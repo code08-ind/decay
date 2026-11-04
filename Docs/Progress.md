@@ -53,7 +53,7 @@
 | S5 | Design screens 1–5, 7–10, 12 (P0) light + dark | 🟨 all done in light + dark; awaiting review |
 | S6 | Design screens 6, 11, 13, 14, 16 (P1) | 🟨 light + dark; awaiting review |
 | S7 | Windows variants for screens 3, 5, 9 | 🟨 light + dark |
-| S8 | Init git repo, monorepo scaffold (pnpm + Cargo workspaces, Turborepo, Biome, CI) | ⬜ |
+| S8 | Init git repo, monorepo scaffold (pnpm + Cargo workspaces, Turborepo, Biome, CI) | 🟨 git repo live (github.com/code08-ind/decay, private); scaffold not started |
 
 ## Phase 0 — Extension validation (weeks 1–4) · **GATE**
 
