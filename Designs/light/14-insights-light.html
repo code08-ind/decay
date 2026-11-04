@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Insights</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Editorial Typography: Newsreader & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline": "#848269",
+            "on-error": "#ffffff",
+            "background": "#fffbff",
+            "on-primary": "#e6ffdd",
+            "secondary-fixed-dim": "#b8e18e",
+            "tertiary-fixed": "#edfbac",
+            "error-container": "#fe8b70",
+            "tertiary-container": "#edfbac",
+            "surface": "#fffbff",
+            "outline-variant": "#bdba9f",
+            "tertiary": "#5e6a2a",
+            "on-tertiary": "#ffffff",
+            "error-dim": "#5c1202",
+            "primary-fixed-dim": "#a4e49b",
+            "surface-container-highest": "#ede9cc",
+            "primary-container": "#b2f3a8",
+            "on-error-container": "#742410",
+            "on-secondary-fixed-variant": "#436521",
+            "on-surface-variant": "#67654e",
+            "on-tertiary-fixed": "#444e11",
+            "surface-dim": "#e7e4c3",
+            "inverse-on-surface": "#a09d92",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-dim": "#525d1f",
+            "error": "#a54731",
+            "on-secondary": "#ffffff",
+            "surface-tint": "#316a2f",
+            "on-secondary-container": "#395b18",
+            "secondary-dim": "#3f611e",
+            "primary-dim": "#245e25",
+            "surface-variant": "#ede9cc",
+            "surface-bright": "#fffbff",
+            "on-surface": "#3a3924",
+            "on-secondary-fixed": "#274705",
+            "primary-fixed": "#b2f3a8",
+            "surface-container-high": "#f2efd5",
+            "surface-container": "#f8f4df",
+            "on-primary-container": "#235d24",
+            "secondary": "#4b6e29",
+            "inverse-surface": "#0f0e08",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-primary-fixed-variant": "#2e672d",
+            "secondary-container": "#c6ef9b",
+            "on-primary-fixed": "#0c4a13",
+            "on-background": "#3a3924",
+            "secondary-fixed": "#c6ef9b",
+            "inverse-primary": "#bafcb0",
+            "tertiary-fixed-dim": "#dfed9e",
+            "on-tertiary-container": "#556122",
+            "surface-container-low": "#fefae8",
+            "primary": "#316a2f"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.375rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Newsreader", "Georgia", "serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-sm": ["DM Sans", "system-ui", "sans-serif"],
+            "headline-md": ["Newsreader", "Georgia", "serif"],
+            "headline-lg": ["Newsreader", "Georgia", "serif"],
+            "body-medium": ["DM Sans", "system-ui", "sans-serif"],
+            "body-md": ["DM Sans", "system-ui", "sans-serif"]
+          },
+          "fontSize": {
+            "display-lg": [
+              "32px",
+              {
+                "lineHeight": "38px",
+                "letterSpacing": "-0.02em",
+                "fontWeight": "600"
+              }
+            ],
+            "code-sm": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "400"
+              }
+            ],
+            "label-sm": [
+              "11px",
+              {
+                "lineHeight": "14px",
+                "fontWeight": "400"
+              }
+            ],
+            "headline-md": [
+              "16px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "600"
+              }
+            ],
+            "headline-lg": [
+              "20px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "600"
+              }
+            ],
+            "body-medium": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-md": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(189, 186, 159, 0.4);
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(132, 130, 105, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] text-[#1B1E19] min-h-screen flex items-center justify-center p-3 md:p-6 lg:p-8 font-['DM Sans'] antialiased selection:bg-[#c6ef9b] selection:text-[#0c4a13]">
+<!-- Floating macOS Window Container -->
+<main class="w-full max-w-[1240px] h-[942px] max-h-[890px] bg-[#FAF6E9] rounded-[24px] border border-white/50 flex flex-col overflow-hidden shadow-[0_25px_60px_-15px_rgba(25,45,20,0.28)] relative">
+<!-- Top Window Titlebar & Chrome (Shared TopAppBar Hybrid Anchor) -->
+<header class="h-12 w-full px-5 border-b border-[#E8E2CC]/80 bg-[#FAF6E9]/90 backdrop-blur-md flex items-center justify-between shrink-0 select-none z-20">
+<!-- Left: macOS Traffic Lights + Brand Lockup -->
+<div class="flex items-center gap-4">
+<!-- Traffic lights -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></div>
+</div>
+<div class="h-4 w-[1px] bg-[#E8E2CC]"></div>
+<!-- Brand Identity -->
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-lg bg-[#316A2F] text-[#E6FFDD] flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[15px]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<span class="font-['Newsreader'] text-base font-semibold text-[#1B1E19] tracking-tight">Decay</span>
+<span class="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#EFEAD7] text-[#67654E] border border-[#E0DAC2]">v1.4</span>
+</div>
+</div>
+<!-- Center: Navigation Pill Switcher -->
+<nav class="hidden md:flex items-center bg-[#EFEAD7]/80 p-1 rounded-full border border-[#E2DDC7] text-xs font-['DM Sans'] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]">
+<button class="px-3.5 py-1 text-[#67654E] hover:text-[#1B1E19] rounded-full transition-colors font-medium">Overview</button>
+<button class="px-3.5 py-1 text-[#67654E] hover:text-[#1B1E19] rounded-full transition-colors font-medium">Library</button>
+<button class="px-3.5 py-1 text-[#67654E] hover:text-[#1B1E19] rounded-full transition-colors font-medium">Live now</button>
+<button class="px-3.5 py-1 text-[#67654E] hover:text-[#1B1E19] rounded-full transition-colors font-medium">Sweeps</button>
+<button class="px-3.5 py-1 text-[#67654E] hover:text-[#1B1E19] rounded-full transition-colors font-medium">Rules</button>
+<!-- Active Tab: Insights -->
+<button class="bg-[#FFFDF6] text-[#1B1E19] shadow-[0_1px_3px_rgba(0,0,0,0.08)] font-semibold px-3.5 py-1 rounded-full flex items-center gap-1.5 border border-black/[0.04]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#316A2F]"></span>
+<span>Insights</span>
+</button>
+</nav>
+<!-- Right: Window Utility Actions -->
+<div class="flex items-center gap-2">
+<div class="px-2.5 py-1 rounded-full bg-[#EAE5D2] border border-[#DDD7C0] text-[11px] font-medium text-[#4B6E29] flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4B6E29] animate-pulse"></span>
+<span>Automatic</span>
+</div>
+<button aria-label="Search" class="w-7 h-7 rounded-full bg-[#FFFDF6] border border-[#E2DDC7] text-[#67654E] hover:text-[#1B1E19] hover:bg-white flex items-center justify-center transition-colors shadow-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="search">search</span>
+</button>
+<button aria-label="Notifications" class="w-7 h-7 rounded-full bg-[#FFFDF6] border border-[#E2DDC7] text-[#67654E] hover:text-[#1B1E19] hover:bg-white flex items-center justify-center transition-colors shadow-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Window Main Canvas -->
+<div class="flex-1 overflow-y-auto custom-scroll p-6 lg:p-7 space-y-6">
+<!-- Canvas Header Area -->
+<section class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
+<div>
+<h1 class="font-['Newsreader'] text-[34px] leading-tight font-normal text-[#1B1E19] tracking-tight">Insights</h1>
+<p class="text-xs sm:text-sm text-[#666D60] font-['DM Sans'] mt-1">
+            How your browsing has settled since you started using Decay. Computed on this Mac only.
+          </p>
+</div>
+<div class="flex items-center gap-2.5 shrink-0">
+<button class="bg-[#FFFDF6] hover:bg-[#F7F4EA] text-[#1B1E19] text-xs font-medium px-3.5 py-1.5 rounded-full border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-1.5 transition-all">
+<span>Last 30 days</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="expand_more">expand_more</span>
+</button>
+<button class="bg-[#FFFDF6] hover:bg-[#F7F4EA] text-[#1B1E19] text-xs font-medium px-3.5 py-1.5 rounded-full border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-[14px]" data-icon="download">download</span>
+<span>Export CSV</span>
+</button>
+</div>
+</section>
+<!-- Row 1: 4 Key Metric Stat Cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Metric 1: Average open tabs -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-5 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between hover:border-[#bdba9f] transition-all">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-[#666D60] uppercase tracking-wider">Average open tabs</span>
+<span class="material-symbols-outlined text-[#848269] text-[18px]" data-icon="tab">tab</span>
+</div>
+<div class="my-2">
+<div class="font-['Newsreader'] text-4xl font-normal text-[#1B1E19] tracking-tight">34</div>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-[#666D60]">
+<span class="bg-[#E8F2D8] text-[#3A6B29] font-medium text-[11px] px-2 py-0.5 rounded-full flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]" data-icon="arrow_downward">arrow_downward</span> 56%
+            </span>
+<span class="truncate">was 78 before Decay</span>
+</div>
+</div>
+<!-- Metric 2: Regret rate -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-5 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between hover:border-[#bdba9f] transition-all">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-[#666D60] uppercase tracking-wider">Regret rate</span>
+<span class="material-symbols-outlined text-[#848269] text-[18px]" data-icon="history">history</span>
+</div>
+<div class="my-2">
+<div class="font-['Newsreader'] text-4xl font-normal text-[#1B1E19] tracking-tight">2.1%</div>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-[#666D60]">
+<span class="bg-[#E8F2D8] text-[#3A6B29] font-medium text-[11px] px-2 py-0.5 rounded-full">low</span>
+<span class="truncate">restored within a day</span>
+</div>
+</div>
+<!-- Metric 3: Items archived -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-5 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between hover:border-[#bdba9f] transition-all">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-[#666D60] uppercase tracking-wider">Items archived</span>
+<span class="material-symbols-outlined text-[#848269] text-[18px]" data-icon="archive">archive</span>
+</div>
+<div class="my-2">
+<div class="font-['Newsreader'] text-4xl font-normal text-[#1B1E19] tracking-tight">612</div>
+</div>
+<div class="text-xs text-[#666D60] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#848269]"></span>
+<span>Across 4 active browsers</span>
+</div>
+</div>
+<!-- Metric 4: Most tidied site -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-5 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between hover:border-[#bdba9f] transition-all">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-[#666D60] uppercase tracking-wider">Most tidied site</span>
+<span class="material-symbols-outlined text-[#848269] text-[18px]" data-icon="cleaning_services">cleaning_services</span>
+</div>
+<div class="my-2">
+<div class="font-['DM_Sans'] text-[21px] font-medium text-[#1B1E19] truncate tracking-tight">docs.google.com</div>
+</div>
+<div class="text-xs text-[#666D60]">
+<span>148 tabs quietly swept</span>
+</div>
+</div>
+</section>
+<!-- Row 2: Trend Chart (8 Cols) + "Your Rhythm" Bento Tile (4 Cols) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+<!-- Left: Open Tabs Historical Bar Chart -->
+<div class="lg:col-span-8 bg-[#FFFDF6] rounded-[22px] p-6 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between">
+<!-- Chart Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+<div>
+<h2 class="font-['Newsreader'] text-lg font-medium text-[#1B1E19]">Open tabs, last 30 days</h2>
+<p class="text-xs text-[#666D60] mt-0.5">Daily active open tab count at 6:00 PM</p>
+</div>
+<div class="flex items-center gap-3 text-xs">
+<div class="flex items-center gap-1.5 text-[#666D60]">
+<span class="w-3.5 h-[1.5px] border-b border-dashed border-[#A54731]"></span>
+<span>before Decay: 78</span>
+</div>
+<div class="flex items-center gap-1.5 text-[#1B1E19] font-medium">
+<span class="w-2 h-2 rounded-full bg-[#8EB768]"></span>
+<span>Current: avg 34</span>
+</div>
+</div>
+</div>
+<!-- Chart Visualization Surface -->
+<div class="relative h-[210px] w-full pt-4 flex flex-col justify-between select-none">
+<!-- Horizontal Dashed Target Reference Line (78 tabs) -->
+<div class="absolute top-4 left-0 right-0 z-0 pointer-events-none flex items-center">
+<div class="w-full border-t border-dashed border-[#A54731]/40"></div>
+<span class="absolute right-0 -top-3 text-[10px] font-mono text-[#A54731] bg-[#FAF6E9] px-1 rounded">78 tabs</span>
+</div>
+<!-- Subtle Gridlines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-40 z-0">
+<div class="w-full border-b border-[#E8E2CC]"></div>
+<div class="w-full border-b border-[#E8E2CC]"></div>
+<div class="w-full border-b border-[#E8E2CC]"></div>
+<div class="w-full border-b border-[#E8E2CC]"></div>
+</div>
+<!-- 30-Day Bar Histogram -->
+<div class="relative z-10 h-[175px] w-full flex items-end justify-between gap-[3px] sm:gap-[5px] px-1">
+<!-- Days 1-6 (Higher values ~68 -> 55) -->
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[84%]" title="Day 1 · 68 tabs"></div>
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[80%]" title="Day 2 · 64 tabs"></div>
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[75%]" title="Day 3 · 60 tabs"></div>
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[71%]" title="Day 4 · 58 tabs"></div>
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[68%]" title="Day 5 · 55 tabs"></div>
+<div class="flex-1 bg-[#B6DA93]/80 hover:bg-[#8EB768] transition-all rounded-t-sm h-[64%]" title="Day 6 · 51 tabs"></div>
+<!-- Days 7-12 (Drop down to ~45) -->
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[58%]" title="Day 7 · 47 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[55%]" title="Day 8 · 44 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[52%]" title="Day 9 · 42 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[56%]" title="Day 10 · 45 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[50%]" title="Day 11 · 40 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[48%]" title="Day 12 · 39 tabs"></div>
+<!-- Days 13-18 (Settling in ~36) -->
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[46%]" title="Day 13 · 37 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[44%]" title="Day 14 · 35 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[47%]" title="Day 15 · 38 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[42%]" title="Day 16 · 34 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[40%]" title="Day 17 · 32 tabs"></div>
+<div class="flex-1 bg-[#A0C878] hover:bg-[#78A452] transition-all rounded-t-sm h-[43%]" title="Day 18 · 35 tabs"></div>
+<!-- Days 19-24 (With Active Day Highlight & Tooltip on Day 24) -->
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[41%]" title="Day 19 · 33 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[39%]" title="Day 20 · 31 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[43%]" title="Day 21 · 35 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[40%]" title="Day 22 · 32 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[38%]" title="Day 23 · 30 tabs"></div>
+<!-- Day 24: Highlighted Item with Floating Tooltip -->
+<div class="flex-1 relative group h-[40%]">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#1B1E19] text-[#FFFDF6] text-[10px] font-medium px-2 py-0.5 rounded-full shadow-md z-30 pointer-events-none">
+                  Day 24 · 32 tabs
+                </div>
+<div class="w-full h-full bg-[#4F8A4B] rounded-t-sm ring-2 ring-[#316A2F]/30"></div>
+</div>
+<!-- Days 25-30 (Steady State ~30-34) -->
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[37%]" title="Day 25 · 30 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[41%]" title="Day 26 · 33 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[38%]" title="Day 27 · 31 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[42%]" title="Day 28 · 34 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[36%]" title="Day 29 · 29 tabs"></div>
+<div class="flex-1 bg-[#8EB768] hover:bg-[#608B3C] transition-all rounded-t-sm h-[40%]" title="Day 30 · 32 tabs"></div>
+</div>
+<!-- X-Axis Labels -->
+<div class="flex justify-between items-center text-[11px] text-[#848269] pt-2 px-1 border-t border-[#E8E2CC]">
+<span>Oct 5</span>
+<span>Oct 12</span>
+<span>Oct 19</span>
+<span>Oct 26</span>
+<span>Nov 4</span>
+</div>
+</div>
+</div>
+<!-- Right: Deep Forest Green Feature Card "Your rhythm" -->
+<div class="lg:col-span-4 bg-[#355E3B] text-white rounded-[22px] p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+<!-- Subtle organic background aura -->
+<div class="absolute -right-12 -top-12 w-48 h-48 bg-[#4F8A4B]/40 rounded-full blur-3xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[10px] tracking-widest font-semibold uppercase text-[#DDEB9D] bg-white/10 px-2 py-0.5 rounded-full">
+                CALCULATED HABITS
+              </span>
+<span class="material-symbols-outlined text-white/40 text-[18px]" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h2 class="font-['Newsreader'] text-2xl font-normal text-white">Your rhythm</h2>
+<p class="text-xs text-white/70 mt-0.5 mb-4">How tab density behaves throughout your workweek.</p>
+<!-- 3 Frosted Habit Tiles -->
+<div class="space-y-2.5">
+<!-- Tile 1 -->
+<div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3 hover:bg-white/15 transition-colors">
+<div class="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-0.5">Most active</div>
+<div class="font-['Newsreader'] text-[17px] font-medium text-white">10 AM – 1 PM</div>
+<div class="text-[11px] text-white/60 leading-tight mt-0.5">Peak window when tabs accumulate fastest</div>
+</div>
+<!-- Tile 2 -->
+<div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3 hover:bg-white/15 transition-colors">
+<div class="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-0.5">Quietest</div>
+<div class="font-['Newsreader'] text-[17px] font-medium text-white">Friday afternoons</div>
+<div class="text-[11px] text-white/60 leading-tight mt-0.5">Lowest creation rate, highest manual closures</div>
+</div>
+<!-- Tile 3 -->
+<div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3 hover:bg-white/15 transition-colors">
+<div class="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-0.5">Stale velocity</div>
+<div class="font-['Newsreader'] text-[15px] font-medium text-white leading-tight">Tabs usually go stale after 2.3 days</div>
+<div class="text-[11px] text-white/60 leading-tight mt-0.5">Matches your balanced 60h threshold</div>
+</div>
+</div>
+</div>
+<!-- Bottom Telemetry Privacy Seal -->
+<div class="pt-3 border-t border-white/10 flex items-center gap-1.5 text-[10px] text-white/60">
+<span class="material-symbols-outlined text-[14px] text-white/70" data-icon="lock">lock</span>
+<span>All telemetry processed on this Mac. No data ever leaves.</span>
+</div>
+</div>
+</section>
+<!-- Row 3: Top Sources + Restored Most Often -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
+<!-- Left: Top sources breakdown -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-6 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-['Newsreader'] text-lg font-medium text-[#1B1E19]">Top sources</h2>
+<p class="text-xs text-[#666D60] mt-0.5">Breakdown of archived windows &amp; tabs</p>
+</div>
+<span class="text-xs font-mono text-[#848269]">612 Total</span>
+</div>
+<!-- Progress Bars -->
+<div class="mt-5 space-y-4">
+<!-- Source 1: Chrome Work -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
+<span class="font-medium text-[#1B1E19]">Chrome — Work</span>
+</div>
+<div class="flex items-center gap-2 font-mono text-[#666D60]">
+<span>294 tabs</span>
+<span class="font-medium text-[#1B1E19]">48%</span>
+</div>
+</div>
+<div class="w-full h-2 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] overflow-hidden">
+<div class="h-full bg-[#4F8A4B] rounded-full" style="width: 48%;"></div>
+</div>
+</div>
+<!-- Source 2: Arc -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#EC4899]"></span>
+<span class="font-medium text-[#1B1E19]">Arc</span>
+</div>
+<div class="flex items-center gap-2 font-mono text-[#666D60]">
+<span>190 tabs</span>
+<span class="font-medium text-[#1B1E19]">31%</span>
+</div>
+</div>
+<div class="w-full h-2 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] overflow-hidden">
+<div class="h-full bg-[#6AA260] rounded-full" style="width: 31%;"></div>
+</div>
+</div>
+<!-- Source 3: Brave -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#F97316]"></span>
+<span class="font-medium text-[#1B1E19]">Brave</span>
+</div>
+<div class="flex items-center gap-2 font-mono text-[#666D60]">
+<span>73 tabs</span>
+<span class="font-medium text-[#1B1E19]">12%</span>
+</div>
+</div>
+<div class="w-full h-2 rounded-full bg-[#8FB884] rounded-full border border-[#E8E2CC] overflow-hidden">
+<div class="h-full bg-[#8FB884] rounded-full" style="width: 12%;"></div>
+</div>
+</div>
+<!-- Source 4: macOS Finder -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#0EA5E9]"></span>
+<span class="font-medium text-[#1B1E19]">macOS Finder</span>
+</div>
+<div class="flex items-center gap-2 font-mono text-[#666D60]">
+<span>55 windows</span>
+<span class="font-medium text-[#1B1E19]">9%</span>
+</div>
+</div>
+<div class="w-full h-2 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] overflow-hidden">
+<div class="h-full bg-[#AECBA6] rounded-full" style="width: 9%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-3 mt-3 text-[11px] text-[#848269] flex items-center justify-between border-t border-[#E8E2CC]">
+<span>Automatic sweeps configured at 03:00 AM</span>
+<button class="text-[#316A2F] hover:underline font-medium">Source rules ↗</button>
+</div>
+</div>
+<!-- Right: Restored most often (Safelisting Candidates) -->
+<div class="bg-[#FFFDF6] rounded-[22px] p-6 border border-[#E7E2CE]/80 shadow-[0_1px_2px_rgba(31,36,24,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<div>
+<h2 class="font-['Newsreader'] text-lg font-medium text-[#1B1E19]">Restored most often</h2>
+<p class="text-xs text-[#666D60] mt-0.5">Items you pulled back from archive (consider safelisting)</p>
+</div>
+<span class="text-xs font-mono text-[#848269]">4 recommendations</span>
+</div>
+<!-- List rows with favicons & quick actions -->
+<div class="divide-y divide-[#E8E2CC]/70">
+<!-- Item 1: Stripe -->
+<div class="py-2.5 flex items-center justify-between gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-[#635BFF]/10 text-[#635BFF] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#635BFF]/20">
+                    S
+                  </div>
+<div class="min-w-0">
+<p class="text-xs font-medium text-[#1B1E19] truncate group-hover:text-[#316A2F] transition-colors">
+                      Stripe pricing — Compare plans
+                    </p>
+<p class="text-[11px] text-[#848269] truncate">stripe.com</p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#FAF6E9] text-[#67654E] border border-[#E8E2CC]">
+                    restored 3×
+                  </span>
+<button class="bg-[#FFFDF6] hover:bg-[#F3F0E2] text-xs font-medium text-zinc-700 px-2.5 py-1 rounded-full border border-black/10 shadow-xs flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[13px] text-[#316A2F]" data-icon="shield">shield</span>
+<span class="hidden sm:inline">Always protect</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Linear -->
+<div class="py-2.5 flex items-center justify-between gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-[#5E6AD2]/10 text-[#5E6AD2] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#5E6AD2]/20">
+                    L
+                  </div>
+<div class="min-w-0">
+<p class="text-xs font-medium text-[#1B1E19] truncate group-hover:text-[#316A2F] transition-colors">
+                      Linear — Cycle 42 roadmap
+                    </p>
+<p class="text-[11px] text-[#848269] truncate">linear.app</p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#FAF6E9] text-[#67654E] border border-[#E8E2CC]">
+                    restored 3×
+                  </span>
+<button class="bg-[#FFFDF6] hover:bg-[#F3F0E2] text-xs font-medium text-zinc-700 px-2.5 py-1 rounded-full border border-black/10 shadow-xs flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[13px] text-[#316A2F]" data-icon="shield">shield</span>
+<span class="hidden sm:inline">Always protect</span>
+</button>
+</div>
+</div>
+<!-- Item 3: GitHub -->
+<div class="py-2.5 flex items-center justify-between gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-[#24292F]/10 text-[#24292F] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#24292F]/20">
+<span class="material-symbols-outlined text-[14px]" data-icon="code">code</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs font-medium text-[#1B1E19] truncate group-hover:text-[#316A2F] transition-colors">
+                      Pull request #418: cache invalidation
+                    </p>
+<p class="text-[11px] text-[#848269] truncate">github.com</p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#FAF6E9] text-[#67654E] border border-[#E8E2CC]">
+                    restored 2×
+                  </span>
+<button class="bg-[#FFFDF6] hover:bg-[#F3F0E2] text-xs font-medium text-zinc-700 px-2.5 py-1 rounded-full border border-black/10 shadow-xs flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[13px] text-[#316A2F]" data-icon="shield">shield</span>
+<span class="hidden sm:inline">Always protect</span>
+</button>
+</div>
+</div>
+<!-- Item 4: Notion -->
+<div class="py-2.5 flex items-center justify-between gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-[#37352F]/10 text-[#37352F] font-semibold text-xs flex items-center justify-center shrink-0 border border-[#37352F]/20">
+                    N
+                  </div>
+<div class="min-w-0">
+<p class="text-xs font-medium text-[#1B1E19] truncate group-hover:text-[#316A2F] transition-colors">
+                      Q4 2026 Product Spec &amp; Backlog
+                    </p>
+<p class="text-[11px] text-[#848269] truncate">notion.so</p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#FAF6E9] text-[#67654E] border border-[#E8E2CC]">
+                    restored 2×
+                  </span>
+<button class="bg-[#FFFDF6] hover:bg-[#F3F0E2] text-xs font-medium text-zinc-700 px-2.5 py-1 rounded-full border border-black/10 shadow-xs flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[13px] text-[#316A2F]" data-icon="shield">shield</span>
+<span class="hidden sm:inline">Always protect</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-3 mt-2 text-[11px] text-[#848269] flex items-center justify-between border-t border-[#E8E2CC]">
+<span>Safelist automatically skips sweeps</span>
+<button class="text-[#316A2F] hover:underline font-medium">Manage rules</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script>
+    // Lightweight macOS micro-interactions for button clicks
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.classList.add('scale-[0.98]');
+        setTimeout(() => this.classList.remove('scale-[0.98]'), 120);
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>11-daily-summary-dark</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            desktop: '#1C2A1B',
+            canvas: '#121511',
+            card: '#1A1E18',
+            cardBorder: '#2A3027',
+            pillActive: '#2A3027',
+            greenCard: '#2F5A2E',
+            textIvory: '#F2F0E6',
+            textMuted: '#A7AC9C',
+            sage: '#A0C878',
+            sageDark: '#7FA77A',
+            tagBg: '#222720',
+          },
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .dot-pattern {
+      background-image: radial-gradient(rgba(242, 240, 230, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .frosted-banner {
+      background: rgba(22, 28, 22, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(242, 240, 230, 0.1);
+    }
+    .frosted-row {
+      background: rgba(18, 21, 17, 0.45);
+      border: 1px solid rgba(242, 240, 230, 0.07);
+    }
+  </style>
+</head>
+<body class="bg-desktop dot-pattern min-h-screen font-sans text-textIvory flex flex-col items-center justify-start p-8 select-none antialiased relative">
+
+  <!-- macOS Top Notification Banner -->
+  <div class="w-full max-w-[1040px] flex justify-end mb-6">
+    <div class="frosted-banner rounded-2xl p-4 w-[380px] shadow-2xl flex flex-col gap-2.5 transition-all">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded-full bg-emerald-950/80 border border-sage/30 flex items-center justify-center text-sage">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6"/>
+            </svg>
+          </div>
+          <span class="text-xs font-medium tracking-tight text-textIvory font-sans">Decay · Good morning</span>
+        </div>
+        <span class="text-[11px] font-mono text-textMuted/70">9:00 AM</span>
+      </div>
+      <p class="text-xs text-textMuted font-sans leading-relaxed">
+        Yesterday Decay archived 14 tabs and hid 3 windows. 2 things need a look.
+      </p>
+      <div class="flex items-center justify-end gap-2 pt-0.5">
+        <button class="px-3 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory bg-white/5 hover:bg-white/10 transition-colors">
+          Dismiss
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-medium font-sans bg-[#F2F0E6] text-[#121511] hover:bg-white shadow-sm transition-colors">
+          Open summary
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main macOS Application Window -->
+  <div class="w-full max-w-[1040px] bg-canvas rounded-[26px] border border-cardBorder shadow-2xl overflow-hidden flex flex-col mb-12">
+
+    <!-- macOS Title Bar & Navigation -->
+    <div class="h-14 px-6 border-b border-cardBorder flex items-center justify-between bg-canvas/90 backdrop-blur-md">
+      <!-- Traffic lights & App Name -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40"></div>
+          <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40"></div>
+          <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40"></div>
+        </div>
+        <div class="h-4 w-[1px] bg-cardBorder mx-1"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded-md bg-emerald-950/70 border border-sage/30 flex items-center justify-center text-sage">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6"/>
+            </svg>
+          </div>
+          <span class="font-serif text-sm tracking-tight text-textIvory font-medium">Decay</span>
+          <span class="text-[10px] font-mono text-textMuted/70 bg-card px-1.5 py-0.5 rounded border border-cardBorder">v1.4</span>
+        </div>
+      </div>
+
+      <!-- Navigation Pill Selector -->
+      <div class="flex items-center bg-card p-1 rounded-full border border-cardBorder">
+        <button class="px-3.5 py-1 rounded-full text-xs font-medium font-sans bg-pillActive text-textIvory shadow-sm flex items-center gap-1.5 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+          Overview
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory transition-colors">
+          Library
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory transition-colors">
+          Live now
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory transition-colors">
+          Sweeps
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory transition-colors">
+          Rules
+        </button>
+        <button class="px-3.5 py-1 rounded-full text-xs font-sans text-textMuted hover:text-textIvory transition-colors">
+          Insights
+        </button>
+      </div>
+
+      <!-- Right controls -->
+      <div class="flex items-center gap-3">
+        <button class="w-7 h-7 rounded-full flex items-center justify-center text-textMuted hover:text-textIvory hover:bg-card transition-colors">
+          <span class="material-symbols-outlined text-lg">search</span>
+        </button>
+        <button class="w-7 h-7 rounded-full flex items-center justify-center text-textMuted hover:text-textIvory hover:bg-card transition-colors relative">
+          <span class="material-symbols-outlined text-lg">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-sage"></span>
+        </button>
+        <div class="flex items-center gap-1.5 bg-card border border-cardBorder px-2.5 py-1 rounded-full text-xs font-sans text-textIvory">
+          <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+          <span>Automatic</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Window Body Content -->
+    <div class="p-8 space-y-6">
+
+      <!-- Header Greeting -->
+      <div class="space-y-1">
+        <h1 class="font-serif text-3xl text-textIvory font-normal tracking-tight">Good morning, Aryan</h1>
+        <p class="text-xs text-textMuted font-sans">Here's what happened while you worked yesterday.</p>
+      </div>
+
+      <!-- Stat Cards Row (3 Cards, 22px radius, #1A1E18, 1px #2A3027) -->
+      <div class="grid grid-cols-3 gap-4">
+        <!-- Card 1: Tabs archived -->
+        <div class="bg-card border border-cardBorder rounded-[22px] p-5 flex flex-col justify-between h-[126px]">
+          <div class="flex items-start justify-between">
+            <span class="text-3xl font-serif text-textIvory font-normal">14</span>
+            <div class="w-8 h-8 rounded-xl bg-canvas border border-cardBorder flex items-center justify-center text-textMuted">
+              <span class="material-symbols-outlined text-[18px]">tab</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-textMuted mb-2">tabs archived</div>
+            <div class="flex items-center gap-2 text-[11px] font-sans text-textMuted">
+              <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+              <span>across 3 browsers</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Windows hidden -->
+        <div class="bg-card border border-cardBorder rounded-[22px] p-5 flex flex-col justify-between h-[126px]">
+          <div class="flex items-start justify-between">
+            <span class="text-3xl font-serif text-textIvory font-normal">3</span>
+            <div class="w-8 h-8 rounded-xl bg-canvas border border-cardBorder flex items-center justify-center text-textMuted">
+              <span class="material-symbols-outlined text-[18px]">visibility_off</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-textMuted mb-2">windows hidden</div>
+            <div class="flex items-center gap-2 text-[11px] font-sans text-textMuted">
+              <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+              <span>Finder & Terminal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Restored & Regret -->
+        <div class="bg-card border border-cardBorder rounded-[22px] p-5 flex flex-col justify-between h-[126px]">
+          <div class="flex items-start justify-between">
+            <span class="text-3xl font-serif text-textIvory font-normal">1</span>
+            <div class="w-8 h-8 rounded-xl bg-canvas border border-cardBorder flex items-center justify-center text-textMuted">
+              <span class="material-symbols-outlined text-[18px]">history</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-textMuted mb-2">restored</div>
+            <div class="flex items-center justify-between text-[11px] font-sans">
+              <div class="flex items-center gap-2 text-textMuted">
+                <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+                <span>7% regret rate (low)</span>
+              </div>
+              <span class="text-sage font-medium">Optimal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- "Worth a look" Deep Green Card (#2F5A2E) -->
+      <div class="bg-greenCard border border-[#3E703D] rounded-[22px] p-6 space-y-4 shadow-lg">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sage text-lg">auto_awesome</span>
+          <h2 class="font-serif text-lg text-textIvory font-medium tracking-tight">Worth a look</h2>
+        </div>
+        <p class="text-xs text-textIvory/80 -mt-2">
+          Decay noticed patterns in what you reopened yesterday.
+        </p>
+
+        <!-- Frosted recommendation rows -->
+        <div class="space-y-2.5">
+          <!-- Row 1 -->
+          <div class="frosted-row rounded-xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-black/20 flex items-center justify-center text-sage">
+                <span class="material-symbols-outlined text-base">sync</span>
+              </div>
+              <span class="text-xs font-sans text-textIvory">
+                You restored <strong class="font-medium text-white">stripe.com</strong> 3 times this week
+              </span>
+            </div>
+            <button class="px-4 py-1.5 rounded-full text-xs font-medium font-sans bg-[#F2F0E6] text-[#121511] hover:bg-white transition-colors shadow-sm">
+              Always protect
+            </button>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="frosted-row rounded-xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-black/20 flex items-center justify-center text-sage">
+                <span class="material-symbols-outlined text-base">schedule</span>
+              </div>
+              <span class="text-xs font-sans text-textIvory">
+                <strong class="font-medium text-white">github.com</strong> pull requests are archived often
+              </span>
+            </div>
+            <button class="px-4 py-1.5 rounded-full text-xs font-medium font-sans bg-[#F2F0E6] text-[#121511] hover:bg-white transition-colors shadow-sm">
+              Keep longer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- "Archived yesterday" Card (Compact table of records) -->
+      <div class="bg-card border border-cardBorder rounded-[22px] p-6 space-y-4">
+        <!-- Card Header -->
+        <div class="flex items-center justify-between border-b border-cardBorder/60 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-textMuted text-lg">inventory_2</span>
+            <h3 class="font-serif text-base text-textIvory font-normal">Archived yesterday</h3>
+          </div>
+          <button class="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-sans text-textIvory border border-cardBorder hover:bg-white/5 transition-colors">
+            <span class="material-symbols-outlined text-sm">undo</span>
+            <span>Undo whole day</span>
+          </button>
+        </div>
+
+        <!-- Archived List Rows -->
+        <div class="divide-y divide-cardBorder/40 text-xs font-sans">
+          <!-- Row 1: Stripe -->
+          <div class="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-[#635BFF]/20 border border-[#635BFF]/30 flex items-center justify-center text-[#9B95FF] font-medium font-sans text-xs">
+                S
+              </div>
+              <div>
+                <div class="text-textIvory font-medium">Stripe pricing — Compare plans</div>
+                <div class="text-textMuted/70 text-[11px] font-mono">stripe.com/pricing</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5">
+              <span class="px-2 py-0.5 rounded-md bg-tagBg border border-cardBorder text-sage text-[11px] font-sans">
+                Unused 61h active
+              </span>
+              <span class="text-textMuted/70 text-[11px] font-mono min-w-[90px] text-right">
+                Yesterday 2:14 PM
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 2: Linear -->
+          <div class="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-[#5E6AD2]/20 border border-[#5E6AD2]/30 flex items-center justify-center text-[#8D96E8] font-medium font-sans text-xs">
+                L
+              </div>
+              <div>
+                <div class="text-textIvory font-medium">Linear — Cycle 42 roadmap</div>
+                <div class="text-textMuted/70 text-[11px] font-mono">linear.app</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5">
+              <span class="px-2 py-0.5 rounded-md bg-tagBg border border-cardBorder text-sage text-[11px] font-sans">
+                Unused 48h active
+              </span>
+              <span class="text-textMuted/70 text-[11px] font-mono min-w-[90px] text-right">
+                Yesterday 1:50 PM
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 3: Github Pull Request -->
+          <div class="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-textIvory font-mono text-xs">
+                &lt;&gt;
+              </div>
+              <div>
+                <div class="text-textIvory font-medium">Pull request #418: Cache invalidation logic</div>
+                <div class="text-textMuted/70 text-[11px] font-mono">github.com</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5">
+              <span class="px-2 py-0.5 rounded-md bg-tagBg border border-cardBorder text-sage text-[11px] font-sans">
+                Unused 24h active
+              </span>
+              <span class="text-textMuted/70 text-[11px] font-mono min-w-[90px] text-right">
+                Yesterday 11:20 AM
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 4: Window / Downloads Invoices -->
+          <div class="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-lg transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-300">
+                <span class="material-symbols-outlined text-sm">folder</span>
+              </div>
+              <div>
+                <div class="text-textIvory font-medium">~/Downloads/Invoices-2024 (Window)</div>
+                <div class="text-textMuted/70 text-[11px] font-mono">macOS Finder workspace</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-5">
+              <span class="px-2 py-0.5 rounded-md bg-tagBg border border-cardBorder text-textMuted text-[11px] font-sans">
+                Inactive 3 days
+              </span>
+              <span class="text-textMuted/70 text-[11px] font-mono min-w-[90px] text-right">
+                Yesterday 9:15 AM
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Muted Footer Line -->
+      <div class="pt-2 pb-1 flex items-center justify-between text-[11px] text-textMuted/60 font-sans border-t border-cardBorder/40">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+          <span>Engine active · Local SQLite ledger</span>
+        </div>
+        <span>Decay v1.4 · All actions reversible</span>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

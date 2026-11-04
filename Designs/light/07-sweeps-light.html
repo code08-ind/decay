@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Sweeps</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100..900&family=Newsreader:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bdba9f",
+            "on-surface-variant": "#67654e",
+            "inverse-primary": "#bafcb0",
+            "inverse-on-surface": "#a09d92",
+            "primary-dim": "#245e25",
+            "tertiary-dim": "#525d1f",
+            "tertiary-container": "#edfbac",
+            "surface-container": "#f8f4df",
+            "secondary-fixed": "#c6ef9b",
+            "on-tertiary-container": "#556122",
+            "tertiary": "#5e6a2a",
+            "on-tertiary": "#ffffff",
+            "error": "#a54731",
+            "error-container": "#fe8b70",
+            "primary": "#316a2f",
+            "surface-variant": "#ede9cc",
+            "error-dim": "#5c1202",
+            "on-primary-container": "#235d24",
+            "on-primary": "#e6ffdd",
+            "tertiary-fixed-dim": "#dfed9e",
+            "on-tertiary-fixed": "#444e11",
+            "surface-container-highest": "#ede9cc",
+            "tertiary-fixed": "#edfbac",
+            "on-surface": "#3a3924",
+            "on-secondary-fixed": "#274705",
+            "outline": "#848269",
+            "primary-fixed": "#b2f3a8",
+            "secondary-container": "#c6ef9b",
+            "inverse-surface": "#0f0e08",
+            "primary-fixed-dim": "#a4e49b",
+            "on-secondary-fixed-variant": "#436521",
+            "primary-container": "#b2f3a8",
+            "surface-container-high": "#f2efd5",
+            "on-error-container": "#742410",
+            "on-secondary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#fffbff",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-primary-fixed-variant": "#2e672d",
+            "secondary-dim": "#3f611e",
+            "on-secondary-container": "#395b18",
+            "background": "#fffbff",
+            "secondary": "#4b6e29",
+            "on-primary-fixed": "#0c4a13",
+            "surface-dim": "#e7e4c3",
+            "surface": "#fffbff",
+            "on-error": "#ffffff",
+            "on-background": "#3a3924",
+            "secondary-fixed-dim": "#b8e18e",
+            "surface-tint": "#316a2f",
+            "surface-container-low": "#fefae8"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "margin": "1.5rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "body-medium": ["DM Sans"],
+            "code-sm": ["JetBrains Mono"],
+            "headline-md": ["Newsreader"],
+            "label-sm": ["DM Sans"],
+            "headline-lg": ["Newsreader"],
+            "display-lg": ["Newsreader"],
+            "body-md": ["DM Sans"]
+          },
+          "fontSize": {
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-[#7FA77A] p-4 md:p-8 flex items-center justify-center font-body-md text-body-md text-on-surface antialiased selection:bg-[#4F8A4B] selection:text-white">
+<!-- Desktop App Window Floating Frame -->
+<div class="w-full max-w-[1240px] bg-[#FAF7EE] rounded-3xl shadow-[0_30px_90px_rgba(20,38,18,0.22)] border border-[#E8E2CC]/80 overflow-hidden flex flex-col">
+<!-- Top Window Chrome / App Titlebar -->
+<header class="h-14 border-b border-[#E8E2CC]/70 px-5 flex items-center justify-between select-none bg-[#FAF7EE]/95">
+<!-- Window Controls & Brand Identity -->
+<div class="flex items-center gap-4">
+<!-- macOS Traffic Lights -->
+<div class="flex items-center gap-2 pr-2">
+<span class="w-3 h-3 rounded-full bg-[#EC6A5E] border border-black/10 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#F5BF4F] border border-black/10 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#62C554] border border-black/10 inline-block"></span>
+</div>
+<div class="h-4 w-px bg-[#E8E2CC]"></div>
+<!-- Logo & Version Pill -->
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#316a2f] text-lg select-none">eco</span>
+<span class="font-headline-lg text-headline-lg font-semibold text-[#1F2418] tracking-tight">Decay</span>
+<span class="font-code-sm text-[10px] px-1.5 py-0.5 rounded-full bg-[#EDE9CC] text-[#556122] font-medium leading-none">v1.4</span>
+</div>
+</div>
+<!-- Segmented Navigation Shell -->
+<nav class="hidden md:flex items-center bg-[#EDE9CC]/80 p-1 rounded-full border border-[#E8E2CC] text-on-surface-variant font-body-medium text-xs">
+<a class="px-3.5 py-1 rounded-full hover:text-on-surface transition-colors" href="#overview">Overview</a>
+<a class="px-3.5 py-1 rounded-full hover:text-on-surface transition-colors" href="#library">Library</a>
+<a class="px-3.5 py-1 rounded-full hover:text-on-surface transition-colors" href="#live-now">Live now</a>
+<!-- ACTIVE TAB: Sweeps -->
+<a class="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-[#1F2418] shadow-[0_1px_3px_rgba(0,0,0,0.08)] font-semibold transition-all" href="#sweeps">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+<span>Sweeps</span>
+</a>
+<a class="px-3.5 py-1 rounded-full hover:text-on-surface transition-colors" href="#rules">Rules</a>
+<a class="px-3.5 py-1 rounded-full hover:text-on-surface transition-colors" href="#insights">Insights</a>
+</nav>
+<!-- Right Utility Actions -->
+<div class="flex items-center gap-2">
+<button aria-label="Search" class="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-[#E8E2CC] text-on-surface-variant hover:text-on-surface hover:border-outline-variant transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[17px]">search</span>
+</button>
+<button aria-label="Notifications" class="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-[#E8E2CC] text-on-surface-variant hover:text-on-surface hover:border-outline-variant transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[17px]">notifications</span>
+</button>
+<!-- Status Indicator Pill -->
+<div class="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-on-surface shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+<span>Automatic</span>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="p-6 md:p-8 space-y-6">
+<!-- Page Header: Heading & Sweep Controls -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-display-lg text-display-lg font-semibold text-[#1F2418] tracking-tight">Sweeps</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Every tidy-up Decay has made. Any sweep can be undone.</p>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="flex items-center gap-1.5 px-4 py-2 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-[#1F2418] hover:bg-[#FAF7EE] shadow-sm transition-all active:scale-[0.98]" type="button">
+<span>Last 30 days</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 bg-[#1F2418] rounded-full text-xs font-body-medium text-[#FFFDF6] hover:bg-[#2C3322] shadow-sm transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>Sweep now</span>
+</button>
+</div>
+</section>
+<!-- Two-Column Master / Detail Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT CARD: Timeline List (approx 62% width -> 7 of 12 columns / 7/5 split) -->
+<section class="lg:col-span-7 bg-white rounded-[22px] border border-black/5 p-6 shadow-sm space-y-6">
+<!-- GROUP 1: TODAY -->
+<div class="space-y-3">
+<header class="font-label-sm text-[11px] tracking-wider font-semibold text-on-surface-variant/70 uppercase">
+              TODAY
+            </header>
+<!-- Sweep #409 (ACTIVE / SELECTED ROW) -->
+<div class="relative bg-[#F4F8EB] rounded-2xl p-4 border border-[#4F8A4B]/25 flex items-center justify-between gap-4 transition-all">
+<!-- Left accent bar -->
+<span class="absolute left-1.5 top-3 bottom-3 w-1 bg-[#4F8A4B] rounded-full"></span>
+<div class="flex items-center gap-3.5 pl-2 min-w-0">
+<div class="w-9 h-9 rounded-full bg-[#ECF5D8] border border-[#A0C878]/30 flex items-center justify-center text-[#316a2f] shrink-0">
+<span class="material-symbols-outlined text-lg">cleaning_services</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-[#1F2418] font-semibold">Sweep #409</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-white/80 border border-[#E8E2CC] text-[#395b18] font-medium">11 tabs</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-white/80 border border-[#E8E2CC] text-[#395b18] font-medium">3 windows hidden</span>
+</div>
+<div class="font-body-md text-xs text-on-surface-variant mt-0.5">
+                    2:14 PM · automatic
+                  </div>
+</div>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-[#1F2418] hover:bg-[#FAF7EE] shadow-sm transition-all" type="button">
+                Undo
+              </button>
+</div>
+<!-- Sweep #408 -->
+<div class="rounded-2xl p-4 hover:bg-[#FAF7EE] border border-transparent hover:border-[#E8E2CC]/80 flex items-center justify-between gap-4 transition-all group">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-full bg-[#F8F4DF] flex items-center justify-center text-on-surface-variant shrink-0 group-hover:bg-white group-hover:border group-hover:border-[#E8E2CC]">
+<span class="material-symbols-outlined text-lg">auto_mode</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-[#1F2418] font-medium">Sweep #408</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant font-medium">14 tabs</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant font-medium">2 windows hidden</span>
+</div>
+<div class="font-body-md text-xs text-on-surface-variant mt-0.5">
+                    11:30 AM · manual
+                  </div>
+</div>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-[#1F2418] hover:bg-[#FAF7EE] shadow-sm transition-all" type="button">
+                Undo
+              </button>
+</div>
+</div>
+<div class="h-px bg-[#E8E2CC]/50"></div>
+<!-- GROUP 2: YESTERDAY -->
+<div class="space-y-3">
+<header class="font-label-sm text-[11px] tracking-wider font-semibold text-on-surface-variant/70 uppercase">
+              YESTERDAY
+            </header>
+<!-- Sweep #407 -->
+<div class="rounded-2xl p-4 hover:bg-[#FAF7EE] border border-transparent hover:border-[#E8E2CC]/80 flex items-center justify-between gap-4 transition-all group">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-full bg-[#F8F4DF] flex items-center justify-center text-on-surface-variant shrink-0 group-hover:bg-white group-hover:border group-hover:border-[#E8E2CC]">
+<span class="material-symbols-outlined text-lg">cleaning_services</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-[#1F2418] font-medium">Sweep #407</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant font-medium">8 tabs</span>
+</div>
+<div class="font-body-md text-xs text-on-surface-variant mt-0.5">
+                    4:00 PM · automatic
+                  </div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="font-label-sm text-xs px-2.5 py-1 rounded-full bg-[#EDFBAC]/80 text-[#556122] font-medium border border-[#BDBA9F]/30">Partially restored · 2</span>
+<button class="px-3.5 py-1.5 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-[#1F2418] hover:bg-[#FAF7EE] shadow-sm transition-all" type="button">
+                  Undo rest
+                </button>
+</div>
+</div>
+<!-- Sweep #406 -->
+<div class="rounded-2xl p-4 hover:bg-[#FAF7EE] border border-transparent hover:border-[#E8E2CC]/80 flex items-center justify-between gap-4 transition-all group opacity-75">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-full bg-[#F8F4DF] flex items-center justify-center text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-lg">history</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-[#1F2418] font-medium line-through">Sweep #406</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant/70 font-medium">19 tabs</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant/70 font-medium">4 windows hidden</span>
+</div>
+<div class="font-body-md text-xs text-on-surface-variant mt-0.5">
+                    9:15 AM · automatic
+                  </div>
+</div>
+</div>
+<span class="font-label-sm text-xs px-3 py-1 rounded-full bg-[#FAF7EE] text-on-surface-variant/60 font-medium border border-[#E8E2CC]">
+                Undone
+              </span>
+</div>
+</div>
+<div class="h-px bg-[#E8E2CC]/50"></div>
+<!-- GROUP 3: MON, 2 NOV -->
+<div class="space-y-3">
+<header class="font-label-sm text-[11px] tracking-wider font-semibold text-on-surface-variant/70 uppercase">
+              MON, 2 NOV
+            </header>
+<!-- Sweep #405 -->
+<div class="rounded-2xl p-4 hover:bg-[#FAF7EE] border border-transparent hover:border-[#E8E2CC]/80 flex items-center justify-between gap-4 transition-all group">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-full bg-[#F8F4DF] flex items-center justify-center text-on-surface-variant shrink-0 group-hover:bg-white group-hover:border group-hover:border-[#E8E2CC]">
+<span class="material-symbols-outlined text-lg">cleaning_services</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-md text-headline-md text-[#1F2418] font-medium">Sweep #405</span>
+<span class="font-label-sm text-xs px-2 py-0.5 rounded-full bg-[#FAF7EE] text-on-surface-variant font-medium">6 tabs</span>
+</div>
+<div class="font-body-md text-xs text-on-surface-variant mt-0.5">
+                    3:45 PM · automatic
+                  </div>
+</div>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 bg-white border border-[#E8E2CC] rounded-full text-xs font-body-medium text-[#1F2418] hover:bg-[#FAF7EE] shadow-sm transition-all" type="button">
+                Undo
+              </button>
+</div>
+</div>
+</section>
+<!-- RIGHT CARD: Detail Inspector (approx 38% width -> 5 of 12 columns) -->
+<aside class="lg:col-span-5 bg-[#4F8A4B] rounded-[22px] p-6 text-white shadow-sm flex flex-col justify-between min-h-[580px] space-y-6">
+<div class="space-y-4">
+<!-- Header Metadata -->
+<div>
+<div class="font-label-sm text-[11px] tracking-widest text-white/80 uppercase font-semibold">
+                SWEEP #409 · TODAY 2:14 PM
+              </div>
+<h2 class="font-headline-lg text-2xl font-normal leading-snug text-white mt-1">
+                Archived 11 tabs, hid 3 windows
+              </h2>
+</div>
+<!-- Trigger & Pace Metadata Frosted Row -->
+<div class="bg-black/15 backdrop-blur-sm rounded-xl px-3.5 py-2.5 text-xs text-white/90 flex items-center justify-between border border-white/10">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-[#c6ef9b]">schedule</span>
+<span>Trigger: scheduled sweep</span>
+</span>
+<span class="font-code-sm text-xs text-white/80">Pace: Balanced</span>
+</div>
+<!-- Frosted Inner List Container -->
+<div class="bg-black/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 space-y-2">
+<div class="font-label-sm text-[10px] uppercase tracking-wider text-white/60 px-1 font-semibold">Items in this sweep</div>
+<!-- Item 1 -->
+<div class="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#635BFF] flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs">S</div>
+<span class="font-body-md text-xs text-white truncate font-medium">Stripe pricing — Compare plans</span>
+</div>
+<span class="font-code-sm text-[11px] text-white/70 shrink-0">Unused 61 active h</span>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#5E6AD2] flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs">L</div>
+<span class="font-body-md text-xs text-white truncate font-medium">Linear — Cycle 42 roadmap</span>
+</div>
+<span class="font-code-sm text-[11px] text-white/70 shrink-0">Unused 48 active h</span>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#24292F] flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs">G</div>
+<span class="font-body-md text-xs text-white truncate font-medium">Pull request #418: cache invalidation</span>
+</div>
+<span class="font-code-sm text-[11px] text-white/70 shrink-0">Unused 24 active h</span>
+</div>
+<!-- Item 4 -->
+<div class="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#F24E1E] flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs">F</div>
+<span class="font-body-md text-xs text-white truncate font-medium">Design System v2.4 (Components)</span>
+</div>
+<span class="font-code-sm text-[11px] text-white/70 shrink-0">Unused 18 active h</span>
+</div>
+<!-- Item 5 -->
+<div class="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-6 h-6 rounded bg-white/20 flex items-center justify-center text-white shrink-0">
+<span class="material-symbols-outlined text-[14px]">folder</span>
+</div>
+<span class="font-body-md text-xs text-white truncate font-medium">Downloads/Invoices-2024 (Window)</span>
+</div>
+<span class="font-code-sm text-[11px] text-white/70 shrink-0">Inactive 3 days</span>
+</div>
+</div>
+<!-- Explanatory note -->
+<p class="font-body-md text-xs text-white/80 leading-relaxed px-1">
+              Decay saved the address and window state. Reopening restores exact tab order.
+            </p>
+</div>
+<!-- Bottom Action Row -->
+<footer class="pt-4 border-t border-white/15 flex items-center gap-2 flex-wrap">
+<button class="flex items-center gap-1.5 bg-white text-[#20401E] font-medium px-4 py-2 rounded-full text-xs shadow-sm hover:bg-white/95 transition-all active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-sm">replay</span>
+<span>Undo whole sweep</span>
+</button>
+<button class="border border-white/30 text-white font-medium px-3.5 py-2 rounded-full text-xs hover:bg-white/10 transition-all active:scale-[0.98]" type="button">
+              Restore selected
+            </button>
+<button aria-label="Dismiss inspector" class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-all ml-auto" type="button">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</footer>
+</aside>
+</div>
+</main>
+</div>
+</body></html>

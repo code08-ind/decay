@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>06-live-now-dark · Decay</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim as mandated -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#c3c9b8",
+            "on-error-container": "#ffdad6",
+            "on-error": "#690005",
+            "tertiary": "#a7e89e",
+            "surface-container-lowest": "#0c0f0b",
+            "primary-fixed": "#c6ef9b",
+            "background": "#111410",
+            "surface-tint": "#aad382",
+            "surface-bright": "#373a35",
+            "on-secondary-container": "#b2bf76",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "tertiary-fixed": "#b2f3a8",
+            "surface-container-highest": "#333631",
+            "outline-variant": "#43493c",
+            "on-secondary-fixed": "#181e00",
+            "on-background": "#e1e3dc",
+            "tertiary-container": "#8dcb85",
+            "surface-dim": "#111410",
+            "primary": "#bbe491",
+            "on-surface": "#e1e3dc",
+            "on-tertiary-fixed": "#002203",
+            "secondary-fixed": "#dcea9c",
+            "on-tertiary-fixed-variant": "#16521a",
+            "tertiary-fixed-dim": "#97d68f",
+            "on-secondary": "#2b3400",
+            "secondary-container": "#434e11",
+            "on-tertiary-container": "#1c561e",
+            "on-tertiary": "#003908",
+            "surface-container-low": "#191c18",
+            "secondary-fixed-dim": "#c0cd82",
+            "inverse-primary": "#456824",
+            "secondary": "#c0cd82",
+            "on-secondary-fixed-variant": "#414b0e",
+            "inverse-on-surface": "#2e312d",
+            "on-primary": "#1c3700",
+            "on-primary-fixed": "#0e2000",
+            "on-primary-container": "#335411",
+            "surface": "#111410",
+            "surface-container": "#1d201c",
+            "surface-variant": "#333631",
+            "surface-container-high": "#282b26",
+            "outline": "#8d9384",
+            "primary-fixed-dim": "#aad382",
+            "inverse-surface": "#e1e3dc",
+            "primary-container": "#a0c878"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "1.5rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "label-sm": ["DM Sans"],
+            "headline-md": ["Newsreader"],
+            "headline-sm": ["Newsreader"],
+            "label-md": ["DM Sans"],
+            "code-sm": ["JetBrains Mono"],
+            "body-sm": ["DM Sans"],
+            "body-md": ["DM Sans"],
+            "headline-lg": ["Newsreader"]
+          },
+          "fontSize": {
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "38px", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+    }
+    .custom-dot-pattern {
+      background-color: #1C2A1B;
+      background-image: radial-gradient(rgba(160, 200, 120, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    /* Thin precision scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2E3327;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #43493c;
+    }
+  </style>
+</head>
+<body class="custom-dot-pattern min-h-screen text-on-surface antialiased p-4 md:p-8 flex items-center justify-center font-body-md text-body-md select-none">
+<!-- macOS Desktop Outer Application Window Frame -->
+<div class="w-full max-w-[1240px] bg-[#121511] border border-[#2A3027] rounded-[26px] shadow-[0_32px_90px_rgba(0,0,0,0.65)] overflow-hidden flex flex-col transition-all">
+<!-- macOS Window Top Titlebar / Nav Ribbon -->
+<header class="h-12 border-b border-[#2A3027] bg-[#121511] px-5 flex items-center justify-between select-none">
+<!-- Left: macOS Traffic Lights & Brand Anchor -->
+<div class="flex items-center gap-5">
+<!-- Traffic lights -->
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block"></span>
+</div>
+<div class="h-4 w-[1px] bg-[#2A3027]"></div>
+<!-- Brand Leaf & Title -->
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#A0C878] text-[18px]">psychiatry</span>
+<span class="font-headline-sm text-headline-sm text-[#F2F0E6] tracking-tight">Decay</span>
+<span class="font-label-sm text-[10px] text-[#A7AC9C] bg-[#1A1E18] px-1.5 py-0.5 rounded border border-[#2A3027]">v1.4</span>
+</div>
+</div>
+<!-- Center: Navigation Pills (From Design Guidance & Shared Shell Specs) -->
+<nav class="hidden md:flex items-center gap-1 bg-[#161A15] p-1 rounded-full border border-[#2A3027]">
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-[#F2F0E6] font-label-md text-label-md transition-colors">
+          Overview
+        </button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-[#F2F0E6] font-label-md text-label-md transition-colors">
+          Library
+        </button>
+<!-- Active Live now tab -->
+<button class="px-3.5 py-1 rounded-full bg-[#2A3027] border border-[#3E4739] text-[#F2F0E6] font-label-md text-label-md flex items-center gap-1.5 shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] animate-pulse"></span>
+<span class="material-symbols-outlined text-[#A0C878] text-[14px]">sensors</span>
+<span>Live now</span>
+</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-[#F2F0E6] font-label-md text-label-md transition-colors">
+          Sweeps
+        </button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-[#F2F0E6] font-label-md text-label-md transition-colors">
+          Rules
+        </button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-[#F2F0E6] font-label-md text-label-md transition-colors">
+          Insights
+        </button>
+</nav>
+<!-- Right: Action Icons & Automated Status Badge -->
+<div class="flex items-center gap-2.5">
+<button class="w-7 h-7 rounded-lg flex items-center justify-center text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18] transition-colors" title="Search">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</button>
+<button class="relative w-7 h-7 rounded-lg flex items-center justify-center text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18] transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#A0C878] rounded-full"></span>
+</button>
+<div class="h-4 w-[1px] bg-[#2A3027]"></div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A1E18] border border-[#2A3027] text-label-sm font-label-sm text-[#F2F0E6]">
+<span class="w-2 h-2 rounded-full bg-[#A0C878] inline-block shadow-[0_0_6px_rgba(160,200,120,0.6)]"></span>
+<span class="tracking-tight">Automatic</span>
+</div>
+</div>
+</header>
+<!-- Main Window Canvas -->
+<main class="flex-1 bg-[#121511] p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-6rem)]">
+<!-- Page Headline Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-[#1E231B]">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-[#F2F0E6] tracking-tight">Live now</h1>
+<p class="font-body-md text-body-md text-[#A7AC9C] mt-1">Everything open right now, and how close each item is to being tidied away.</p>
+</div>
+<!-- Controls on right of header -->
+<div class="flex items-center gap-3 self-start md:self-auto">
+<!-- Segmented Pill Control -->
+<div class="flex items-center bg-[#1A1E18] border border-[#2A3027] p-1 rounded-full">
+<button class="px-3.5 py-1 bg-[#F2F0E6] text-[#121511] font-label-md text-label-md font-medium rounded-full shadow-sm">
+              Tabs (41)
+            </button>
+<button class="px-3 py-1 text-[#A7AC9C] hover:text-[#F2F0E6] font-label-md text-label-md transition-colors rounded-full">
+              Windows (12)
+            </button>
+</div>
+<!-- Group By Dropdown Pill -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A1E18] border border-[#2A3027] hover:border-[#3E4739] text-[#F2F0E6] rounded-full font-label-md text-label-md transition-colors">
+<span>Group by window</span>
+<span class="material-symbols-outlined text-[16px] text-[#A7AC9C]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Main Layout 2-Column Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT COLUMN: Tabs list grouped by window (8 of 12 cols) -->
+<div class="lg:col-span-8 bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 flex flex-col gap-6">
+<!-- GROUP 1: CHROME RESEARCH WINDOW -->
+<section class="flex flex-col gap-3">
+<!-- Group Header -->
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878]"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-[#A7AC9C] font-semibold">Chrome — Research Window · 9 Tabs</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C]">Threshold: 60h active</span>
+</div>
+<!-- Group 1 Tab Rows -->
+<div class="flex flex-col divide-y divide-[#23291F]/70">
+<!-- Item 1: Stripe pricing -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#4F46E5] text-white font-label-md font-bold flex items-center justify-center shadow-inner flex-shrink-0">
+                    S
+                  </div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Stripe pricing — Compare plans</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">stripe.com/pricing/compare</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<!-- Progress Bar -->
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 96.6%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">58 of 60 active h</span>
+</div>
+<!-- Badge -->
+<span class="px-2.5 py-1 rounded-full bg-[#2D3624] border border-[#3E4A32] text-[#DDEB9D] font-label-sm text-label-sm font-medium flex items-center gap-1.5 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+                    Archives in 2 h
+                  </span>
+</div>
+</div>
+<!-- Item 2: Vercel Deployments -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#000000] border border-[#2E3327] text-white flex items-center justify-center flex-shrink-0">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 115 100"><path d="M57.5 0L115 100H0L57.5 0Z"></path></svg>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Vercel Deployments &amp; Infrastructure</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">vercel.com/docs/deployments</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 78.3%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">47 of 60 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A7AC9C] font-label-sm text-label-sm whitespace-nowrap">
+                    Stale in 4 h
+                  </span>
+</div>
+</div>
+<!-- Item 3: Jira DEC-114 -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#0052CC] text-white font-label-md font-bold flex items-center justify-center flex-shrink-0">
+                    J
+                  </div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Jira — DEC-114: Tab state persistence</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">jira.atlassian.com/browse/DEC-114</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 25%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">15 of 60 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A0C878] font-label-sm text-label-sm flex items-center gap-1 whitespace-nowrap">
+<span>📌</span>
+<span>Protected · pinned</span>
+</span>
+</div>
+</div>
+<!-- Item 4: Lo-fi beats -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#CC0000] text-white flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Lo-fi beats for calm focus &amp; study</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">youtube.com/watch?v=5qap5aO4i9A</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 60%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">36 of 60 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A0C878] font-label-sm text-label-sm flex items-center gap-1 whitespace-nowrap">
+<span>🔊</span>
+<span>Protected · playing audio</span>
+</span>
+</div>
+</div>
+<!-- Item 5: Notion Spec -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#2E3327] border border-[#3E4739] text-white font-label-md font-bold flex items-center justify-center flex-shrink-0">
+                    N
+                  </div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Notion — Q4 2026 Product Spec &amp; Backlog</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">notion.so/workspace/spec-v14</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 10%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">6 of 60 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A7AC9C] font-label-sm text-label-sm whitespace-nowrap">
+                    Fresh
+                  </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Divider between groups -->
+<div class="h-[1px] bg-[#2A3027] -mx-6"></div>
+<!-- GROUP 2: ARC CLIENT SPACE -->
+<section class="flex flex-col gap-3">
+<!-- Group Header -->
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878]"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-[#A7AC9C] font-semibold">Arc — Client Space · 6 Tabs</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C]">Threshold: 48h active</span>
+</div>
+<!-- Group 2 Tab Rows -->
+<div class="flex flex-col divide-y divide-[#23291F]/70">
+<!-- Item 1: Linear -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#5E6AD2] text-white font-label-md font-bold flex items-center justify-center flex-shrink-0">
+                    L
+                  </div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Linear — Cycle 42 Roadmap</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">linear.app/team/decay-cycle-42</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 79.1%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">38 of 48 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A7AC9C] font-label-sm text-label-sm whitespace-nowrap">
+                    Stale in 4 h
+                  </span>
+</div>
+</div>
+<!-- Item 2: Google Docs -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#2684FC] text-white flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">description</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Google Docs — Product Architecture RFC</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">docs.google.com/document/d/1X9a...</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 64.5%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">31 of 48 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A0C878] font-label-sm text-label-sm flex items-center gap-1 whitespace-nowrap">
+<span>📝</span>
+<span>Protected · unsaved form</span>
+</span>
+</div>
+</div>
+<!-- Item 3: Figma -->
+<div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 group hover:bg-[#20251D]/40 px-2 rounded-lg -mx-2 transition-colors">
+<div class="flex items-center gap-3 min-w-[240px]">
+<div class="w-8 h-8 rounded-lg bg-[#F24E1E] text-white font-label-md font-bold flex items-center justify-center flex-shrink-0">
+                    F
+                  </div>
+<div class="flex flex-col truncate">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium group-hover:text-primary transition-colors truncate">Figma — Decay System v2.4 (Components)</span>
+<span class="font-code-sm text-code-sm text-[#A7AC9C] truncate">figma.com/file/decay-design-system</span>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-1 justify-end">
+<div class="flex flex-col gap-1 w-36 sm:w-44 flex-shrink-0">
+<div class="w-full h-1.5 bg-[#2A3027] rounded-full overflow-hidden">
+<div class="bg-[#A0C878] h-full rounded-full" style="width: 18.7%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C] text-right">9 of 48 active h</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#222720] border border-[#2A3027] text-[#A7AC9C] font-label-sm text-label-sm whitespace-nowrap">
+                    Fresh
+                  </span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- RIGHT COLUMN: Status & Protection Cards (4 of 12 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- 1. "Why Decay is waiting" Deep Forest Card -->
+<div class="bg-[#244623] border border-[#3A6D39] rounded-[22px] p-6 shadow-lg flex flex-col gap-4">
+<div>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-[#A0C878] font-bold">Engine Status</span>
+<h2 class="font-headline-md text-headline-md text-[#F2F0E6] mt-0.5 tracking-tight">Why Decay is waiting</h2>
+</div>
+<!-- Frosted Inner Metric Tiles -->
+<div class="flex flex-col gap-2.5">
+<!-- Row 1 -->
+<div class="bg-[#1C361B]/80 border border-white/[0.08] rounded-xl p-3.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="w-2 h-2 rounded-full bg-[#A0C878] shadow-[0_0_8px_#A0C878]"></span>
+<span class="font-body-md text-body-md text-[#F2F0E6]/90">Active clock running</span>
+</div>
+<span class="font-code-sm text-code-sm text-[#F2F0E6] font-medium">5.2 h today</span>
+</div>
+<!-- Row 2 -->
+<div class="bg-[#1C361B]/80 border border-white/[0.08] rounded-xl p-3.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-[#A0C878]">schedule</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]/90">Next sweep cadence</span>
+</div>
+<span class="font-code-sm text-code-sm text-[#F2F0E6] font-medium">3:00 PM</span>
+</div>
+<!-- Row 3 -->
+<div class="bg-[#1C361B]/80 border border-white/[0.08] rounded-xl p-3.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-[#DDEB9D]">archive</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]/90">7 items will be archived</span>
+</div>
+<span class="font-label-sm text-label-sm font-semibold text-[#DDEB9D]">in ~18m</span>
+</div>
+</div>
+<!-- Bottom CTA Button -->
+<button class="w-full py-3 px-4 rounded-full bg-[#F2F0E6] text-[#121511] font-label-md text-label-md font-medium hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-1 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">pause_circle</span>
+<span>Hold all for 1 h</span>
+</button>
+</div>
+<!-- 2. "PROTECTION" Card -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 flex flex-col gap-4">
+<!-- Card Header -->
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-[#A7AC9C] font-semibold">Protection</span>
+<span class="font-body-sm text-body-sm text-[#A7AC9C]">12 exempted</span>
+</div>
+<!-- Categories -->
+<div class="flex flex-col divide-y divide-[#23291F]">
+<!-- Row 1: Pinned tabs -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-[#A7AC9C]">push_pin</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]">Pinned tabs</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] text-label-sm font-semibold text-[#F2F0E6] flex items-center justify-center">
+                  4
+                </div>
+</div>
+<!-- Row 2: Playing audio -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-[#A7AC9C]">volume_up</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]">Playing audio</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] text-label-sm font-semibold text-[#F2F0E6] flex items-center justify-center">
+                  1
+                </div>
+</div>
+<!-- Row 3: Unsaved form -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-[#A7AC9C]">edit_note</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]">Unsaved form</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] text-label-sm font-semibold text-[#F2F0E6] flex items-center justify-center">
+                  2
+                </div>
+</div>
+<!-- Row 4: Domain & space rules -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-[#A7AC9C]">verified_user</span>
+<span class="font-body-md text-body-md text-[#F2F0E6]">Domain &amp; space rules</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] text-label-sm font-semibold text-[#F2F0E6] flex items-center justify-center">
+                  5
+                </div>
+</div>
+</div>
+<!-- Footer link row -->
+<div class="pt-2 border-t border-[#2A3027] flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-[#A7AC9C]">Protected tabs never decay</span>
+<a class="font-label-sm text-label-sm text-[#A0C878] hover:underline flex items-center gap-0.5 transition-colors" href="#rules">
+<span>Edit rules</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- macOS Docked Minimal Status Footer Bar -->
+</div>
+</body></html>

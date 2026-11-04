@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>03e-onboarding-shadow-and-done-dark</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim as mandated -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#c3c9b8",
+            "inverse-on-surface": "#2e312d",
+            "tertiary-fixed": "#b2f3a8",
+            "on-surface": "#e1e3dc",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "inverse-primary": "#456824",
+            "primary": "#bbe491",
+            "surface-container": "#1d201c",
+            "on-tertiary": "#003908",
+            "tertiary-fixed-dim": "#97d68f",
+            "surface-tint": "#aad382",
+            "background": "#111410",
+            "secondary-fixed": "#dcea9c",
+            "on-tertiary-container": "#1c561e",
+            "on-error": "#690005",
+            "on-background": "#e1e3dc",
+            "tertiary": "#a7e89e",
+            "on-secondary-container": "#b2bf76",
+            "surface-container-highest": "#333631",
+            "on-tertiary-fixed-variant": "#16521a",
+            "secondary-fixed-dim": "#c0cd82",
+            "outline-variant": "#43493c",
+            "primary-fixed-dim": "#aad382",
+            "error-container": "#93000a",
+            "surface-dim": "#111410",
+            "surface-container-lowest": "#0c0f0b",
+            "on-primary": "#1c3700",
+            "outline": "#8d9384",
+            "on-secondary": "#2b3400",
+            "on-error-container": "#ffdad6",
+            "surface-variant": "#333631",
+            "inverse-surface": "#e1e3dc",
+            "surface-container-low": "#191c18",
+            "secondary": "#c0cd82",
+            "primary-fixed": "#c6ef9b",
+            "secondary-container": "#434e11",
+            "on-secondary-fixed": "#181e00",
+            "on-secondary-fixed-variant": "#414b0e",
+            "on-primary-fixed": "#0e2000",
+            "on-tertiary-fixed": "#002203",
+            "surface": "#111410",
+            "surface-bright": "#373a35",
+            "on-primary-container": "#335411",
+            "tertiary-container": "#8dcb85",
+            "surface-container-high": "#282b26",
+            "primary-container": "#a0c878",
+            "error": "#ffb4ab"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-md": [
+              "Newsreader", "serif"
+            ],
+            "headline-lg": [
+              "Newsreader", "serif"
+            ],
+            "body-md": [
+              "DM Sans", "sans-serif"
+            ],
+            "label-sm": [
+              "DM Sans", "sans-serif"
+            ],
+            "headline-sm": [
+              "Newsreader", "serif"
+            ],
+            "code-sm": [
+              "JetBrains Mono", "monospace"
+            ],
+            "label-md": [
+              "DM Sans", "sans-serif"
+            ],
+            "body-sm": [
+              "DM Sans", "sans-serif"
+            ]
+          },
+          "fontSize": {
+            "headline-md": [
+              "20px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "600"
+              }
+            ],
+            "headline-lg": [
+              "32px",
+              {
+                "lineHeight": "38px",
+                "fontWeight": "600"
+              }
+            ],
+            "body-md": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ],
+            "label-sm": [
+              "11px",
+              {
+                "lineHeight": "14px",
+                "fontWeight": "500"
+              }
+            ],
+            "headline-sm": [
+              "16px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "600"
+              }
+            ],
+            "code-sm": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "400"
+              }
+            ],
+            "label-md": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-sm": [
+              "11px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "400"
+              }
+            ]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-dot-grid {
+      background-color: #1C2A1B;
+      background-image: radial-gradient(rgba(225, 227, 220, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="bg-[#1C2A1B] custom-dot-grid text-on-surface font-body-md antialiased min-h-screen flex flex-col items-center justify-center p-6 md:p-12 overflow-x-auto select-none">
+<!-- Presentation Header Meta -->
+<header class="w-full max-w-[1240px] flex items-center justify-between mb-8 px-2">
+<div class="flex items-center gap-3">
+<div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Decay</span>
+<span class="text-outline-variant font-body-sm">/</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Onboarding Canvas (Dark Mode)</span>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-code-sm text-code-sm border border-outline-variant">03e-onboarding-shadow-and-done-dark</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant font-body-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#DDEB9D]"></span> Step 5: Shadow Mode</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary-container"></span> Step 6: All Set</span>
+</div>
+</header>
+<!-- Side-by-Side Presentation Deck -->
+<main class="w-full max-w-[1240px] flex flex-col xl:flex-row items-center justify-center gap-8 lg:gap-10">
+<!-- ========================================== -->
+<!-- WINDOW 1: STEP 5 OF 6 (Shadow Mode)        -->
+<!-- ========================================== -->
+<section aria-label="Decay Setup Assistant - Step 5" class="w-full max-w-[570px] h-[660px] bg-[#121511] rounded-[20px] border border-[#2A3027] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden relative">
+<!-- macOS Window Titlebar -->
+<div class="h-10 bg-[#121511] border-b border-[#2A3027] px-4 flex items-center justify-between shrink-0">
+<!-- Traffic Lights -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
+</div>
+<!-- Centered Title -->
+<div class="font-body-md text-body-md text-[#A7AC9C] font-medium tracking-tight">
+          Decay Setup Assistant
+        </div>
+<!-- Right subtle label -->
+<div class="font-body-sm text-body-sm text-[#A7AC9C]/60 flex items-center gap-1">
+<span>macOS</span>
+</div>
+</div>
+<!-- Window Interior Split Layout -->
+<div class="flex-1 flex p-3 gap-3 overflow-hidden">
+<!-- Left Sidebar Rail -->
+<aside class="w-[184px] bg-[#2F5A2E] rounded-[16px] p-3.5 flex flex-col justify-between shrink-0 border border-[#3E703D]/30">
+<div>
+<!-- Sidebar Header -->
+<div class="flex items-center justify-between pb-4 mb-3 border-b border-[#3E703D]/40">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[#F2F0E6] text-[18px]">eco</span>
+<span class="font-headline-sm text-headline-sm text-[#F2F0E6] tracking-tight font-semibold">Decay</span>
+</div>
+<span class="font-code-sm text-[10px] bg-[#214220] text-[#DDEB9D] px-1.5 py-0.5 rounded border border-[#3E703D]/50 font-medium">v1.4</span>
+</div>
+<!-- Vertical Step Sequence -->
+<nav aria-label="Onboarding Steps Progress" class="space-y-1.5">
+<!-- Step 1 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Welcome</span>
+</div>
+<!-- Step 2 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Choose pace</span>
+</div>
+<!-- Step 3 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Connect browsers</span>
+</div>
+<!-- Step 4 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Window access</span>
+</div>
+<!-- Step 5 Active -->
+<div class="flex items-center gap-2.5 px-2 py-1.5 bg-[#214220] text-[#F2F0E6] font-body-md text-body-md font-medium rounded-lg border border-[#3E703D]/80 shadow-sm">
+<span class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#121511] font-code-sm text-[10px] font-semibold flex items-center justify-center shrink-0">5</span>
+<span class="truncate text-[#F2F0E6]">Shadow mode</span>
+</div>
+<!-- Step 6 Inactive -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/40 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full border border-[#F2F0E6]/20 text-[#F2F0E6]/40 font-code-sm text-[9px] flex items-center justify-center shrink-0">6</span>
+<span class="truncate">All set</span>
+</div>
+</nav>
+</div>
+<!-- Bottom Sidebar Card: Shadow Guarantee -->
+<div class="bg-[#214220] border border-[#3E703D]/70 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center gap-1.5 text-[#DDEB9D]">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span class="font-label-sm text-[10px] tracking-wider font-semibold">SHADOW GUARANTEE</span>
+</div>
+<p class="font-body-sm text-[10.5px] leading-tight text-[#E1E3DC]/80">
+              Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+            </p>
+</div>
+</aside>
+<!-- Right Content Panel -->
+<div class="flex-1 flex flex-col justify-between p-4 overflow-y-auto">
+<div class="space-y-4">
+<!-- Step Identifier Tag -->
+<div>
+<span class="font-label-sm text-label-sm text-[#A7AC9C] tracking-wider uppercase font-semibold">Step 5 of 6</span>
+<h2 class="font-headline-lg text-[27px] leading-[32px] text-[#F2F0E6] mt-1 tracking-tight">
+                First, a quiet week in shadow mode
+              </h2>
+<p class="font-body-md text-body-md text-[#A7AC9C] mt-2 leading-relaxed">
+                For 7 days Decay only shows what it would have done. Nothing is closed until you say so.
+              </p>
+</div>
+<!-- 7-Day Timeline Container Card -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-2xl p-4 shadow-sm space-y-4">
+<!-- Top Day Indicators Track -->
+<div>
+<div class="grid grid-cols-7 gap-1.5 mb-2.5">
+<div class="h-2 rounded-full bg-[#DDEB9D] shadow-[0_0_8px_rgba(221,235,157,0.35)]" title="Day 1 (Active)"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 2"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 3"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 4"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 5"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 6"></div>
+<div class="h-2 rounded-full bg-[#2A3027]" title="Day 7"></div>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="text-[#A7AC9C] font-code-sm text-[11px]">Day 1 → Day 7</span>
+<span class="text-[#DDEB9D] font-medium font-body-sm text-body-sm">then you decide</span>
+</div>
+</div>
+<!-- Feature Breakdown Rows with Hairline Dividers -->
+<div class="border-t border-[#2A3027] pt-3 space-y-3">
+<!-- Feature 1 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center shrink-0 text-[#DDEB9D]">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+</div>
+<span class="font-body-md text-body-md text-[#E1E3DC] leading-snug">
+                    See a daily list of what would be archived
+                  </span>
+</div>
+<div class="border-t border-[#2A3027]"></div>
+<!-- Feature 2 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center shrink-0 text-[#DDEB9D]">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+</div>
+<span class="font-body-md text-body-md text-[#E1E3DC] leading-snug">
+                    Protect anything with one click
+                  </span>
+</div>
+<div class="border-t border-[#2A3027]"></div>
+<!-- Feature 3 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center shrink-0 text-[#DDEB9D]">
+<span class="material-symbols-outlined text-[16px]">toggle_on</span>
+</div>
+<span class="font-body-md text-body-md text-[#E1E3DC] leading-snug">
+                    Turn on automatic mode when it feels right
+                  </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation Row -->
+<div class="pt-4 border-t border-[#2A3027] flex items-center justify-between">
+<!-- Back Button -->
+<button class="bg-[#1A1E18] hover:bg-[#222720] text-[#F2F0E6] border border-[#2A3027] rounded-full px-5 py-2 font-label-md text-label-md transition-colors">
+              Back
+            </button>
+<!-- Step Dots Progress Indicator -->
+<div aria-hidden="true" class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#2A3027]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#2A3027]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#2A3027]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#2A3027]"></span>
+<span class="w-2 h-2 rounded-full bg-[#DDEB9D] ring-2 ring-[#DDEB9D]/30"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#2A3027]"></span>
+</div>
+<!-- CTA Button -->
+<button class="bg-[#F2F0E6] hover:bg-white text-[#121511] font-label-md text-label-md font-semibold rounded-full px-5 py-2.5 flex items-center gap-1.5 transition-colors shadow-sm active:opacity-90">
+<span>Start shadow mode</span>
+<span class="text-sm">→</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- WINDOW 2: STEP 6 OF 6 (You're all set)     -->
+<!-- ========================================== -->
+<section aria-label="Decay Setup Assistant - Step 6" class="w-full max-w-[570px] h-[660px] bg-[#121511] rounded-[20px] border border-[#2A3027] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden relative">
+<!-- macOS Window Titlebar -->
+<div class="h-10 bg-[#121511] border-b border-[#2A3027] px-4 flex items-center justify-between shrink-0">
+<!-- Traffic Lights -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
+</div>
+<!-- Centered Title -->
+<div class="font-body-md text-body-md text-[#A7AC9C] font-medium tracking-tight">
+          Decay Setup Assistant
+        </div>
+<!-- Right subtle label -->
+<div class="font-body-sm text-body-sm text-[#A7AC9C]/60 flex items-center gap-1">
+<span>macOS</span>
+</div>
+</div>
+<!-- Window Interior Split Layout -->
+<div class="flex-1 flex p-3 gap-3 overflow-hidden">
+<!-- Left Sidebar Rail (Identical Style) -->
+<aside class="w-[184px] bg-[#2F5A2E] rounded-[16px] p-3.5 flex flex-col justify-between shrink-0 border border-[#3E703D]/30">
+<div>
+<!-- Sidebar Header -->
+<div class="flex items-center justify-between pb-4 mb-3 border-b border-[#3E703D]/40">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[#F2F0E6] text-[18px]">eco</span>
+<span class="font-headline-sm text-headline-sm text-[#F2F0E6] tracking-tight font-semibold">Decay</span>
+</div>
+<span class="font-code-sm text-[10px] bg-[#214220] text-[#DDEB9D] px-1.5 py-0.5 rounded border border-[#3E703D]/50 font-medium">v1.4</span>
+</div>
+<!-- Vertical Step Sequence -->
+<nav aria-label="Onboarding Steps Progress" class="space-y-1.5">
+<!-- Step 1 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Welcome</span>
+</div>
+<!-- Step 2 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Choose pace</span>
+</div>
+<!-- Step 3 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Connect browsers</span>
+</div>
+<!-- Step 4 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Window access</span>
+</div>
+<!-- Step 5 Complete -->
+<div class="flex items-center gap-2.5 px-2 py-1 text-[#F2F0E6]/75 font-body-sm text-body-sm">
+<span class="w-4 h-4 rounded-full bg-[#214220] text-[#DDEB9D] flex items-center justify-center text-[10px] shrink-0 border border-[#3E703D]/60">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+<span class="truncate">Shadow mode</span>
+</div>
+<!-- Step 6 Active -->
+<div class="flex items-center gap-2.5 px-2 py-1.5 bg-[#214220] text-[#F2F0E6] font-body-md text-body-md font-medium rounded-lg border border-[#3E703D]/80 shadow-sm">
+<span class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#121511] font-code-sm text-[10px] font-semibold flex items-center justify-center shrink-0">6</span>
+<span class="truncate text-[#F2F0E6]">All set</span>
+</div>
+</nav>
+</div>
+<!-- Bottom Guarantee Notice -->
+<div class="bg-[#214220] border border-[#3E703D]/70 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center gap-1.5 text-[#DDEB9D]">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span class="font-label-sm text-[10px] tracking-wider font-semibold">SHADOW GUARANTEE</span>
+</div>
+<p class="font-body-sm text-[10.5px] leading-tight text-[#E1E3DC]/80">
+              Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+            </p>
+</div>
+</aside>
+<!-- Right Content Panel (Centered Finish Composition) -->
+<div class="flex-1 flex flex-col justify-between p-4 overflow-y-auto">
+<div class="flex flex-col items-center text-center mt-2 space-y-4">
+<!-- Leaf Icon Badge with 14% Opacity Sage Circle -->
+<div class="w-16 h-16 rounded-full bg-[#A0C878]/15 border border-[#A0C878]/30 flex items-center justify-center text-[#A0C878] shadow-[0_0_24px_rgba(160,200,120,0.12)]">
+<span class="material-symbols-outlined text-[30px]" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<!-- Headlines -->
+<div class="space-y-1.5">
+<h2 class="font-headline-lg text-[30px] leading-[36px] text-[#F2F0E6] tracking-tight">
+                You're all set
+              </h2>
+<p class="font-body-md text-body-md text-[#A7AC9C] max-w-[280px] mx-auto leading-relaxed">
+                Decay is now in your menu bar. It's watching quietly.
+              </p>
+</div>
+<!-- Global Shortcut Card -->
+<div class="w-full bg-[#1A1E18] border border-[#2A3027] rounded-2xl p-4 flex flex-col items-center gap-2 shadow-sm">
+<div class="flex items-center gap-2">
+<span class="bg-[#222720] border border-[#2A3027] text-[#F2F0E6] rounded-md px-3 py-1.5 font-code-sm text-code-sm shadow-inner font-medium">⌥</span>
+<span class="bg-[#222720] border border-[#2A3027] text-[#F2F0E6] rounded-md px-3 py-1.5 font-code-sm text-code-sm shadow-inner font-medium">⌘</span>
+<span class="bg-[#222720] border border-[#2A3027] text-[#F2F0E6] rounded-md px-3 py-1.5 font-code-sm text-code-sm shadow-inner font-medium">D</span>
+</div>
+<span class="font-body-sm text-body-sm text-[#A7AC9C]">
+                Open search from anywhere
+              </span>
+</div>
+<!-- Startup Toggle Card -->
+<div class="w-full bg-[#1A1E18] border border-[#2A3027] rounded-2xl p-4 flex items-center justify-between shadow-sm">
+<span class="font-body-md text-body-md text-[#F2F0E6] font-medium">
+                Launch Decay at login
+              </span>
+<!-- Sage Toggle Switch (Active ON) -->
+<div aria-checked="true" aria-label="Launch Decay at login toggle" class="w-11 h-6 rounded-full bg-[#4F8A4B] p-0.5 flex items-center cursor-pointer justify-end transition-colors" role="switch">
+<div class="w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Action Container -->
+<div class="pt-4 border-t border-[#2A3027] mt-3">
+<button class="w-full bg-[#F2F0E6] hover:bg-white text-[#121511] font-label-md text-label-md font-semibold rounded-full py-3.5 shadow-sm transition-colors text-center active:opacity-90">
+              Open Decay
+            </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Canvas Footer Note -->
+<footer class="mt-8 text-center text-[#A7AC9C]/60 font-body-sm text-[11px] tracking-wide">
+    Decay Engine Setup Flow · Screen Comparison View · Dark Mode 4px Rhythm Architecture
+  </footer>
+</body></html>

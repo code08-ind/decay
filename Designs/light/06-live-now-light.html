@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06-live-now-light</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'serif'],
+            sans: ['DM Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            desktop: '#7FA77A',
+            canvas: '#FAF6E9',
+            surface: '#FFFFFF',
+            accent: {
+              sage: '#A0C878',
+              lime: '#DDEB9D',
+              forest: '#4F8A4B',
+              dark: '#243E22',
+            },
+            decay: {
+              border: '#E8E3D5',
+              borderLight: '#F0ECE0',
+              muted: '#7A8275',
+              subtle: '#9CA396',
+              text: '#1C211B',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #7FA77A;
+      color: #1C211B;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D8D2C2;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-6 md:p-10 select-none">
+
+  <!-- Desktop App Window Floating over Muted Sage Desktop -->
+  <div class="w-full max-w-[1240px] bg-[#FAF6E9] rounded-[24px] shadow-[0_30px_70px_rgba(36,62,34,0.18),0_10px_24px_rgba(0,0,0,0.06)] border border-[#E3DFC8] overflow-hidden flex flex-col">
+
+    <!-- macOS Window Chrome / Top Header -->
+    <header class="h-[52px] bg-[#FAF6E9] border-b border-[#ECE7D7] px-5 flex items-center justify-between shrink-0">
+      <!-- Left: macOS Traffic Lights + Brand -->
+      <div class="flex items-center gap-5">
+        <!-- Traffic lights -->
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40"></div>
+          <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40"></div>
+          <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40"></div>
+        </div>
+
+        <div class="h-4 w-[1px] bg-[#E2DC break-all #DFD9C5]"></div>
+
+        <!-- Brand mark: Leaf + Newsreader Serif "Decay" + v1.4 chip -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded-full bg-[#E5EFC9] border border-[#CDE1A1] flex items-center justify-center text-[#4F8A4B]">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+            </svg>
+          </div>
+          <span class="font-serif font-medium text-[17px] text-[#1C211B] tracking-tight">Decay</span>
+          <span class="text-[11px] font-mono font-medium text-[#7A8275] bg-[#ECE7D7]/80 px-2 py-0.5 rounded-full border border-[#DFD9C5]">v1.4</span>
+        </div>
+      </div>
+
+      <!-- Center: Navigation Pill Tabs -->
+      <nav class="flex items-center bg-[#EFEAD9] p-1 rounded-full border border-[#E2DC break-all #DFD9C5] shadow-inner">
+        <button class="px-3.5 py-1 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">dashboard</span>
+          Overview
+        </button>
+        <button class="px-3.5 py-1 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">folder_special</span>
+          Library
+        </button>
+        <!-- Active Tab: Live now (white raised pill, green icon) -->
+        <button class="px-3.5 py-1 text-[13px] font-semibold text-[#1C211B] bg-white rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px] text-[#4F8A4B] fill">sensors</span>
+          Live now
+        </button>
+        <button class="px-3.5 py-1 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">auto_delete</span>
+          Sweeps
+        </button>
+        <button class="px-3.5 py-1 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">rule</span>
+          Rules
+        </button>
+        <button class="px-3.5 py-1 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">insights</span>
+          Insights
+        </button>
+      </nav>
+
+      <!-- Right: Search, Bell, Status -->
+      <div class="flex items-center gap-2.5">
+        <button class="w-8 h-8 rounded-full bg-white hover:bg-[#F5F1E2] border border-[#E4DEC9] flex items-center justify-center text-[#555E50] transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-[18px]">search</span>
+        </button>
+        <button class="w-8 h-8 rounded-full bg-white hover:bg-[#F5F1E2] border border-[#E4DEC9] flex items-center justify-center text-[#555E50] transition-colors shadow-sm relative">
+          <span class="material-symbols-outlined text-[18px]">notifications</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-[#E0443E] absolute top-2 right-2"></span>
+        </button>
+        <div class="h-6 px-3 bg-[#EFEAD9] border border-[#DFD9C5] rounded-full flex items-center gap-1.5 text-[12px] font-medium text-[#2E362C]">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+          Automatic
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="p-8 flex flex-col gap-6">
+
+      <!-- Page Header: Title, Description, and Header Controls -->
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="font-serif text-[38px] leading-tight font-medium text-[#1C211B] tracking-tight">Live now</h1>
+          <p class="text-[14px] text-[#7A8275] mt-1 font-normal">Everything open right now, and how close each item is to being tidied away.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Segmented Filter Pills -->
+          <div class="bg-[#ECE7D7] p-1 rounded-full border border-[#DDD7C3] flex items-center">
+            <button class="px-4 py-1.5 text-[13px] font-semibold text-white bg-[#1C211B] rounded-full shadow-sm transition-all">
+              Tabs (41)
+            </button>
+            <button class="px-4 py-1.5 text-[13px] font-medium text-[#656E61] hover:text-[#1C211B] rounded-full transition-colors">
+              Windows (12)
+            </button>
+          </div>
+
+          <!-- Group By Dropdown Pill -->
+          <button class="px-4 py-1.5 bg-white hover:bg-[#F8F5EC] border border-[#E4DEC9] rounded-full text-[13px] font-medium text-[#1C211B] flex items-center gap-1.5 shadow-sm transition-colors">
+            Group by window
+            <span class="material-symbols-outlined text-[16px] text-[#7A8275]">arrow_drop_down</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Two Column Layout: Main White Card (Left) & Right Sidebar Cards -->
+      <div class="grid grid-cols-12 gap-6 items-start">
+
+        <!-- Main White Card: Rows Grouped by Window (8 cols) -->
+        <div class="col-span-8 bg-white rounded-[22px] border border-[#E8E3D5] shadow-[0_4px_16px_rgba(0,0,0,0.02)] overflow-hidden">
+
+          <!-- Window Group 1: Chrome Research Window -->
+          <div>
+            <!-- Group Header -->
+            <div class="px-6 py-3.5 bg-[#FAF8F0] border-b border-[#EFEAD9] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#4F8A4B]"></span>
+                <span class="text-[11px] font-bold tracking-wider text-[#636C5E] uppercase font-sans">Chrome — Research Window · 9 tabs</span>
+              </div>
+              <span class="text-[11px] font-mono text-[#8C9487]">Threshold: 60h active</span>
+            </div>
+
+            <!-- Tab Row 1: Stripe Pricing -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#635BFF] flex items-center justify-center text-white font-bold text-[13px] shrink-0 shadow-sm">
+                  S
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Stripe pricing — Compare plans</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">stripe.com/pricing/compare</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#4F8A4B] rounded-full" style="width: 95%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">58 of 60 active h</span>
+              </div>
+
+              <!-- Status Pill & Hover Actions -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <!-- Lime pill: Archives in 2 h -->
+                <span class="px-2.5 py-1 bg-[#E8F2B8] text-[#334D1F] border border-[#D5E593] rounded-full text-[11px] font-medium flex items-center gap-1 group-hover:opacity-40 transition-opacity">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+                  Archives in 2 h
+                </span>
+
+                <!-- Hover actions (shield, pause) -->
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 2: Vercel Docs -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#171717] flex items-center justify-center text-white shrink-0 shadow-sm">
+                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2L2 19.7778H22L12 2Z"/></svg>
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Vercel Deployments & Infrastructure</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">vercel.com/docs/deployments</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#A0C878] rounded-full" style="width: 78%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">47 of 60 active h</span>
+              </div>
+
+              <!-- Status Pill & Hover Actions -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-[#F1EEDC] text-[#5B6353] border border-[#E3DFC9] rounded-full text-[11px] font-medium group-hover:opacity-40 transition-opacity">
+                  Stale in 4 h
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 3: Protected Pinned -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#0066DA] flex items-center justify-center text-white font-bold text-[13px] shrink-0 shadow-sm">
+                  J
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Jira — DEC-114: Tab state persistence</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">jira.atlassian.com/browse/DEC-114</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#D1CBB8] rounded-full" style="width: 25%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">15 of 60 active h</span>
+              </div>
+
+              <!-- Status Pill: Protected · pinned -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-white text-[#2F392B] border border-[#DED8C3] rounded-full text-[11px] font-medium flex items-center gap-1.5 shadow-sm group-hover:opacity-40 transition-opacity">
+                  <span class="material-symbols-outlined text-[13px] text-[#4F8A4B]">push_pin</span>
+                  Protected · pinned
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Unprotect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#C0392B] hover:text-[#C0392B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 4: YouTube Playing Audio -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#FF0000] flex items-center justify-center text-white shrink-0 shadow-sm">
+                  <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Lo-fi beats for calm focus & study</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">youtube.com/watch?v=5qap5aO4i9A</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#A0C878] rounded-full" style="width: 60%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">36 of 60 active h</span>
+              </div>
+
+              <!-- Status Pill: Protected · playing audio -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-white text-[#2F392B] border border-[#DED8C3] rounded-full text-[11px] font-medium flex items-center gap-1.5 shadow-sm group-hover:opacity-40 transition-opacity">
+                  <span class="material-symbols-outlined text-[13px] text-[#4F8A4B]">volume_up</span>
+                  Protected · playing audio
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 5: Fresh Tab -->
+            <div class="group h-[56px] px-6 border-b border-[#EFEAD9] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#111111] flex items-center justify-center text-white font-mono font-medium text-[12px] shrink-0 shadow-sm">
+                  N
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Notion — Q4 2026 Product Spec & Backlog</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">notion.so/workspace/spec-v14</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#CCC6B4] rounded-full" style="width: 10%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">6 of 60 active h</span>
+              </div>
+
+              <!-- Status Pill: Fresh -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-[#F5F2E6] text-[#717A6C] border border-[#E5E0CD] rounded-full text-[11px] font-medium group-hover:opacity-40 transition-opacity">
+                  Fresh
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Window Group 2: Arc Client Space -->
+          <div>
+            <!-- Group Header -->
+            <div class="px-6 py-3.5 bg-[#FAF8F0] border-b border-[#EFEAD9] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#A0C878]"></span>
+                <span class="text-[11px] font-bold tracking-wider text-[#636C5E] uppercase font-sans">Arc — Client Space · 6 tabs</span>
+              </div>
+              <span class="text-[11px] font-mono text-[#8C9487]">Threshold: 48h active</span>
+            </div>
+
+            <!-- Tab Row 1: Linear Cycle -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#5E6AD2] flex items-center justify-center text-white font-bold text-[13px] shrink-0 shadow-sm">
+                  L
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Linear — Cycle 42 Roadmap</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">linear.app/decay/cycle-42</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#A0C878] rounded-full" style="width: 79%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">38 of 48 active h</span>
+              </div>
+
+              <!-- Status Pill: Stale in 4 h -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-[#F1EEDC] text-[#5B6353] border border-[#E3DFC9] rounded-full text-[11px] font-medium group-hover:opacity-40 transition-opacity">
+                  Stale in 4 h
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 2: Protected Unsaved Form (Google Docs) -->
+            <div class="group h-[56px] px-6 border-b border-[#F2EEE3] flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#4285F4] flex items-center justify-center text-white shrink-0 shadow-sm">
+                  <span class="material-symbols-outlined text-[16px]">description</span>
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Google Docs — Product Architecture RFC</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">docs.google.com/document/d/4819</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#A0C878] rounded-full" style="width: 65%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">31 of 48 active h</span>
+              </div>
+
+              <!-- Status Pill: Protected · unsaved form -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-white text-[#2F392B] border border-[#DED8C3] rounded-full text-[11px] font-medium flex items-center gap-1.5 shadow-sm group-hover:opacity-40 transition-opacity">
+                  <span class="material-symbols-outlined text-[13px] text-[#4F8A4B]">edit_note</span>
+                  Protected · unsaved form
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Row 3: Figma Design System -->
+            <div class="group h-[56px] px-6 flex items-center justify-between hover:bg-[#FDFCF8] transition-colors relative">
+              <div class="flex items-center gap-3.5 min-w-[280px] max-w-[340px]">
+                <div class="w-7 h-7 rounded-[7px] bg-[#F24E1E] flex items-center justify-center text-white font-bold text-[13px] shrink-0 shadow-sm">
+                  F
+                </div>
+                <div class="truncate">
+                  <div class="text-[13px] font-medium text-[#1C211B] truncate">Figma — Decay System v2.4 (Components)</div>
+                  <div class="text-[11px] font-mono text-[#838B7E] truncate">figma.com/file/decay-system-v24</div>
+                </div>
+              </div>
+
+              <!-- Age Bar + Metric -->
+              <div class="flex items-center gap-3 flex-1 max-w-[200px] px-2">
+                <div class="flex-1">
+                  <div class="w-full h-1.5 bg-[#F0ECE0] rounded-full overflow-hidden">
+                    <div class="h-full bg-[#CCC6B4] rounded-full" style="width: 18%;"></div>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#7A8275] whitespace-nowrap">9 of 48 active h</span>
+              </div>
+
+              <!-- Status Pill: Fresh -->
+              <div class="flex items-center gap-2 justify-end min-w-[150px]">
+                <span class="px-2.5 py-1 bg-[#F5F2E6] text-[#717A6C] border border-[#E5E0CD] rounded-full text-[11px] font-medium group-hover:opacity-40 transition-opacity">
+                  Fresh
+                </span>
+
+                <div class="absolute right-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[#FDFCF8] pl-2">
+                  <button title="Protect tab" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">shield</span>
+                  </button>
+                  <button title="Hold for 1 hour" class="w-7 h-7 rounded-full bg-white border border-[#E0DBC8] hover:border-[#4F8A4B] hover:text-[#4F8A4B] text-[#5A6354] flex items-center justify-center shadow-sm transition-all">
+                    <span class="material-symbols-outlined text-[15px]">pause</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Single Deep Green Card + Protection Card (4 cols) -->
+        <div class="col-span-4 flex flex-col gap-6">
+
+          <!-- AT MOST ONE DEEP GREEN FEATURE CARD (#4F8A4B) -->
+          <div class="bg-[#4F8A4B] text-white rounded-[22px] p-6 shadow-[0_12px_28px_rgba(79,138,75,0.22)] border border-[#43793F] flex flex-col gap-5">
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-white/70 font-sans">Engine Status</div>
+              <h2 class="font-serif text-[22px] font-medium text-white tracking-tight mt-0.5">Why Decay is waiting</h2>
+            </div>
+
+            <!-- Frosted Information Rows -->
+            <div class="flex flex-col gap-2.5">
+              <!-- Row 1: Active clock running -->
+              <div class="bg-white/10 backdrop-blur-md rounded-[14px] px-4 py-3 border border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full bg-[#DDEB9D]"></span>
+                  <span class="text-[13px] font-medium text-white">Active clock running</span>
+                </div>
+                <span class="text-[12px] font-mono text-white/80">5.2 h today</span>
+              </div>
+
+              <!-- Row 2: Next sweep -->
+              <div class="bg-white/10 backdrop-blur-md rounded-[14px] px-4 py-3 border border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-[16px] text-white/80">schedule</span>
+                  <span class="text-[13px] font-medium text-white">Next sweep cadence</span>
+                </div>
+                <span class="text-[12px] font-mono text-white/90 font-medium">3:00 PM</span>
+              </div>
+
+              <!-- Row 3: Items to archive -->
+              <div class="bg-white/10 backdrop-blur-md rounded-[14px] px-4 py-3 border border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-[16px] text-[#DDEB9D]">auto_delete</span>
+                  <span class="text-[13px] font-medium text-white">7 items will be archived</span>
+                </div>
+                <span class="text-[11px] font-sans text-white/70">in ~18m</span>
+              </div>
+            </div>
+
+            <!-- White Pill Button: Hold all for 1 h -->
+            <button class="w-full py-2.5 bg-white hover:bg-[#F6F4EB] text-[#243E22] rounded-full text-[13px] font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]">
+              <span class="material-symbols-outlined text-[16px] text-[#4F8A4B]">pause_circle</span>
+              Hold all for 1 h
+            </button>
+          </div>
+
+          <!-- White Card: Protection Rules & Counts -->
+          <div class="bg-white rounded-[22px] p-6 border border-[#E8E3D5] shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-[14px] font-bold uppercase tracking-wider text-[#636C5E] font-sans">Protection</h3>
+              <span class="text-[12px] text-[#8C9487] font-mono">12 exempted</span>
+            </div>
+
+            <!-- Protection Items in Clean Rows with Light Circles -->
+            <div class="flex flex-col gap-2.5">
+              <!-- Item 1: Pinned -->
+              <div class="flex items-center justify-between py-2 border-b border-[#F4EFE2]">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[#4F8A4B]">
+                    <span class="material-symbols-outlined text-[16px]">push_pin</span>
+                  </div>
+                  <span class="text-[13px] font-medium text-[#1C211B]">Pinned tabs</span>
+                </div>
+                <span class="w-6 h-6 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[12px] font-bold text-[#1C211B]">
+                  4
+                </span>
+              </div>
+
+              <!-- Item 2: Playing Audio -->
+              <div class="flex items-center justify-between py-2 border-b border-[#F4EFE2]">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[#4F8A4B]">
+                    <span class="material-symbols-outlined text-[16px]">volume_up</span>
+                  </div>
+                  <span class="text-[13px] font-medium text-[#1C211B]">Playing audio</span>
+                </div>
+                <span class="w-6 h-6 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[12px] font-bold text-[#1C211B]">
+                  1
+                </span>
+              </div>
+
+              <!-- Item 3: Unsaved form -->
+              <div class="flex items-center justify-between py-2 border-b border-[#F4EFE2]">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[#4F8A4B]">
+                    <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                  </div>
+                  <span class="text-[13px] font-medium text-[#1C211B]">Unsaved form</span>
+                </div>
+                <span class="w-6 h-6 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[12px] font-bold text-[#1C211B]">
+                  2
+                </span>
+              </div>
+
+              <!-- Item 4: Rules -->
+              <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[#4F8A4B]">
+                    <span class="material-symbols-outlined text-[16px]">verified_user</span>
+                  </div>
+                  <span class="text-[13px] font-medium text-[#1C211B]">Domain & space rules</span>
+                </div>
+                <span class="w-6 h-6 rounded-full bg-[#FAF7ED] border border-[#ECE6D4] flex items-center justify-center text-[12px] font-bold text-[#1C211B]">
+                  5
+                </span>
+              </div>
+            </div>
+
+            <!-- Footer note inside Protection card -->
+            <div class="pt-3 border-t border-[#F4EFE2] flex items-center justify-between text-[11px] text-[#7A8275]">
+              <span>Protected tabs never decay</span>
+              <a href="#" class="text-[#4F8A4B] font-medium hover:underline flex items-center gap-0.5">
+                Edit rules
+                <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>

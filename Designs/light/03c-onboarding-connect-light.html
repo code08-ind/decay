@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Connect Browsers</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#fffbff",
+            "surface-bright": "#fffbff",
+            "on-secondary": "#ffffff",
+            "background": "#fffbff",
+            "on-tertiary-container": "#556122",
+            "on-surface-variant": "#67654e",
+            "tertiary": "#5e6a2a",
+            "on-secondary-fixed-variant": "#436521",
+            "secondary-dim": "#3f611e",
+            "surface-container-low": "#fefae8",
+            "secondary": "#4b6e29",
+            "surface-container-highest": "#ede9cc",
+            "inverse-primary": "#bafcb0",
+            "surface-variant": "#ede9cc",
+            "inverse-surface": "#0f0e08",
+            "on-error-container": "#742410",
+            "tertiary-container": "#edfbac",
+            "error": "#a54731",
+            "tertiary-dim": "#525d1f",
+            "on-background": "#3a3924",
+            "on-secondary-fixed": "#274705",
+            "on-primary": "#e6ffdd",
+            "error-container": "#fe8b70",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed": "#0c4a13",
+            "primary-fixed-dim": "#a4e49b",
+            "outline-variant": "#bdba9f",
+            "surface-container": "#f8f4df",
+            "outline": "#848269",
+            "tertiary-fixed-dim": "#dfed9e",
+            "surface-container-high": "#f2efd5",
+            "surface-tint": "#316a2f",
+            "primary-fixed": "#b2f3a8",
+            "on-secondary-container": "#395b18",
+            "error-dim": "#5c1202",
+            "on-primary-fixed-variant": "#2e672d",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#444e11",
+            "inverse-on-surface": "#a09d92",
+            "secondary-fixed": "#c6ef9b",
+            "on-primary-container": "#235d24",
+            "primary-dim": "#245e25",
+            "primary-container": "#b2f3a8",
+            "secondary-container": "#c6ef9b",
+            "primary": "#316a2f",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#b8e18e",
+            "tertiary-fixed": "#edfbac",
+            "on-surface": "#3a3924",
+            "surface-dim": "#e7e4c3",
+            "on-tertiary-fixed-variant": "#606c2c"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "code-sm": ["JetBrains Mono"],
+            "headline-md": ["Newsreader"],
+            "label-sm": ["DM Sans"],
+            "headline-lg": ["Newsreader"],
+            "body-medium": ["DM Sans"],
+            "body-md": ["DM Sans"],
+            "display-lg": ["Newsreader"]
+          },
+          "fontSize": {
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-os-shadow {
+      box-shadow: 0 28px 75px -12px rgba(27, 36, 24, 0.22), 0 1px 3px rgba(27, 36, 24, 0.08);
+    }
+    .row-card-shadow {
+      box-shadow: 0 1px 2px rgba(31, 36, 24, 0.03);
+    }
+  </style>
+</head>
+<body class="h-full bg-[#7FA77A] flex items-center justify-center p-4 antialiased select-none font-body-md text-on-surface overflow-hidden">
+<!-- macOS Floating Window Container (960px x 640px) -->
+<div class="w-[960px] h-[640px] bg-[#FAF7EE] rounded-[26px] custom-os-shadow border border-[#E8E2CC]/80 flex flex-col overflow-hidden relative">
+<!-- macOS Window Chrome / Titlebar -->
+<div class="h-9 px-4 flex items-center shrink-0 border-b border-[#E8E2CC]/50 bg-[#FAF7EE]/90 backdrop-blur-md z-20">
+<!-- Traffic Light Controls -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 transition-opacity hover:opacity-80 cursor-pointer"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 transition-opacity hover:opacity-80 cursor-pointer"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 transition-opacity hover:opacity-80 cursor-pointer"></div>
+</div>
+<!-- Subtle Window Header Title -->
+<div class="flex-1 text-center pr-12">
+<span class="font-label-sm text-label-sm text-outline tracking-tight opacity-75">Decay Setup Assistant</span>
+</div>
+</div>
+<!-- Window Interior: Two Column Split View -->
+<div class="flex-1 flex p-2.5 gap-2.5 overflow-hidden">
+<!-- LEFT COLUMN: Deep Sage Green Inset Navigation Container (340px) -->
+<aside class="w-[340px] bg-[#4F8A4B] rounded-[20px] p-6 flex flex-col justify-between text-white shrink-0 relative overflow-hidden shadow-inner">
+<!-- Background subtle atmospheric radial glow -->
+<div class="absolute -top-24 -left-24 w-64 h-64 bg-[#76AB72]/30 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-20 -right-20 w-56 h-56 bg-[#386435]/40 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Top Content: Brand Identity & Step Progress -->
+<div class="relative z-10 flex flex-col">
+<!-- Brand Anchor Header -->
+<div class="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-[#DDEB9D] flex items-center justify-center text-[#2E582B] shadow-sm">
+<span class="material-symbols-outlined text-[17px]" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<span class="font-headline-lg text-[22px] tracking-tight text-white font-semibold">Decay</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-[#DDEB9D] bg-white/10 px-2 py-0.5 rounded-full border border-white/15">v1.4</span>
+</div>
+<!-- Step Progress List (6 distinct states) -->
+<nav aria-label="Onboarding Progress" class="flex flex-col space-y-3.5">
+<!-- Step 1: Completed -->
+<div class="flex items-center gap-3 text-white/80 group cursor-default">
+<div class="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xs text-white" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-medium text-body-medium text-white/85">1 Welcome</span>
+</div>
+<!-- Step 2: Completed -->
+<div class="flex items-center gap-3 text-white/80 group cursor-default">
+<div class="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xs text-white" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-medium text-body-medium text-white/85">2 Choose pace</span>
+</div>
+<!-- Step 3: Current Active Step -->
+<div class="flex items-center gap-3 group cursor-default">
+<div class="w-5 h-5 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+<div class="w-2 h-2 rounded-full bg-[#4F8A4B]"></div>
+</div>
+<span class="font-body-medium text-body-medium font-semibold text-white tracking-tight">3 Connect browsers</span>
+</div>
+<!-- Step 4: Upcoming -->
+<div class="flex items-center gap-3 text-white/45 group cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-white/30"></span>
+</div>
+<span class="font-body-medium text-body-medium">4 Window access</span>
+</div>
+<!-- Step 5: Upcoming -->
+<div class="flex items-center gap-3 text-white/45 group cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-white/30"></span>
+</div>
+<span class="font-body-medium text-body-medium">5 Shadow mode</span>
+</div>
+<!-- Step 6: Upcoming -->
+<div class="flex items-center gap-3 text-white/45 group cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-white/30"></span>
+</div>
+<span class="font-body-medium text-body-medium">6 All set</span>
+</div>
+</nav>
+</div>
+<!-- Lower Section: Calm Reassurance Frosted Card -->
+<div class="relative z-10 bg-white/10 backdrop-blur-md rounded-xl p-3.5 border border-white/15">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[#DDEB9D] text-lg shrink-0 mt-0.5">verified_user</span>
+<p class="font-body-md text-xs leading-[18px] text-white/90">
+              Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+            </p>
+</div>
+</div>
+</aside>
+<!-- RIGHT COLUMN: Main Setup Canvas -->
+<main class="flex-1 flex flex-col justify-between px-10 py-6 overflow-hidden">
+<!-- Header & Explanatory Copy -->
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] uppercase font-bold tracking-widest text-[#7D8370] mb-1.5">STEP 3 OF 6</span>
+<h1 class="font-headline-lg text-[34px] leading-[40px] text-[#1C1F17] font-semibold tracking-tight mb-2">Connect your browsers</h1>
+<p class="font-body-md text-[13px] leading-[19px] text-[#596152] max-w-lg">
+            Decay uses a tiny extension to see tab activity. It never reads page content.
+          </p>
+<!-- Browser List (4 Rows) -->
+<div class="mt-6 flex flex-col space-y-2.5">
+<!-- Browser Row 1: Google Chrome (Connected) -->
+<div class="h-16 bg-white rounded-[18px] px-5 flex items-center justify-between border border-[#E8E2CC] row-card-shadow transition-all duration-150 hover:border-[#CCD5B5]">
+<div class="flex items-center gap-3.5">
+<!-- Browser Icon Badge -->
+<div class="w-9 h-9 rounded-xl bg-[#FAF7EE] border border-[#E8E2CC] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#316A2F] text-[20px]" data-icon="travel_explore">travel_explore</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium text-[#1C1F17] font-semibold">Google Chrome</span>
+<span class="font-label-sm text-[11px] text-[#7D8370]">Profile: Work</span>
+</div>
+</div>
+<!-- Status Pill -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBF4CF] border border-[#DDEB9D]/80">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+<span class="font-label-sm text-[11px] font-medium text-[#395B18]">Connected</span>
+</div>
+</div>
+<!-- Browser Row 2: Arc (Connected) -->
+<div class="h-16 bg-white rounded-[18px] px-5 flex items-center justify-between border border-[#E8E2CC] row-card-shadow transition-all duration-150 hover:border-[#CCD5B5]">
+<div class="flex items-center gap-3.5">
+<!-- Browser Icon Badge -->
+<div class="w-9 h-9 rounded-xl bg-[#FAF7EE] border border-[#E8E2CC] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#316A2F] text-[20px]" data-icon="web_stories">web_stories</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium text-[#1C1F17] font-semibold">Arc</span>
+<span class="font-label-sm text-[11px] text-[#7D8370]">2 spaces</span>
+</div>
+</div>
+<!-- Status Pill -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBF4CF] border border-[#DDEB9D]/80">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+<span class="font-label-sm text-[11px] font-medium text-[#395B18]">Connected</span>
+</div>
+</div>
+<!-- Browser Row 3: Brave (Detected / Install Extension CTA) -->
+<div class="h-16 bg-white rounded-[18px] px-5 flex items-center justify-between border border-[#E8E2CC] row-card-shadow transition-all duration-150 hover:border-[#CCD5B5]">
+<div class="flex items-center gap-3.5">
+<!-- Browser Icon Badge -->
+<div class="w-9 h-9 rounded-xl bg-[#FAF7EE] border border-[#E8E2CC] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#596152] text-[20px]" data-icon="shield">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium text-[#1C1F17] font-semibold">Brave</span>
+<span class="font-label-sm text-[11px] text-[#7D8370]">Detected</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="bg-[#1C1F17] hover:bg-[#2B3023] text-white rounded-full px-4 py-1.5 font-label-sm text-[11px] font-medium transition-all duration-150 active:scale-95 shadow-sm">
+                Install extension
+              </button>
+</div>
+<!-- Browser Row 4: Microsoft Edge (Not Installed) -->
+<div class="h-16 bg-white/70 rounded-[18px] px-5 flex items-center justify-between border border-[#E8E2CC]/60 row-card-shadow">
+<div class="flex items-center gap-3.5 opacity-60">
+<!-- Browser Icon Badge -->
+<div class="w-9 h-9 rounded-xl bg-[#F3EEDC]/60 border border-[#E8E2CC]/50 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#9DA494] text-[20px]" data-icon="language">language</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium text-[#1C1F17]">Microsoft Edge</span>
+<span class="font-label-sm text-[11px] text-[#9DA494]">Not installed</span>
+</div>
+</div>
+<span class="font-label-sm text-[11px] text-[#9DA494] font-medium pr-1">Not found</span>
+</div>
+</div>
+<!-- Subtle Secondary Fallback Link -->
+<div class="mt-3 text-left">
+<button class="font-label-sm text-[11px] text-[#6B7260] hover:text-[#1C1F17] hover:underline underline-offset-2 transition-colors">
+              Using another Chromium browser?
+            </button>
+</div>
+</div>
+<!-- Footer Navigation Row -->
+<div class="pt-4 border-t border-[#E8E2CC]/60 flex items-center justify-between">
+<!-- Back Button -->
+<button class="bg-white border border-[#E8E2CC] hover:bg-[#F3EEDC] text-[#1C1F17] rounded-full px-5 py-2 font-label-sm text-xs font-medium transition-all duration-150 active:scale-95 shadow-xs">
+            Back
+          </button>
+<!-- Step Pagination Dots -->
+<div aria-hidden="true" class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-[#BDC7B3]"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-[#BDC7B3]"></div>
+<!-- Active 3rd Step Elongated Indicator -->
+<div class="w-5 h-1.5 rounded-full bg-[#4F8A4B]"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-[#BDC7B3]"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-[#BDC7B3]"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-[#BDC7B3]"></div>
+</div>
+<!-- Continue Primary Button -->
+<button class="bg-[#1C1F17] hover:bg-[#2F3427] text-white rounded-full px-6 py-2 font-label-sm text-xs font-medium shadow-sm transition-all duration-150 active:scale-95 flex items-center gap-1.5 group">
+<span>Continue</span>
+<span class="transition-transform duration-150 group-hover:translate-x-0.5">→</span>
+</button>
+</div>
+</main>
+</div>
+</div>
+</body></html>

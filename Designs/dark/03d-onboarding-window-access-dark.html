@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>03d-onboarding-window-access-dark</title>
+  <!-- Google Fonts: Newsreader & DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            desktop: '#1C2A1B',
+            canvas: '#121511',
+            sidebar: '#2F5A2E',
+            cardBg: '#1A1E18',
+            cardBorder: '#2A3027',
+            mockBg: '#222720',
+            ivory: '#F2F0E6',
+            mutedIvory: '#A7AC9C',
+            sage: '#A0C878',
+            sageMuted: 'rgba(160, 200, 120, 0.12)',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #1C2A1B;
+      color: #F2F0E6;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body class="bg-desktop p-8 selection:bg-sage/20 selection:text-ivory">
+
+  <!-- macOS Window Frame (960x640) -->
+  <div class="relative w-[960px] h-[640px] bg-canvas rounded-[20px] shadow-2xl border border-white/5 flex flex-col overflow-hidden">
+    
+    <!-- macOS Window Title Bar -->
+    <div class="relative h-10 px-4 flex items-center justify-between border-b border-[#1F251E] bg-[#121511] select-none shrink-0">
+      <!-- Traffic lights -->
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 inline-block"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 inline-block"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 inline-block"></span>
+      </div>
+
+      <!-- Window Title -->
+      <div class="text-xs font-sans font-medium tracking-tight text-mutedIvory">
+        Decay Setup Assistant
+      </div>
+
+      <!-- Right tag / empty space for balance -->
+      <div class="text-[11px] font-sans font-medium text-mutedIvory/70 px-2 py-0.5 rounded border border-[#232B21] bg-[#181D17]">
+        macOS
+      </div>
+    </div>
+
+    <!-- Window Body Layout (2 Columns: Sidebar + Main Content) -->
+    <div class="flex-1 flex overflow-hidden p-3 gap-3">
+      
+      <!-- LEFT SIDEBAR PANEL (Deep Green #2F5A2E) -->
+      <div class="w-[240px] bg-sidebar rounded-[14px] p-5 flex flex-col justify-between select-none shrink-0 border border-white/5">
+        <div>
+          <!-- Logo & Version -->
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-ivory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+              </svg>
+              <span class="font-serif text-lg font-medium tracking-tight text-ivory">Decay</span>
+            </div>
+            <span class="text-[11px] font-medium tracking-wide text-ivory/80 bg-black/20 px-2 py-0.5 rounded-full border border-white/10">v1.4</span>
+          </div>
+
+          <!-- Stepper Navigation -->
+          <nav class="space-y-1.5 text-xs font-medium">
+            <!-- Step 1: Completed -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-ivory/70">
+              <span class="w-4 h-4 rounded-full bg-white/20 text-ivory flex items-center justify-center text-[10px]">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 6l3 3 5-5"></path>
+                </svg>
+              </span>
+              <span>1 Welcome</span>
+            </div>
+
+            <!-- Step 2: Completed -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-ivory/70">
+              <span class="w-4 h-4 rounded-full bg-white/20 text-ivory flex items-center justify-center text-[10px]">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 6l3 3 5-5"></path>
+                </svg>
+              </span>
+              <span>2 Choose pace</span>
+            </div>
+
+            <!-- Step 3: Completed -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-ivory/70">
+              <span class="w-4 h-4 rounded-full bg-white/20 text-ivory flex items-center justify-center text-[10px]">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 6l3 3 5-5"></path>
+                </svg>
+              </span>
+              <span>3 Connect browsers</span>
+            </div>
+
+            <!-- Step 4: Active / Current (Window access) -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-black/25 text-ivory font-semibold shadow-inner border border-white/10">
+              <span class="w-4 h-4 rounded-full bg-ivory text-[#2F5A2E] flex items-center justify-center text-[10px] font-bold">4</span>
+              <span>4 Window access</span>
+            </div>
+
+            <!-- Step 5: Upcoming -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-ivory/50">
+              <span class="w-4 h-4 rounded-full border border-ivory/30 flex items-center justify-center text-[10px]">5</span>
+              <span>5 Shadow mode</span>
+            </div>
+
+            <!-- Step 6: Upcoming -->
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-ivory/50">
+              <span class="w-4 h-4 rounded-full border border-ivory/30 flex items-center justify-center text-[10px]">6</span>
+              <span>6 All set</span>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Shadow Guarantee Pill Box -->
+        <div class="bg-black/20 rounded-xl p-3 border border-white/10 text-ivory/80 text-[11px] leading-relaxed">
+          <div class="flex items-center gap-1.5 font-medium text-ivory mb-1">
+            <svg class="w-3.5 h-3.5 text-sage" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span class="text-[10px] uppercase tracking-wider font-semibold">Shadow guarantee</span>
+          </div>
+          <p class="text-ivory/70 text-[11px]">
+            Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+          </p>
+        </div>
+      </div>
+
+      <!-- RIGHT MAIN CONTENT PANEL (Canvas #121511) -->
+      <div class="flex-1 flex flex-col justify-between px-8 py-4 overflow-y-auto">
+        
+        <div>
+          <!-- Header Area -->
+          <div class="mb-5">
+            <div class="text-[11px] font-sans font-semibold tracking-wider uppercase text-mutedIvory mb-1.5">
+              Step 4 of 6
+            </div>
+            <h1 class="font-serif text-3xl font-medium tracking-tight text-ivory mb-2">
+              Let Decay tidy app windows too
+            </h1>
+            <p class="text-sm text-mutedIvory leading-relaxed max-w-xl">
+              To hide windows you haven't touched in days, macOS asks you to allow Accessibility access. Decay never reads what's inside your windows.
+            </p>
+          </div>
+
+          <!-- Cards Container -->
+          <div class="space-y-3.5 max-w-xl">
+            
+            <!-- OPTION 1: SELECTED "Tabs and windows" CARD -->
+            <div class="relative bg-cardBg rounded-[18px] p-5 border-2 border-sage bg-opacity-95 shadow-lg">
+              
+              <!-- Checkmark badge top-right -->
+              <div class="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-sage text-[#121511] flex items-center justify-center shadow-md">
+                <svg class="w-3.5 h-3.5 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+
+              <!-- Card Header Row -->
+              <div class="flex items-center gap-2 mb-1.5">
+                <h2 class="text-base font-medium text-ivory">Tabs and windows</h2>
+                <span class="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#121511] bg-sage px-2 py-0.5 rounded-full">
+                  Recommended
+                </span>
+              </div>
+              <p class="text-xs text-mutedIvory mb-4">
+                Hide stale Finder, Preview and other app windows.
+              </p>
+
+              <!-- Inner Mock of macOS Accessibility Row (#222720) -->
+              <div class="bg-mockBg rounded-xl p-3.5 border border-[#2D352A] flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <!-- App info -->
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#2F5A2E] flex items-center justify-center border border-white/10 shadow-sm">
+                      <svg class="w-4 h-4 text-ivory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-xs font-medium text-ivory">Decay</div>
+                      <div class="text-[11px] text-mutedIvory">Accessibility · macOS System Settings</div>
+                    </div>
+                  </div>
+
+                  <!-- Sage Toggle ON -->
+                  <div class="w-10 h-5 bg-sage rounded-full p-0.5 flex items-center justify-end cursor-pointer shadow-inner">
+                    <div class="w-4 h-4 rounded-full bg-[#121511] shadow-md"></div>
+                  </div>
+                </div>
+
+                <!-- Sub-row: Open System Settings button + Allowed status -->
+                <div class="flex items-center justify-between pt-1 border-t border-[#2D352A]/60">
+                  <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181D17] hover:bg-[#1E251D] border border-[#2F372C] text-xs font-medium text-ivory transition-colors">
+                    <span>Open System Settings</span>
+                    <svg class="w-3 h-3 text-mutedIvory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </button>
+
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sage/10 border border-sage/30 text-[11px] font-medium text-sage">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sage inline-block"></span>
+                    <span>Allowed</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- OPTION 2: "Tabs only" CARD -->
+            <div class="bg-cardBg rounded-[18px] p-5 border border-cardBorder hover:border-[#384234] transition-all cursor-pointer">
+              <h2 class="text-base font-medium text-ivory mb-1">Tabs only</h2>
+              <p class="text-xs text-mutedIvory">
+                Skip this for now. You can turn it on later in Settings.
+              </p>
+            </div>
+
+            <!-- Muted info helper line -->
+            <div class="flex items-center gap-2 pt-1 text-[11px] text-mutedIvory">
+              <svg class="w-3.5 h-3.5 shrink-0 text-mutedIvory/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>You can revoke this at any time in System Settings → Privacy & Security.</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- FOOTER BAR: Back, Stepper Dots, Continue -->
+        <div class="pt-4 border-t border-[#1F251E] flex items-center justify-between max-w-xl">
+          <!-- Back button (Outline pill) -->
+          <button class="px-5 py-2 rounded-full border border-[#2E372B] hover:border-mutedIvory/40 text-xs font-medium text-ivory transition-colors">
+            Back
+          </button>
+
+          <!-- Step Dots (6 steps, 4th elongated sage) -->
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#343D31]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#343D31]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#343D31]"></span>
+            <span class="w-4 h-1.5 rounded-full bg-sage"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#343D31]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#343D31]"></span>
+          </div>
+
+          <!-- Continue button (Ivory pill with dark text) -->
+          <button class="px-6 py-2 rounded-full bg-ivory hover:bg-white text-canvas text-xs font-semibold tracking-tight shadow-md flex items-center gap-1.5 transition-all">
+            <span>Continue</span>
+            <span class="text-xs">→</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

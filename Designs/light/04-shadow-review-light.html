@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>04-shadow-review-light — Decay</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "tertiary-container": "#edfbac",
+            "on-primary-container": "#235d24",
+            "secondary-dim": "#3f611e",
+            "tertiary-dim": "#525d1f",
+            "surface-container-high": "#f2efd5",
+            "on-error-container": "#742410",
+            "surface-dim": "#e7e4c3",
+            "outline": "#848269",
+            "on-tertiary-fixed": "#444e11",
+            "background": "#fffbff",
+            "on-primary": "#e6ffdd",
+            "inverse-primary": "#bafcb0",
+            "inverse-surface": "#0f0e08",
+            "on-surface-variant": "#67654e",
+            "primary-fixed-dim": "#a4e49b",
+            "primary-dim": "#245e25",
+            "on-surface": "#3a3924",
+            "secondary": "#4b6e29",
+            "on-primary-fixed": "#0c4a13",
+            "secondary-container": "#c6ef9b",
+            "error-container": "#fe8b70",
+            "tertiary": "#5e6a2a",
+            "surface": "#fffbff",
+            "on-secondary-container": "#395b18",
+            "on-tertiary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "error": "#a54731",
+            "error-dim": "#5c1202",
+            "primary": "#316a2f",
+            "on-secondary-fixed": "#274705",
+            "tertiary-fixed-dim": "#dfed9e",
+            "surface-variant": "#ede9cc",
+            "primary-fixed": "#b2f3a8",
+            "on-secondary-fixed-variant": "#436521",
+            "surface-tint": "#316a2f",
+            "outline-variant": "#bdba9f",
+            "on-primary-fixed-variant": "#2e672d",
+            "surface-container-low": "#fefae8",
+            "secondary-fixed-dim": "#b8e18e",
+            "surface-bright": "#fffbff",
+            "primary-container": "#b2f3a8",
+            "tertiary-fixed": "#edfbac",
+            "on-error": "#ffffff",
+            "surface-container": "#f8f4df",
+            "surface-container-highest": "#ede9cc",
+            "on-tertiary-container": "#556122",
+            "secondary-fixed": "#c6ef9b",
+            "on-background": "#3a3924",
+            "inverse-on-surface": "#a09d92"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1.375rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Newsreader", "serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "display-lg": ["Newsreader", "serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "body-medium": ["DM Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'liga';
+    }
+    body {
+      background-color: #7FA77A;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-4 lg:p-8 font-body-md text-on-surface select-none antialiased">
+<!-- Desktop macOS Application Window Container -->
+<div class="w-full max-w-[1240px] bg-[#FAF6ED] rounded-[24px] shadow-[0_24px_70px_rgba(28,34,22,0.22)] border border-[#E4DEC9] overflow-hidden flex flex-col transition-all">
+<!-- macOS Window Chrome / Titlebar -->
+<header class="h-12 bg-[#F4EFE6] px-4 flex items-center justify-between border-b border-[#E8E2D1] shrink-0">
+<!-- Left: macOS Traffic Lights + Brand -->
+<div class="flex items-center gap-3 w-64">
+<div class="flex items-center gap-1.5 mr-1">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 inline-block"></span>
+</div>
+<div class="flex items-center gap-1.5 pl-1">
+<span class="material-symbols-outlined text-primary text-[19px]" data-icon="eco">eco</span>
+<span class="font-headline-md text-[17px] tracking-tight text-[#2B3020]">Decay</span>
+<span class="font-body-md text-[10px] tracking-normal uppercase bg-[#E8E2D1] text-[#555948] px-1.5 py-0.5 rounded-full font-medium ml-0.5">v1.4</span>
+</div>
+</div>
+<!-- Center: Segmented Navigation Pill Bar -->
+<nav class="flex items-center bg-[#E9E3D3]/70 p-1 rounded-full border border-[#DED7C4]">
+<button class="px-3.5 py-1 text-xs font-body-md text-[#5E6452] hover:text-[#1F2418] transition-colors rounded-full">Overview</button>
+<button class="px-3.5 py-1 text-xs font-body-md text-[#5E6452] hover:text-[#1F2418] transition-colors rounded-full">Library</button>
+<button class="px-3.5 py-1 text-xs font-body-md text-[#5E6452] hover:text-[#1F2418] transition-colors rounded-full">Live now</button>
+<button class="px-3.5 py-1 text-xs font-body-medium bg-[#FAF6ED] text-[#1F2418] rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.06)] border border-[#DDD6C3]">Sweeps</button>
+<button class="px-3.5 py-1 text-xs font-body-md text-[#5E6452] hover:text-[#1F2418] transition-colors rounded-full">Rules</button>
+<button class="px-3.5 py-1 text-xs font-body-md text-[#5E6452] hover:text-[#1F2418] transition-colors rounded-full">Insights</button>
+</nav>
+<!-- Right: Search, Bell, Shadow Mode Status Indicator -->
+<div class="flex items-center justify-end gap-2 w-64">
+<button aria-label="Search" class="w-7 h-7 rounded-full flex items-center justify-center text-[#555948] hover:bg-[#E8E2D1] transition-colors">
+<span class="material-symbols-outlined text-[17px]" data-icon="search">search</span>
+</button>
+<button aria-label="Notifications" class="w-7 h-7 rounded-full flex items-center justify-center text-[#555948] hover:bg-[#E8E2D1] transition-colors">
+<span class="material-symbols-outlined text-[17px]" data-icon="notifications">notifications</span>
+</button>
+<div class="flex items-center gap-1.5 bg-[#FAF6ED] border border-[#DDD6C3] rounded-full px-2.5 py-1">
+<span class="w-2 h-2 rounded-full bg-[#62B239] animate-pulse"></span>
+<span class="font-body-medium text-[11px] text-[#2F3524]">Shadow mode</span>
+</div>
+</div>
+</header>
+<!-- Main Window Canvas -->
+<main class="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto">
+<!-- Header Title Section -->
+<section class="space-y-1">
+<h1 class="font-display-lg text-display-lg text-[#1D2115]">Shadow review</h1>
+<p class="font-body-md text-body-md text-[#666B5A]">Here's what Decay would have done this week. Nothing has been closed.</p>
+</section>
+<!-- Top Feature Card (Deep Sage Green Banner) -->
+<section class="bg-[#4F8A4B] rounded-2xl p-6 text-white shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 border border-[#43793F]">
+<!-- Left Banner Content -->
+<div class="space-y-4 max-w-2xl">
+<div class="space-y-1">
+<h2 class="font-headline-lg text-[23px] text-white tracking-tight">You're ready for automatic mode</h2>
+<p class="font-body-md text-white/85 text-sm">Day 6 of 7 · Decay would have archived 63 tabs and hidden 9 windows. You reopened 2 of them (3%).</p>
+</div>
+<!-- Frosted Mini Stat Tiles -->
+<div class="grid grid-cols-3 gap-3 pt-1">
+<div class="bg-white/15 backdrop-blur-md rounded-xl p-3 border border-white/20">
+<div class="font-headline-lg text-2xl text-white font-semibold tracking-tight">63 tabs</div>
+<div class="font-body-md text-[11px] text-white/80 mt-0.5">simulated archive</div>
+</div>
+<div class="bg-white/15 backdrop-blur-md rounded-xl p-3 border border-white/20">
+<div class="font-headline-lg text-2xl text-white font-semibold tracking-tight">9 windows</div>
+<div class="font-body-md text-[11px] text-white/80 mt-0.5">hidden spaces</div>
+</div>
+<div class="bg-white/15 backdrop-blur-md rounded-xl p-3 border border-white/20">
+<div class="font-headline-lg text-2xl text-white font-semibold tracking-tight">3% regret</div>
+<div class="font-body-md text-[11px] text-white/80 mt-0.5">reopened within 1h</div>
+</div>
+</div>
+</div>
+<!-- Right Banner CTAs -->
+<div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 justify-center">
+<button class="bg-[#FAF6ED] text-[#20441E] font-body-medium text-xs px-5 py-2.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.08)] hover:bg-[#F3EEDC] transition-all flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="bolt">bolt</span>
+<span>Turn on automatic mode</span>
+</button>
+<button class="border border-white/40 text-white font-body-medium text-xs px-4 py-2.5 rounded-full hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="visibility">visibility</span>
+<span>Keep watching</span>
+</button>
+</div>
+</section>
+<!-- Main Content Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- Left Column: Wide Tab Review Card (8 cols) -->
+<div class="lg:col-span-8 bg-white rounded-2xl p-5 border border-[#E9E4D4] shadow-sm space-y-4">
+<!-- Filter Row -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#F0EBE0]">
+<!-- Segmented Pill Filter -->
+<div class="flex items-center gap-1 bg-[#F5F2E6] p-1 rounded-full border border-[#EAE3D2] self-start sm:self-auto">
+<button class="bg-[#1C1F17] text-white font-body-medium text-xs px-3.5 py-1 rounded-full shadow-sm">Would archive (63)</button>
+<button class="text-[#5C6053] hover:text-[#1C1F17] font-body-md text-xs px-3 py-1 rounded-full transition-colors">Would hide (9)</button>
+<button class="text-[#5C6053] hover:text-[#1C1F17] font-body-md text-xs px-3 py-1 rounded-full transition-colors">Protected (12)</button>
+</div>
+<!-- Search Filter Pill -->
+<div class="relative min-w-[210px]">
+<span class="material-symbols-outlined text-[17px] text-[#8C9081] absolute left-3 top-1/2 -translate-y-1/2" data-icon="search">search</span>
+<input class="w-full bg-[#FAF7EE] border border-[#E8E2D0] rounded-full text-xs font-body-md pl-8 pr-3 py-1.5 text-[#292D21] placeholder-[#9CA090] focus:outline-none focus:ring-1 focus:ring-[#4F8A4B]" placeholder="Filter simulated tabs..." type="text"/>
+</div>
+</div>
+<!-- List of 56px Rows -->
+<div class="divide-y divide-[#F0EBE0]">
+<!-- Row 1: Stripe -->
+<div class="py-3 flex items-center justify-between gap-3 hover:bg-[#FAF8F1] transition-colors rounded-lg px-2 -mx-2">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-semibold text-xs shrink-0 border border-[#635BFF]/20">
+                  S
+                </div>
+<div class="min-w-0 space-y-0.5">
+<div class="font-body-medium text-xs text-[#202419] truncate">Stripe pricing — Compare plans</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-[#7A7E6F]">stripe.com/pricing</span>
+<span class="inline-flex items-center gap-1 bg-[#F5F2E6] text-[#4A4E40] text-[10px] px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#62B239]"></span>
+                      Unused 61 active h
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="border border-[#DDD7C6] bg-white hover:bg-[#FAF7EE] text-[#3B4031] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="shield">shield</span>
+<span>Protect</span>
+</button>
+<button class="bg-[#F5F2E6] hover:bg-[#EAE4D2] text-[#4A4E40] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors">
+                  Rule: always keep site
+                </button>
+</div>
+</div>
+<!-- Row 2: Jira -->
+<div class="py-3 flex items-center justify-between gap-3 hover:bg-[#FAF8F1] transition-colors rounded-lg px-2 -mx-2">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-[#0052CC]/10 text-[#0052CC] flex items-center justify-center font-semibold text-xs shrink-0 border border-[#0052CC]/20">
+                  J
+                </div>
+<div class="min-w-0 space-y-0.5">
+<div class="font-body-medium text-xs text-[#202419] truncate">Jira — DEC-114: Tab state persistence</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-[#7A7E6F]">jira.atlassian.com</span>
+<span class="inline-flex items-center gap-1 bg-[#F5F2E6] text-[#4A4E40] text-[10px] px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#62B239]"></span>
+                      Unused 48 active h
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="border border-[#DDD7C6] bg-white hover:bg-[#FAF7EE] text-[#3B4031] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="shield">shield</span>
+<span>Protect</span>
+</button>
+<button class="bg-[#F5F2E6] hover:bg-[#EAE4D2] text-[#4A4E40] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors">
+                  Rule: always keep site
+                </button>
+</div>
+</div>
+<!-- Row 3: Google Docs (Protected) -->
+<div class="py-3 flex items-center justify-between gap-3 hover:bg-[#FAF8F1] transition-colors rounded-lg px-2 -mx-2">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-[#2684FF]/10 text-[#2684FF] flex items-center justify-center shrink-0 border border-[#2684FF]/20">
+<span class="material-symbols-outlined text-[17px]" data-icon="description">description</span>
+</div>
+<div class="min-w-0 space-y-0.5">
+<div class="font-body-medium text-xs text-[#202419] truncate">Google Docs — Q4 plan</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-[#7A7E6F]">docs.google.com</span>
+<span class="inline-flex items-center gap-1 bg-[#F5F2E6] text-[#4A4E40] text-[10px] px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#62B239]"></span>
+                      Unused 26 active h
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center shrink-0">
+<span class="bg-[#DDEB9D] text-[#243818] font-body-medium text-xs px-3 py-1 rounded-full flex items-center gap-1.5 border border-[#CDE182]">
+<span class="material-symbols-outlined text-[14px]" data-icon="push_pin">push_pin</span>
+<span>Protected: pinned</span>
+</span>
+</div>
+</div>
+<!-- Row 4: YouTube (Audio Active) -->
+<div class="py-3 flex items-center justify-between gap-3 hover:bg-[#FAF8F1] transition-colors rounded-lg px-2 -mx-2">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-[#FF0000]/10 text-[#FF0000] flex items-center justify-center font-semibold text-xs shrink-0 border border-[#FF0000]/20">
+                  Y
+                </div>
+<div class="min-w-0 space-y-0.5">
+<div class="font-body-medium text-xs text-[#202419] truncate">YouTube — Lo-fi beats to study to</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-[#7A7E6F]">youtube.com</span>
+<span class="inline-flex items-center gap-1 bg-[#F5F2E6] text-[#4A4E40] text-[10px] px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#62B239]"></span>
+                      Unused 19 active h
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center shrink-0">
+<span class="bg-[#DDEB9D] text-[#243818] font-body-medium text-xs px-3 py-1 rounded-full flex items-center gap-1.5 border border-[#CDE182]">
+<span class="material-symbols-outlined text-[14px]" data-icon="volume_up">volume_up</span>
+<span>Protected: playing audio</span>
+</span>
+</div>
+</div>
+<!-- Row 5: Linear -->
+<div class="py-3 flex items-center justify-between gap-3 hover:bg-[#FAF8F1] transition-colors rounded-lg px-2 -mx-2">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-[#5E6AD2]/10 text-[#5E6AD2] flex items-center justify-center font-semibold text-xs shrink-0 border border-[#5E6AD2]/20">
+                  L
+                </div>
+<div class="min-w-0 space-y-0.5">
+<div class="font-body-medium text-xs text-[#202419] truncate">Linear — Cycle 42 roadmap</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-[#7A7E6F]">linear.app</span>
+<span class="inline-flex items-center gap-1 bg-[#F5F2E6] text-[#4A4E40] text-[10px] px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#62B239]"></span>
+                      Unused 18 active h
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="border border-[#DDD7C6] bg-white hover:bg-[#FAF7EE] text-[#3B4031] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="shield">shield</span>
+<span>Protect</span>
+</button>
+<button class="bg-[#F5F2E6] hover:bg-[#EAE4D2] text-[#4A4E40] text-[11px] font-body-medium px-2.5 py-1 rounded-full transition-colors">
+                  Rule: always keep site
+                </button>
+</div>
+</div>
+</div>
+<!-- Bottom micro footer for table -->
+<div class="pt-2 flex items-center justify-between text-[11px] text-[#7A7E6E] font-body-md">
+<span>Showing 5 of 63 simulated decisions</span>
+<button class="hover:text-[#1C1F17] font-body-medium transition-colors underline underline-offset-2">View all 63 items</button>
+</div>
+</div>
+<!-- Right Column: Safety Rules & Insights Card (4 cols) -->
+<div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-[#E9E4D4] shadow-sm space-y-5">
+<div class="space-y-1">
+<h3 class="font-headline-md text-headline-md text-[#202419]">Why things were kept</h3>
+<p class="font-body-md text-xs text-[#7A7E6F] leading-relaxed">Decay automatically leaves tabs alone when active indicators match your safety rules.</p>
+</div>
+<!-- Indicators List -->
+<div class="space-y-2.5">
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F1] border border-[#F0ECE1]">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-[#EAE4D2] flex items-center justify-center text-[#4B503F]">
+<span class="material-symbols-outlined text-[16px]" data-icon="push_pin">push_pin</span>
+</div>
+<span class="font-body-medium text-xs text-[#2C3122]">Pinned tabs</span>
+</div>
+<span class="w-6 h-6 rounded-full bg-[#F5F2E6] border border-[#E3DCB8] flex items-center justify-center text-xs font-semibold text-[#4A4E40]">4</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F1] border border-[#F0ECE1]">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-[#EAE4D2] flex items-center justify-center text-[#4B503F]">
+<span class="material-symbols-outlined text-[16px]" data-icon="volume_up">volume_up</span>
+</div>
+<span class="font-body-medium text-xs text-[#2C3122]">Playing audio</span>
+</div>
+<span class="w-6 h-6 rounded-full bg-[#F5F2E6] border border-[#E3DCB8] flex items-center justify-center text-xs font-semibold text-[#4A4E40]">1</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F1] border border-[#F0ECE1]">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-[#EAE4D2] flex items-center justify-center text-[#4B503F]">
+<span class="material-symbols-outlined text-[16px]" data-icon="edit_document">edit_document</span>
+</div>
+<span class="font-body-medium text-xs text-[#2C3122]">Unsaved form</span>
+</div>
+<span class="w-6 h-6 rounded-full bg-[#F5F2E6] border border-[#E3DCB8] flex items-center justify-center text-xs font-semibold text-[#4A4E40]">2</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F1] border border-[#F0ECE1]">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-[#EAE4D2] flex items-center justify-center text-[#4B503F]">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified_user">verified_user</span>
+</div>
+<span class="font-body-medium text-xs text-[#2C3122]">Rules &amp; domain safelist</span>
+</div>
+<span class="w-6 h-6 rounded-full bg-[#F5F2E6] border border-[#E3DCB8] flex items-center justify-center text-xs font-semibold text-[#4A4E40]">5</span>
+</div>
+</div>
+<!-- Bottom Tip Note Box -->
+<div class="p-3.5 rounded-xl bg-[#F4F1E4] border border-[#E5DFC9] flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-[#4F8A4B] shrink-0 mt-0.5" data-icon="info">info</span>
+<p class="font-body-md text-xs text-[#525746] leading-relaxed">
+              Shadow mode keeps running until Day 7. Decay will notify you before any tabs ever get moved.
+            </p>
+</div>
+<!-- Extra Safety Guarantee Indicator -->
+<div class="pt-1 border-t border-[#F0EBE0] flex items-center justify-between text-[11px] text-[#7A7E6F]">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-[#4F8A4B]" data-icon="lock">lock</span>
+              Local processing only
+            </span>
+<a class="hover:text-[#1C1F17] underline underline-offset-2" href="#">Tune parameters</a>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

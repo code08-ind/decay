@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Rules</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,400&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,400;1,600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-background": "#3a3924",
+            "primary": "#316a2f",
+            "on-error": "#ffffff",
+            "surface-tint": "#316a2f",
+            "tertiary-fixed-dim": "#dfed9e",
+            "on-secondary-fixed": "#274705",
+            "secondary-fixed": "#c6ef9b",
+            "on-secondary-container": "#395b18",
+            "secondary": "#4b6e29",
+            "surface-container-high": "#f2efd5",
+            "tertiary-container": "#edfbac",
+            "outline": "#848269",
+            "surface-bright": "#fffbff",
+            "primary-dim": "#245e25",
+            "on-tertiary-container": "#556122",
+            "tertiary-fixed": "#edfbac",
+            "on-tertiary-fixed": "#444e11",
+            "primary-fixed-dim": "#a4e49b",
+            "on-error-container": "#742410",
+            "on-primary-container": "#235d24",
+            "inverse-on-surface": "#a09d92",
+            "on-primary": "#e6ffdd",
+            "surface": "#fffbff",
+            "tertiary": "#5e6a2a",
+            "surface-container-highest": "#ede9cc",
+            "surface-container": "#f8f4df",
+            "error-container": "#fe8b70",
+            "surface-variant": "#ede9cc",
+            "secondary-container": "#c6ef9b",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#bafcb0",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#b8e18e",
+            "on-surface": "#3a3924",
+            "outline-variant": "#bdba9f",
+            "secondary-dim": "#3f611e",
+            "on-surface-variant": "#67654e",
+            "error": "#a54731",
+            "on-secondary-fixed-variant": "#436521",
+            "primary-container": "#b2f3a8",
+            "inverse-surface": "#0f0e08",
+            "background": "#fffbff",
+            "on-primary-fixed": "#0c4a13",
+            "primary-fixed": "#b2f3a8",
+            "on-primary-fixed-variant": "#2e672d",
+            "error-dim": "#5c1202",
+            "surface-container-low": "#fefae8",
+            "on-tertiary": "#ffffff",
+            "tertiary-dim": "#525d1f",
+            "surface-dim": "#e7e4c3"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1.375rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "gutter": "1rem",
+            "margin": "1.5rem"
+          },
+          fontFamily: {
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "display-lg": ["Newsreader", "serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "body-medium": ["DM Sans", "sans-serif"],
+            "label-sm": ["DM Sans", "sans-serif"]
+          },
+          fontSize: {
+            "code-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "display-lg": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "headline-lg": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+            "headline-md": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "body-medium": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#7FA77A] min-h-screen flex items-center justify-center p-4 lg:p-8 font-body-md text-on-surface antialiased select-none selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Floating macOS Application Window -->
+<div class="w-full max-w-[1360px] h-[880px] bg-[#FAF6E9] rounded-[24px] shadow-[0_24px_70px_rgba(23,36,20,0.22)] border border-[#E8E2CC] flex flex-col overflow-hidden relative backdrop-blur-md">
+<!-- Top Chrome / Navigation Bar -->
+<header class="h-[58px] px-6 bg-[#FAF6E9] flex items-center justify-between border-b border-[#E8E2CC]/80 flex-shrink-0 z-20">
+<!-- Left: macOS Traffic Lights + Brand -->
+<div class="flex items-center gap-6">
+<!-- Traffic Lights -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 cursor-pointer"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 cursor-pointer"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 cursor-pointer"></div>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<!-- Brand Identity -->
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">eco</span>
+</div>
+<span class="font-display-lg text-[18px] text-on-surface font-semibold tracking-tight">Decay</span>
+<span class="font-label-sm text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-[#EFEAD4] text-on-surface-variant border border-[#E2DCBD]">v1.4</span>
+</div>
+</div>
+<!-- Center: Navigation Tabs (Pills) -->
+<nav class="hidden md:flex items-center bg-[#EFEAD4]/70 p-1 rounded-full border border-[#E4DEBF]/80 gap-0.5">
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Overview</a>
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Library</a>
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1.5" href="#">
+<span>Live now</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+</a>
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Sweeps</a>
+<!-- Active Rules Tab -->
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md bg-[#FFFDF6] text-on-surface shadow-[0_1px_3px_rgba(40,45,28,0.08)] flex items-center gap-1.5 border border-[#E8E2CC]/80" href="#">
+<span class="material-symbols-outlined text-[15px] text-primary">tune</span>
+<span class="font-medium">Rules</span>
+</a>
+<a class="px-3.5 py-1.5 rounded-full font-body-medium text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Insights</a>
+</nav>
+<!-- Right Controls -->
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-[#FFFDF6] border border-[#E8E2CC] text-on-surface-variant hover:text-on-surface flex items-center justify-center hover:bg-white transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+<span class="material-symbols-outlined text-[17px]">search</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-[#FFFDF6] border border-[#E8E2CC] text-on-surface-variant hover:text-on-surface flex items-center justify-center hover:bg-white transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+<span class="material-symbols-outlined text-[17px]">notifications</span>
+</button>
+<div class="ml-1 pl-2 border-l border-outline-variant/30 flex items-center">
+<div class="px-3 py-1.5 rounded-full bg-[#FFFDF6] border border-[#E8E2CC] flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-medium text-[12px] text-on-surface tracking-tight">Automatic</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex-1 overflow-hidden flex flex-col p-6 lg:p-7 gap-5">
+<!-- Sub-header & Title Area -->
+<div class="flex items-end justify-between flex-shrink-0">
+<div>
+<h1 class="font-display-lg text-[28px] text-on-surface tracking-tight leading-tight">Rules</h1>
+<p class="font-body-md text-on-surface-variant text-[13px] mt-0.5">Tell Decay what to keep, what to tidy sooner, and what to never touch.</p>
+</div>
+<button class="bg-[#1F2418] hover:bg-[#141810] text-[#FFFDF6] px-4 py-2 rounded-full font-body-medium text-[13px] flex items-center gap-1.5 transition-all shadow-[0_2px_6px_rgba(31,36,24,0.14)] active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>New rule</span>
+</button>
+</div>
+<!-- Split Layout: Rule List (Left) + Inspector/New Rule Panel (Right) -->
+<div class="flex-1 grid grid-cols-12 gap-6 min-h-0 overflow-hidden">
+<!-- Left Column: Master Rules List -->
+<div class="col-span-12 lg:col-span-7 bg-[#FFFDF6] rounded-2xl border border-[#E8E2CC] shadow-[0_2px_8px_rgba(31,36,24,0.03)] flex flex-col overflow-hidden">
+<!-- Filter / Subbar inside List -->
+<div class="px-6 py-3.5 border-b border-[#E8E2CC]/80 flex items-center justify-between text-on-surface-variant bg-[#FAF6E9]/40 flex-shrink-0">
+<div class="flex items-center gap-2 font-body-medium text-label-sm text-on-surface-variant uppercase tracking-wider">
+<span>Active Rules</span>
+<span class="px-1.5 py-0.5 rounded bg-[#EAE4CA] text-on-surface text-[10px] font-semibold">5</span>
+</div>
+<div class="flex items-center gap-3 text-label-sm font-body-medium text-on-surface-variant">
+<span class="flex items-center gap-1 cursor-pointer hover:text-on-surface">
+<span class="material-symbols-outlined text-[14px]">swap_vert</span>
+                Priority order
+              </span>
+</div>
+</div>
+<!-- List Rows (64px clean spaced rows) -->
+<div class="flex-1 overflow-y-auto divide-y divide-[#E8E2CC]/60">
+<!-- Row 1: mail.google.com -->
+<div class="h-16 px-5 flex items-center gap-4 hover:bg-[#FAF6E9]/50 transition-colors group">
+<!-- Drag handle -->
+<button class="text-outline-variant group-hover:text-on-surface-variant cursor-grab active:cursor-grabbing p-1 -ml-1">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</button>
+<!-- Toggle switch (Active Green) -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#D2CCB4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<!-- Content details -->
+<div class="flex-1 min-w-0 pr-2">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium truncate">mail.google.com</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Never archive email tabs</p>
+</div>
+<!-- Scope pill -->
+<div class="hidden sm:block flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FAF6E9] text-on-surface-variant border border-[#E8E2CC]">All browsers</span>
+</div>
+<!-- Action badge: Sage 'Never archive' -->
+<div class="flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#E8EFE5] text-[#294B24] border border-[#CFDFCB]">Never archive</span>
+</div>
+<!-- Action context button -->
+<button class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-[#ECE6CE] flex items-center justify-center transition-colors flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+<!-- Row 2: github.com/*/pull/* -->
+<div class="h-16 px-5 flex items-center gap-4 hover:bg-[#FAF6E9]/50 transition-colors group">
+<!-- Drag handle -->
+<button class="text-outline-variant group-hover:text-on-surface-variant cursor-grab active:cursor-grabbing p-1 -ml-1">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</button>
+<!-- Toggle switch -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#D2CCB4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<!-- Content details -->
+<div class="flex-1 min-w-0 pr-2">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium truncate">github.com/*/pull/*</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Keep pull requests 2× longer</p>
+</div>
+<!-- Scope pill -->
+<div class="hidden sm:block flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FAF6E9] text-on-surface-variant border border-[#E8E2CC]">All browsers</span>
+</div>
+<!-- Action badge: Lime 'Keep longer' -->
+<div class="flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#F1F9CE] text-[#475916] border border-[#DEEC9F]">Keep longer</span>
+</div>
+<!-- Action context button -->
+<button class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-[#ECE6CE] flex items-center justify-center transition-colors flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+<!-- Row 3: youtube.com -->
+<div class="h-16 px-5 flex items-center gap-4 hover:bg-[#FAF6E9]/50 transition-colors group">
+<!-- Drag handle -->
+<button class="text-outline-variant group-hover:text-on-surface-variant cursor-grab active:cursor-grabbing p-1 -ml-1">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</button>
+<!-- Toggle switch -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#D2CCB4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<!-- Content details -->
+<div class="flex-1 min-w-0 pr-2">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium truncate">youtube.com</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Archive sooner after 4 active h</p>
+</div>
+<!-- Scope pill -->
+<div class="hidden sm:block flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FAF6E9] text-on-surface-variant border border-[#E8E2CC]">Chrome · Arc</span>
+</div>
+<!-- Action badge: Soft tint 'Archive sooner' -->
+<div class="flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FDEEE9] text-[#7A3625] border border-[#F4D0C5]">Archive sooner</span>
+</div>
+<!-- Action context button -->
+<button class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-[#ECE6CE] flex items-center justify-center transition-colors flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+<!-- Row 4: Figma -->
+<div class="h-16 px-5 flex items-center gap-4 hover:bg-[#FAF6E9]/50 transition-colors group">
+<!-- Drag handle -->
+<button class="text-outline-variant group-hover:text-on-surface-variant cursor-grab active:cursor-grabbing p-1 -ml-1">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</button>
+<!-- Toggle switch -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#D2CCB4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<!-- Content details -->
+<div class="flex-1 min-w-0 pr-2">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium truncate">Figma</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Never hide active Figma windows</p>
+</div>
+<!-- Scope pill -->
+<div class="hidden sm:block flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FAF6E9] text-on-surface-variant border border-[#E8E2CC]">Desktop app</span>
+</div>
+<!-- Action badge: Sage 'Never hide' -->
+<div class="flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#E8EFE5] text-[#294B24] border border-[#CFDFCB]">Never hide</span>
+</div>
+<!-- Action context button -->
+<button class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-[#ECE6CE] flex items-center justify-center transition-colors flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+<!-- Row 5: Tab group: Billing -->
+<div class="h-16 px-5 flex items-center gap-4 hover:bg-[#FAF6E9]/50 transition-colors group">
+<!-- Drag handle -->
+<button class="text-outline-variant group-hover:text-on-surface-variant cursor-grab active:cursor-grabbing p-1 -ml-1">
+<span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+</button>
+<!-- Toggle switch -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#D2CCB4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<!-- Content details -->
+<div class="flex-1 min-w-0 pr-2">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium truncate">Tab group: Billing</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Never archive tabs in group Billing</p>
+</div>
+<!-- Scope pill -->
+<div class="hidden sm:block flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#FAF6E9] text-on-surface-variant border border-[#E8E2CC]">Chrome</span>
+</div>
+<!-- Action badge: Sage 'Never archive' -->
+<div class="flex-shrink-0">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-body-medium bg-[#E8EFE5] text-[#294B24] border border-[#CFDFCB]">Never archive</span>
+</div>
+<!-- Action context button -->
+<button class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-[#ECE6CE] flex items-center justify-center transition-colors flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Bottom micro-hint -->
+<div class="p-3 bg-[#FAF6E9]/40 border-t border-[#E8E2CC]/60 px-6 flex items-center gap-2 text-on-surface-variant font-body-md text-[12px]">
+<span class="material-symbols-outlined text-[15px] text-primary">info</span>
+<span>Rules are evaluated from top to bottom. First matched pattern applies.</span>
+</div>
+</div>
+<!-- Right Column: Inspector Sheet (Add/Edit Rule) -->
+<div class="col-span-12 lg:col-span-5 bg-[#FFFDF6] rounded-2xl border border-[#E8E2CC] shadow-[0_12px_36px_rgba(31,36,24,0.06)] flex flex-col justify-between overflow-hidden">
+<!-- Sheet Header -->
+<div class="px-6 py-4 border-b border-[#E8E2CC]/80 flex items-center justify-between flex-shrink-0 bg-[#FAF6E9]/30">
+<h2 class="font-headline-lg text-[18px] text-on-surface font-semibold tracking-tight">New rule</h2>
+<button class="w-7 h-7 rounded-full bg-[#FAF6E9] hover:bg-[#ECE6CE] border border-[#E8E2CC] flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[15px]">close</span>
+</button>
+</div>
+<!-- Sheet Body Form -->
+<div class="p-6 overflow-y-auto space-y-4 flex-1">
+<!-- Field: When -->
+<div class="space-y-1.5">
+<label class="block font-body-medium text-[12px] text-on-surface-variant font-medium">When</label>
+<div class="grid grid-cols-4 gap-1 p-1 bg-[#FAF6E9] rounded-xl border border-[#E8E2CC]/80 text-center font-body-medium text-[12px]">
+<button class="py-1.5 bg-[#FFFDF6] text-on-surface font-medium rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-[#E4DEC4]">Site</button>
+<button class="py-1.5 text-on-surface-variant hover:text-on-surface rounded-lg">App</button>
+<button class="py-1.5 text-on-surface-variant hover:text-on-surface rounded-lg">Tab group</button>
+<button class="py-1.5 text-on-surface-variant hover:text-on-surface rounded-lg">Title</button>
+</div>
+</div>
+<!-- Field: Matches -->
+<div class="space-y-1.5">
+<label class="block font-body-medium text-[12px] text-on-surface-variant font-medium">Matches</label>
+<div class="relative flex items-center">
+<input class="w-full bg-[#FAF6E9] border border-[#E8E2CC] rounded-xl px-3.5 py-2 font-code-sm text-code-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary pr-9" type="text" value="notion.so/*"/>
+<button class="absolute right-2.5 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+</button>
+</div>
+</div>
+<!-- Field: Do -->
+<div class="space-y-1.5">
+<label class="block font-body-medium text-[12px] text-on-surface-variant font-medium">Do</label>
+<div class="grid grid-cols-3 gap-1 p-1 bg-[#FAF6E9] rounded-xl border border-[#E8E2CC]/80 text-center font-body-medium text-[12px]">
+<button class="py-1.5 text-on-surface-variant hover:text-on-surface rounded-lg">Never archive</button>
+<button class="py-1.5 bg-[#FFFDF6] text-on-surface font-medium rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-[#E4DEC4]">Keep longer</button>
+<button class="py-1.5 text-on-surface-variant hover:text-on-surface rounded-lg">Archive sooner</button>
+</div>
+</div>
+<!-- Multiplier / Timing Slider -->
+<div class="space-y-2 pt-1">
+<div class="flex items-center justify-between">
+<span class="font-body-medium text-[12px] text-on-surface-variant">Decay lifespan multiplier</span>
+<span class="font-body-medium text-[12px] text-primary font-semibold px-2 py-0.5 rounded-full bg-secondary-container/50 border border-secondary-container">2× longer</span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-1.5 bg-[#E8E2CC] rounded-lg appearance-none cursor-pointer accent-primary" max="5" min="1" type="range" value="2"/>
+</div>
+<div class="flex justify-between text-[11px] font-body-md text-on-surface-variant/70">
+<span>Standard (1×)</span>
+<span>Normal +24h</span>
+<span>Max (5×)</span>
+</div>
+</div>
+<!-- Inner Test Preview Box (Dark Green / Forest Accent) -->
+<div class="bg-[#2D5A27] rounded-xl p-3.5 text-white/90 space-y-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+<div class="flex items-center justify-between text-white">
+<div class="flex items-center gap-1.5 font-body-medium text-[12px] font-medium">
+<span class="material-symbols-outlined text-[15px] text-[#A4E49B]">filter_alt</span>
+<span>Test: 6 open tabs match this rule</span>
+</div>
+<span class="text-[10px] font-code-sm uppercase px-1.5 py-0.5 rounded bg-white/10 text-white/80">Live</span>
+</div>
+<!-- Preview rows -->
+<div class="space-y-1.5 font-body-md text-[12px]">
+<div class="flex items-center justify-between p-1.5 rounded-lg bg-black/15 text-white/90 hover:bg-black/20 transition-colors">
+<div class="flex items-center gap-2 truncate pr-2">
+<span class="material-symbols-outlined text-[13px] text-[#C6EF9B]">description</span>
+<span class="truncate">Q3 Product Roadmap · Decay Inc.</span>
+</div>
+<span class="text-[10px] font-code-sm text-white/60 flex-shrink-0">Active 12m ago</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded-lg bg-black/15 text-white/90 hover:bg-black/20 transition-colors">
+<div class="flex items-center gap-2 truncate pr-2">
+<span class="material-symbols-outlined text-[13px] text-[#C6EF9B]">description</span>
+<span class="truncate">Weekly Standup Notes — Design Team</span>
+</div>
+<span class="text-[10px] font-code-sm text-white/60 flex-shrink-0">Active 3h ago</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded-lg bg-black/15 text-white/90 hover:bg-black/20 transition-colors">
+<div class="flex items-center gap-2 truncate pr-2">
+<span class="material-symbols-outlined text-[13px] text-[#C6EF9B]">description</span>
+<span class="truncate">Engine Specifications v1.4 Draft</span>
+</div>
+<span class="text-[10px] font-code-sm text-white/60 flex-shrink-0">Active 1d ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sheet Footer Actions -->
+<div class="p-4 px-6 border-t border-[#E8E2CC]/80 flex items-center justify-end gap-2.5 bg-[#FAF6E9]/40 flex-shrink-0">
+<button class="px-4 py-2 rounded-full font-body-medium text-[13px] text-on-surface bg-[#FFFDF6] hover:bg-white border border-[#E8E2CC] transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Cancel
+            </button>
+<button class="px-5 py-2 rounded-full font-body-medium text-[13px] text-[#FFFDF6] bg-[#1F2418] hover:bg-[#141810] transition-all shadow-[0_2px_6px_rgba(31,36,24,0.12)] active:scale-[0.98]">
+              Save rule
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

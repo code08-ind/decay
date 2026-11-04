@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09-settings-aging-light (v3)</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            sage: {
+              desktop: '#7FA77A',
+              accent: '#4F8A4B',
+              pale: '#DDEB9D',
+              light: '#EBF3E7',
+              border: '#E2E8D8',
+            },
+            decay: {
+              cream: '#FAF6E9',
+              card: '#FFFFFF',
+              dark: '#1C211A',
+              muted: '#6C7567',
+              border: '#E8E4D5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom subtle styling */
+    body {
+      background-color: #7FA77A;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .custom-range {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 9999px;
+      outline: none;
+    }
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 1.5px solid #4F8A4B;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-6 md:p-8 select-none">
+
+  <!-- Main Window: 1100px x 920px -->
+  <div class="w-[1100px] h-[920px] max-w-full bg-[#FAF6E9] rounded-[24px] shadow-[0_24px_64px_rgba(30,45,25,0.22),0_4px_16px_rgba(0,0,0,0.06)] border border-[#E7E2D0] flex flex-col overflow-hidden relative">
+
+    <!-- Window Titlebar (macOS Style) -->
+    <header class="h-[46px] px-5 flex items-center justify-between border-b border-[#EBE7D8] bg-[#FAF6E9]/95 z-20 shrink-0">
+      <!-- Traffic lights -->
+      <div class="flex items-center space-x-2 w-32">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block shadow-xs"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block shadow-xs"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block shadow-xs"></span>
+      </div>
+
+      <!-- Centered muted title with icon -->
+      <div class="flex items-center space-x-1.5 text-[#72796D] text-[13px] font-medium tracking-tight">
+        <svg class="w-3.5 h-3.5 text-[#8A9284]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span>Settings</span>
+      </div>
+
+      <!-- Right spacer with app version indicator -->
+      <div class="w-32 flex justify-end items-center">
+        <span class="font-mono text-[11px] text-[#9EA698] font-medium">v1.4</span>
+      </div>
+    </header>
+
+    <!-- Window Body Layout: Nav on left, Content on right -->
+    <div class="flex-1 flex overflow-hidden p-6 gap-6">
+
+      <!-- Left Navigation Card: 220px width, rounded-22px, white card -->
+      <aside class="w-[220px] bg-white rounded-[22px] border border-[#E9E5D8] shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-3 flex flex-col justify-between shrink-0">
+        <!-- Navigation Menu -->
+        <nav class="space-y-0.5">
+          <!-- General -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span>General</span>
+          </a>
+
+          <!-- Aging (ACTIVE) - Lime #DDEB9D pill, green icon -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] bg-[#DDEB9D] text-[#24341E] text-[13px] font-semibold transition-colors">
+            <svg class="w-4 h-4 text-[#3E6F3A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Aging</span>
+          </a>
+
+          <!-- Protection -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Protection</span>
+          </a>
+
+          <!-- Browsers -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+            </svg>
+            <span>Browsers</span>
+          </a>
+
+          <!-- Rules -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Rules</span>
+          </a>
+
+          <!-- Privacy & data -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Privacy &amp; data</span>
+          </a>
+
+          <!-- Shortcuts -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            <span>Shortcuts</span>
+          </a>
+
+          <!-- Notifications -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span>Notifications</span>
+          </a>
+
+          <!-- Divider -->
+          <div class="pt-2 pb-2 px-1">
+            <div class="h-px bg-[#EFECE0]"></div>
+          </div>
+
+          <!-- License (with black "PRO" badge) -->
+          <a href="#" class="flex items-center justify-between px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <div class="flex items-center space-x-2.5">
+              <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              <span>License</span>
+            </div>
+            <span class="bg-[#1C211A] text-white text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide font-mono">PRO</span>
+          </a>
+
+          <!-- Updates -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Updates</span>
+          </a>
+
+          <!-- About -->
+          <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[12px] text-[#4F5649] hover:bg-[#F6F4EB] text-[13px] font-medium transition-colors">
+            <svg class="w-4 h-4 text-[#7C8474]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>About</span>
+          </a>
+        </nav>
+
+        <!-- Bottom Status in Nav -->
+        <div class="px-2 pt-2 border-t border-[#F2EFE5] flex items-center justify-between">
+          <div class="flex items-center space-x-2 text-[11px] text-[#717A6B]">
+            <span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+            <span>Engine active</span>
+          </div>
+          <span class="text-[10px] text-[#9CA596]">macOS</span>
+        </div>
+      </aside>
+
+      <!-- Right Main Content Area: Header + 4 Cards (Pace, Thresholds, Preview, Clock) + Footer -->
+      <main class="flex-1 flex flex-col justify-between overflow-hidden">
+        
+        <!-- Header: serif "Aging", muted description -->
+        <div class="shrink-0 mb-3">
+          <h1 class="font-serif text-[28px] font-medium text-[#1A2218] tracking-tight leading-tight">Aging</h1>
+          <p class="text-[#6D7768] text-[13px] mt-0.5 font-normal">How long things can sit unused before Decay steps in. Time counts only while you're active.</p>
+        </div>
+
+        <!-- Cards Container: 16px vertical gap, white/green 22px cards with 24px padding -->
+        <div class="flex-1 flex flex-col justify-between gap-3 overflow-hidden">
+
+          <!-- 1. Card "Pace": 22px rounded, 24px padding -->
+          <section class="bg-white rounded-[22px] border border-[#E8E4D5] shadow-[0_2px_8px_rgba(0,0,0,0.02)] px-6 py-4 flex items-center justify-between shrink-0">
+            <div>
+              <div class="text-[14px] font-semibold text-[#1C211A] tracking-tight">Pace</div>
+              <div class="text-[12px] text-[#727B6E] mt-0.5">Preset for archiving tabs and windows</div>
+            </div>
+
+            <!-- Segmented pills: Gentle · Balanced (black) · Aggressive · Custom -->
+            <div class="bg-[#F4F1E4] p-1 rounded-full flex items-center border border-[#E5E0CF]">
+              <button class="px-3.5 py-1 text-[12px] font-medium text-[#5F6759] hover:text-[#21271D] transition-colors rounded-full">
+                Gentle
+              </button>
+              <button class="px-3.5 py-1 text-[12px] font-semibold text-white bg-[#1C211A] rounded-full shadow-xs">
+                Balanced
+              </button>
+              <button class="px-3.5 py-1 text-[12px] font-medium text-[#5F6759] hover:text-[#21271D] transition-colors rounded-full">
+                Aggressive
+              </button>
+              <button class="px-3.5 py-1 text-[12px] font-medium text-[#5F6759] hover:text-[#21271D] transition-colors rounded-full">
+                Custom
+              </button>
+            </div>
+          </section>
+
+          <!-- 2. Card "Thresholds": three slider rows + 4-segment age bar -->
+          <section class="bg-white rounded-[22px] border border-[#E8E4D5] shadow-[0_2px_8px_rgba(0,0,0,0.02)] px-6 py-4 flex flex-col justify-between shrink-0">
+            <!-- Card Header -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-[#868F81] tracking-wider uppercase">Thresholds</span>
+              <span class="text-[11px] text-[#868F81] font-medium">Active hours calculation</span>
+            </div>
+
+            <!-- Slider Rows -->
+            <div class="space-y-2.5">
+              <!-- Row 1: Mark as stale after 12 active h ≈ 1.5 work days -->
+              <div class="grid grid-cols-12 items-center gap-3">
+                <div class="col-span-4">
+                  <div class="text-[13px] font-medium text-[#222A20]">Mark as stale after</div>
+                  <div class="text-[11px] text-[#838D7E]">Dimmed in tab bar &amp; menus</div>
+                </div>
+                <div class="col-span-5 flex items-center">
+                  <input type="range" min="4" max="48" value="12" class="custom-range w-full bg-[#DCE6D5]" style="accent-color: #4F8A4B;" disabled>
+                </div>
+                <div class="col-span-3 flex items-center justify-end space-x-2">
+                  <span class="font-mono text-[12px] font-semibold bg-[#F5F2E7] border border-[#E4DEC9] px-2.5 py-0.5 rounded-lg text-[#253021]">12 active h</span>
+                  <span class="text-[11px] text-[#7E8878] whitespace-nowrap">≈ 1.5 work days</span>
+                </div>
+              </div>
+
+              <!-- Row 2: Hide windows after 36 active h ≈ 4.5 work days -->
+              <div class="grid grid-cols-12 items-center gap-3">
+                <div class="col-span-4">
+                  <div class="text-[13px] font-medium text-[#222A20]">Hide windows after</div>
+                  <div class="text-[11px] text-[#838D7E]">Background spaces tucked away</div>
+                </div>
+                <div class="col-span-5 flex items-center">
+                  <input type="range" min="12" max="96" value="36" class="custom-range w-full bg-[#DCE6D5]" style="accent-color: #4F8A4B;" disabled>
+                </div>
+                <div class="col-span-3 flex items-center justify-end space-x-2">
+                  <span class="font-mono text-[12px] font-semibold bg-[#F5F2E7] border border-[#E4DEC9] px-2.5 py-0.5 rounded-lg text-[#253021]">36 active h</span>
+                  <span class="text-[11px] text-[#7E8878] whitespace-nowrap">≈ 4.5 work days</span>
+                </div>
+              </div>
+
+              <!-- Row 3: Archive tabs after 60 active h ≈ 1.5 work weeks -->
+              <div class="grid grid-cols-12 items-center gap-3">
+                <div class="col-span-4">
+                  <div class="text-[13px] font-medium text-[#222A20]">Archive tabs after</div>
+                  <div class="text-[11px] text-[#838D7E]">Saved safely to Library</div>
+                </div>
+                <div class="col-span-5 flex items-center">
+                  <input type="range" min="24" max="160" value="60" class="custom-range w-full bg-[#DCE6D5]" style="accent-color: #4F8A4B;" disabled>
+                </div>
+                <div class="col-span-3 flex items-center justify-end space-x-2">
+                  <span class="font-mono text-[12px] font-semibold bg-[#F5F2E7] border border-[#E4DEC9] px-2.5 py-0.5 rounded-lg text-[#253021]">60 active h</span>
+                  <span class="text-[11px] text-[#7E8878] whitespace-nowrap">≈ 1.5 work weeks</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4-segment Age Bar & Legend -->
+            <div class="mt-3 pt-2.5 border-t border-[#F2EFE4]">
+              <!-- Segment Bar -->
+              <div class="h-2 w-full rounded-full overflow-hidden flex bg-[#ECE7D6]">
+                <div class="h-full bg-[#C2DCA9]" style="width: 20%;" title="Fresh: 0–12 h"></div>
+                <div class="h-full bg-[#9DC384]" style="width: 30%;" title="Stale: 12–36 h"></div>
+                <div class="h-full bg-[#689E5F]" style="width: 25%;" title="Hidden: 36–60 h"></div>
+                <div class="h-full bg-[#396934]" style="width: 25%;" title="Archived: 60 h+"></div>
+              </div>
+              <!-- Legend Labels -->
+              <div class="flex items-center justify-between text-[11px] text-[#697364] mt-1.5">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#C2DCA9] inline-block"></span>
+                  <span>Fresh <span class="font-mono text-[10px] text-[#889283]">(0–12 h)</span></span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#9DC384] inline-block"></span>
+                  <span>Stale <span class="font-mono text-[10px] text-[#889283]">(12–36 h)</span></span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#689E5F] inline-block"></span>
+                  <span>Hidden <span class="font-mono text-[10px] text-[#889283]">(36–60 h)</span></span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#396934] inline-block"></span>
+                  <span>Archived <span class="font-mono text-[10px] text-[#889283]">(60 h+)</span></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. Green Card #4F8A4B: "Preview with these settings" -->
+          <section class="bg-[#4F8A4B] rounded-[22px] shadow-[0_4px_14px_rgba(79,138,75,0.2)] px-6 py-4 flex items-center justify-between text-white shrink-0">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center text-[10px] font-mono font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/15 text-white backdrop-blur-xs">Simulation</span>
+              </div>
+              <h3 class="font-serif text-[17px] font-medium mt-1 tracking-tight text-[#FAF9F0]">Preview with these settings</h3>
+              <div class="flex items-center space-x-2.5 mt-2">
+                <!-- Chip 1: 9 tabs would be archived today -->
+                <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/15 text-white/95 text-[12px] font-medium backdrop-blur-xs border border-white/10">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+                  <span><strong class="font-mono font-semibold">9 tabs</strong> would be archived today</span>
+                </span>
+                <!-- Chip 2: 2 windows would be hidden -->
+                <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/15 text-white/95 text-[12px] font-medium backdrop-blur-xs border border-white/10">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+                  <span><strong class="font-mono font-semibold">2 windows</strong> would be hidden</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- White pill button: Open shadow review → -->
+            <button class="bg-white hover:bg-[#F9F7F0] text-[#284C25] font-semibold text-[13px] px-4 py-2 rounded-full shadow-sm transition-all flex items-center space-x-1.5 shrink-0 group">
+              <span>Open shadow review</span>
+              <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+            </button>
+          </section>
+
+          <!-- 4. Card "Clock": three toggle rows -->
+          <section class="bg-white rounded-[22px] border border-[#E8E4D5] shadow-[0_2px_8px_rgba(0,0,0,0.02)] px-6 py-4 flex flex-col justify-between shrink-0">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-[#868F81] tracking-wider uppercase">Clock</span>
+              <span class="text-[11px] text-[#868F81]">Idle &amp; calendar awareness</span>
+            </div>
+
+            <div class="space-y-2">
+              <!-- Toggle Row 1: Pause the clock while the screen is locked (ON) -->
+              <div class="flex items-center justify-between py-0.5">
+                <div>
+                  <div class="text-[13px] font-medium text-[#222A20]">Pause the clock while the screen is locked</div>
+                  <div class="text-[11px] text-[#7F897B]">Stops tab age from ticking during breaks and overnight sleep</div>
+                </div>
+                <!-- Green Pill Toggle ON -->
+                <button type="button" class="w-10 h-6 bg-[#4F8A4B] rounded-full p-0.5 transition-colors relative flex items-center justify-end px-0.5 shadow-inner" aria-checked="true">
+                  <span class="w-5 h-5 bg-white rounded-full shadow-sm"></span>
+                </button>
+              </div>
+
+              <!-- Toggle Row 2: Pause during meetings and screen sharing (ON) -->
+              <div class="flex items-center justify-between py-0.5">
+                <div>
+                  <div class="text-[13px] font-medium text-[#222A20]">Pause during meetings and screen sharing</div>
+                  <div class="text-[11px] text-[#7F897B]">Detects active Zoom, Meet, FaceTime, and display broadcast</div>
+                </div>
+                <!-- Green Pill Toggle ON -->
+                <button type="button" class="w-10 h-6 bg-[#4F8A4B] rounded-full p-0.5 transition-colors relative flex items-center justify-end px-0.5 shadow-inner" aria-checked="true">
+                  <span class="w-5 h-5 bg-white rounded-full shadow-sm"></span>
+                </button>
+              </div>
+
+              <!-- Toggle Row 3: Count weekends (OFF) -->
+              <div class="flex items-center justify-between py-0.5">
+                <div>
+                  <div class="text-[13px] font-medium text-[#222A20]">Count weekends</div>
+                  <div class="text-[11px] text-[#7F897B]">Allow decay clock to run on Saturday and Sunday</div>
+                </div>
+                <!-- Pill Toggle OFF -->
+                <button type="button" class="w-10 h-6 bg-[#E1DCCF] rounded-full p-0.5 transition-colors relative flex items-center justify-start px-0.5 shadow-inner" aria-checked="false">
+                  <span class="w-5 h-5 bg-white rounded-full shadow-sm"></span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Bottom Footer Info: Muted "Changes save automatically" -->
+        <div class="shrink-0 flex items-center justify-between pt-2.5 px-1 text-[11px] text-[#868F81]">
+          <div class="flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5 text-[#5B9857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Connected to Decay Engine</span>
+          </div>
+          <span class="italic font-serif text-[12px] text-[#7B8576]">Changes save automatically</span>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

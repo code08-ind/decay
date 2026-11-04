@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09h-settings-about-light</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            sage: {
+              desktop: '#7FA77A',
+              surface: '#FBF9F1',
+              card: '#FFFFFF',
+              border: '#E8E5D8',
+              hover: '#F4F1E6',
+              accent: '#356330',
+              accentHover: '#2B5127',
+              pill: '#DDEB9D',
+              pillText: '#264421',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #7FA77A;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle dot grid pattern on desktop backdrop matching existing screens */
+    .desktop-bg {
+      background-color: #7FA77A;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="desktop-bg min-h-screen flex items-center justify-center p-6 text-[#242A22]">
+
+  <!-- macOS Settings Window: 1100x900 styled -->
+  <div class="w-[1100px] h-[900px] bg-[#FBF9F1] rounded-[24px] shadow-[0_25px_60px_-15px_rgba(30,48,25,0.35),0_0_0_1px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden select-none border border-[#E4E0D2]">
+    
+    <!-- Title Bar -->
+    <div class="h-11 px-5 flex items-center justify-between border-b border-[#EAE6D8] bg-[#FAF8EE] shrink-0">
+      <!-- Traffic lights -->
+      <div class="flex items-center space-x-2 w-28">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block shadow-sm"></span>
+      </div>
+
+      <!-- Centered Window Title -->
+      <div class="flex items-center gap-1.5 text-xs font-medium text-[#5F6759]">
+        <svg class="w-3.5 h-3.5 text-[#737C6C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span class="tracking-tight">Settings</span>
+      </div>
+
+      <!-- Version Indicator right -->
+      <div class="w-28 flex justify-end">
+        <span class="text-[11px] font-mono font-medium text-[#7A8372] bg-[#EFECE0] px-2 py-0.5 rounded-full">v1.4</span>
+      </div>
+    </div>
+
+    <!-- Main Body: Sidebar + Content -->
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- Left Sidebar Nav -->
+      <aside class="w-[240px] bg-[#F7F4E9]/90 border-r border-[#EAE6D8] p-4 flex flex-col justify-between shrink-0">
+        <div class="space-y-6">
+          
+          <!-- Top Brand/Section Title -->
+          <div class="flex items-center gap-2.5 px-2 pt-1">
+            <div class="w-7 h-7 rounded-lg bg-[#356330] flex items-center justify-center text-white shadow-sm">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="font-serif text-sm font-semibold tracking-tight text-[#1E241C]">Decay</div>
+              <div class="text-[10px] text-[#717A6C] -mt-0.5 font-medium">System Preferences</div>
+            </div>
+          </div>
+
+          <!-- Primary Nav List -->
+          <nav class="space-y-1 text-xs font-medium">
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>General</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 22h14"></path>
+                <path d="M5 2h14"></path>
+                <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"></path>
+                <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+              </svg>
+              <span>Aging</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Protection</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>Browsers</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+              <span>Rules</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span>Privacy & data</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <line x1="6" y1="8" x2="6" y2="8"></line>
+                <line x1="10" y1="8" x2="10" y2="8"></line>
+                <line x1="14" y1="8" x2="14" y2="8"></line>
+                <line x1="18" y1="8" x2="18" y2="8"></line>
+                <line x1="6" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="18" y2="12"></line>
+                <line x1="8" y1="16" x2="16" y2="16"></line>
+              </svg>
+              <span>Shortcuts</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span>Notifications</span>
+            </a>
+          </nav>
+
+          <!-- Divider -->
+          <div class="border-t border-[#EAE6D8] pt-2 space-y-1 text-xs font-medium">
+            <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                </svg>
+                <span>License</span>
+              </div>
+              <span class="text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-[#356330] text-white">PRO</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#5F6759] hover:bg-[#EDE8DA] hover:text-[#1E241C] transition-colors">
+              <svg class="w-4 h-4 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Updates</span>
+            </a>
+
+            <!-- ACTIVE About Item: Lime #DDEB9D pill + green icon -->
+            <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl bg-[#DDEB9D] text-[#264421] font-semibold transition-colors shadow-sm">
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-[#356330]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>About</span>
+              </div>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#356330]"></span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Sidebar footer status -->
+        <div class="pt-3 border-t border-[#EAE6D8] px-2 flex items-center justify-between text-[11px] text-[#788172]">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-[#356330]"></span>
+            <span class="font-medium">Engine active</span>
+          </div>
+          <span class="font-mono text-[10px] text-[#8F9888]">macOS</span>
+        </div>
+      </aside>
+
+      <!-- Right Content Area -->
+      <main class="flex-1 p-8 overflow-y-auto bg-[#FBF9F1] flex flex-col justify-start">
+        
+        <div class="max-w-[760px] w-full mx-auto space-y-4">
+          
+          <!-- Page Header -->
+          <div class="mb-3">
+            <h1 class="font-serif text-[28px] leading-tight font-semibold text-[#1B2219] tracking-tight">About</h1>
+            <p class="text-xs text-[#6B7565] mt-1">Decay is built for quiet background browser hygiene.</p>
+          </div>
+
+          <!-- Hero Card (White, 22px rounded) -->
+          <section class="bg-white rounded-[22px] border border-[#EBE7D8] shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-7 flex flex-col items-center text-center">
+            
+            <!-- Large leaf app icon in a lime #DDEB9D rounded square -->
+            <div class="w-20 h-20 rounded-[20px] bg-[#DDEB9D] flex items-center justify-center shadow-inner border border-[#CFDF89] mb-4">
+              <svg class="w-11 h-11 text-[#2B5425]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+              </svg>
+            </div>
+
+            <!-- Title & Metadata -->
+            <h2 class="font-serif text-[40px] leading-none font-bold text-[#192117] tracking-tight mb-1.5">Decay</h2>
+            <div class="text-xs font-mono font-medium text-[#7A8372] bg-[#F4F1E4] px-2.5 py-0.5 rounded-full mb-3 border border-[#E9E5D4]">
+              Version 1.4.2 (Stable)
+            </div>
+            
+            <!-- Italic Serif Tagline -->
+            <p class="font-serif italic text-base text-[#475240] max-w-sm mb-6">
+              "Your tabs, gently put away."
+            </p>
+
+            <!-- White Pills Row: Website, Changelog, Send feedback -->
+            <div class="flex items-center gap-2.5">
+              <a href="#" class="px-4 py-2 text-xs font-medium text-[#252E22] bg-[#FAF8F0] hover:bg-[#F2EFE2] rounded-full border border-[#DFDAC8] shadow-sm transition-all flex items-center gap-1.5">
+                <span>Website</span>
+                <svg class="w-3 h-3 text-[#798371]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+
+              <a href="#" class="px-4 py-2 text-xs font-medium text-[#252E22] bg-[#FAF8F0] hover:bg-[#F2EFE2] rounded-full border border-[#DFDAC8] shadow-sm transition-all flex items-center gap-1.5">
+                <span>Changelog</span>
+                <svg class="w-3 h-3 text-[#798371]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </a>
+
+              <a href="#" class="px-4 py-2 text-xs font-medium text-[#252E22] bg-[#FAF8F0] hover:bg-[#F2EFE2] rounded-full border border-[#DFDAC8] shadow-sm transition-all flex items-center gap-1.5">
+                <span>Send feedback</span>
+                <svg class="w-3 h-3 text-[#798371]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </a>
+            </div>
+          </section>
+
+          <!-- Card "Open source" (White, 22px rounded) -->
+          <section class="bg-white rounded-[22px] border border-[#EBE7D8] shadow-[0_2px_8px_rgba(0,0,0,0.03)] px-6 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+              <div class="w-9 h-9 rounded-xl bg-[#F4F1E4] border border-[#E8E4D2] flex items-center justify-center text-[#3D4737] shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-xs font-semibold text-[#1E251B] uppercase tracking-wider">Open source</h3>
+                <p class="text-xs text-[#5E6857] mt-0.5">The archiving engine and browser extension are open source.</p>
+              </div>
+            </div>
+            
+            <a href="#" class="px-4 py-2 text-xs font-medium text-[#252E22] bg-[#FAF8F0] hover:bg-[#F2EFE2] rounded-full border border-[#DFDAC8] shadow-sm transition-all shrink-0 flex items-center gap-1.5">
+              <span>View on GitHub</span>
+              <svg class="w-3 h-3 text-[#798371]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </section>
+
+          <!-- Card "Support" (White, 22px rounded): rows with line icons and chevrons -->
+          <section class="bg-white rounded-[22px] border border-[#EBE7D8] shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-2 divide-y divide-[#F1EEDE]">
+            
+            <!-- Row 1: Help & guides -->
+            <a href="#" class="flex items-center justify-between px-5 py-3 rounded-xl hover:bg-[#FAF8F0] transition-colors group">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-[#F5F2E5] flex items-center justify-center text-[#55614F]">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-[#222A1E]">Help & guides</span>
+              </div>
+              <svg class="w-4 h-4 text-[#9FA898] group-hover:text-[#4F5B49] group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
+
+            <!-- Row 2: Keyboard shortcuts  ⌘/ -->
+            <a href="#" class="flex items-center justify-between px-5 py-3 rounded-xl hover:bg-[#FAF8F0] transition-colors group">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-[#F5F2E5] flex items-center justify-center text-[#55614F]">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <line x1="6" y1="8" x2="6" y2="8"></line>
+                    <line x1="10" y1="8" x2="10" y2="8"></line>
+                    <line x1="14" y1="8" x2="14" y2="8"></line>
+                    <line x1="18" y1="8" x2="18" y2="8"></line>
+                    <line x1="6" y1="12" x2="6" y2="12"></line>
+                    <line x1="18" y1="12" x2="18" y2="12"></line>
+                    <line x1="8" y1="16" x2="16" y2="16"></line>
+                  </svg>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium text-[#222A1E]">Keyboard shortcuts</span>
+                  <span class="font-mono text-[10px] text-[#697463] bg-[#EFECE0] px-1.5 py-0.5 rounded border border-[#DFDAC8]">⌘/</span>
+                </div>
+              </div>
+              <svg class="w-4 h-4 text-[#9FA898] group-hover:text-[#4F5B49] group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
+
+            <!-- Row 3: Contact support -->
+            <a href="#" class="flex items-center justify-between px-5 py-3 rounded-xl hover:bg-[#FAF8F0] transition-colors group">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-[#F5F2E5] flex items-center justify-center text-[#55614F]">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-[#222A1E]">Contact support</span>
+              </div>
+              <svg class="w-4 h-4 text-[#9FA898] group-hover:text-[#4F5B49] group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
+          </section>
+
+          <!-- Card "Legal" (White, 22px rounded): text links and copyright -->
+          <section class="bg-white rounded-[22px] border border-[#EBE7D8] shadow-[0_2px_8px_rgba(0,0,0,0.03)] px-6 py-4 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-4 text-[#5D6755]">
+              <a href="#" class="hover:text-[#1E251B] hover:underline underline-offset-2 transition-colors">Privacy policy</a>
+              <span class="text-[#D3CEBC]">•</span>
+              <a href="#" class="hover:text-[#1E251B] hover:underline underline-offset-2 transition-colors">Terms</a>
+              <span class="text-[#D3CEBC]">•</span>
+              <a href="#" class="hover:text-[#1E251B] hover:underline underline-offset-2 transition-colors">Open-source licenses</a>
+            </div>
+            
+            <div class="text-[11px] font-medium text-[#8D9686]">
+              © 2026 Decay
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

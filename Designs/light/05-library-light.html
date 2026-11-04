@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05-library-light (v2) — Decay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'serif'],
+            sans: ['DM Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            backdrop: '#7FA77A',
+            canvas: '#FAF6E9',
+            canvasEnd: '#F4EFE0',
+            deepGreen: '#4F8A4B',
+            darkForest: '#1D3B1C',
+            sageAccent: '#5A9457',
+            sageMuted: '#95B892',
+            sageTagBg: '#EBF3E7',
+            limeHighlight: '#DDEB9D',
+            warmCard: '#FFFFFF',
+            warmBorder: '#E8E2D2',
+            subtleText: '#7A7568',
+            charcoal: '#1E1E1C',
+          },
+          boxShadow: {
+            window: '0 30px 80px -15px rgba(25, 45, 23, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.4) inset, 0 10px 30px -5px rgba(0,0,0,0.15)',
+            card: '0 2px 10px rgba(44, 40, 30, 0.04), 0 1px 2px rgba(44, 40, 30, 0.03)',
+            elevatedPill: '0 3px 8px rgba(35, 40, 30, 0.08), 0 1px 2px rgba(0,0,0,0.04)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill-1 {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] min-h-screen w-full flex items-center justify-center p-8 lg:p-12 font-sans text-charcoal antialiased selection:bg-limeHighlight selection:text-charcoal">
+
+  <!-- Floating macOS Application Window -->
+  <div class="w-full max-w-[1440px] rounded-[24px] bg-[#FAF6E9] shadow-window border border-white/60 overflow-hidden flex flex-col backdrop-blur-2xl transition-all duration-300">
+    
+    <!-- Top macOS Titlebar & Nav Bar -->
+    <header class="px-7 pt-5 pb-4 border-b border-warmBorder/70 bg-[#FAF6E9]/90 backdrop-blur-md flex items-center justify-between gap-6">
+      
+      <!-- Left: macOS Traffic Lights + Brand -->
+      <div class="flex items-center gap-5 shrink-0">
+        <!-- Traffic Lights -->
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 inline-block shadow-sm"></span>
+          <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 inline-block shadow-sm"></span>
+          <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 inline-block shadow-sm"></span>
+        </div>
+
+        <div class="h-4 w-px bg-warmBorder mx-1"></div>
+
+        <!-- Brand Mark -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-deepGreen/10 border border-deepGreen/20 flex items-center justify-center text-deepGreen shadow-sm">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </div>
+          <span class="font-serif text-[19px] tracking-tight font-semibold text-charcoal">Decay</span>
+          <span class="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-warmBorder/60 text-subtleText">v1.4</span>
+        </div>
+      </div>
+
+      <!-- Center: Pill Navigation Tabs -->
+      <nav class="flex items-center bg-[#EFE9D7]/80 p-1 rounded-full border border-warmBorder/80 gap-1 text-[13px] font-medium text-subtleText">
+        <button class="px-3.5 py-1.5 rounded-full hover:text-charcoal hover:bg-white/50 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[17px]">space_dashboard</span>
+          <span>Overview</span>
+        </button>
+        <button class="px-4 py-1.5 rounded-full bg-white text-charcoal shadow-elevatedPill font-semibold flex items-center gap-1.5 transition-all">
+          <span class="material-symbols-outlined text-[17px] text-deepGreen">archive</span>
+          <span>Library</span>
+        </button>
+        <button class="px-3.5 py-1.5 rounded-full hover:text-charcoal hover:bg-white/50 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[17px]">tab</span>
+          <span>Live now</span>
+        </button>
+        <button class="px-3.5 py-1.5 rounded-full hover:text-charcoal hover:bg-white/50 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[17px]">auto_mode</span>
+          <span>Sweeps</span>
+        </button>
+        <button class="px-3.5 py-1.5 rounded-full hover:text-charcoal hover:bg-white/50 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[17px]">tune</span>
+          <span>Rules</span>
+        </button>
+        <button class="px-3.5 py-1.5 rounded-full hover:text-charcoal hover:bg-white/50 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[17px]">monitoring</span>
+          <span>Insights</span>
+        </button>
+      </nav>
+
+      <!-- Right: Action Icons & Automatic Status -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <button class="w-10 h-10 rounded-full bg-white border border-warmBorder/80 text-subtleText hover:text-charcoal hover:border-warmBorder transition-all flex items-center justify-center shadow-sm" title="Search">
+          <span class="material-symbols-outlined text-[19px]">search</span>
+        </button>
+        <button class="w-10 h-10 rounded-full bg-white border border-warmBorder/80 text-subtleText hover:text-charcoal hover:border-warmBorder transition-all flex items-center justify-center shadow-sm relative" title="Notifications">
+          <span class="material-symbols-outlined text-[19px]">notifications</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-deepGreen absolute top-2.5 right-2.5 ring-2 ring-white"></span>
+        </button>
+        
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EAE3CE] border border-warmBorder text-[12px] font-medium text-charcoal shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-[#5A9457] animate-pulse"></span>
+          <span>Automatic</span>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- App Window Body -->
+    <main class="p-8 lg:p-9 space-y-7 bg-gradient-to-b from-[#FAF6E9] to-[#F5EFE0]">
+      
+      <!-- Page Header -->
+      <section class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="font-serif text-[34px] leading-tight font-normal text-charcoal tracking-tight">Library</h1>
+          <p class="text-[14px] text-subtleText font-normal mt-1 flex items-center gap-2">
+            <span>318 tabs and windows archived</span>
+            <span class="text-warmBorder">·</span>
+            <span class="italic font-serif text-[15px] text-subtleText/90">nothing is ever lost</span>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button class="px-4 py-2.5 rounded-full bg-white hover:bg-[#FDFBF7] text-charcoal text-[13px] font-medium border border-warmBorder shadow-card transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[17px] text-subtleText">history_toggle_off</span>
+            <span>Shadow review</span>
+          </button>
+          
+          <button class="w-10 h-10 rounded-full bg-white hover:bg-[#FDFBF7] text-charcoal border border-warmBorder shadow-card transition-all flex items-center justify-center" title="Undo Last Sweep">
+            <span class="material-symbols-outlined text-[18px] text-subtleText">undo</span>
+          </button>
+
+          <button class="px-5 py-2.5 rounded-full bg-charcoal hover:bg-black text-white text-[13px] font-medium shadow-elevatedPill transition-all flex items-center gap-1.5">
+            <span class="text-limeHighlight text-base leading-none font-semibold">+</span>
+            <span>Sweep now</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Stat Cards Row -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Card 1 -->
+        <div class="bg-white rounded-[22px] p-5 border border-warmBorder/90 shadow-card flex flex-col justify-between relative group hover:border-[#D0C8B0] transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-[13px] font-medium text-subtleText">Open tabs</span>
+            <div class="w-8 h-8 rounded-full bg-[#F5F2E6] flex items-center justify-center text-subtleText">
+              <span class="material-symbols-outlined text-[17px]">tab</span>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="font-serif text-[38px] leading-none font-normal text-charcoal tracking-tight">41</div>
+            <div class="mt-2 text-[12px] font-medium text-emerald-700 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+              <span>38% this week</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white rounded-[22px] p-5 border border-warmBorder/90 shadow-card flex flex-col justify-between relative group hover:border-[#D0C8B0] transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-[13px] font-medium text-subtleText">Archived today</span>
+            <div class="w-8 h-8 rounded-full bg-[#F5F2E6] flex items-center justify-center text-subtleText">
+              <span class="material-symbols-outlined text-[17px]">archive</span>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="font-serif text-[38px] leading-none font-normal text-charcoal tracking-tight">14</div>
+            <div class="mt-2 text-[12px] font-medium text-subtleText flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#A8BFA4]"></span>
+              <span>11 tabs · 3 windows</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white rounded-[22px] p-5 border border-warmBorder/90 shadow-card flex flex-col justify-between relative group hover:border-[#D0C8B0] transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-[13px] font-medium text-subtleText">Restored</span>
+            <div class="w-8 h-8 rounded-full bg-[#F5F2E6] flex items-center justify-center text-subtleText">
+              <span class="material-symbols-outlined text-[17px]">restore_page</span>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="font-serif text-[38px] leading-none font-normal text-charcoal tracking-tight">3</div>
+            <div class="mt-2 text-[12px] font-medium text-subtleText flex items-center gap-1.5">
+              <span class="px-1.5 py-0.2 rounded bg-sageTagBg text-deepGreen font-semibold text-[11px]">low</span>
+              <span>regret rate 2.1%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white rounded-[22px] p-5 border border-warmBorder/90 shadow-card flex flex-col justify-between relative group hover:border-[#D0C8B0] transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-[13px] font-medium text-subtleText">Active hours today</span>
+            <div class="w-8 h-8 rounded-full bg-[#F5F2E6] flex items-center justify-center text-subtleText">
+              <span class="material-symbols-outlined text-[17px]">timer</span>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="font-serif text-[38px] leading-none font-normal text-charcoal tracking-tight flex items-baseline gap-1">
+              <span>5.2</span>
+              <span class="text-[18px] font-sans text-subtleText font-normal">h</span>
+            </div>
+            <div class="mt-2 text-[12px] font-medium text-subtleText flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-deepGreen"></span>
+              <span>Across 6 active applications</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Main Layout Grid: Main List Card (left 8 cols) + Right Feature Card (right 4 cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Main List Card -->
+        <section class="lg:col-span-8 bg-white rounded-[22px] border border-warmBorder/90 shadow-card overflow-hidden">
+          
+          <!-- Filter & Search Toolbar -->
+          <div class="p-5 border-b border-warmBorder/60 flex flex-wrap items-center justify-between gap-4">
+            <!-- Left Segmented Pills -->
+            <div class="flex items-center bg-[#F5F2E6] p-1 rounded-full border border-warmBorder/70 text-[13px] font-medium">
+              <button class="px-4 py-1.5 rounded-full bg-charcoal text-white shadow-sm font-semibold transition-all">
+                All
+              </button>
+              <button class="px-3.5 py-1.5 rounded-full text-subtleText hover:text-charcoal transition-all">
+                Tabs
+              </button>
+              <button class="px-3.5 py-1.5 rounded-full text-subtleText hover:text-charcoal transition-all">
+                Windows
+              </button>
+            </div>
+
+            <!-- Right Pill Search Field -->
+            <div class="relative flex-1 max-w-sm min-w-[240px]">
+              <span class="material-symbols-outlined text-[18px] text-subtleText absolute left-3.5 top-1/2 -translate-y-1/2">search</span>
+              <input 
+                type="text" 
+                placeholder="Search by title, site or date…" 
+                value="" 
+                class="w-full bg-[#FAF7EE] text-[13px] placeholder:text-subtleText/70 text-charcoal pl-10 pr-4 py-2 rounded-full border border-warmBorder/80 focus:outline-none focus:border-deepGreen focus:bg-white transition-all"
+              />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-subtleText bg-[#EAE4D2] px-1.5 py-0.5 rounded">⌘K</span>
+            </div>
+          </div>
+
+          <!-- Table Header -->
+          <div class="grid grid-cols-12 px-6 py-3 text-[11px] font-semibold text-subtleText uppercase tracking-wider bg-[#FBF9F2] border-b border-warmBorder/50 select-none">
+            <div class="col-span-5">Item</div>
+            <div class="col-span-3">Source</div>
+            <div class="col-span-2">Reason</div>
+            <div class="col-span-2 text-right flex items-center justify-end gap-1">
+              <span>Archived</span>
+              <span class="text-[10px]">▾</span>
+            </div>
+          </div>
+
+          <!-- Rows (56px visual height, hairlines) -->
+          <div class="divide-y divide-warmBorder/50 text-[13px]">
+            
+            <!-- Row 1: Stripe pricing (Selected with #DDEB9D faint lime tint) -->
+            <div class="grid grid-cols-12 px-6 py-3.5 items-center bg-[#DDEB9D]/30 border-l-4 border-l-deepGreen transition-colors cursor-pointer group">
+              <!-- Item Column -->
+              <div class="col-span-5 flex items-center gap-3 pr-2">
+                <div class="w-9 h-9 rounded-xl bg-[#635BFF] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                  S
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-charcoal truncate group-hover:text-deepGreen transition-colors flex items-center gap-1.5">
+                    <span>Stripe pricing — Compare plans</span>
+                  </div>
+                  <div class="text-[11px] font-mono text-subtleText truncate mt-0.5">stripe.com/pricing</div>
+                </div>
+              </div>
+              <!-- Source Column -->
+              <div class="col-span-3 flex items-center gap-1.5 text-subtleText">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="truncate">Chrome — Research</span>
+              </div>
+              <!-- Reason Column -->
+              <div class="col-span-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F5F2E6] text-[11px] font-medium text-charcoal border border-warmBorder/60 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+                  <span>Unused 61 active h</span>
+                </span>
+              </div>
+              <!-- Date Column -->
+              <div class="col-span-2 text-right font-mono text-[11px] text-subtleText">
+                Today, 2:14 PM
+              </div>
+            </div>
+
+            <!-- Row 2: Linear -->
+            <div class="grid grid-cols-12 px-6 py-3.5 items-center hover:bg-[#FAF7EE] transition-colors cursor-pointer group">
+              <div class="col-span-5 flex items-center gap-3 pr-2">
+                <div class="w-9 h-9 rounded-xl bg-[#5E6AD2] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                  L
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-charcoal truncate group-hover:text-deepGreen transition-colors">
+                    Linear — Cycle 42 roadmap
+                  </div>
+                  <div class="text-[11px] font-mono text-subtleText truncate mt-0.5">linear.app</div>
+                </div>
+              </div>
+              <div class="col-span-3 flex items-center gap-1.5 text-subtleText">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="truncate">Chrome — Product</span>
+              </div>
+              <div class="col-span-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F5F2E6] text-[11px] font-medium text-charcoal border border-warmBorder/60 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+                  <span>Unused 48 active h</span>
+                </span>
+              </div>
+              <div class="col-span-2 text-right font-mono text-[11px] text-subtleText">
+                Today, 1:50 PM
+              </div>
+            </div>
+
+            <!-- Row 3: Pull request #418 -->
+            <div class="grid grid-cols-12 px-6 py-3.5 items-center hover:bg-[#FAF7EE] transition-colors cursor-pointer group">
+              <div class="col-span-5 flex items-center gap-3 pr-2">
+                <div class="w-9 h-9 rounded-xl bg-[#24292F] text-white flex items-center justify-center text-xs shrink-0 shadow-sm">
+                  <span class="material-symbols-outlined text-[18px]">code</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-charcoal truncate group-hover:text-deepGreen transition-colors">
+                    Pull request #418: cache invalidation
+                  </div>
+                  <div class="text-[11px] font-mono text-subtleText truncate mt-0.5">github.com</div>
+                </div>
+              </div>
+              <div class="col-span-3 flex items-center gap-1.5 text-subtleText">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                <span class="truncate">Arc — Engineering</span>
+              </div>
+              <div class="col-span-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F5F2E6] text-[11px] font-medium text-charcoal border border-warmBorder/60 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+                  <span>Unused 24 active h</span>
+                </span>
+              </div>
+              <div class="col-span-2 text-right font-mono text-[11px] text-subtleText">
+                Today, 11:20 AM
+              </div>
+            </div>
+
+            <!-- Row 4: Design System v2.4 -->
+            <div class="grid grid-cols-12 px-6 py-3.5 items-center hover:bg-[#FAF7EE] transition-colors cursor-pointer group">
+              <div class="col-span-5 flex items-center gap-3 pr-2">
+                <div class="w-9 h-9 rounded-xl bg-[#F24E1E] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                  F
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-charcoal truncate group-hover:text-deepGreen transition-colors">
+                    Design System v2.4 (Components & tokens)
+                  </div>
+                  <div class="text-[11px] font-mono text-subtleText truncate mt-0.5">figma.com</div>
+                </div>
+              </div>
+              <div class="col-span-3 flex items-center gap-1.5 text-subtleText">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                <span class="truncate">Arc — Design</span>
+              </div>
+              <div class="col-span-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F5F2E6] text-[11px] font-medium text-charcoal border border-warmBorder/60 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+                  <span>Unused 18 active h</span>
+                </span>
+              </div>
+              <div class="col-span-2 text-right font-mono text-[11px] text-subtleText">
+                Today, 10:05 AM
+              </div>
+            </div>
+
+            <!-- Row 5: Finder window -->
+            <div class="grid grid-cols-12 px-6 py-3.5 items-center hover:bg-[#FAF7EE] transition-colors cursor-pointer group">
+              <div class="col-span-5 flex items-center gap-3 pr-2">
+                <div class="w-9 h-9 rounded-xl bg-[#007AFF] text-white flex items-center justify-center text-xs shrink-0 shadow-sm">
+                  <span class="material-symbols-outlined text-[18px]">folder</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-charcoal truncate group-hover:text-deepGreen transition-colors">
+                    ~/Downloads/Invoices-2024
+                  </div>
+                  <div class="text-[11px] font-mono text-subtleText truncate mt-0.5">Finder window</div>
+                </div>
+              </div>
+              <div class="col-span-3 flex items-center gap-1.5 text-subtleText">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                <span class="truncate">macOS Finder</span>
+              </div>
+              <div class="col-span-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F5F2E6] text-[11px] font-medium text-charcoal border border-warmBorder/60 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+                  <span>Inactive 3 days</span>
+                </span>
+              </div>
+              <div class="col-span-2 text-right font-mono text-[11px] text-subtleText">
+                Today, 9:15 AM
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Summary Bar inside List Card -->
+          <div class="px-6 py-3.5 bg-[#FAF7EE] border-t border-warmBorder/60 flex items-center justify-between text-[12px] text-subtleText">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-deepGreen"></span>
+              <span>Displaying 5 of 318 archived records</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button class="hover:text-charcoal transition-colors font-medium">Clear search</button>
+              <span>·</span>
+              <button class="hover:text-charcoal transition-colors font-medium text-deepGreen">Export JSON</button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Right: Feature Inspector Card (Solid deep green #4F8A4B, 22px radius, white text) -->
+        <aside class="lg:col-span-4 bg-[#4F8A4B] rounded-[22px] p-6 text-white shadow-card flex flex-col justify-between space-y-6 relative overflow-hidden border border-emerald-600/30">
+          
+          <!-- Subtle background organic leaf glow -->
+          <div class="absolute -right-16 -top-16 w-56 h-56 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-12 bottom-0 w-48 h-48 bg-black/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <!-- Header & Title -->
+          <div class="relative z-10 space-y-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <span class="text-[11px] uppercase tracking-wider font-semibold text-emerald-200/90 font-sans">Archived Item Detail</span>
+                <h2 class="font-serif text-[24px] leading-tight font-normal text-white">Stripe pricing — Compare plans</h2>
+              </div>
+              <button class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center text-white/80 hover:text-white shrink-0" title="Close Inspector">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+
+            <!-- Frosted Inner Card 1: Mono URL with copy icon -->
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-3.5 border border-white/15 flex items-center justify-between gap-2 shadow-sm group">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="material-symbols-outlined text-[17px] text-emerald-200 shrink-0">link</span>
+                <span class="font-mono text-[12px] text-white/95 truncate">stripe.com/pricing</span>
+              </div>
+              <button class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center text-white/90 transition-all shrink-0" title="Copy URL">
+                <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              </button>
+            </div>
+
+            <!-- Frosted Inner Card 2: Lifecycle Timeline with Thin White Progress Track -->
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/15 space-y-3.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] font-semibold tracking-wide uppercase text-emerald-200">Lifecycle</span>
+                <span class="text-[11px] font-mono text-emerald-100/80">Sweep #409</span>
+              </div>
+
+              <!-- Thin White Progress Track -->
+              <div class="relative py-2">
+                <!-- Track Line -->
+                <div class="h-[2px] w-full bg-white/25 absolute top-1/2 -translate-y-1/2 left-0 z-0"></div>
+                <!-- Active filled portion to Archived -->
+                <div class="h-[2px] w-full bg-white absolute top-1/2 -translate-y-1/2 left-0 z-0"></div>
+
+                <!-- Stages with dots -->
+                <div class="relative z-10 flex items-center justify-between">
+                  <!-- Opened -->
+                  <div class="flex flex-col items-center gap-1 group">
+                    <span class="w-2.5 h-2.5 rounded-full bg-white ring-4 ring-[#4F8A4B]"></span>
+                    <span class="text-[10px] font-medium text-emerald-100">Opened</span>
+                  </div>
+                  <!-- Last used -->
+                  <div class="flex flex-col items-center gap-1 group">
+                    <span class="w-2.5 h-2.5 rounded-full bg-white ring-4 ring-[#4F8A4B]"></span>
+                    <span class="text-[10px] font-medium text-emerald-100">Last used</span>
+                  </div>
+                  <!-- Stale -->
+                  <div class="flex flex-col items-center gap-1 group">
+                    <span class="w-2.5 h-2.5 rounded-full bg-white ring-4 ring-[#4F8A4B]"></span>
+                    <span class="text-[10px] font-medium text-emerald-100">Stale</span>
+                  </div>
+                  <!-- Archived (Marker position) -->
+                  <div class="flex flex-col items-center gap-1 group">
+                    <span class="w-3.5 h-3.5 rounded-full bg-[#DDEB9D] ring-4 ring-white/50 shadow-md"></span>
+                    <span class="text-[10px] font-bold text-white">Archived</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Labels & timestamps below track -->
+              <div class="flex items-center justify-between text-[11px] font-mono text-emerald-100/90 pt-1 border-t border-white/10">
+                <span>Mon 9:02 AM</span>
+                <span class="text-white/40">········</span>
+                <span>Today 2:14 PM</span>
+              </div>
+            </div>
+
+            <!-- White Inner Note Card -->
+            <div class="bg-white rounded-xl p-4 text-charcoal border border-white/40 shadow-sm flex items-start gap-3">
+              <span class="material-symbols-outlined text-[19px] text-[#4F8A4B] shrink-0 mt-0.5">info</span>
+              <p class="text-[12px] leading-relaxed text-charcoal/85">
+                <span class="font-semibold text-charcoal">Decay saves the address, not the page.</span> Unsaved form input won't come back.
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons in Inspector -->
+          <div class="relative z-10 pt-2 flex items-center gap-2">
+            <!-- White pill "↺ Restore" -->
+            <button class="flex-1 py-2.5 px-4 rounded-full bg-white hover:bg-white/95 text-charcoal font-medium text-[13px] shadow-sm flex items-center justify-center gap-1.5 transition-all">
+              <span class="text-base leading-none">↺</span>
+              <span>Restore</span>
+            </button>
+
+            <!-- Outline white pill "Always protect" -->
+            <button class="flex-1 py-2.5 px-4 rounded-full bg-transparent hover:bg-white/10 text-white font-medium text-[13px] border border-white/60 transition-all flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-[15px]">verified_user</span>
+              <span>Always protect</span>
+            </button>
+
+            <!-- Small circle × button -->
+            <button class="w-9 h-9 rounded-full bg-black/15 hover:bg-black/30 border border-white/20 text-white flex items-center justify-center transition-all shrink-0" title="Delete permanently">
+              <span class="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>

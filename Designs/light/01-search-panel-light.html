@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Search Panel</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Newsreader, DM Sans, JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#c6ef9b",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "surface": "#fffbff",
+            "on-secondary": "#ffffff",
+            "tertiary-container": "#edfbac",
+            "primary": "#316a2f",
+            "on-secondary-fixed-variant": "#436521",
+            "tertiary": "#5e6a2a",
+            "secondary-fixed": "#c6ef9b",
+            "tertiary-dim": "#525d1f",
+            "on-error-container": "#742410",
+            "surface-container-high": "#f2efd5",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#444e11",
+            "error-dim": "#5c1202",
+            "primary-fixed-dim": "#a4e49b",
+            "on-surface-variant": "#67654e",
+            "on-error": "#ffffff",
+            "surface-variant": "#ede9cc",
+            "outline-variant": "#bdba9f",
+            "secondary-dim": "#3f611e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#bafcb0",
+            "surface-dim": "#e7e4c3",
+            "on-primary-fixed": "#0c4a13",
+            "on-background": "#3a3924",
+            "tertiary-fixed-dim": "#dfed9e",
+            "inverse-surface": "#0f0e08",
+            "on-secondary-fixed": "#274705",
+            "primary-dim": "#245e25",
+            "on-primary-fixed-variant": "#2e672d",
+            "surface-container-low": "#fefae8",
+            "error-container": "#fe8b70",
+            "surface-tint": "#316a2f",
+            "secondary": "#4b6e29",
+            "error": "#a54731",
+            "secondary-fixed-dim": "#b8e18e",
+            "tertiary-fixed": "#edfbac",
+            "primary-fixed": "#b2f3a8",
+            "outline": "#848269",
+            "background": "#fffbff",
+            "on-primary": "#e6ffdd",
+            "surface-bright": "#fffbff",
+            "primary-container": "#b2f3a8",
+            "on-primary-container": "#235d24",
+            "surface-container": "#f8f4df",
+            "on-surface": "#3a3924",
+            "surface-container-highest": "#ede9cc",
+            "on-secondary-container": "#395b18",
+            "inverse-on-surface": "#a09d92",
+            "on-tertiary-container": "#556122"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.5rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "margin": "1.5rem",
+            "gutter": "1rem"
+          },
+          "fontFamily": {
+            "code-sm": ["JetBrains Mono"],
+            "label-sm": ["DM Sans"],
+            "headline-lg": ["Newsreader"],
+            "body-medium": ["DM Sans"],
+            "display-lg": ["Newsreader"],
+            "headline-md": ["Newsreader"],
+            "body-md": ["DM Sans"]
+          },
+          "fontSize": {
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .caret-blink {
+      animation: blink 1.05s infinite;
+    }
+    .custom-modal-shadow {
+      box-shadow: 0 30px 80px -15px rgba(28, 38, 24, 0.22), 0 0 0 1px rgba(94, 106, 42, 0.12), 0 8px 24px -6px rgba(49, 106, 47, 0.12);
+    }
+  </style>
+</head>
+<body class="h-full w-full overflow-hidden select-none bg-[#74966F] font-body-md text-on-surface antialiased relative flex items-center justify-center">
+<!-- Ambient Blurred macOS Desktop Layer with out-of-focus window backing -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none"><!-- Soft textured sage desktop background -->
+<div class="absolute inset-0 bg-[#7A9A78]"></div>
+<!-- Subtle realistic cream browser window behind modal for soft depth -->
+<div class="absolute top-10 left-16 right-16 bottom-8 rounded-2xl bg-[#FFFDF7]/25 border border-white/20 backdrop-blur-sm shadow-xl opacity-35 flex flex-col overflow-hidden pointer-events-none">
+<!-- Subtle browser chrome -->
+<div class="h-9 bg-[#FFFDF7]/40 border-b border-black/5 px-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#E5806A]/70"></div>
+<div class="w-3 h-3 rounded-full bg-[#E5C26A]/70"></div>
+<div class="w-3 h-3 rounded-full bg-[#7FB875]/70"></div>
+</div>
+<div class="w-72 h-5 rounded-md bg-[#FFFDF7]/60 border border-black/5 mx-auto"></div>
+<div class="w-12"></div>
+</div>
+<!-- Window body subtle page placeholders -->
+<div class="p-8 grid grid-cols-3 gap-6 opacity-40">
+<div class="h-36 rounded-xl bg-[#FFFDF7]/50 border border-black/5"></div>
+<div class="h-36 rounded-xl bg-[#FFFDF7]/50 border border-black/5"></div>
+<div class="h-36 rounded-xl bg-[#FFFDF7]/50 border border-black/5"></div>
+<div class="col-span-2 h-56 rounded-xl bg-[#FFFDF7]/50 border border-black/5"></div>
+<div class="h-56 rounded-xl bg-[#FFFDF7]/50 border border-black/5"></div>
+</div>
+</div>
+<!-- Gentle radial vignette -->
+<div class="absolute inset-0 bg-radial from-transparent via-black/5 to-black/20 pointer-events-none"></div></div>
+<!-- FLOATING SPOTLIGHT-STYLE / RAYCAST-STYLE COMMAND MODAL -->
+<div class="relative z-20 w-[720px] max-h-[870px] rounded-3xl bg-[#FFFDF6]/[0.97] backdrop-blur-lg border border-[#E8E4D5] shadow-2xl flex flex-col overflow-hidden">
+<!-- 1. BIG SEARCH INPUT HEADER -->
+<div class="px-5 py-4 border-b border-[#E8E4D5] flex items-center justify-between gap-3 bg-[#FFFDF6]">
+<div class="flex items-center gap-3.5 flex-1 min-w-0">
+<span class="material-symbols-outlined text-[#5E6A2A] text-[22px] shrink-0" data-icon="search">search</span>
+<div class="flex items-center flex-1 min-w-0">
+<span class="font-body-medium text-[22px] tracking-tight text-[#1C1F17]">pricing</span>
+<!-- Active cursor indicator -->
+<span class="w-[2px] h-[22px] bg-[#4F8A4B] ml-[2px] caret-blink inline-block rounded-full"></span>
+</div>
+</div>
+<!-- Scope Filter Pills -->
+<div class="flex items-center gap-1.5 shrink-0">
+<button class="bg-[#181A16] text-[#FFFDF6] font-body-medium text-label-sm font-label-sm px-3 py-1 rounded-full transition-all duration-150 active:scale-95 shadow-xs">
+          All
+        </button>
+<button class="bg-surface-container text-on-surface-variant hover:bg-surface-variant hover:text-on-surface font-body-medium text-label-sm font-label-sm px-3 py-1 rounded-full transition-colors">
+          Tabs
+        </button>
+<button class="bg-surface-container text-on-surface-variant hover:bg-surface-variant hover:text-on-surface font-body-medium text-label-sm font-label-sm px-3 py-1 rounded-full transition-colors">
+          Windows
+        </button>
+<button class="bg-surface-container/60 border border-outline-variant/30 text-outline hover:text-on-surface font-code-sm text-label-sm font-label-sm px-2.5 py-0.5 rounded-full transition-colors">
+          site:
+        </button>
+</div>
+</div>
+<!-- 2. GROUPED RESULTS LIST (Scrollable Canvas) -->
+<div class="overflow-y-auto px-3 py-3 space-y-4 max-h-[460px] scrollbar-thin"><!-- GROUP 1: TODAY · CHROME — RESEARCH WINDOW -->
+<div>
+<!-- Group Header 1 -->
+<div class="px-3 pt-1 pb-2 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-[#5F6354]" data-icon="schedule">schedule</span>
+<span class="font-body-medium text-[11px] tracking-wider uppercase text-[#5F6354] font-semibold">
+        Today · Chrome — Research Window
+      </span>
+</div>
+<button class="bg-[#F5F2E6] border border-[#E5E0CE] hover:bg-[#EDE9DA] text-[#4A4E40] font-body-medium text-[11px] px-2.5 py-0.5 rounded-full transition-colors flex items-center gap-1 shadow-2xs">
+<span>Restore all</span>
+<span class="font-code-sm text-[10px] text-[#8A8E7E]">⌘↵</span>
+</button>
+</div>
+<!-- Rows Container -->
+<div class="space-y-1">
+<!-- ROW 1 (SELECTED ACTIVE STATE) -->
+<div class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#DDEB9D]/[0.45] transition-colors cursor-pointer group">
+<!-- Deep green sharp 3px left indicator bar -->
+<div class="absolute left-0 top-2 bottom-2 w-[3px] bg-[#4F8A4B] rounded-r-full"></div>
+<div class="flex items-center gap-3 min-w-0 pr-2 pl-0.5">
+<!-- Stripe Favicon Tile -->
+<div class="w-8 h-8 rounded-lg bg-[#5F52FF] text-white flex items-center justify-center font-bold text-xs tracking-tighter shrink-0 shadow-xs">
+          S
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="font-body-medium text-[13px] font-medium text-[#1C1F17] truncate flex items-center gap-1.5">
+<span>Stripe</span>
+<mark class="bg-[#DDEB9D] text-[#1C1F17] px-1 py-0.5 rounded-[4px] font-semibold inline-block leading-tight">pricing</mark>
+<span class="text-[#1C1F17] truncate">— Compare plans</span>
+</div>
+<div class="font-code-sm text-[12px] text-[#5F6354] flex items-center gap-1.5">
+<span>stripe.com</span>
+<span class="text-[10px] text-[#8A8E7E]">/</span>
+<span class="text-[11px] text-[#8A8E7E] truncate">pricing/compare</span>
+</div>
+</div>
+</div>
+<!-- Metadata tags (Right Aligned) -->
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1.5 bg-[#F5F2E6] text-[#4A4E40] border border-[#E5E0CE] px-2.5 py-0.5 rounded-full text-[11px] font-medium shadow-2xs">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] shrink-0"></span>
+<span>Unused 61 active h</span>
+</span>
+<span class="font-body-md text-[11px] text-[#8A8E7E] whitespace-nowrap min-w-[90px] text-right">
+          Today, 2:14 PM
+        </span>
+</div>
+</div>
+<!-- ROW 2: Vercel -->
+<div class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-[#F4F0E1]/60 transition-colors cursor-pointer group bg-transparent">
+<div class="flex items-center gap-3 min-w-0 pr-2 pl-0.5">
+<!-- Vercel Favicon Tile -->
+<div class="w-8 h-8 rounded-lg bg-[#181A16] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+          ▲
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="font-body-medium text-[13px] font-medium text-[#1C1F17] truncate flex items-center gap-1.5">
+<span>Vercel</span>
+<mark class="bg-[#DDEB9D] text-[#1C1F17] px-1 py-0.5 rounded-[4px] font-semibold inline-block leading-tight">pricing</mark>
+</div>
+<div class="font-code-sm text-[12px] text-[#5F6354]">
+            vercel.com
+          </div>
+</div>
+</div>
+<!-- Metadata tags -->
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1.5 bg-[#F5F2E6] text-[#4A4E40] border border-[#E5E0CE] px-2.5 py-0.5 rounded-full text-[11px] font-medium shadow-2xs">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] shrink-0"></span>
+<span>Unused 48 active h</span>
+</span>
+<span class="font-body-md text-[11px] text-[#8A8E7E] whitespace-nowrap min-w-[90px] text-right">
+          Today, 1:50 PM
+        </span>
+</div>
+</div>
+<!-- ROW 3: Notion -->
+<div class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-[#F4F0E1]/60 transition-colors cursor-pointer group bg-transparent">
+<div class="flex items-center gap-3 min-w-0 pr-2 pl-0.5">
+<!-- Notion Favicon Tile -->
+<div class="w-8 h-8 rounded-lg bg-[#EFEBD8] border border-[#DDD8C4] text-[#1C1F17] flex items-center justify-center font-bold text-xs shrink-0 shadow-xs font-serif">
+          N
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="font-body-medium text-[13px] font-medium text-[#1C1F17] truncate flex items-center gap-1.5">
+<span>Notion — Q4</span>
+<mark class="bg-[#DDEB9D] text-[#1C1F17] px-1 py-0.5 rounded-[4px] font-semibold inline-block leading-tight">pricing</mark>
+<span>review</span>
+</div>
+<div class="font-code-sm text-[12px] text-[#5F6354]">
+            notion.so
+          </div>
+</div>
+</div>
+<!-- Metadata tags -->
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1.5 bg-[#F5F2E6] text-[#4A4E40] border border-[#E5E0CE] px-2.5 py-0.5 rounded-full text-[11px] font-medium shadow-2xs">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] shrink-0"></span>
+<span>Unused 26 active h</span>
+</span>
+<span class="font-body-md text-[11px] text-[#8A8E7E] whitespace-nowrap min-w-[90px] text-right">
+          Today, 11:30 AM
+        </span>
+</div>
+</div>
+</div>
+</div>
+<!-- GROUP 2: LAST TUESDAY · ARC — CLIENT SPACE -->
+<div>
+<!-- Group Header 2 -->
+<div class="px-3 pt-2 pb-2 flex items-center justify-between border-t border-[#E8E4D5]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-[#5F6354]" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-body-medium text-[11px] tracking-wider uppercase text-[#5F6354] font-semibold">
+        Last Tuesday · Arc — Client Space
+      </span>
+</div>
+</div>
+<!-- Rows Container -->
+<div class="space-y-1">
+<!-- ROW 4: Linear -->
+<div class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-[#F4F0E1]/60 transition-colors cursor-pointer group bg-transparent">
+<div class="flex items-center gap-3 min-w-0 pr-2 pl-0.5">
+<!-- Linear Favicon Tile -->
+<div class="w-8 h-8 rounded-lg bg-[#5E6AD2] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+          L
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="font-body-medium text-[13px] font-medium text-[#1C1F17] truncate flex items-center gap-1.5">
+<span>Linear</span>
+<mark class="bg-[#DDEB9D] text-[#1C1F17] px-1 py-0.5 rounded-[4px] font-semibold inline-block leading-tight">pricing</mark>
+</div>
+<div class="font-code-sm text-[12px] text-[#5F6354]">
+            linear.app
+          </div>
+</div>
+</div>
+<!-- Metadata tags -->
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1.5 bg-[#F5F2E6] text-[#4A4E40] border border-[#E5E0CE] px-2.5 py-0.5 rounded-full text-[11px] font-medium shadow-2xs">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] shrink-0"></span>
+<span>Inactive 5 days</span>
+</span>
+<span class="font-body-md text-[11px] text-[#8A8E7E] whitespace-nowrap min-w-[90px] text-right">
+          Tue, Oct 28
+        </span>
+</div>
+</div>
+<!-- ROW 5: Figma -->
+<div class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-[#F4F0E1]/60 transition-colors cursor-pointer group bg-transparent">
+<div class="flex items-center gap-3 min-w-0 pr-2 pl-0.5">
+<!-- Figma Favicon Tile -->
+<div class="w-8 h-8 rounded-lg bg-[#F24E1E] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+          F
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="font-body-medium text-[13px] font-medium text-[#1C1F17] truncate flex items-center gap-1.5">
+<span>Figma —</span>
+<mark class="bg-[#DDEB9D] text-[#1C1F17] px-1 py-0.5 rounded-[4px] font-semibold inline-block leading-tight">Pricing</mark>
+<span>page v3</span>
+</div>
+<div class="font-code-sm text-[12px] text-[#5F6354]">
+            figma.com
+          </div>
+</div>
+</div>
+<!-- Metadata tags -->
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1.5 bg-[#F5F2E6] text-[#4A4E40] border border-[#E5E0CE] px-2.5 py-0.5 rounded-full text-[11px] font-medium shadow-2xs">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] shrink-0"></span>
+<span>Inactive 6 days</span>
+</span>
+<span class="font-body-md text-[11px] text-[#8A8E7E] whitespace-nowrap min-w-[90px] text-right">
+          Tue, Oct 28
+        </span>
+</div>
+</div>
+</div>
+</div></div>
+<!-- 3. FOOTER BAR (Quick actions & Key hints) -->
+<div class="bg-[#FAF6E9] border-t border-[#E8E4D5] rounded-b-3xl px-5 py-3 flex items-center justify-between text-body-md">
+<!-- Shortcuts row -->
+<div class="flex items-center gap-2.5 text-[#5F6354]">
+<div class="flex items-center gap-1.5">
+<kbd class="px-1.5 py-0.5 rounded border border-[#DDD8C4] bg-[#FFFDF6] text-[#1C1F17] font-code-sm text-[11px] shadow-2xs">↵</kbd>
+<span class="font-body-medium text-[11px]">Restore</span>
+</div>
+<span class="text-[#CCC8B4]">•</span>
+<div class="flex items-center gap-1.5">
+<kbd class="px-1.5 py-0.5 rounded border border-[#DDD8C4] bg-[#FFFDF6] text-[#1C1F17] font-code-sm text-[11px] shadow-2xs">⌘↵</kbd>
+<span class="font-body-medium text-[11px]">Restore group</span>
+</div>
+<span class="text-[#CCC8B4]">•</span>
+<div class="flex items-center gap-1.5">
+<kbd class="px-1.5 py-0.5 rounded border border-[#DDD8C4] bg-[#FFFDF6] text-[#1C1F17] font-code-sm text-[11px] shadow-2xs">⌘P</kbd>
+<span class="font-body-medium text-[11px]">Protect</span>
+</div>
+<span class="text-[#CCC8B4]">•</span>
+<div class="flex items-center gap-1.5">
+<kbd class="px-1.5 py-0.5 rounded border border-[#DDD8C4] bg-[#FFFDF6] text-[#1C1F17] font-code-sm text-[11px] shadow-2xs">⌘I</kbd>
+<span class="font-body-medium text-[11px]">Details</span>
+</div>
+<span class="text-[#CCC8B4]">•</span>
+<div class="flex items-center gap-1.5">
+<kbd class="px-1.5 py-0.5 rounded border border-[#DDD8C4] bg-[#FFFDF6] text-[#1C1F17] font-code-sm text-[11px] shadow-2xs">esc</kbd>
+<span class="font-body-medium text-[11px]">Close</span>
+</div>
+</div>
+<!-- Right Count Status -->
+<div class="font-body-md text-[11px] text-[#5F6354] flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878]"></span>
+<span>5 of 318 archived</span>
+</div>
+</div>
+</div>
+</body></html>

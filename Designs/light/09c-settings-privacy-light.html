@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Settings — Privacy &amp; Data</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary": "#e6ffdd",
+            "secondary-fixed": "#c6ef9b",
+            "on-secondary-container": "#395b18",
+            "surface": "#fffbff",
+            "on-primary-fixed-variant": "#2e672d",
+            "on-error": "#ffffff",
+            "surface-container-low": "#fefae8",
+            "surface-container-high": "#f2efd5",
+            "secondary-dim": "#3f611e",
+            "surface-container": "#f8f4df",
+            "on-tertiary-fixed": "#444e11",
+            "error-dim": "#5c1202",
+            "tertiary-container": "#edfbac",
+            "surface-variant": "#ede9cc",
+            "on-secondary-fixed-variant": "#436521",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#ede9cc",
+            "background": "#fffbff",
+            "on-tertiary": "#ffffff",
+            "secondary": "#4b6e29",
+            "tertiary-fixed-dim": "#dfed9e",
+            "on-tertiary-container": "#556122",
+            "surface-tint": "#316a2f",
+            "primary-container": "#b2f3a8",
+            "tertiary": "#5e6a2a",
+            "inverse-on-surface": "#a09d92",
+            "secondary-fixed-dim": "#b8e18e",
+            "error-container": "#fe8b70",
+            "inverse-surface": "#0f0e08",
+            "primary-fixed-dim": "#a4e49b",
+            "on-surface-variant": "#67654e",
+            "tertiary-dim": "#525d1f",
+            "surface-bright": "#fffbff",
+            "error": "#a54731",
+            "on-surface": "#3a3924",
+            "on-primary-container": "#235d24",
+            "outline": "#848269",
+            "on-secondary-fixed": "#274705",
+            "inverse-primary": "#bafcb0",
+            "primary-fixed": "#b2f3a8",
+            "primary": "#316a2f",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-fixed": "#edfbac",
+            "outline-variant": "#bdba9f",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-background": "#3a3924",
+            "on-error-container": "#742410",
+            "primary-dim": "#245e25",
+            "surface-dim": "#e7e4c3",
+            "secondary-container": "#c6ef9b",
+            "on-primary-fixed": "#0c4a13"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "gutter": "1rem",
+            "margin": "1.5rem",
+            "space-xl": "2rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "label-sm": [
+              "DM Sans"
+            ],
+            "headline-md": [
+              "Newsreader"
+            ],
+            "headline-lg": [
+              "Newsreader"
+            ],
+            "body-medium": [
+              "DM Sans"
+            ],
+            "body-md": [
+              "DM Sans"
+            ],
+            "display-lg": [
+              "Newsreader"
+            ],
+            "code-sm": [
+              "JetBrains Mono"
+            ]
+          },
+          "fontSize": {
+            "label-sm": [
+              "11px",
+              {
+                "lineHeight": "14px",
+                "fontWeight": "400"
+              }
+            ],
+            "headline-md": [
+              "16px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "600"
+              }
+            ],
+            "headline-lg": [
+              "20px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "600"
+              }
+            ],
+            "body-medium": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-md": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ],
+            "display-lg": [
+              "32px",
+              {
+                "lineHeight": "38px",
+                "letterSpacing": "-0.02em",
+                "fontWeight": "600"
+              }
+            ],
+            "code-sm": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "400"
+              }
+            ]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    /* Custom scrollbar for subtle canvas feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #E8E2CC;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #D5CDAF;
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] min-h-screen flex items-center justify-center p-6 selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- macOS Desktop App Window Container (1100px x 900px) -->
+<div class="w-[1100px] h-[900px] bg-[#FAF6E9] rounded-[24px] shadow-[0_24px_60px_rgba(31,36,24,0.18)] border border-[#E8E2CC] flex flex-col overflow-hidden relative">
+<!-- Title Bar -->
+<div class="h-10 bg-[#FAF6E9] border-b border-[#E8E2CC] flex items-center justify-between px-4 select-none shrink-0 z-20">
+<!-- Traffic Light Buttons -->
+<div class="flex items-center gap-2 w-20">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] inline-block cursor-pointer shadow-sm hover:opacity-80 transition-opacity"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] inline-block cursor-pointer shadow-sm hover:opacity-80 transition-opacity"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] inline-block cursor-pointer shadow-sm hover:opacity-80 transition-opacity"></span>
+</div>
+<!-- Centered Window Title -->
+<div class="flex items-center gap-1.5 font-label-sm text-body-medium text-on-surface">
+<span class="text-xs text-on-surface font-medium">Settings</span>
+</div>
+<!-- Right Window Label / Version -->
+<div class="w-20 text-right font-code-sm text-code-sm text-on-surface-variant font-normal">
+        v1.4
+      </div>
+</div>
+<!-- Main Window Workspace -->
+<div class="flex flex-1 overflow-hidden p-5 gap-5">
+<!-- Left Sidebar Navigation Card -->
+<aside class="w-[200px] bg-white rounded-[22px] p-3 shadow-[0_1px_3px_rgba(31,36,24,0.04)] border border-stone-200/50 flex flex-col justify-between shrink-0 select-none">
+<!-- Navigation Links Stack -->
+<nav aria-label="Settings Categories" class="flex flex-col gap-0.5">
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">tune</span>
+<span>General</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">hourglass_empty</span>
+<span>Aging</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">verified_user</span>
+<span>Protection</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">language</span>
+<span>Browsers</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">rule</span>
+<span>Rules</span>
+</a>
+<!-- ACTIVE ITEM: Privacy & Data -->
+<a class="bg-[#DDEB9D] text-[#2C4A28] font-label-sm text-body-medium font-medium rounded-xl px-3 py-2 flex items-center gap-2.5 shadow-sm" href="#">
+<span class="material-symbols-outlined fill-icon text-[17px] text-[#2C4A28]">shield</span>
+<span class="tracking-tight">Privacy &amp; data</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">keyboard</span>
+<span>Shortcuts</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">notifications</span>
+<span>Notifications</span>
+</a>
+<a class="flex items-center justify-between px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-stone-400">key</span>
+<span>License</span>
+</div>
+<span class="bg-[#F3EEDC] text-[#556122] text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded-full uppercase border border-[#E8E2CC]">PRO</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">update</span>
+<span>Updates</span>
+</a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl font-label-sm text-body-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px] text-stone-400">info</span>
+<span>About</span>
+</a>
+</nav>
+<!-- Bottom Status Pill -->
+<div class="pt-2 border-t border-stone-100">
+<div class="flex items-center gap-2 bg-[#FAF6E9] border border-[#E8E2CC] px-2.5 py-1.5 rounded-xl">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+<span class="font-label-sm text-xs text-on-surface font-medium">Engine active</span>
+</div>
+</div>
+</aside>
+<!-- Right Main Content Area -->
+<main class="flex-1 overflow-y-auto pr-1">
+<!-- Header -->
+<header class="mb-4">
+<h1 class="font-headline-lg text-display-lg font-normal tracking-tight text-[#1E231B]">Privacy &amp; data</h1>
+<p class="font-label-sm text-body-md text-stone-500 mt-1">Everything Decay knows lives in an encrypted database on this Mac.</p>
+</header>
+<!-- Vertical Cards Stack (16px vertical gap) -->
+<div class="flex flex-col gap-4 pb-8">
+<!-- 1. Deep Green Banner Card -->
+<section class="bg-[#3D6A3A] text-white rounded-[22px] p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-2.5 mb-2">
+<span class="material-symbols-outlined text-white text-[20px] fill-icon">lock</span>
+<h2 class="font-headline-md text-headline-lg font-medium text-white tracking-tight">Local only</h2>
+</div>
+<p class="font-label-sm text-body-md text-white/90 max-w-xl leading-relaxed mb-4">
+                Decay runs completely on your machine. No telemetry or browsing history leaves your device.
+              </p>
+<!-- Three frosted chips -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="bg-white/15 backdrop-blur-md border border-white/20 text-white font-label-sm text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] font-bold">check</span>
+<span>No account</span>
+</div>
+<div class="bg-white/15 backdrop-blur-md border border-white/20 text-white font-label-sm text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] font-bold">check</span>
+<span>No analytics by default</span>
+</div>
+<div class="bg-white/15 backdrop-blur-md border border-white/20 text-white font-label-sm text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] font-bold">check</span>
+<span>Encrypted at rest</span>
+</div>
+</div>
+</div>
+<!-- Soft decorative highlight -->
+<div class="absolute -right-8 -bottom-8 w-40 h-40 bg-[#4F8A4B] rounded-full filter blur-2xl opacity-60 pointer-events-none"></div>
+</section>
+<!-- 2. Storage Card -->
+<section class="bg-white rounded-[22px] p-6 shadow-sm border border-stone-200/60">
+<h3 class="font-label-sm text-xs tracking-wider text-stone-400 font-bold uppercase mb-4">Storage</h3>
+<!-- Row 1: Archive size -->
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="font-label-sm text-body-medium text-stone-900 font-medium">Archive size</p>
+<p class="font-label-sm text-xs text-stone-400 font-normal">Local SQLite database on ~/Library/Application Support/Decay</p>
+</div>
+<div class="bg-stone-100 text-stone-700 font-code-sm text-code-sm px-2.5 py-1 rounded-md border border-stone-200/50">
+                318 items · 4.2 MB
+              </div>
+</div>
+<div class="border-t border-stone-100 my-3"></div>
+<!-- Row 2: Keep archived items for -->
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="font-label-sm text-body-medium text-stone-900 font-medium">Keep archived items for</p>
+<p class="font-label-sm text-xs text-stone-400 font-normal">Older snapshots automatically purged</p>
+</div>
+<button class="bg-[#FFFDF6] border border-stone-200 text-stone-700 font-label-sm text-xs font-medium px-3.5 py-1.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-stone-50 flex items-center gap-2 transition-colors">
+<span>Forever</span>
+<span class="material-symbols-outlined text-[14px] text-stone-500">expand_more</span>
+</button>
+</div>
+<div class="border-t border-stone-100 my-3"></div>
+<!-- Row 3: Automatic backups -->
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="font-label-sm text-body-medium text-stone-900 font-medium">Automatic backups</p>
+<p class="font-label-sm text-xs text-stone-400 font-normal">Daily, last 7 kept</p>
+</div>
+<!-- Green Toggle ON -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4F8A4B]"></div>
+</label>
+</div>
+</section>
+<!-- 3. Export & Import Card -->
+<section class="bg-white rounded-[22px] p-6 shadow-sm border border-stone-200/60">
+<h3 class="font-label-sm text-xs tracking-wider text-stone-400 font-bold uppercase mb-1">Export &amp; import</h3>
+<p class="font-label-sm text-xs text-stone-500 mb-4">Download your browsing ledger or restore snapshots from other machines.</p>
+<div class="flex gap-2.5 flex-wrap items-center">
+<button class="border border-stone-200 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 font-label-sm text-xs font-medium px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all">
+                Export JSON
+              </button>
+<button class="border border-stone-200 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 font-label-sm text-xs font-medium px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all">
+                Export bookmarks (HTML)
+              </button>
+<button class="border border-stone-200 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 font-label-sm text-xs font-medium px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all">
+                Export CSV
+              </button>
+<button class="border border-stone-200 bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-700 font-label-sm text-xs font-medium px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all">
+                Import…
+              </button>
+</div>
+</section>
+<!-- 4. Diagnostics Card -->
+<section class="bg-white rounded-[22px] p-6 shadow-sm border border-stone-200/60">
+<h3 class="font-label-sm text-xs tracking-wider text-stone-400 font-bold uppercase mb-4">Diagnostics</h3>
+<!-- Row 1: Share crash reports -->
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="font-label-sm text-body-medium text-stone-900 font-medium">Share anonymous crash reports</p>
+<p class="font-label-sm text-xs text-stone-400 font-normal">Helps fix bugs without sending URLs, titles, or browsing habits.</p>
+</div>
+<!-- Toggle OFF -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4F8A4B]"></div>
+</label>
+</div>
+<div class="border-t border-stone-100 my-3"></div>
+<!-- Row 2: Log files -->
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="font-label-sm text-body-medium text-stone-900 font-medium">Log files</p>
+<p class="font-label-sm text-xs text-stone-400 font-normal">Stored locally on disk for troubleshooting</p>
+</div>
+<button class="border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 font-label-sm text-xs font-medium px-3.5 py-1.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors">
+                Open logs folder
+              </button>
+</div>
+</section>
+<!-- 5. Danger Zone Card -->
+<section class="bg-[#FFFDFB] rounded-[22px] p-6 shadow-sm border border-red-200/80 bg-red-50/10">
+<h3 class="font-label-sm text-xs tracking-wider text-red-600 font-bold uppercase mb-2">Danger zone</h3>
+<div class="flex items-center justify-between">
+<p class="font-label-sm text-body-md text-stone-700">
+                Erase all archived items and settings. This can't be undone.
+              </p>
+<button class="border border-red-300 text-red-700 hover:bg-red-50 active:bg-red-100 font-label-sm text-xs font-medium px-4 py-2 rounded-full transition-colors shrink-0">
+                Erase everything…
+              </button>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</body></html>

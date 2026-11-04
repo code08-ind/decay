@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — 05-library-windows-light</title>
+<!-- Google Fonts: Newsreader, DM Sans, JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error-dim": "#5c1202",
+            "outline-variant": "#bdba9f",
+            "surface-dim": "#e7e4c3",
+            "tertiary": "#5e6a2a",
+            "secondary-fixed-dim": "#b8e18e",
+            "surface-bright": "#fffbff",
+            "on-error-container": "#742410",
+            "error-container": "#fe8b70",
+            "surface-tint": "#316a2f",
+            "on-secondary-container": "#395b18",
+            "outline": "#848269",
+            "surface-variant": "#ede9cc",
+            "secondary-fixed": "#c6ef9b",
+            "on-surface-variant": "#67654e",
+            "primary-fixed-dim": "#a4e49b",
+            "on-secondary-fixed-variant": "#436521",
+            "on-tertiary-container": "#556122",
+            "on-secondary": "#ffffff",
+            "on-surface": "#3a3924",
+            "primary-fixed": "#b2f3a8",
+            "inverse-surface": "#0f0e08",
+            "error": "#a54731",
+            "surface": "#fffbff",
+            "tertiary-fixed-dim": "#dfed9e",
+            "secondary": "#4b6e29",
+            "on-primary-container": "#235d24",
+            "tertiary-fixed": "#edfbac",
+            "primary": "#316a2f",
+            "on-error": "#ffffff",
+            "secondary-dim": "#3f611e",
+            "on-secondary-fixed": "#274705",
+            "inverse-on-surface": "#a09d92",
+            "tertiary-container": "#edfbac",
+            "on-primary-fixed-variant": "#2e672d",
+            "surface-container-high": "#f2efd5",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-primary": "#e6ffdd",
+            "surface-container-highest": "#ede9cc",
+            "primary-dim": "#245e25",
+            "on-background": "#3a3924",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#fefae8",
+            "inverse-primary": "#bafcb0",
+            "on-tertiary-fixed": "#444e11",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed": "#0c4a13",
+            "background": "#fffbff",
+            "secondary-container": "#c6ef9b",
+            "primary-container": "#b2f3a8",
+            "tertiary-dim": "#525d1f",
+            "surface-container": "#f8f4df",
+            /* Editorial calm tokens matching instructions */
+            "desktop-sage": "#7FA77A",
+            "decay-canvas": "#FAF6E9",
+            "decay-border": "#E8E2CC",
+            "decay-ink": "#1B1E19",
+            "decay-accent": "#4F8A4B",
+            "decay-accent-dark": "#3d6d3a",
+            "decay-light-sage": "#A0C878",
+            "decay-tint": "#DDEB9D"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "22": "1.375rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "margin": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "body-medium": ["DM Sans", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "display-lg": ["Newsreader", "serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "headline-md": ["Newsreader", "serif"]
+          },
+          "fontSize": {
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #E8E2CC;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] text-[#1B1E19] font-body-md text-body-md antialiased m-0 p-0 overflow-hidden select-none min-h-screen flex flex-col justify-between">
+<!-- Desktop Canvas Viewport Container -->
+<main class="flex-1 w-full flex items-center justify-center p-3 relative">
+<!-- Decay Application Window (1240px x 800px, 8px corners, Windows 11 Drop Shadow) -->
+<div class="w-[1240px] h-[800px] bg-[#FAF6E9] rounded-[8px] border border-[#E8E2CC] shadow-[0_20px_60px_-15px_rgba(27,30,25,0.28),0_0_0_1px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden relative">
+<!-- WINDOW TITLE BAR (Windows 11 Native Aesthetic, Cream #FAF6E9, clean center) -->
+<div class="h-10 px-3.5 bg-[#FAF6E9] border-b border-[#E8E2CC] flex items-center justify-between select-none shrink-0 z-20">
+<!-- Left: ONLY Decay Leaf Logo Icon + Serif 'Decay' Font -->
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-[#4F8A4B] flex items-center justify-center text-white shadow-xs">
+<span class="material-symbols-outlined text-[13px]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<span class="font-headline-md text-[17px] font-semibold tracking-tight text-[#1B1E19] pt-0.5">Decay</span>
+</div>
+<!-- Middle: COMPLETELY CLEAN (nothing centered) -->
+<div></div>
+<!-- Right: Windows 11 Native Caption Controls (Minimize, Maximize, Close) -->
+<div class="flex items-center h-full -mr-3.5">
+<button class="h-10 w-11 flex items-center justify-center hover:bg-[#F0ECE0] text-[#1B1E19]/70 transition-colors" title="Minimize">
+<svg class="w-3 h-3" stroke="currentColor" stroke-width="1" viewbox="0 0 12 12"><path d="M1 6h10"></path></svg>
+</button>
+<button class="h-10 w-11 flex items-center justify-center hover:bg-[#F0ECE0] text-[#1B1E19]/70 transition-colors" title="Maximize">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1" viewbox="0 0 12 12"><rect height="9" width="9" x="1.5" y="1.5"></rect></svg>
+</button>
+<button class="h-10 w-11 flex items-center justify-center hover:bg-[#E81123] hover:text-white text-[#1B1E19]/70 transition-colors" title="Close">
+<svg class="w-3 h-3" stroke="currentColor" stroke-width="1.1" viewbox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8"></path></svg>
+</button>
+</div>
+</div>
+<!-- WINDOW INTERIOR CONTENT -->
+<div class="flex-1 flex flex-col px-6 pt-3.5 pb-4 overflow-hidden gap-3.5 bg-[#FAF6E9]">
+<!-- 1. TOP NAVIGATION / TOOLBAR -->
+<div class="flex items-center justify-between shrink-0">
+<!-- Left Navigation Pill Group -->
+<nav class="flex items-center gap-1 bg-[#F0ECE0]/80 p-1 rounded-full border border-[#E8E2CC]/80">
+<button class="px-3.5 py-1 text-xs font-medium text-[#1B1E19]/75 rounded-full hover:text-[#1B1E19] hover:bg-[#FAF6E9]/60 transition-colors">Overview</button>
+<button class="px-3.5 py-1 text-xs font-semibold text-[#1B1E19] bg-white rounded-full shadow-[0_1px_3px_rgba(27,30,25,0.08)] border border-[#E8E2CC]/70 transition-colors">Library</button>
+<button class="px-3.5 py-1 text-xs font-medium text-[#1B1E19]/75 rounded-full hover:text-[#1B1E19] hover:bg-[#FAF6E9]/60 transition-colors">Live now</button>
+<button class="px-3.5 py-1 text-xs font-medium text-[#1B1E19]/75 rounded-full hover:text-[#1B1E19] hover:bg-[#FAF6E9]/60 transition-colors">Sweeps</button>
+<button class="px-3.5 py-1 text-xs font-medium text-[#1B1E19]/75 rounded-full hover:text-[#1B1E19] hover:bg-[#FAF6E9]/60 transition-colors">Rules</button>
+<button class="px-3.5 py-1 text-xs font-medium text-[#1B1E19]/75 rounded-full hover:text-[#1B1E19] hover:bg-[#FAF6E9]/60 transition-colors">Insights</button>
+</nav>
+<!-- Right Utility Controls -->
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-white border border-[#E8E2CC] flex items-center justify-center text-[#1B1E19]/80 hover:bg-[#F3EEDC] transition-colors shadow-xs" title="Search">
+<span class="material-symbols-outlined text-[16px]" data-icon="search">search</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-white border border-[#E8E2CC] flex items-center justify-center text-[#1B1E19]/80 hover:bg-[#F3EEDC] transition-colors shadow-xs relative" title="Notifications">
+<span class="material-symbols-outlined text-[16px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#4F8A4B] rounded-full"></span>
+</button>
+<div class="flex items-center gap-1.5 bg-white border border-[#E8E2CC] px-3 py-1 rounded-full text-xs font-medium text-[#1B1E19] shadow-xs">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+<span>Automatic</span>
+</div>
+</div>
+</div>
+<!-- 2. HEADER -->
+<header class="flex items-end justify-between shrink-0">
+<div>
+<h1 class="font-display-lg text-[28px] leading-tight font-semibold text-[#1B1E19] tracking-tight">Library</h1>
+<p class="font-body-md text-xs text-[#1B1E19]/60 mt-0.5">318 tabs and windows archived · nothing is ever lost</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3.5 py-1.5 bg-white border border-[#E8E2CC] text-[#1B1E19] rounded-full text-xs font-medium hover:bg-[#F3EEDC] transition-colors shadow-xs flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]" data-icon="visibility">visibility</span>
+              Shadow review
+            </button>
+<button class="w-8 h-8 rounded-full bg-white border border-[#E8E2CC] text-[#1B1E19]/80 hover:bg-[#F3EEDC] transition-colors flex items-center justify-center shadow-xs" title="Undo Last Sweep">
+<span class="material-symbols-outlined text-[15px]" data-icon="undo">undo</span>
+</button>
+<button class="px-3.5 py-1.5 bg-[#1B1E19] text-[#FFFDF6] rounded-full text-xs font-medium hover:bg-[#2C3127] transition-colors shadow-xs flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]" data-icon="bolt">bolt</span>
+              + Sweep now
+            </button>
+</div>
+</header>
+<!-- 3. FOUR STAT METRIC CARDS -->
+<section class="grid grid-cols-4 gap-3.5 shrink-0">
+<!-- Card 1 -->
+<div class="bg-white rounded-22 border border-[#E8E2CC] p-4 flex flex-col justify-between shadow-[0_1px_2px_rgba(31,36,24,0.03)]">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-[#1B1E19]/65">Open tabs</span>
+<span class="material-symbols-outlined text-[18px] text-[#4F8A4B]" data-icon="tab">tab</span>
+</div>
+<div class="flex items-baseline gap-2.5 my-1">
+<span class="font-display-lg text-[26px] leading-none font-semibold text-[#1B1E19]">41</span>
+<span class="bg-[#DDEB9D]/50 text-[#395b18] px-2 py-0.5 rounded-full text-[11px] font-medium inline-flex items-center gap-0.5">
+                ↓ 38% this week
+              </span>
+</div>
+<span class="text-[11px] text-[#1B1E19]/55">Down from 66 on Monday</span>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-22 border border-[#E8E2CC] p-4 flex flex-col justify-between shadow-[0_1px_2px_rgba(31,36,24,0.03)]">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-[#1B1E19]/65">Archived today</span>
+<span class="material-symbols-outlined text-[18px] text-[#4F8A4B]" data-icon="archive">archive</span>
+</div>
+<div class="flex items-baseline gap-2.5 my-1">
+<span class="font-display-lg text-[26px] leading-none font-semibold text-[#1B1E19]">14</span>
+<span class="bg-[#DDEB9D]/50 text-[#395b18] px-2 py-0.5 rounded-full text-[11px] font-medium">
+                11 tabs · 3 windows
+              </span>
+</div>
+<span class="text-[11px] text-[#1B1E19]/55">All restorable</span>
+</div>
+<!-- Card 3 -->
+<div class="bg-white rounded-22 border border-[#E8E2CC] p-4 flex flex-col justify-between shadow-[0_1px_2px_rgba(31,36,24,0.03)]">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-[#1B1E19]/65">Restored</span>
+<span class="material-symbols-outlined text-[18px] text-[#4F8A4B]" data-icon="restore">restore</span>
+</div>
+<div class="flex items-baseline gap-2.5 my-1">
+<span class="font-display-lg text-[26px] leading-none font-semibold text-[#1B1E19]">3</span>
+<span class="bg-[#DDEB9D]/50 text-[#395b18] px-2 py-0.5 rounded-full text-[11px] font-medium">
+                regret rate 2.1%
+              </span>
+</div>
+<span class="text-[11px] text-[#1B1E19]/55">Restored within minutes of a sweep</span>
+</div>
+<!-- Card 4 -->
+<div class="bg-white rounded-22 border border-[#E8E2CC] p-4 flex flex-col justify-between shadow-[0_1px_2px_rgba(31,36,24,0.03)]">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-[#1B1E19]/65">Active hours today</span>
+<span class="material-symbols-outlined text-[18px] text-[#4F8A4B]" data-icon="timer">timer</span>
+</div>
+<div class="flex items-baseline gap-2.5 my-1">
+<span class="font-display-lg text-[26px] leading-none font-semibold text-[#1B1E19]">5.2 h</span>
+</div>
+<span class="text-[11px] text-[#1B1E19]/55">Clock pauses when you're away</span>
+</div>
+</section>
+<!-- 4. MAIN CONTENT ROW (Two-column layout) -->
+<div class="flex-1 flex gap-3.5 overflow-hidden min-h-0">
+<!-- LEFT LIST CARD -->
+<div class="flex-1 bg-white rounded-22 border border-[#E8E2CC] flex flex-col overflow-hidden shadow-[0_1px_2px_rgba(31,36,24,0.03)]">
+<!-- Filter Bar & Search -->
+<div class="p-3 border-b border-[#E8E2CC] flex items-center justify-between gap-3 shrink-0">
+<!-- Pill segmented control -->
+<div class="flex items-center gap-1 bg-[#F0ECE0]/80 p-0.5 rounded-full border border-[#E8E2CC]/80">
+<button class="px-3 py-1 text-xs font-medium text-white bg-[#1B1E19] rounded-full shadow-xs">All (318)</button>
+<button class="px-3 py-1 text-xs font-medium text-[#1B1E19]/70 hover:text-[#1B1E19] rounded-full transition-colors">Tabs (284)</button>
+<button class="px-3 py-1 text-xs font-medium text-[#1B1E19]/70 hover:text-[#1B1E19] rounded-full transition-colors">Windows (34)</button>
+</div>
+<!-- Search input pill with shortcut -->
+<div class="relative flex-1 max-w-sm">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-[#1B1E19]/45" data-icon="search">search</span>
+<input class="w-full bg-[#FAF6E9] border border-[#E8E2CC] rounded-full pl-9 pr-14 py-1 text-xs text-[#1B1E19] placeholder-[#1B1E19]/45 focus:outline-none focus:ring-1 focus:ring-[#4F8A4B] focus:border-[#4F8A4B] transition-all" placeholder="Search by title, site or date…" type="text"/>
+<span class="absolute right-2.5 top-1/2 -translate-y-1/2 font-code-sm text-[10px] bg-[#E8E2CC]/60 px-1.5 py-0.5 rounded text-[#1B1E19]/70 font-medium">Ctrl+K</span>
+</div>
+</div>
+<!-- Table Header -->
+<div class="grid grid-cols-12 px-4 py-2 border-b border-[#E8E2CC]/70 bg-[#FAF6E9]/40 text-[11px] font-medium text-[#1B1E19]/60 shrink-0 uppercase tracking-wider">
+<div class="col-span-5">Item</div>
+<div class="col-span-3">Source</div>
+<div class="col-span-2">Reason</div>
+<div class="col-span-2 text-right">Archived</div>
+</div>
+<!-- Table 5 Data Rows (dense 40px–50px row heights) -->
+<div class="flex-1 overflow-y-auto custom-scroll divide-y divide-[#E8E2CC]/40">
+<!-- Row 1 (SELECTED) -->
+<div class="grid grid-cols-12 px-4 py-2.5 items-center bg-[#F4F8EB] relative transition-colors cursor-pointer group">
+<!-- Left Sage/Green vertical indicator bar -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#4F8A4B]"></div>
+<div class="col-span-5 flex items-center gap-2.5 pl-1.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center font-bold text-xs shrink-0">
+                    S
+                  </div>
+<div class="truncate">
+<p class="text-xs font-semibold text-[#1B1E19] truncate">Stripe pricing — Compare plans</p>
+<p class="font-code-sm text-[11px] text-[#1B1E19]/50 truncate">stripe.com/pricing</p>
+</div>
+</div>
+<div class="col-span-3 flex items-center gap-1.5 text-xs text-[#1B1E19]/80 truncate">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] shrink-0"></span>
+<span class="truncate">Chrome — Research</span>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#DDEB9D]/60 text-[#395b18] rounded-full text-[11px] font-medium">
+<span class="w-1 h-1 rounded-full bg-[#4F8A4B]"></span>
+                    Unused 61 h
+                  </span>
+</div>
+<div class="col-span-2 text-right text-xs text-[#1B1E19]/60 font-body-md">
+                  Today, 2:14 PM
+                </div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-[#FAF6E9]/60 transition-colors cursor-pointer group">
+<div class="col-span-5 flex items-center gap-2.5 pl-1.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#5E6AD2]/10 text-[#5E6AD2] flex items-center justify-center font-bold text-xs shrink-0">
+                    L
+                  </div>
+<div class="truncate">
+<p class="text-xs font-medium text-[#1B1E19] truncate">Linear — Cycle 42 roadmap</p>
+<p class="font-code-sm text-[11px] text-[#1B1E19]/50 truncate">linear.app</p>
+</div>
+</div>
+<div class="col-span-3 flex items-center gap-1.5 text-xs text-[#1B1E19]/80 truncate">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] shrink-0"></span>
+<span class="truncate">Chrome — Product</span>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FAF6E9] border border-[#E8E2CC] text-[#395b18] rounded-full text-[11px] font-medium">
+<span class="w-1 h-1 rounded-full bg-[#4F8A4B]"></span>
+                    Unused 48 h
+                  </span>
+</div>
+<div class="col-span-2 text-right text-xs text-[#1B1E19]/60 font-body-md">
+                  Today, 1:50 PM
+                </div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-[#FAF6E9]/60 transition-colors cursor-pointer group">
+<div class="col-span-5 flex items-center gap-2.5 pl-1.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#24292F]/10 text-[#24292F] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[15px]" data-icon="code">code</span>
+</div>
+<div class="truncate">
+<p class="text-xs font-medium text-[#1B1E19] truncate">Pull request #418: cache invalidation</p>
+<p class="font-code-sm text-[11px] text-[#1B1E19]/50 truncate">github.com</p>
+</div>
+</div>
+<div class="col-span-3 flex items-center gap-1.5 text-xs text-[#1B1E19]/80 truncate">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] shrink-0"></span>
+<span class="truncate">Edge — Engineering</span>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FAF6E9] border border-[#E8E2CC] text-[#395b18] rounded-full text-[11px] font-medium">
+<span class="w-1 h-1 rounded-full bg-[#4F8A4B]"></span>
+                    Unused 24 h
+                  </span>
+</div>
+<div class="col-span-2 text-right text-xs text-[#1B1E19]/60 font-body-md">
+                  Today, 11:20 AM
+                </div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-[#FAF6E9]/60 transition-colors cursor-pointer group">
+<div class="col-span-5 flex items-center gap-2.5 pl-1.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#F24E1E]/10 text-[#F24E1E] flex items-center justify-center font-bold text-xs shrink-0">
+                    F
+                  </div>
+<div class="truncate">
+<p class="text-xs font-medium text-[#1B1E19] truncate">Design System v2.4 (Components &amp; tokens)</p>
+<p class="font-code-sm text-[11px] text-[#1B1E19]/50 truncate">figma.com</p>
+</div>
+</div>
+<div class="col-span-3 flex items-center gap-1.5 text-xs text-[#1B1E19]/80 truncate">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] shrink-0"></span>
+<span class="truncate">Edge — Design</span>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FAF6E9] border border-[#E8E2CC] text-[#395b18] rounded-full text-[11px] font-medium">
+<span class="w-1 h-1 rounded-full bg-[#4F8A4B]"></span>
+                    Unused 18 h
+                  </span>
+</div>
+<div class="col-span-2 text-right text-xs text-[#1B1E19]/60 font-body-md">
+                  Today, 10:05 AM
+                </div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-[#FAF6E9]/60 transition-colors cursor-pointer group">
+<div class="col-span-5 flex items-center gap-2.5 pl-1.5 min-w-0">
+<div class="w-6 h-6 rounded bg-[#D99B00]/15 text-[#D99B00] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[15px]" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+</div>
+<div class="truncate">
+<p class="text-xs font-medium text-[#1B1E19] truncate">Invoices-2024</p>
+<p class="font-code-sm text-[11px] text-[#1B1E19]/50 truncate">File Explorer window</p>
+</div>
+</div>
+<div class="col-span-3 flex items-center gap-1.5 text-xs text-[#1B1E19]/80 truncate">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B] shrink-0"></span>
+<span class="truncate">File Explorer</span>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FAF6E9] border border-[#E8E2CC] text-[#395b18] rounded-full text-[11px] font-medium">
+<span class="w-1 h-1 rounded-full bg-[#4F8A4B]"></span>
+                    Inactive 3 days
+                  </span>
+</div>
+<div class="col-span-2 text-right text-xs text-[#1B1E19]/60 font-body-md">
+                  Today, 9:15 AM
+                </div>
+</div>
+</div>
+<!-- Bottom footer -->
+<div class="p-2.5 px-4 bg-[#FAF6E9]/40 border-t border-[#E8E2CC] flex items-center justify-between text-xs text-[#1B1E19]/60 shrink-0">
+<span>Displaying 5 of 318 archived records</span>
+<button class="hover:text-[#1B1E19] transition-colors flex items-center gap-1 text-[11px] font-medium">
+<span class="material-symbols-outlined text-[13px]" data-icon="download">download</span>
+                Export JSON
+              </button>
+</div>
+</div>
+<!-- RIGHT DETAIL INSPECTOR CARD (Forest green #4F8A4B background, compact vertical padding to prevent clipping) -->
+<div class="w-[340px] bg-[#4F8A4B] text-white rounded-22 p-4 flex flex-col justify-between shrink-0 shadow-[0_12px_32px_rgba(49,106,47,0.22)]">
+<!-- Top Section -->
+<div class="flex flex-col gap-2.5">
+<!-- Header with green dot & close icon -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+<span class="text-[10px] font-semibold tracking-wider text-[#DDEB9D] uppercase">Archived Item Detail</span>
+</div>
+<button class="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-white/80 transition-colors" title="Close Panel">
+<span class="material-symbols-outlined text-[15px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- Title -->
+<div>
+<h2 class="font-headline-lg text-[18px] leading-snug font-medium text-white tracking-tight">Stripe pricing — Compare plans</h2>
+</div>
+<!-- Mono URL Bar -->
+<div class="flex items-center justify-between bg-black/15 border border-white/10 rounded-lg px-2.5 py-1.5">
+<span class="font-code-sm text-[11px] text-[#DDEB9D] truncate pr-2">stripe.com/pricing</span>
+<button class="text-white/70 hover:text-white transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[14px]" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+<!-- Lifecycle Track (compact 4-line tracker with connecting vertical line) -->
+<div class="py-1">
+<span class="text-[10px] uppercase font-semibold text-white/60 tracking-wider block mb-2">Lifecycle History</span>
+<div class="relative pl-5 space-y-2 text-xs">
+<!-- Connecting vertical line -->
+<div class="absolute left-1.5 top-1 bottom-1 w-px bg-white/20"></div>
+<!-- 1. Opened -->
+<div class="relative flex items-center justify-between text-white/75">
+<span class="absolute -left-5 w-3 h-3 rounded-full bg-[#4F8A4B] border-2 border-white/40 flex items-center justify-center"></span>
+<span>Opened</span>
+<span class="font-code-sm text-[11px] text-white/50">Mon 9:02 AM</span>
+</div>
+<!-- 2. Last used -->
+<div class="relative flex items-center justify-between text-white/75">
+<span class="absolute -left-5 w-3 h-3 rounded-full bg-[#4F8A4B] border-2 border-white/40 flex items-center justify-center"></span>
+<span>Last used</span>
+<span class="font-code-sm text-[11px] text-white/50">Mon 4:40 PM</span>
+</div>
+<!-- 3. Stale -->
+<div class="relative flex items-center justify-between text-white/75">
+<span class="absolute -left-5 w-3 h-3 rounded-full bg-[#4F8A4B] border-2 border-[#DDEB9D] flex items-center justify-center"></span>
+<span>Stale</span>
+<span class="font-code-sm text-[11px] text-white/50">Wed 9:18 AM</span>
+</div>
+<!-- 4. Archived -->
+<div class="relative flex items-center justify-between text-white font-medium">
+<span class="absolute -left-5 w-3 h-3 rounded-full bg-[#DDEB9D] border border-white"></span>
+<span>Archived</span>
+<span class="font-code-sm text-[11px] text-[#DDEB9D]">Today 2:14 PM <span class="text-white/50 text-[10px]">(#409)</span></span>
+</div>
+</div>
+</div>
+<!-- Note Box -->
+<div class="bg-black/15 border border-white/10 rounded-xl p-2.5 flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-[#DDEB9D] shrink-0 mt-0.5" data-icon="info">info</span>
+<p class="text-[11px] leading-relaxed text-white/80">
+                  Decay saves the address, not the page. Unsaved form input won't come back.
+                </p>
+</div>
+</div>
+<!-- Bottom Action Buttons (Fully visible, no clipping) -->
+<div class="flex items-center gap-1.5 pt-2">
+<button class="flex-1 bg-white text-[#1B1E19] hover:bg-[#FAF6E9] transition-colors py-1.5 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1 shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-[#4F8A4B]" data-icon="restore">restore</span>
+                Restore
+              </button>
+<button class="bg-transparent border border-white/30 text-white hover:bg-white/10 transition-colors py-1.5 px-3 rounded-full text-xs font-medium flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified_user">verified_user</span>
+                Always protect
+              </button>
+<button class="w-8 h-8 rounded-full border border-white/20 hover:bg-white/10 transition-colors flex items-center justify-center text-white/80 shrink-0" title="Dismiss Item">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- NATIVE WINDOWS 11 LIGHT TASKBAR (Bottom of screen) -->
+<footer class="h-12 w-full bg-[#F3EEDC]/90 backdrop-blur-md border-t border-[#E8E2CC] flex items-center justify-between px-3 select-none shrink-0 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+<!-- Bottom-Left: Weather Widget -->
+<div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-[#FAF6E9]/60 cursor-pointer transition-colors w-48">
+<span class="material-symbols-outlined text-[18px] text-[#D99B00]" data-icon="wb_sunny">wb_sunny</span>
+<div class="flex flex-col text-[11px] leading-tight text-[#1B1E19]">
+<span class="font-medium">68°F</span>
+<span class="text-[#1B1E19]/65 text-[10px]">Mostly sunny</span>
+</div>
+</div>
+<!-- Centered App Icons (Windows Start logo, Search, Task View, Widgets, Explorer, Edge, Decay leaf in active state) -->
+<div class="flex items-center gap-1.5">
+<!-- Windows Start Logo -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#0078D4]" title="Start">
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 16 16">
+<path d="M0 2.25L6.5 1.35V7.5H0V2.25ZM0 8.5H6.5V14.65L0 13.75V8.5ZM7.5 1.21L16 0V7.5H7.5V1.21ZM7.5 8.5H16V16L7.5 14.79V8.5Z"></path>
+</svg>
+</button>
+<!-- Search -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#1B1E19]/80" title="Search">
+<span class="material-symbols-outlined text-[18px]" data-icon="search">search</span>
+</button>
+<!-- Task View -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#1B1E19]/80" title="Task View">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16">
+<rect height="12" rx="1" width="6" x="2" y="2"></rect>
+<rect height="12" rx="1" width="6" x="8" y="2"></rect>
+</svg>
+</button>
+<!-- Widgets -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#1B1E19]/80" title="Widgets">
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 16 16">
+<rect height="5" rx="1" width="5" x="1.5" y="1.5"></rect>
+<rect height="5" rx="1" width="5" x="9.5" y="1.5"></rect>
+<rect height="5" rx="1" width="5" x="1.5" y="9.5"></rect>
+<rect height="5" rx="1" width="5" x="9.5" y="9.5"></rect>
+</svg>
+</button>
+<!-- File Explorer -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#E68A00]" title="File Explorer">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+</button>
+<!-- Microsoft Edge -->
+<button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-[#FAF6E9]/70 active:scale-95 transition-all text-[#0078D7]" title="Microsoft Edge">
+<span class="material-symbols-outlined text-[20px]" data-icon="language">language</span>
+</button>
+<!-- Decay Leaf Icon (ACTIVE STATE with bottom indicator bar) -->
+<button class="w-9 h-9 rounded-md flex flex-col items-center justify-center bg-[#FAF6E9] shadow-xs border border-[#E8E2CC] relative active:scale-95 transition-all group" title="Decay (Running)">
+<div class="w-5 h-5 rounded-full bg-[#4F8A4B] flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[13px]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<!-- Active App Indicator Bar -->
+<span class="absolute bottom-0.5 w-3.5 h-[3px] bg-[#4F8A4B] rounded-full"></span>
+</button>
+</div>
+<!-- Bottom-Right: System Tray (Wi-Fi, speaker, battery, Decay leaf with badge '7', clock 2:21 PM, date 11/4/2026) -->
+<div class="flex items-center gap-1.5 w-48 justify-end text-xs text-[#1B1E19]">
+<!-- Decay Notification Badge in Tray -->
+<div class="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-[#FAF6E9]/60 cursor-pointer transition-colors relative" title="Decay: 7 items swept today">
+<span class="material-symbols-outlined text-[16px] text-[#4F8A4B]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+<span class="bg-[#4F8A4B] text-white text-[9px] font-bold px-1 rounded-full leading-tight">7</span>
+</div>
+<!-- System Status Cluster (Wi-Fi, Volume, Battery) -->
+<div class="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-[#FAF6E9]/60 cursor-pointer transition-colors text-[#1B1E19]/80">
+<span class="material-symbols-outlined text-[16px]" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="volume_up">volume_up</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="battery_full">battery_full</span>
+</div>
+<!-- Clock & Date -->
+<div class="flex flex-col text-right px-2 py-0.5 rounded hover:bg-[#FAF6E9]/60 cursor-pointer transition-colors leading-tight font-body-md">
+<span class="font-medium text-[11px] text-[#1B1E19]">2:21 PM</span>
+<span class="text-[10px] text-[#1B1E19]/65">11/4/2026</span>
+</div>
+</div>
+</footer>
+</body></html>

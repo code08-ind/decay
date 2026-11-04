@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — What's New 1.5</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: Newsreader & DM Sans & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-surface": "#0f0e08",
+            "secondary-container": "#c6ef9b",
+            "surface-container": "#f8f4df",
+            "surface-container-low": "#fefae8",
+            "inverse-on-surface": "#a09d92",
+            "on-tertiary-fixed": "#444e11",
+            "tertiary-dim": "#525d1f",
+            "surface-container-highest": "#ede9cc",
+            "primary-fixed-dim": "#a4e49b",
+            "primary-container": "#b2f3a8",
+            "tertiary-container": "#edfbac",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "tertiary-fixed-dim": "#dfed9e",
+            "surface-variant": "#ede9cc",
+            "primary-fixed": "#b2f3a8",
+            "on-secondary-fixed": "#274705",
+            "on-surface": "#3a3924",
+            "on-primary-fixed-variant": "#2e672d",
+            "on-secondary-fixed-variant": "#436521",
+            "on-surface-variant": "#67654e",
+            "surface-container-lowest": "#ffffff",
+            "secondary-dim": "#3f611e",
+            "tertiary": "#5e6a2a",
+            "error-container": "#fe8b70",
+            "surface-dim": "#e7e4c3",
+            "error-dim": "#5c1202",
+            "surface": "#fffbff",
+            "on-tertiary-container": "#556122",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#395b18",
+            "on-tertiary": "#ffffff",
+            "on-error-container": "#742410",
+            "primary-dim": "#245e25",
+            "surface-container-high": "#f2efd5",
+            "inverse-primary": "#bafcb0",
+            "tertiary-fixed": "#edfbac",
+            "surface-bright": "#fffbff",
+            "primary": "#316a2f",
+            "background": "#fffbff",
+            "secondary-fixed": "#c6ef9b",
+            "on-primary": "#e6ffdd",
+            "surface-tint": "#316a2f",
+            "outline-variant": "#bdba9f",
+            "error": "#a54731",
+            "on-primary-fixed": "#0c4a13",
+            "on-primary-container": "#235d24",
+            "on-background": "#3a3924",
+            "outline": "#848269",
+            "secondary": "#4b6e29",
+            "secondary-fixed-dim": "#b8e18e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "1.5rem"
+          },
+          "fontFamily": {
+            "body-medium": ["DM Sans"],
+            "label-sm": ["DM Sans"],
+            "headline-md": ["Newsreader"],
+            "headline-lg": ["Newsreader"],
+            "display-lg": ["Newsreader"],
+            "body-md": ["DM Sans"],
+            "code-sm": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #bdba9f;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] h-screen w-screen overflow-hidden flex items-center justify-center font-body-md text-body-md select-none relative">
+<!-- ========================================================================= -->
+<!-- 1. BACKGROUND APP WINDOW (DECAY OVERVIEW - DIMMED UNDER SHEET)             -->
+<!-- ========================================================================= -->
+<div class="w-[1100px] h-[720px] bg-surface-container-low rounded-2xl shadow-2xl border border-outline-variant/40 flex flex-col overflow-hidden relative pointer-events-none transform scale-[0.98] transition-all duration-300">
+<!-- Window Titlebar / Header -->
+<header class="h-10 bg-surface-container border-b border-outline-variant/30 flex items-center justify-between px-4">
+<!-- Traffic lights -->
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-[#EA6B5E] border border-black/10 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#F5BF4F] border border-black/10 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#61C554] border border-black/10 inline-block"></span>
+</div>
+<!-- Segmented Pill Navigation -->
+<div class="flex items-center bg-surface-variant/70 p-0.5 rounded-lg border border-outline-variant/20 text-xs">
+<span class="px-2.5 py-1 rounded bg-surface text-on-surface font-medium shadow-xs">Overview</span>
+<span class="px-2.5 py-1 text-on-surface-variant">Library 318</span>
+<span class="px-2.5 py-1 text-on-surface-variant">Live now</span>
+<span class="px-2.5 py-1 text-on-surface-variant">Sweeps</span>
+<span class="px-2.5 py-1 text-on-surface-variant">Rules</span>
+<span class="px-2.5 py-1 text-on-surface-variant">Insights</span>
+</div>
+<!-- Right Window Utilities -->
+<div class="flex items-center gap-3 text-xs text-on-surface-variant">
+<div class="flex items-center gap-1.5 bg-surface px-2.5 py-1 rounded-md border border-outline-variant/30 text-outline">
+<span class="material-symbols-outlined text-[15px]" data-icon="search">search</span>
+<span class="text-[11px]">Filter tabs...</span>
+</div>
+<div class="flex items-center gap-1 font-body-medium text-body-medium text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>Automatic</span>
+</div>
+</div>
+</header>
+<!-- App Window Body Canvas -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-[232px] bg-surface-container border-r border-outline-variant/30 p-3 flex flex-col justify-between">
+<div class="space-y-1">
+<div class="px-2 py-1.5 text-xs text-on-surface-variant font-label-sm uppercase tracking-wider font-semibold">Triage</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 bg-secondary-container text-on-secondary-container rounded-lg font-medium text-xs">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px]" data-icon="tab">tab</span>All Active</span>
+<span class="text-[11px] font-code-sm">41</span>
+</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 text-on-surface-variant rounded-lg text-xs">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px]" data-icon="hourglass_empty">hourglass_empty</span>Stale Tabs</span>
+<span class="text-[11px] font-code-sm">7</span>
+</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 text-on-surface-variant rounded-lg text-xs">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px]" data-icon="archive">archive</span>Archived</span>
+<span class="text-[11px] font-code-sm">52</span>
+</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 text-on-surface-variant rounded-lg text-xs">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px]" data-icon="verified_user">verified_user</span>Protected</span>
+<span class="text-[11px] font-code-sm">14</span>
+</div>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 space-y-1">
+<div class="flex items-center gap-2 px-2.5 py-1 text-on-surface-variant text-xs"><span class="material-symbols-outlined text-[16px]" data-icon="history">history</span>Activity Log</div>
+<div class="flex items-center gap-2 px-2.5 py-1 text-on-surface-variant text-xs"><span class="material-symbols-outlined text-[16px]" data-icon="tune">tune</span>Settings</div>
+</div>
+</aside>
+<!-- Main Overview Canvas -->
+<main class="flex-1 p-6 space-y-5 bg-[#FAF6E9]">
+<div class="flex items-baseline justify-between border-b border-outline-variant/20 pb-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Tab Vitality Overview</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitoring Safari, Brave &amp; Chromium instances.</p>
+</div>
+<div class="flex gap-2">
+<div class="bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs text-on-surface">Space: Design Research</div>
+</div>
+</div>
+<!-- Metric Bento Row -->
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface p-4 rounded-xl border border-outline-variant/30">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Open tabs</span>
+<div class="font-display-lg text-display-lg text-on-surface mt-1">41</div>
+<span class="text-[11px] text-primary">Safari (28) · Chrome (13)</span>
+</div>
+<div class="bg-surface p-4 rounded-xl border border-outline-variant/30">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Getting stale (&gt;3h)</span>
+<div class="font-display-lg text-display-lg text-[#BD7328] mt-1">7</div>
+<span class="text-[11px] text-on-surface-variant">Next decay sweep in 18m</span>
+</div>
+<div class="bg-surface p-4 rounded-xl border border-outline-variant/30">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Archived this week</span>
+<div class="font-display-lg text-display-lg text-primary mt-1">52</div>
+<span class="text-[11px] text-primary">Saved ~1.4 GB memory</span>
+</div>
+</div>
+<!-- Sample List -->
+<div class="bg-surface rounded-xl border border-outline-variant/30 divide-y divide-outline-variant/20">
+<div class="px-4 py-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-body-medium text-body-medium text-on-surface">Figma — Decay Component Design System v1.5</span>
+</div>
+<span class="text-on-surface-variant font-code-sm text-code-sm">Idle for 4h 12m</span>
+</div>
+<div class="px-4 py-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-[#BD7328]"></span>
+<span class="font-body-medium text-body-medium text-on-surface">W3C WebGL Shaders Specification Draft</span>
+</div>
+<span class="text-on-surface-variant font-code-sm text-code-sm">Idle for 2h 45m</span>
+</div>
+<div class="px-4 py-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-medium text-body-medium text-on-surface">GitHub Pull Request #142 · Multi-window restoration</span>
+</div>
+<span class="text-on-surface-variant font-code-sm text-code-sm">Active 4m ago</span>
+</div>
+</div>
+</main>
+</div>
+<!-- Soft Overlay Mask to dim window -->
+<div class="absolute inset-0 bg-[#142316]/25 backdrop-blur-[2px]"></div>
+</div>
+<!-- ========================================================================= -->
+<!-- 2. MACOS UPDATE BANNER TOAST (TOP RIGHT OF WINDOW)                         -->
+<!-- ========================================================================= -->
+<div class="absolute top-8 right-12 z-40 bg-surface/95 backdrop-blur-md rounded-full px-3.5 py-2 border border-outline-variant/50 shadow-lg flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+<div class="w-6 h-6 rounded-full bg-[#EBF3E2] flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[15px]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div class="text-xs font-body-medium text-on-surface">
+<span>Decay 1.5 is ready</span>
+<span class="text-on-surface-variant font-normal"> · Restart to update</span>
+</div>
+<button class="bg-[#181B16] hover:bg-black text-white text-xs font-body-medium px-3 py-1 rounded-full transition-colors active:scale-95">
+      Restart
+    </button>
+</div>
+<!-- ========================================================================= -->
+<!-- 3. CENTERED "WHAT'S NEW" MODAL SHEET                                       -->
+<!-- ========================================================================= -->
+<div class="absolute z-50 w-[640px] max-h-[610px] bg-[#FAF7EE] rounded-[24px] border border-black/5 shadow-[0_24px_60px_rgba(20,30,18,0.22)] flex flex-col p-6 overflow-hidden">
+<!-- Modal Header -->
+<header class="flex items-start justify-between pb-1">
+<div class="flex items-center gap-3">
+<!-- Brand Mark Circle -->
+<div class="w-10 h-10 rounded-full bg-[#EBF3E2] border border-[#DEECCF] flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[22px]" data-icon="eco" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div>
+<!-- Pill & Date Row -->
+<div class="flex items-center gap-2">
+<span class="bg-[#DDEB9D] text-[#2C4119] font-body-medium text-[11px] px-2.5 py-0.5 rounded-full inline-flex items-center tracking-tight">
+              Updated to 1.5
+            </span>
+<span class="text-[11px] text-[#6F7A6A] font-body-md">4 November 2026</span>
+</div>
+<!-- Title -->
+<h2 class="font-headline-lg text-headline-lg text-[#181B16] mt-0.5 leading-snug">
+            What's new in Decay
+          </h2>
+</div>
+</div>
+<!-- Close Button (x) -->
+<button aria-label="Close dialog" class="w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[17px]" data-icon="close">close</span>
+</button>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto custom-scroll pr-1 mt-3 space-y-3.5">
+<!-- HERO CARD: Deep Green Highlight Card -->
+<section class="bg-[#4F8A4B] rounded-[20px] p-4 text-white shadow-sm border border-[#3E703A]">
+<div class="flex items-center gap-1.5 text-[11px] font-body-medium tracking-wide text-white/90">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-code-sm text-[10px] tracking-wider uppercase">Major Feature</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white mt-1">
+          Restore whole windows
+        </h3>
+<p class="font-body-md text-body-md text-white/85 leading-relaxed mt-0.5">
+          Bring back a window exactly as it was — every tab, in order, in the same Space.
+        </p>
+<!-- Frosted window preview card -->
+<div class="bg-white/15 backdrop-blur-sm rounded-xl p-3 mt-3 flex items-center justify-between border border-white/15">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[16px]" data-icon="folder_open">folder_open</span>
+</div>
+<div>
+<div class="text-xs font-body-medium text-white">Research — 8 tabs</div>
+<div class="text-[10px] text-white/70 font-body-md">Last closed 2h ago · Space 2</div>
+</div>
+</div>
+<button class="bg-white/90 hover:bg-white text-[#2C4119] text-[11px] font-body-medium px-3 py-1 rounded-full flex items-center gap-1 shadow-xs transition-colors">
+<span>Restore window</span>
+<span class="material-symbols-outlined text-[13px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- FEATURE LIST: 3 White Rows -->
+<section class="space-y-2">
+<!-- Row 1: Faster Search -->
+<div class="bg-white rounded-[16px] p-3 border border-[#ECE7DA] flex items-start gap-3 transition-colors hover:border-[#DFD7C4]">
+<div class="w-8 h-8 rounded-full bg-[#EAF3E2] flex items-center justify-center text-[#4F8A4B] shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="search">search</span>
+</div>
+<div class="flex-1">
+<div class="text-xs font-body-medium text-[#181B16]">Faster search</div>
+<div class="text-xs text-[#6F7A6A] font-body-md leading-relaxed mt-0.5">
+              Results appear as you type, even with 10,000 archived items.
+            </div>
+</div>
+</div>
+<!-- Row 2: Meeting Mode -->
+<div class="bg-white rounded-[16px] p-3 border border-[#ECE7DA] flex items-start gap-3 transition-colors hover:border-[#DFD7C4]">
+<div class="w-8 h-8 rounded-full bg-[#EAF3E2] flex items-center justify-center text-[#4F8A4B] shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="present_to_all">present_to_all</span>
+</div>
+<div class="flex-1">
+<div class="text-xs font-body-medium text-[#181B16]">Meeting mode</div>
+<div class="text-xs text-[#6F7A6A] font-body-md leading-relaxed mt-0.5">
+              Sweeps pause automatically while you share your screen.
+            </div>
+</div>
+</div>
+<!-- Row 3: Edge Support -->
+<div class="bg-white rounded-[16px] p-3 border border-[#ECE7DA] flex items-start gap-3 transition-colors hover:border-[#DFD7C4]">
+<div class="w-8 h-8 rounded-full bg-[#EAF3E2] flex items-center justify-center text-[#4F8A4B] shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="language">language</span>
+</div>
+<div class="flex-1">
+<div class="text-xs font-body-medium text-[#181B16]">Edge support</div>
+<div class="text-xs text-[#6F7A6A] font-body-md leading-relaxed mt-0.5">
+              Microsoft Edge now works out of the box with zero setup.
+            </div>
+</div>
+</div>
+</section>
+</div>
+<!-- MODAL FOOTER -->
+<footer class="pt-3.5 mt-2 border-t border-[#E8E2CC]/80 flex items-center justify-between">
+<a class="text-xs text-[#5F6A5B] hover:text-[#181B16] font-body-medium inline-flex items-center gap-1 transition-colors" href="#">
+<span>Full changelog</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="east">east</span>
+</a>
+<div class="flex items-center gap-2">
+<button class="bg-white hover:bg-neutral-50 text-[#181B16] border border-[#E0DCD0] text-xs font-body-medium px-4 py-1.5 rounded-full transition-colors active:scale-95">
+          Later
+        </button>
+<button class="bg-[#181B16] hover:bg-black text-white text-xs font-body-medium px-5 py-1.5 rounded-full shadow-sm transition-colors active:scale-95">
+          Got it
+        </button>
+</div>
+</footer>
+</div>
+</body></html>

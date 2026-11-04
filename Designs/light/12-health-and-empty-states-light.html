@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12-health-and-empty-states-light (v2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+          colors: {
+            cream: '#FAF6E9',
+            sage: '#4F8A4B',
+            'sage-dark': '#386335',
+            'sage-light': '#E2ECD8',
+            amberState: '#C98A2B',
+            redState: '#B5483A',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FAF6E9;
+      color: #1A1D1A;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#FAF6E9] text-[#1D201C] p-12 md:p-16 flex flex-col justify-start items-center">
+
+  <!-- Main Board Container (max 1440px wide) -->
+  <main class="w-full max-w-[1440px] flex flex-col gap-12">
+
+    <!-- Header Section -->
+    <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#E8E2D1]">
+      <div class="space-y-1">
+        <h1 class="font-serif text-[40px] leading-[1.15] font-normal tracking-tight text-[#1D201C]">
+          States &amp; banners
+        </h1>
+        <p class="font-sans text-[15px] text-[#696F63] font-normal">
+          Decay — health banners and empty states
+        </p>
+      </div>
+
+      <!-- Legend -->
+      <div class="flex items-center gap-6 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full border border-[#E8E2D1] text-[13px] font-medium text-[#464A42]">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#4F8A4B]"></span>
+          <span>Connected</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#C98A2B]"></span>
+          <span>Degraded</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#B5483A]"></span>
+          <span>Disconnected</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION: Banners -->
+    <section class="flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-semibold tracking-wider uppercase text-[#7A8072]">
+          Banners
+        </h2>
+      </div>
+
+      <div class="flex flex-col gap-3.5">
+
+        <!-- Banner 1: Amber Tint #F7EBD6 -->
+        <div class="w-full h-16 rounded-[22px] bg-[#F7EBD6] px-5 flex items-center justify-between border border-[#EDDEC4] shadow-sm">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <!-- Amber Circle Icon -->
+            <div class="w-9 h-9 rounded-full bg-[#ECDABF] text-[#8C5D19] flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <p class="text-[14px] font-medium text-[#2E281F] truncate">
+              Chrome extension disconnected. Tabs in Chrome aren't being tracked.
+            </p>
+          </div>
+          <button class="shrink-0 px-4 py-1.5 rounded-full bg-[#181B17] text-[#FAF6E9] hover:bg-[#2A2E28] transition-colors text-[13px] font-medium ml-4 shadow-sm">
+            Reconnect
+          </button>
+        </div>
+
+        <!-- Banner 2: Soft Red Tint #F6E1DC -->
+        <div class="w-full h-16 rounded-[22px] bg-[#F6E1DC] px-5 flex items-center justify-between border border-[#ECD1CA] shadow-sm">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <!-- Red Circle Icon -->
+            <div class="w-9 h-9 rounded-full bg-[#EBC8C0] text-[#933427] flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <p class="text-[14px] font-medium text-[#2E1F1C] truncate">
+              Accessibility permission was turned off. Decay can't hide windows.
+            </p>
+          </div>
+          <button class="shrink-0 px-4 py-1.5 rounded-full bg-[#181B17] text-[#FAF6E9] hover:bg-[#2A2E28] transition-colors text-[13px] font-medium ml-4 shadow-sm">
+            Open System Settings
+          </button>
+        </div>
+
+        <!-- Banner 3: Lime Tint #EEF4D2 -->
+        <div class="w-full h-16 rounded-[22px] bg-[#EEF4D2] px-5 flex items-center justify-between border border-[#DFE7BA] shadow-sm">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <!-- Lime Circle Icon -->
+            <div class="w-9 h-9 rounded-full bg-[#DFE9BE] text-[#405624] flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="10" y1="15" x2="10" y2="9"/>
+                <line x1="14" y1="15" x2="14" y2="9"/>
+              </svg>
+            </div>
+            <p class="text-[14px] font-medium text-[#242A19] truncate">
+              Paused for your meeting. Sweeps resume when screen sharing ends.
+            </p>
+          </div>
+          <button class="shrink-0 px-4 py-1.5 rounded-full bg-white text-[#181B17] hover:bg-[#FDFBF7] border border-[#D5DDC0] transition-colors text-[13px] font-medium ml-4 shadow-sm">
+            Resume now
+          </button>
+        </div>
+
+        <!-- Banner 4: White with Lime Left Bar -->
+        <div class="relative w-full h-16 rounded-[22px] bg-white px-5 flex items-center justify-between border border-[#E8E2D1] shadow-sm overflow-hidden">
+          <!-- Lime Left Bar Accent -->
+          <div class="absolute left-0 top-0 bottom-0 w-2 bg-[#8EB85B]"></div>
+
+          <div class="flex items-center gap-3.5 pl-1.5 min-w-0">
+            <!-- Soft Lime Circle Icon -->
+            <div class="w-9 h-9 rounded-full bg-[#EEF4D2] text-[#4F8A4B] flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <p class="text-[14px] font-medium text-[#1D201C] truncate">
+              Shadow mode · 3 days left. Nothing is being closed yet.
+            </p>
+          </div>
+          <button class="shrink-0 px-4 py-1.5 rounded-full bg-white text-[#181B17] hover:bg-[#FDFBF7] border border-[#DAD4C2] transition-colors text-[13px] font-medium ml-4 shadow-sm">
+            Review
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION: Empty states -->
+    <section class="flex flex-col gap-4 pt-2">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-semibold tracking-wider uppercase text-[#7A8072]">
+          Empty states
+        </h2>
+      </div>
+
+      <!-- 3-Column Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Card 1: Nothing archived yet -->
+        <div class="bg-white rounded-[22px] border border-[#E8E2D1] p-8 flex flex-col items-center text-center shadow-sm hover:shadow transition-shadow">
+          <!-- Light Circle Icon -->
+          <div class="w-14 h-14 rounded-full bg-[#F5F1E4] text-[#4F8A4B] flex items-center justify-center mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m10 12 2 2 2-2"/>
+              <path d="M12 8v6"/>
+            </svg>
+          </div>
+
+          <!-- Serif Title -->
+          <h3 class="font-serif text-[22px] leading-tight font-normal text-[#1D201C] mb-2">
+            Nothing archived yet
+          </h3>
+
+          <!-- Muted Sentence -->
+          <p class="text-[14px] text-[#696F63] leading-relaxed max-w-[260px] mb-8 font-normal">
+            Decay is watching quietly in shadow mode.
+          </p>
+
+          <!-- White Pill CTA -->
+          <div class="mt-auto w-full flex justify-center">
+            <button class="px-5 py-2 rounded-full bg-white text-[#1D201C] border border-[#DAD4C2] hover:bg-[#FAF6E9] transition-colors text-[13.5px] font-medium shadow-sm">
+              See what it would do
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: No results for 'invoices' -->
+        <div class="bg-white rounded-[22px] border border-[#E8E2D1] p-8 flex flex-col items-center text-center shadow-sm hover:shadow transition-shadow">
+          <!-- Light Circle Icon -->
+          <div class="w-14 h-14 rounded-full bg-[#F5F1E4] text-[#4F8A4B] flex items-center justify-center mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+
+          <!-- Serif Title -->
+          <h3 class="font-serif text-[22px] leading-tight font-normal text-[#1D201C] mb-2">
+            No results for 'invoices'
+          </h3>
+
+          <!-- Muted Sentence -->
+          <p class="text-[14px] text-[#696F63] leading-relaxed max-w-[260px] mb-8 font-normal">
+            Try a site name, or search all time.
+          </p>
+
+          <!-- White Pill CTA -->
+          <div class="mt-auto w-full flex justify-center">
+            <button class="px-5 py-2 rounded-full bg-white text-[#1D201C] border border-[#DAD4C2] hover:bg-[#FAF6E9] transition-colors text-[13.5px] font-medium shadow-sm">
+              Search all time
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 3: All caught up -->
+        <div class="bg-white rounded-[22px] border border-[#E8E2D1] p-8 flex flex-col items-center text-center shadow-sm hover:shadow transition-shadow">
+          <!-- Light Circle Icon -->
+          <div class="w-14 h-14 rounded-full bg-[#EEF4D2] text-[#4F8A4B] flex items-center justify-center mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+
+          <!-- Serif Title -->
+          <h3 class="font-serif text-[22px] leading-tight font-normal text-[#1D201C] mb-2">
+            All caught up
+          </h3>
+
+          <!-- Muted Sentence -->
+          <p class="text-[14px] text-[#696F63] leading-relaxed max-w-[260px] mb-8 font-normal">
+            No tabs are getting stale right now.
+          </p>
+
+          <!-- Small Sage Check Pill -->
+          <div class="mt-auto w-full flex justify-center">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E5EED8] text-[#3B6637] border border-[#CAD9B5] text-[13px] font-medium">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>Nothing to do</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

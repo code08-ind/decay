@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay - Pro Upgrade</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-fixed": "#b2f3a8",
+            "on-tertiary": "#ffffff",
+            "surface": "#fffbff",
+            "tertiary-dim": "#525d1f",
+            "secondary-fixed": "#c6ef9b",
+            "on-surface-variant": "#67654e",
+            "on-error": "#ffffff",
+            "on-primary-fixed-variant": "#2e672d",
+            "on-tertiary-fixed": "#444e11",
+            "secondary-fixed-dim": "#b8e18e",
+            "on-secondary-fixed-variant": "#436521",
+            "error": "#a54731",
+            "tertiary-fixed": "#edfbac",
+            "primary-fixed-dim": "#a4e49b",
+            "on-tertiary-container": "#556122",
+            "on-surface": "#3a3924",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "primary-dim": "#245e25",
+            "surface-container-highest": "#ede9cc",
+            "tertiary-container": "#edfbac",
+            "error-container": "#fe8b70",
+            "on-error-container": "#742410",
+            "surface-tint": "#316a2f",
+            "error-dim": "#5c1202",
+            "surface-dim": "#e7e4c3",
+            "secondary-dim": "#3f611e",
+            "outline-variant": "#bdba9f",
+            "on-secondary-container": "#395b18",
+            "inverse-surface": "#0f0e08",
+            "surface-variant": "#ede9cc",
+            "surface-bright": "#fffbff",
+            "on-primary-container": "#235d24",
+            "primary-container": "#b2f3a8",
+            "surface-container": "#f8f4df",
+            "surface-container-low": "#fefae8",
+            "on-background": "#3a3924",
+            "tertiary-fixed-dim": "#dfed9e",
+            "secondary-container": "#c6ef9b",
+            "on-primary-fixed": "#0c4a13",
+            "inverse-primary": "#bafcb0",
+            "primary": "#316a2f",
+            "on-secondary-fixed": "#274705",
+            "tertiary": "#5e6a2a",
+            "inverse-on-surface": "#a09d92",
+            "secondary": "#4b6e29",
+            "on-secondary": "#ffffff",
+            "surface-container-high": "#f2efd5",
+            "background": "#fffbff",
+            "on-primary": "#e6ffdd",
+            "surface-container-lowest": "#ffffff",
+            "outline": "#848269"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Newsreader", "serif"],
+            "display-lg": ["Newsreader", "serif"],
+            "body-medium": ["DM Sans", "sans-serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "body-md": ["DM Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-[#759E70] text-on-surface antialiased overflow-hidden select-none font-body-md text-body-md min-h-screen relative flex items-center justify-center">
+<!-- Desktop Wallpaper Base with Quiet Organic Tint -->
+<div class="absolute inset-0 bg-gradient-to-b from-[#7CA576] to-[#678E62] -z-20"></div>
+<!-- Background Dimmed macOS Application Window (Decay 05-library-light) -->
+<div class="absolute w-[1280px] h-[820px] rounded-2xl bg-[#FCFAF2] border border-outline-variant/60 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] overflow-hidden flex flex-col pointer-events-none opacity-40 blur-[1px] transform scale-[0.985]">
+<!-- Titlebar & Traffic Lights -->
+<div class="h-10 bg-[#F4EFE0] border-b border-outline-variant flex items-center justify-between px-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#E36859]/80 border border-black/10"></div>
+<div class="w-3 h-3 rounded-full bg-[#E5B548]/80 border border-black/10"></div>
+<div class="w-3 h-3 rounded-full bg-[#7BB24E]/80 border border-black/10"></div>
+<span class="ml-4 font-headline-md text-headline-md text-on-surface">Decay</span>
+</div>
+<!-- Navigation pill tabs -->
+<div class="flex items-center gap-1 bg-[#E8E2CD] p-1 rounded-full text-xs">
+<span class="px-3 py-0.5 rounded-full text-on-surface-variant font-medium">Overview</span>
+<span class="px-3 py-0.5 rounded-full bg-[#FAF7ED] text-on-surface font-semibold flex items-center gap-1.5 shadow-sm">
+          Library
+          <span class="px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-container text-[10px]">318</span>
+</span>
+<span class="px-3 py-0.5 rounded-full text-on-surface-variant font-medium">Live now</span>
+<span class="px-3 py-0.5 rounded-full text-on-surface-variant font-medium">Sweeps</span>
+<span class="px-3 py-0.5 rounded-full text-on-surface-variant font-medium">Rules</span>
+<span class="px-3 py-0.5 rounded-full text-on-surface-variant font-medium">Insights</span>
+</div>
+<!-- Window Action Indicators -->
+<div class="flex items-center gap-2">
+<div class="h-7 w-48 bg-[#FAF7ED] border border-outline-variant/60 rounded-full px-2.5 flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px]">search</span>
+<span>Search 318 tabs...</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-[#E8E2CD] flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-sm">tune</span>
+</div>
+</div>
+</div>
+<!-- Background Window Body Canvas (Layout preview) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Background Sidebar -->
+<div class="w-60 border-r border-outline-variant bg-[#F7F2E4] p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 px-2.5 py-1.5 bg-secondary-container text-on-secondary-container rounded-lg font-medium">
+<span class="material-symbols-outlined text-sm">tab</span>
+<span>All Active</span>
+</div>
+<div class="flex items-center gap-2 px-2.5 py-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">hourglass_empty</span>
+<span>Stale Tabs</span>
+</div>
+<div class="flex items-center gap-2 px-2.5 py-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">archive</span>
+<span>Archived</span>
+</div>
+<div class="flex items-center gap-2 px-2.5 py-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+<span>Protected</span>
+</div>
+<div class="flex items-center gap-2 px-2.5 py-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">tune</span>
+<span>Rules</span>
+</div>
+</div>
+<!-- Main Canvas Table & Cards Mock -->
+<div class="flex-1 bg-[#FAF6E9] p-6 space-y-5">
+<div class="grid grid-cols-3 gap-4">
+<div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant">
+<div class="text-xs text-on-surface-variant">Memory Relieved</div>
+<div class="text-2xl font-headline-lg text-headline-lg font-semibold mt-1">4.2 GB</div>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant">
+<div class="text-xs text-on-surface-variant">Auto-decayed Today</div>
+<div class="text-2xl font-headline-lg text-headline-lg font-semibold mt-1">84 Tabs</div>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant">
+<div class="text-xs text-on-surface-variant">Focus Efficiency</div>
+<div class="text-2xl font-headline-lg text-headline-lg font-semibold mt-1">96.8%</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-4 space-y-3">
+<div class="h-8 border-b border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant px-2">
+<span>Title / Target</span>
+<span>Domain</span>
+<span>Age</span>
+<span>State</span>
+</div>
+<div class="h-10 border-b border-outline-variant/30 flex items-center justify-between px-2">
+<span class="text-sm">Figma — Decay OS Architecture Specs</span>
+<span class="text-xs text-on-surface-variant">figma.com</span>
+<span class="text-xs text-on-surface-variant">14m</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-xs text-on-secondary-container">Active</span>
+</div>
+<div class="h-10 border-b border-outline-variant/30 flex items-center justify-between px-2">
+<span class="text-sm">RFC 9110: HTTP Semantics Overview</span>
+<span class="text-xs text-on-surface-variant">rfc-editor.org</span>
+<span class="text-xs text-on-surface-variant">2h 45m</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-xs text-on-tertiary-container">Stale soon</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Ambient Scrim / Backdrop -->
+<div class="absolute inset-0 bg-inverse-surface/30 backdrop-blur-sm z-10 transition-opacity"></div>
+<!-- CENTERED MODAL SHEET -->
+<div class="relative z-20 w-full max-w-[768px] mx-4 bg-[#FCF9EE] rounded-[28px] border border-outline-variant/70 shadow-[0_24px_60px_rgba(31,36,24,0.18)] p-3 overflow-hidden select-text">
+<!-- Absolute Circle Close Button '×' -->
+<button aria-label="Close dialog" class="absolute top-5 right-5 z-30 w-8 h-8 rounded-full bg-surface-container-high/80 hover:bg-surface-container-high text-[#1D201C] flex items-center justify-center text-sm font-medium transition cursor-pointer border border-outline-variant/40" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+<!-- Two-column Inner Container -->
+<div class="flex flex-col md:flex-row items-stretch gap-3 md:gap-4 h-full">
+<!-- LEFT COLUMN: Deep Forest Green Panel -->
+<div class="w-full md:w-[340px] shrink-0 bg-[#3D6E3A] rounded-[22px] p-7 text-white flex flex-col justify-between shadow-inner relative overflow-hidden select-none">
+<!-- Subtle Organic Ambient Radial Glow Background -->
+<div class="absolute -top-16 -right-16 w-56 h-56 bg-[#63A35E]/30 rounded-full blur-2xl pointer-events-none"></div>
+<div class="absolute -bottom-16 -left-16 w-48 h-48 bg-[#284B26]/40 rounded-full blur-xl pointer-events-none"></div>
+<!-- Top Header & Price -->
+<div class="relative z-10">
+<!-- Pro Badge -->
+<div class="inline-flex items-center gap-1 bg-[#DDEB9D] text-[#2C4A28] text-[11px] font-bold tracking-wider px-2.5 py-0.5 rounded-full mb-3 shadow-xs">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span>PRO</span>
+</div>
+<!-- Product Title -->
+<h2 class="font-headline-lg text-headline-lg text-3xl font-headline-md tracking-tight text-white mb-2">Decay Pro</h2>
+<!-- Price Line -->
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display-lg text-display-lg text-4xl text-white font-normal leading-none">$24</span>
+<span class="font-label-sm text-label-sm text-white/75 font-normal tracking-tight">one-time · yours forever</span>
+</div>
+<div class="font-label-sm text-label-sm text-white/70 mt-1">2 Macs or PCs included</div>
+</div>
+<!-- Feature List -->
+<div class="relative z-10 space-y-3.5 my-6 text-[13px] text-white/95 font-body-medium font-medium">
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Hide stale windows, not just tabs</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Unlimited rules &amp; exclusion patterns</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Restore whole windows and tab groups</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Historical memory insights and JSON export</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Multi-browser and multi-profile sync</span>
+</div>
+<div class="flex items-start gap-2.5">
+<div class="w-4 h-4 rounded-full bg-[#DDEB9D] text-[#2C4A28] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[12px] font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="leading-tight">Priority update channel &amp; early access</span>
+</div>
+</div>
+<!-- Footnote -->
+<div class="relative z-10 pt-2 border-t border-white/15">
+<p class="font-label-sm text-label-sm text-white/70 font-normal tracking-tight">14-day free trial · no account needed</p>
+</div>
+</div>
+<!-- RIGHT COLUMN: Ivory / Cream Activation Form -->
+<div class="flex-1 p-5 md:p-7 flex flex-col justify-between relative bg-[#FCF9EE] rounded-[22px]">
+<div>
+<!-- Heading -->
+<div class="pr-8 mb-5">
+<h1 class="font-headline-lg text-headline-lg text-2xl font-normal text-on-surface tracking-tight">Upgrade or activate</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Unlock full decay cadence controls and deep workspace hygiene.</p>
+</div>
+<!-- Segmented Pill Tabs -->
+<div class="bg-[#ECE7D7] p-1 rounded-full flex gap-1 w-full max-w-[280px] mb-6 border border-outline-variant/30">
+<button class="flex-1 py-1.5 rounded-full font-label-sm text-label-sm font-medium text-on-surface-variant hover:text-on-surface transition text-center" type="button">
+              Buy Pro
+            </button>
+<button class="flex-1 py-1.5 rounded-full font-label-sm text-label-sm font-semibold text-white bg-inverse-surface shadow-sm transition text-center" type="button">
+              I have a license
+            </button>
+</div>
+<!-- Main Interactive Form Section -->
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm font-medium text-[#44483E] mb-2 flex items-center justify-between" for="license-input">
+<span>License key</span>
+<span class="font-code-sm text-code-sm text-outline">v2.4+</span>
+</label>
+<div class="relative">
+<input class="w-full px-4 py-3 rounded-full bg-surface-container-lowest border border-[#DDD8C7] font-code-sm text-code-sm tracking-wider text-on-surface placeholder:text-[#A0A398] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary shadow-sm" id="license-input" name="license_key" placeholder="DECAY-XXXX-XXXX-XXXX-XXXX" type="text" value="DECAY-8849-KL72-91QA-M820"/>
+<div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Helper Line -->
+<p class="font-label-sm text-label-sm text-[#74786D] mt-2 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">mail</span>
+<span>Check your purchase confirmation email</span>
+</p>
+</div>
+<!-- Action Buttons Stack -->
+<div class="pt-2 space-y-2.5">
+<button class="w-full py-3 rounded-full bg-inverse-surface hover:bg-[#2D312B] text-surface text-body-medium font-body-medium font-semibold shadow transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" type="button">
+<span>Activate</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<button class="w-full py-2.5 rounded-full bg-surface-container-lowest hover:bg-[#F7F5EC] border border-[#DDD8C7] text-on-surface text-body-medium font-body-medium font-semibold shadow-sm transition flex items-center justify-center cursor-pointer active:scale-[0.99]" type="button">
+                Start free trial
+              </button>
+</div>
+</div>
+</div>
+<!-- Privacy & Verification Footnote -->
+<div class="mt-6 pt-4 border-t border-outline-variant/30 text-center">
+<div class="inline-flex items-center justify-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span>Your license is verified locally on this device.</span>
+</div>
+<p class="font-label-sm text-label-sm text-[#74786D] mt-0.5">Nothing about your open tabs or browsing history is ever transmitted.</p>
+</div>
+</div>
+</div>
+</div>
+</body></html>

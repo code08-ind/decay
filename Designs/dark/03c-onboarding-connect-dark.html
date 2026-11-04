@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>03c-onboarding-connect-dark — Decay</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-error-container": "#ffdad6",
+            "surface-variant": "#333631",
+            "surface-container-low": "#191c18",
+            "secondary-fixed-dim": "#c0cd82",
+            "on-secondary": "#2b3400",
+            "surface-container-highest": "#333631",
+            "error": "#ffb4ab",
+            "tertiary": "#a7e89e",
+            "secondary": "#c0cd82",
+            "background": "#111410",
+            "on-primary": "#1c3700",
+            "surface-container": "#1d201c",
+            "outline-variant": "#43493c",
+            "primary-container": "#a0c878",
+            "on-secondary-fixed": "#181e00",
+            "tertiary-fixed-dim": "#97d68f",
+            "tertiary-fixed": "#b2f3a8",
+            "primary-fixed-dim": "#aad382",
+            "tertiary-container": "#8dcb85",
+            "surface-bright": "#373a35",
+            "surface-tint": "#aad382",
+            "secondary-container": "#434e11",
+            "outline": "#8d9384",
+            "on-tertiary-fixed": "#002203",
+            "surface-dim": "#111410",
+            "on-background": "#e1e3dc",
+            "on-surface": "#e1e3dc",
+            "surface-container-high": "#282b26",
+            "inverse-on-surface": "#2e312d",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "on-tertiary-container": "#1c561e",
+            "on-secondary-fixed-variant": "#414b0e",
+            "on-error": "#690005",
+            "error-container": "#93000a",
+            "secondary-fixed": "#dcea9c",
+            "on-surface-variant": "#c3c9b8",
+            "primary": "#bbe491",
+            "primary-fixed": "#c6ef9b",
+            "on-primary-fixed": "#0e2000",
+            "inverse-primary": "#456824",
+            "surface-container-lowest": "#0c0f0b",
+            "on-primary-container": "#335411",
+            "surface": "#111410",
+            "on-tertiary-fixed-variant": "#16521a",
+            "inverse-surface": "#e1e3dc",
+            "on-secondary-container": "#b2bf76",
+            "on-tertiary": "#003908"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-sm": "0.5rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem"
+          },
+          fontFamily: {
+            "headline-sm": ["Newsreader", "serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "label-md": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "code-sm": ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }],
+            "headline-md": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "body-sm": ["11px", { lineHeight: "16px", fontWeight: "400" }],
+            "label-md": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "headline-lg": ["32px", { lineHeight: "38px", fontWeight: "600" }],
+            "code-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    body {
+      background-color: #1C2A1B;
+      color: #E1E3DC;
+      font-family: 'DM Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-4 selection:bg-primary-container selection:text-on-primary-container antialiased">
+<!-- Desktop App Modal Container -->
+<main class="w-[960px] h-[640px] bg-[#121511] border border-white/10 rounded-[26px] shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-md">
+<!-- macOS Window Titlebar -->
+<header class="h-[38px] min-h-[38px] w-full px-4 flex items-center justify-between border-b border-white/[0.06] select-none bg-[#121511]/90 z-20">
+<!-- Window Controls (Traffic Lights) -->
+<div class="flex items-center gap-2 w-24">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block"></span>
+</div>
+<!-- Window Title -->
+<div class="font-label-sm text-label-sm text-[#A7AC9C] tracking-normal font-medium">
+        Decay Setup Assistant
+      </div>
+<!-- Right System Badge -->
+<div class="w-24 flex justify-end items-center">
+<span class="font-code-sm text-[10px] text-[#A7AC9C] border border-white/10 rounded-md px-2 py-0.5 tracking-wide">
+          macOS
+        </span>
+</div>
+</header>
+<!-- Window Main Body Grid -->
+<div class="flex flex-row flex-1 p-3 gap-3 overflow-hidden">
+<!-- LEFT PANEL: Sage Brand Sidebar -->
+<aside class="w-[260px] min-w-[260px] rounded-[20px] bg-[#2F5A2E] p-5 flex flex-col justify-between text-[#F2F0E6] select-none relative overflow-hidden">
+<!-- Background subtle accent glow -->
+<div class="absolute -top-12 -left-12 w-48 h-48 bg-[#437541]/40 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Header & Stepper Content -->
+<div class="flex flex-col gap-6 relative z-10">
+<!-- Logo & Brand Mark -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">psychology_alt</span>
+<span class="font-headline-sm text-lg font-semibold tracking-tight text-[#F2F0E6]">Decay</span>
+</div>
+<span class="font-code-sm text-[11px] bg-black/20 text-[#DDEB9D] px-2 py-0.5 rounded-full border border-white/10 font-medium">
+              v1.4
+            </span>
+</div>
+<!-- Stepper Navigation -->
+<nav aria-label="Onboarding Progress" class="flex flex-col gap-1.5 mt-1">
+<!-- Step 1: Welcome (Completed) -->
+<div class="flex items-center gap-3 px-3 py-2 rounded-xl text-white/70 font-label-md text-body-md transition-colors">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm font-semibold">check</span>
+</span>
+<span>Welcome</span>
+</div>
+<!-- Step 2: Choose pace (Completed) -->
+<div class="flex items-center gap-3 px-3 py-2 rounded-xl text-white/70 font-label-md text-body-md transition-colors">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm font-semibold">check</span>
+</span>
+<span>Choose pace</span>
+</div>
+<!-- Step 3: Connect browsers (CURRENT ACTIVE STEP) -->
+<div class="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-white/15 text-[#F2F0E6] font-medium font-label-md text-body-md border border-white/15 shadow-sm">
+<span class="w-5 h-5 rounded-full bg-[#F2F0E6] flex items-center justify-center text-[#2F5A2E]">
+<span class="w-2 h-2 rounded-full bg-[#2F5A2E]"></span>
+</span>
+<span class="font-semibold text-white tracking-tight">3 Connect browsers</span>
+</div>
+<!-- Step 4: Window access (Pending) -->
+<div class="flex items-center gap-3 px-3 py-2 rounded-xl text-white/40 font-label-md text-body-md">
+<span class="w-5 h-5 rounded-full border border-white/25 flex items-center justify-center text-[10px] font-code-sm">
+                4
+              </span>
+<span>Window access</span>
+</div>
+<!-- Step 5: Shadow mode (Pending) -->
+<div class="flex items-center gap-3 px-3 py-2 rounded-xl text-white/40 font-label-md text-body-md">
+<span class="w-5 h-5 rounded-full border border-white/25 flex items-center justify-center text-[10px] font-code-sm">
+                5
+              </span>
+<span>Shadow mode</span>
+</div>
+<!-- Step 6: All set (Pending) -->
+<div class="flex items-center gap-3 px-3 py-2 rounded-xl text-white/40 font-label-md text-body-md">
+<span class="w-5 h-5 rounded-full border border-white/25 flex items-center justify-center text-[10px] font-code-sm">
+                6
+              </span>
+<span>All set</span>
+</div>
+</nav>
+</div>
+<!-- Sidebar Footer Guarantee Card -->
+<div class="relative z-10 bg-black/25 border border-white/10 rounded-2xl p-3.5 backdrop-blur-sm">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="material-symbols-outlined text-[#DDEB9D] text-sm">shield</span>
+<span class="font-code-sm text-[10px] font-medium tracking-wider text-[#DDEB9D] uppercase">
+              SHADOW GUARANTEE
+            </span>
+</div>
+<p class="font-body-sm text-body-sm leading-relaxed text-white/75">
+            Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+          </p>
+</div>
+</aside>
+<!-- RIGHT PANEL: Main Configuration Content -->
+<section class="flex-1 flex flex-col justify-between p-6 pl-8 bg-transparent text-[#F2F0E6] overflow-y-auto">
+<!-- Header Group -->
+<div>
+<span class="font-label-sm text-[11px] font-semibold tracking-wider text-[#A7AC9C] uppercase">
+            STEP 3 OF 6
+          </span>
+<h1 class="font-headline-lg text-3xl font-medium tracking-tight text-[#F2F0E6] mt-1">
+            Connect your browsers
+          </h1>
+<p class="font-body-md text-body-md text-[#A7AC9C] mt-1.5 max-w-lg">
+            Decay uses a tiny extension to see tab activity. It never reads page content.
+          </p>
+<!-- Browser Cards Stack -->
+<div class="mt-6 flex flex-col gap-2.5">
+<!-- Item 1: Google Chrome (Connected) -->
+<div class="h-16 px-4 bg-[#1A1E18] border border-[#2A3027] hover:border-[#384234] transition-colors rounded-[20px] flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-full bg-[#222720] border border-white/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">language</span>
+</div>
+<div>
+<div class="font-label-md text-body-md font-medium text-[#F2F0E6]">Google Chrome</div>
+<div class="font-body-sm text-body-sm text-[#A7AC9C]">Profile: Work</div>
+</div>
+</div>
+<div>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-[#A0C878] bg-[#A0C878]/15 border border-[#A0C878]/25">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] animate-pulse"></span>
+                  Connected
+                </span>
+</div>
+</div>
+<!-- Item 2: Arc (Connected) -->
+<div class="h-16 px-4 bg-[#1A1E18] border border-[#2A3027] hover:border-[#384234] transition-colors rounded-[20px] flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-full bg-[#222720] border border-white/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">adjust</span>
+</div>
+<div>
+<div class="font-label-md text-body-md font-medium text-[#F2F0E6]">Arc</div>
+<div class="font-body-sm text-body-sm text-[#A7AC9C]">2 spaces</div>
+</div>
+</div>
+<div>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-[#A0C878] bg-[#A0C878]/15 border border-[#A0C878]/25">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A0C878]"></span>
+                  Connected
+                </span>
+</div>
+</div>
+<!-- Item 3: Brave (Detected / Needs Action) -->
+<div class="h-16 px-4 bg-[#1A1E18] border border-[#2A3027] hover:border-[#384234] transition-colors rounded-[20px] flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-full bg-[#222720] border border-white/5 flex items-center justify-center text-primary-fixed-dim">
+<span class="material-symbols-outlined text-xl">shield_person</span>
+</div>
+<div>
+<div class="font-label-md text-body-md font-medium text-[#F2F0E6]">Brave</div>
+<div class="font-body-sm text-body-sm text-[#A7AC9C]">Detected</div>
+</div>
+</div>
+<div>
+<button class="bg-[#F2F0E6] hover:bg-white text-[#121511] font-label-sm text-label-sm font-semibold px-4 py-1.5 rounded-full transition-colors active:scale-95 shadow-sm" type="button">
+                  Install extension
+                </button>
+</div>
+</div>
+<!-- Item 4: Microsoft Edge (Not Installed) -->
+<div class="h-16 px-4 bg-[#1A1E18]/70 border border-[#2A3027]/70 rounded-[20px] flex items-center justify-between opacity-80">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-full bg-[#222720] border border-white/5 flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-xl">motion_photos_on</span>
+</div>
+<div>
+<div class="font-label-md text-body-md font-medium text-[#F2F0E6]/80">Microsoft Edge</div>
+<div class="font-body-sm text-body-sm text-[#A7AC9C]/70">Not installed</div>
+</div>
+</div>
+<div>
+<span class="text-xs font-label-sm text-[#A7AC9C]/70 px-2 py-1">
+                  Not found
+                </span>
+</div>
+</div>
+</div>
+<!-- Chromium helper sublink -->
+<div class="mt-3.5">
+<button class="font-body-sm text-body-sm text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors flex items-center gap-1.5 focus:outline-none" type="button">
+<span>Using another Chromium browser?</span>
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Bottom Action Row & Step Indicator -->
+<div class="pt-4 border-t border-white/[0.06] flex items-center justify-between mt-auto">
+<!-- Back Button -->
+<button class="rounded-full px-5 py-2 border border-white/15 text-body-md font-label-md text-[#F2F0E6] hover:bg-white/5 active:opacity-80 transition-all font-medium" type="button">
+            Back
+          </button>
+<!-- Step Progress Dots Indicator -->
+<div aria-hidden="true" class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A7AC9C]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#A7AC9C]/40"></span>
+<span class="w-5 h-1.5 rounded-full bg-[#A0C878]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#A7AC9C]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#A7AC9C]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#A7AC9C]/40"></span>
+</div>
+<!-- Primary CTA Button -->
+<button class="rounded-full px-6 py-2 bg-[#F2F0E6] hover:bg-white text-[#121511] font-label-md text-label-md font-semibold transition-all active:scale-95 flex items-center gap-2 shadow-sm" type="button">
+<span>Continue</span>
+<span class="material-symbols-outlined text-base">arrow_forward</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+</body></html>

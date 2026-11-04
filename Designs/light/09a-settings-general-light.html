@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09a-settings-general-light</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            sage: {
+              desktop: '#7FA77A',
+              accent: '#4F8A4B',
+              dark: '#356332',
+              tint: '#F4F7F2',
+            },
+            decay: {
+              cream: '#FBF8EE',
+              card: '#FFFFFF',
+              border: '#E8E3D5',
+              borderLight: '#EFECE2',
+              text: '#1C1F1B',
+              muted: '#71756C',
+              faint: '#9E9C91',
+              lime: '#DDEB9D',
+              limeText: '#2D441E',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #7FA77A;
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .custom-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #E2DDD0;
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    input:checked + .slider {
+      background-color: #4F8A4B;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body class="p-8 select-none">
+
+  <!-- macOS Window Frame (1100px x 900px centered) -->
+  <div class="w-[1100px] h-[900px] bg-[#FAF6EB] rounded-[24px] shadow-[0_25px_60px_-15px_rgba(28,35,26,0.32),0_0_0_1px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden relative border border-[#E7E2D4]">
+    
+    <!-- Titlebar -->
+    <div class="h-11 px-5 flex items-center justify-between border-b border-[#EAE5D7] bg-[#FAF6EB]/80 backdrop-blur-md relative z-20 shrink-0">
+      <!-- Traffic lights -->
+      <div class="flex items-center gap-2 w-28">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 inline-block shadow-sm"></span>
+      </div>
+
+      <!-- Window title -->
+      <div class="text-[13px] font-medium text-[#7A7E75] tracking-tight">
+        Settings
+      </div>
+
+      <!-- Version / Right placeholder -->
+      <div class="w-28 text-right text-[11px] font-mono text-[#A1A59C]">
+        v1.4
+      </div>
+    </div>
+
+    <!-- Window Body Layout -->
+    <div class="flex flex-1 overflow-hidden p-6 gap-6">
+      
+      <!-- Left Sidebar Nav Card -->
+      <div class="w-[204px] bg-white rounded-[22px] border border-[#EAE5D7] p-3 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.02)] shrink-0">
+        
+        <!-- Navigation Links -->
+        <nav class="space-y-1">
+          <!-- General (ACTIVE) -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] bg-[#DDEB9D] text-[#223517] font-medium text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors">
+            <svg class="w-4 h-4 text-[#3A6B32] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>General</span>
+          </a>
+
+          <!-- Aging -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 22h14"></path>
+              <path d="M5 2h14"></path>
+              <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"></path>
+              <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+            </svg>
+            <span>Aging</span>
+          </a>
+
+          <!-- Protection -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Protection</span>
+          </a>
+
+          <!-- Browsers -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></path>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>Browsers</span>
+          </a>
+
+          <!-- Rules -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+            <span>Rules</span>
+          </a>
+
+          <!-- Privacy & data -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Privacy &amp; data</span>
+          </a>
+
+          <!-- Shortcuts -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
+            </svg>
+            <span>Shortcuts</span>
+          </a>
+
+          <!-- Notifications -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span>Notifications</span>
+          </a>
+
+          <div class="pt-2 pb-1">
+            <div class="h-px bg-[#EAE5D7] mx-2"></div>
+          </div>
+
+          <!-- License · PRO -->
+          <a href="#" class="flex items-center justify-between px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <div class="flex items-center gap-3">
+              <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+              <span>License</span>
+            </div>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#1C1F1B] text-[#FAF6EB] tracking-wide">PRO</span>
+          </a>
+
+          <!-- Updates -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2v6h-6"></path>
+              <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+              <path d="M3 22v-6h6"></path>
+              <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+            </svg>
+            <span>Updates</span>
+          </a>
+
+          <!-- About -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-[12px] text-[#696D64] hover:text-[#1C1F1B] hover:bg-[#F7F4EB] text-[13px] font-normal transition-colors">
+            <svg class="w-4 h-4 text-[#8C9086] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>About</span>
+          </a>
+        </nav>
+
+        <!-- Engine status pill at bottom of nav -->
+        <div class="pt-3">
+          <div class="flex items-center gap-2 px-3 py-2 bg-[#FAF6EB] rounded-[14px] border border-[#EAE5D7]">
+            <span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+            <span class="text-[11px] font-medium text-[#5B6056]">Engine active</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Main Content -->
+      <div class="flex-1 flex flex-col justify-between overflow-y-auto pr-1">
+        
+        <!-- Header -->
+        <div class="mb-4">
+          <h1 class="font-serif text-[32px] font-medium tracking-tight text-[#1C1F1B] leading-none mb-1.5">
+            General
+          </h1>
+          <p class="text-[13px] text-[#71756C] font-normal">
+            How Decay starts, looks and behaves.
+          </p>
+        </div>
+
+        <!-- Cards Container (16px gaps) -->
+        <div class="space-y-4">
+          
+          <!-- Card 1: Startup -->
+          <div class="bg-white rounded-[22px] border border-[#EAE5D7] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <h2 class="text-[11px] font-semibold tracking-wider text-[#8A8E83] uppercase mb-4">
+              Startup
+            </h2>
+            <div class="divide-y divide-[#F2EFE7]">
+              <!-- Row 1 -->
+              <div class="flex items-center justify-between pb-3.5 pt-0.5">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Launch Decay at login</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Start monitoring quietly in the background on startup</div>
+                </div>
+                <label class="custom-switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Row 2 -->
+              <div class="flex items-center justify-between py-3.5">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Show in menu bar</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Access quick stats, sweeps, and pause controls from the menu bar</div>
+                </div>
+                <label class="custom-switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Row 3 -->
+              <div class="flex items-center justify-between pt-3.5">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Show stale count on the menu bar icon</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Displays a quiet numeric badge when tabs exceed your decay limit</div>
+                </div>
+                <label class="custom-switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Appearance -->
+          <div class="bg-white rounded-[22px] border border-[#EAE5D7] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <h2 class="text-[11px] font-semibold tracking-wider text-[#8A8E83] uppercase mb-4">
+              Appearance
+            </h2>
+            <div class="space-y-4">
+              
+              <!-- Theme Segmented Control -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Theme</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Application color scheme</div>
+                </div>
+                <div class="inline-flex p-1 bg-[#F4EFE6] rounded-full border border-[#E8E2D4]">
+                  <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-[#5C6156] hover:text-[#1C1F1B] rounded-full transition-all">Light</button>
+                  <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-[#5C6156] hover:text-[#1C1F1B] rounded-full transition-all">Dark</button>
+                  <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-white bg-[#1C1F1B] rounded-full shadow-sm transition-all">Match system</button>
+                </div>
+              </div>
+
+              <div class="h-px bg-[#F2EFE7]"></div>
+
+              <!-- Row density -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Row density</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Vertical spacing in Library and live list views</div>
+                </div>
+                <div class="inline-flex p-1 bg-[#F4EFE6] rounded-full border border-[#E8E2D4]">
+                  <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-white bg-[#1C1F1B] rounded-full shadow-sm transition-all">Compact</button>
+                  <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-[#5C6156] hover:text-[#1C1F1B] rounded-full transition-all">Comfortable</button>
+                </div>
+              </div>
+
+              <div class="h-px bg-[#F2EFE7]"></div>
+
+              <!-- Accent color -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-[13.5px] font-medium text-[#1C1F1B]">Accent</div>
+                  <div class="text-[12px] text-[#7E8379] mt-0.5">Primary tint for indicators, badges and highlights</div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <!-- Sage (selected with ring) -->
+                  <button type="button" class="w-6 h-6 rounded-full bg-[#4F8A4B] ring-2 ring-offset-2 ring-[#4F8A4B] ring-offset-white transition-transform hover:scale-105" title="Sage"></button>
+                  <!-- Lime -->
+                  <button type="button" class="w-6 h-6 rounded-full bg-[#DDEB9D] border border-[#CBD98C] transition-transform hover:scale-105" title="Lime"></button>
+                  <!-- Ink -->
+                  <button type="button" class="w-6 h-6 rounded-full bg-[#1C1F1B] border border-black/20 transition-transform hover:scale-105" title="Ink"></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card 3: Mode -->
+          <div class="bg-white rounded-[22px] border border-[#EAE5D7] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <h2 class="text-[11px] font-semibold tracking-wider text-[#8A8E83] uppercase">
+                  Mode
+                </h2>
+              </div>
+              <div class="inline-flex p-1 bg-[#F4EFE6] rounded-full border border-[#E8E2D4]">
+                <button type="button" class="px-4 py-1 text-[12px] font-medium text-[#5C6156] hover:text-[#1C1F1B] rounded-full transition-all">Shadow mode</button>
+                <button type="button" class="px-4 py-1 text-[12px] font-medium text-white bg-[#1C1F1B] rounded-full shadow-sm transition-all">Automatic</button>
+              </div>
+            </div>
+            <p class="text-[12.5px] text-[#71756C] leading-relaxed pr-8">
+              Automatic mode archives and hides on schedule. Shadow mode only shows what it would do.
+            </p>
+          </div>
+
+          <!-- Card 4: Global shortcut -->
+          <div class="bg-white rounded-[22px] border border-[#EAE5D7] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <h2 class="text-[11px] font-semibold tracking-wider text-[#8A8E83] uppercase mb-3">
+              Global shortcut
+            </h2>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[13.5px] font-medium text-[#1C1F1B]">Open search</div>
+                <div class="text-[12px] text-[#7E8379] mt-0.5">Summon the quick search and restore palette from anywhere in macOS</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <!-- Keycaps -->
+                <div class="flex items-center gap-1">
+                  <kbd class="px-2.5 py-1 bg-[#F7F4EB] border border-[#E3DDCF] rounded-[8px] text-[12px] font-mono font-medium text-[#2A2E27] shadow-[0_1px_1px_rgba(0,0,0,0.04)]">⌥</kbd>
+                  <kbd class="px-2.5 py-1 bg-[#F7F4EB] border border-[#E3DDCF] rounded-[8px] text-[12px] font-mono font-medium text-[#2A2E27] shadow-[0_1px_1px_rgba(0,0,0,0.04)]">⌘</kbd>
+                  <kbd class="px-2.5 py-1 bg-[#F7F4EB] border border-[#E3DDCF] rounded-[8px] text-[12px] font-mono font-medium text-[#2A2E27] shadow-[0_1px_1px_rgba(0,0,0,0.04)]">D</kbd>
+                </div>
+                <!-- White pill secondary button -->
+                <button type="button" class="px-3.5 py-1 text-[12px] font-medium text-[#2E332A] bg-white border border-[#DDD7C8] hover:bg-[#F9F7F1] rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all">
+                  Change
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer / Save status -->
+        <div class="pt-3 pb-1 flex justify-end items-center">
+          <span class="text-[11.5px] text-[#93988E] flex items-center gap-1.5 font-normal">
+            <svg class="w-3.5 h-3.5 text-[#7FA77A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Changes save automatically
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

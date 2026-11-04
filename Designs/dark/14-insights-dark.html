@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Insights</title>
+<!-- Typography: Newsreader, DM Sans, JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&amp;family=JetBrains+Mono:ital,wght@0,300..700;1,300..700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#0c0f0b",
+            "secondary": "#c0cd82",
+            "secondary-fixed": "#dcea9c",
+            "on-background": "#e1e3dc",
+            "error-container": "#93000a",
+            "on-surface": "#e1e3dc",
+            "on-secondary": "#2b3400",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "on-error": "#690005",
+            "surface-container-high": "#282b26",
+            "on-tertiary-fixed-variant": "#16521a",
+            "primary": "#bbe491",
+            "outline-variant": "#43493c",
+            "tertiary-fixed": "#b2f3a8",
+            "secondary-container": "#434e11",
+            "inverse-primary": "#456824",
+            "tertiary-fixed-dim": "#97d68f",
+            "surface-container-low": "#191c18",
+            "surface": "#111410",
+            "on-tertiary-fixed": "#002203",
+            "on-primary": "#1c3700",
+            "inverse-surface": "#e1e3dc",
+            "surface-dim": "#111410",
+            "on-secondary-container": "#b2bf76",
+            "tertiary": "#a7e89e",
+            "on-error-container": "#ffdad6",
+            "primary-fixed-dim": "#aad382",
+            "tertiary-container": "#8dcb85",
+            "secondary-fixed-dim": "#c0cd82",
+            "on-primary-fixed": "#0e2000",
+            "surface-tint": "#aad382",
+            "on-tertiary": "#003908",
+            "background": "#111410",
+            "on-primary-container": "#335411",
+            "surface-variant": "#333631",
+            "error": "#ffb4ab",
+            "on-surface-variant": "#c3c9b8",
+            "surface-bright": "#373a35",
+            "on-tertiary-container": "#1c561e",
+            "surface-container-highest": "#333631",
+            "primary-container": "#a0c878",
+            "primary-fixed": "#c6ef9b",
+            "on-secondary-fixed-variant": "#414b0e",
+            "inverse-on-surface": "#2e312d",
+            "surface-container": "#1d201c",
+            "outline": "#8d9384",
+            "on-secondary-fixed": "#181e00"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Newsreader", "serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "label-md": ["DM Sans", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"]
+          },
+          "fontSize": {
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "38px", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-[#1C2A1B] text-[#e1e3dc] min-h-screen flex items-center justify-center p-4 md:p-8 antialiased selection:bg-[#434e11] selection:text-[#bbe491]">
+<!-- Main macOS Window Frame -->
+<div class="w-full max-w-[1240px] bg-[#121511] rounded-[24px] border border-[#2A3027] shadow-[0_32px_80px_rgba(0,0,0,0.65)] flex flex-col overflow-hidden">
+<!-- Desktop Titlebar / Top Chrome Navigation -->
+<header class="h-14 px-6 border-b border-[#2A3027] bg-[#121511] flex items-center justify-between select-none">
+<!-- Left: macOS Traffic Lights + App Brand Identity -->
+<div class="flex items-center gap-5">
+<!-- Native macOS Traffic Lights -->
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] shadow-sm"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] shadow-sm"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] shadow-sm"></div>
+</div>
+<div class="h-4 w-px bg-[#2A3027]"></div>
+<!-- Brand Identity -->
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#bbe491] text-base" data-icon="eco">eco</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-[#F2F0E6] tracking-tight">Decay</span>
+<span class="font-code-sm text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#191c18] border border-[#2A3027] text-[#c3c9b8] ml-1">v1.4</span>
+</div>
+</div>
+<!-- Center: Segmented Navigation Pills -->
+<nav class="hidden md:flex items-center bg-[#191c18] border border-[#2A3027] rounded-full p-1 gap-1">
+<a class="px-3.5 py-1 text-xs font-medium rounded-full text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors" href="#">Overview</a>
+<a class="px-3.5 py-1 text-xs font-medium rounded-full text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors" href="#">Library</a>
+<a class="px-3.5 py-1 text-xs font-medium rounded-full text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors" href="#">Live now</a>
+<a class="px-3.5 py-1 text-xs font-medium rounded-full text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors" href="#">Sweeps</a>
+<a class="px-3.5 py-1 text-xs font-medium rounded-full text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors" href="#">Rules</a>
+<!-- Active Insights Pill -->
+<a class="px-3.5 py-1 text-xs font-medium rounded-full bg-[#2A3027] text-[#F2F0E6] flex items-center gap-1.5 shadow-sm" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878]"></span>
+          Insights
+        </a>
+</nav>
+<!-- Right: Search, Notifications, Status -->
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#191c18] transition-colors" title="Search">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+</button>
+<button class="relative w-8 h-8 rounded-full flex items-center justify-center text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#191c18] transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-lg" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#ffb4ab] rounded-full"></span>
+</button>
+<div class="h-4 w-px bg-[#2A3027]"></div>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#191c18] border border-[#2A3027] rounded-full text-xs text-[#c3c9b8]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878] animate-pulse"></span>
+<span>Automatic</span>
+</div>
+</div>
+</header>
+<!-- Main Scrollable Canvas -->
+<main class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(100vh-6rem)]">
+<!-- Page Header Banner -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+<div>
+<h1 class="font-headline-lg text-3xl md:text-4xl text-[#F2F0E6] tracking-tight font-normal">Insights</h1>
+<p class="font-body-md text-body-md text-[#A7AC9C] mt-1">
+            How your browsing has settled since you started using Decay. Computed on this Mac only.
+          </p>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 bg-[#1A1E18] hover:bg-[#222720] border border-[#2A3027] text-[#F2F0E6] text-xs font-medium px-3.5 py-1.5 rounded-full transition-all">
+<span>Last 30 days</span>
+<span class="material-symbols-outlined text-xs" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+<button class="inline-flex items-center gap-1.5 bg-[#1A1E18] hover:bg-[#222720] border border-[#2A3027] text-[#F2F0E6] text-xs font-medium px-3.5 py-1.5 rounded-full transition-all">
+<span class="material-symbols-outlined text-xs" data-icon="download">download</span>
+<span>Export CSV</span>
+</button>
+</div>
+</div>
+<!-- ROW 1: Four Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Metric 1: Average Open Tabs -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[#A7AC9C] text-xs uppercase tracking-wider font-semibold">
+<span>AVERAGE OPEN TABS</span>
+<span class="material-symbols-outlined text-base" data-icon="tab">tab</span>
+</div>
+<div class="mt-4">
+<div class="font-headline-lg text-4xl text-[#F2F0E6] font-normal tracking-tight">34</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#222720] text-[#DDEB9D] border border-[#2A3027] text-xs font-medium">
+                ↓ 56%
+              </span>
+<span class="text-xs text-[#A7AC9C]">was 78 before Decay</span>
+</div>
+</div>
+</div>
+<!-- Metric 2: Regret Rate -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[#A7AC9C] text-xs uppercase tracking-wider font-semibold">
+<span>REGRET RATE</span>
+<span class="material-symbols-outlined text-base" data-icon="history">history</span>
+</div>
+<div class="mt-4">
+<div class="font-headline-lg text-4xl text-[#F2F0E6] font-normal tracking-tight">2.1%</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[#222720] text-[#DDEB9D] border border-[#2A3027] text-xs font-medium">
+                low
+              </span>
+<span class="text-xs text-[#A7AC9C]">restored within a day</span>
+</div>
+</div>
+</div>
+<!-- Metric 3: Items Archived -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[#A7AC9C] text-xs uppercase tracking-wider font-semibold">
+<span>ITEMS ARCHIVED</span>
+<span class="material-symbols-outlined text-base" data-icon="archive">archive</span>
+</div>
+<div class="mt-4">
+<div class="font-headline-lg text-4xl text-[#F2F0E6] font-normal tracking-tight">612</div>
+<div class="flex items-center gap-1.5 mt-2 text-xs text-[#A7AC9C]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878]"></span>
+<span>Across 4 active browsers</span>
+</div>
+</div>
+</div>
+<!-- Metric 4: Most Tidied Site -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[#A7AC9C] text-xs uppercase tracking-wider font-semibold">
+<span>MOST TIDIED SITE</span>
+<span class="material-symbols-outlined text-base" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div class="mt-4">
+<div class="font-body-md text-xl font-semibold text-[#F2F0E6] truncate">docs.google.com</div>
+<div class="flex items-center gap-1.5 mt-2 text-xs text-[#A7AC9C]">
+<span>148 tabs quietly swept</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ROW 2: Two Main Columns (Chart + Habits card) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<!-- Left 2 Cols: 30-day Bar Chart -->
+<div class="lg:col-span-2 bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 flex flex-col justify-between">
+<div>
+<!-- Header and Legend -->
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div>
+<h3 class="font-headline-md text-lg text-[#F2F0E6] font-normal">Open tabs, last 30 days</h3>
+<p class="font-body-sm text-body-sm text-[#A7AC9C]">Daily active open tab count at 6:00 PM</p>
+</div>
+<div class="flex items-center gap-3 text-xs">
+<div class="flex items-center gap-1.5 text-[#E57373]">
+<span class="w-3 border-b border-dashed border-[#E57373]"></span>
+<span>before Decay: 78</span>
+</div>
+<div class="flex items-center gap-1.5 text-[#a0c878]">
+<span class="w-2 h-2 rounded-full bg-[#a0c878]"></span>
+<span>Current: avg 34</span>
+</div>
+</div>
+</div>
+<!-- Chart Canvas Container -->
+<div class="relative mt-8 pt-6 pb-2">
+<!-- Dashed Baseline: 78 Tabs Before Decay -->
+<div class="absolute top-8 left-0 right-0 border-b border-dashed border-[#E57373]/60 flex items-center justify-end">
+<span class="text-[10px] text-[#E57373] bg-[#1A1E18] px-1 -mt-2">78 limit</span>
+</div>
+<!-- Bar Grid (30 days tapering downward) -->
+<div class="h-44 flex items-end justify-between gap-1 sm:gap-2 px-1 relative">
+<!-- Day 1-5 (High count ~78 to 68) -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[94%] flex items-end">
+<div class="w-full bg-[#a0c878]/40 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[90%] flex items-end">
+<div class="w-full bg-[#a0c878]/40 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[85%] flex items-end">
+<div class="w-full bg-[#a0c878]/50 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[82%] flex items-end">
+<div class="w-full bg-[#a0c878]/50 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[78%] flex items-end">
+<div class="w-full bg-[#a0c878]/50 rounded-t-sm h-full"></div>
+</div>
+<!-- Day 6-10 (~65 to 55) -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[75%] flex items-end">
+<div class="w-full bg-[#a0c878]/60 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[70%] flex items-end">
+<div class="w-full bg-[#a0c878]/60 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[68%] flex items-end">
+<div class="w-full bg-[#a0c878]/60 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[64%] flex items-end">
+<div class="w-full bg-[#a0c878]/70 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[60%] flex items-end">
+<div class="w-full bg-[#a0c878]/70 rounded-t-sm h-full"></div>
+</div>
+<!-- Day 11-15 (~54 to 45) -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[58%] flex items-end">
+<div class="w-full bg-[#a0c878]/70 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[55%] flex items-end">
+<div class="w-full bg-[#a0c878]/70 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[50%] flex items-end">
+<div class="w-full bg-[#a0c878]/80 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[48%] flex items-end">
+<div class="w-full bg-[#a0c878]/80 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[45%] flex items-end">
+<div class="w-full bg-[#a0c878]/80 rounded-t-sm h-full"></div>
+</div>
+<!-- Day 16-20 (~44 to 38) -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[46%] flex items-end">
+<div class="w-full bg-[#a0c878]/85 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[42%] flex items-end">
+<div class="w-full bg-[#a0c878]/85 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[40%] flex items-end">
+<div class="w-full bg-[#a0c878]/90 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[43%] flex items-end">
+<div class="w-full bg-[#a0c878]/90 rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[39%] flex items-end">
+<div class="w-full bg-[#a0c878]/90 rounded-t-sm h-full"></div>
+</div>
+<!-- Day 21-25 (~36 to 32) WITH ACTIVE HOVER TOOLTIP ON DAY 24 -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[38%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[36%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[35%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<!-- Day 24: Active Tooltip Element -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[34%] flex items-end relative group">
+<div class="w-full bg-[#bbe491] rounded-t-sm h-full shadow-[0_0_12px_rgba(187,228,145,0.4)]"></div>
+<!-- Tooltip Float -->
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#121511] text-[#F2F0E6] text-[11px] font-medium px-2.5 py-1 rounded-md border border-[#a0c878] shadow-lg pointer-events-none z-10">
+                    Day 24 · 32 tabs
+                  </div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[33%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<!-- Day 26-30 (~34 baseline) -->
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[36%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[34%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[32%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[35%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+<div class="flex-1 bg-[#222720] rounded-t-sm h-[33%] flex items-end">
+<div class="w-full bg-[#a0c878] rounded-t-sm h-full"></div>
+</div>
+</div>
+</div>
+<!-- X-Axis Labels -->
+<div class="flex justify-between items-center text-xs text-[#A7AC9C] pt-2 border-t border-[#2A3027] font-code-sm">
+<span>Oct 5</span>
+<span>Oct 12</span>
+<span>Oct 19</span>
+<span>Oct 26</span>
+<span>Nov 4</span>
+</div>
+</div>
+</div>
+<!-- Right Col: Deep Green Rhythm / Calculated Habits Card -->
+<div class="bg-[#2F5A2E] rounded-[22px] border border-white/10 p-6 flex flex-col justify-between text-[#F2F0E6]">
+<div class="space-y-4">
+<!-- Pill Tag -->
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs text-[#F2F0E6] font-medium tracking-wide">
+<span class="material-symbols-outlined text-xs text-[#DDEB9D]" data-icon="sparkles">arrow_back_ios_new</span>
+<span>CALCULATED HABITS</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-2xl font-normal text-[#F2F0E6]">Your rhythm</h2>
+<p class="text-xs text-[#F2F0E6]/70 mt-1">How tab density behaves throughout your workweek.</p>
+</div>
+<!-- Frosted Habit Tiles -->
+<div class="space-y-2.5 pt-1">
+<!-- Tile 1 -->
+<div class="bg-[#223F21]/80 border border-white/10 rounded-xl p-3.5 space-y-1">
+<div class="text-[10px] uppercase tracking-wider text-[#a0c878] font-bold">MOST ACTIVE</div>
+<div class="font-semibold text-sm text-[#F2F0E6]">10 AM – 1 PM</div>
+<p class="text-[11px] text-[#F2F0E6]/75">Peak window when tabs accumulate fastest</p>
+</div>
+<!-- Tile 2 -->
+<div class="bg-[#223F21]/80 border border-white/10 rounded-xl p-3.5 space-y-1">
+<div class="text-[10px] uppercase tracking-wider text-[#a0c878] font-bold">QUIETEST</div>
+<div class="font-semibold text-sm text-[#F2F0E6]">Friday afternoons</div>
+<p class="text-[11px] text-[#F2F0E6]/75">Lowest creation rate, highest manual closures</p>
+</div>
+<!-- Tile 3 -->
+<div class="bg-[#223F21]/80 border border-white/10 rounded-xl p-3.5 space-y-1">
+<div class="text-[10px] uppercase tracking-wider text-[#a0c878] font-bold">STALE VELOCITY</div>
+<div class="font-semibold text-sm text-[#F2F0E6]">Tabs usually go stale after 2.3 days</div>
+<p class="text-[11px] text-[#F2F0E6]/75">Matches your balanced 60h threshold</p>
+</div>
+</div>
+</div>
+<!-- Bottom Security Badge -->
+<div class="mt-4 pt-3 border-t border-white/10 flex items-center gap-2 text-[11px] text-[#F2F0E6]/70">
+<span class="material-symbols-outlined text-sm text-[#DDEB9D]" data-icon="lock">lock</span>
+<span>All telemetry processed on this Mac. No data ever leaves.</span>
+</div>
+</div>
+</div>
+<!-- ROW 3: Two Bottom Detail Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-2">
+<!-- Left: Top Sources (Breakdown) -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 space-y-5">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-base text-[#F2F0E6] font-normal">Top sources</h3>
+<p class="font-body-sm text-body-sm text-[#A7AC9C]">Breakdown of tidied tabs and active browser windows</p>
+</div>
+<span class="px-2.5 py-1 bg-[#222720] border border-[#2A3027] rounded-full text-xs font-code-sm text-[#bbe491]">612 Total</span>
+</div>
+<div class="space-y-4 pt-1">
+<!-- Chrome -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-[#F2F0E6] font-medium">Chrome — Work</span>
+<span class="text-[#A7AC9C] font-code-sm">294 tabs (48%)</span>
+</div>
+<div class="h-2 w-full bg-[#222720] rounded-full overflow-hidden border border-[#2A3027]">
+<div class="h-full bg-[#A0C878] rounded-full" style="width: 48%"></div>
+</div>
+</div>
+<!-- Arc -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-[#F2F0E6] font-medium">Arc</span>
+<span class="text-[#A7AC9C] font-code-sm">184 tabs (30%)</span>
+</div>
+<div class="h-2 w-full bg-[#222720] rounded-full overflow-hidden border border-[#2A3027]">
+<div class="h-full bg-[#A0C878] rounded-full" style="width: 30%"></div>
+</div>
+</div>
+<!-- Brave -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-[#F2F0E6] font-medium">Brave</span>
+<span class="text-[#A7AC9C] font-code-sm">74 tabs (12%)</span>
+</div>
+<div class="h-2 w-full bg-[#222720] rounded-full overflow-hidden border border-[#2A3027]">
+<div class="h-full bg-[#A0C878] rounded-full" style="width: 12%"></div>
+</div>
+</div>
+<!-- Finder -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-xs">
+<span class="text-[#F2F0E6] font-medium">Finder windows</span>
+<span class="text-[#A7AC9C] font-code-sm">60 windows (10%)</span>
+</div>
+<div class="h-2 w-full bg-[#222720] rounded-full overflow-hidden border border-[#2A3027]">
+<div class="h-full bg-[#A0C878] rounded-full" style="width: 10%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Restored Most Often -->
+<div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-base text-[#F2F0E6] font-normal">Restored most often</h3>
+<p class="font-body-sm text-body-sm text-[#A7AC9C]">Sites you pull back regularly. Consider keeping them pinned.</p>
+</div>
+<span class="px-2.5 py-1 bg-[#222720] border border-[#2A3027] rounded-full text-xs font-code-sm text-[#A7AC9C]">4 candidates</span>
+</div>
+<div class="divide-y divide-[#2A3027] pt-1">
+<!-- Item 1: Stripe -->
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#bbe491]">
+<span class="material-symbols-outlined text-base" data-icon="payments">payments</span>
+</div>
+<div>
+<div class="text-xs font-semibold text-[#F2F0E6]">Stripe pricing</div>
+<div class="text-[11px] text-[#A7AC9C]">restored 5× this month</div>
+</div>
+</div>
+<button class="px-3 py-1 bg-[#222720] hover:bg-[#2A3027] text-[#DDEB9D] border border-[#2A3027] rounded-full text-xs font-medium transition-colors">
+                Safelist
+              </button>
+</div>
+<!-- Item 2: Linear -->
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#bbe491]">
+<span class="material-symbols-outlined text-base" data-icon="alt_route">alt_route</span>
+</div>
+<div>
+<div class="text-xs font-semibold text-[#F2F0E6]">Linear roadmap</div>
+<div class="text-[11px] text-[#A7AC9C]">restored 4× this month</div>
+</div>
+</div>
+<button class="px-3 py-1 bg-[#222720] hover:bg-[#2A3027] text-[#DDEB9D] border border-[#2A3027] rounded-full text-xs font-medium transition-colors">
+                Safelist
+              </button>
+</div>
+<!-- Item 3: Figma -->
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#bbe491]">
+<span class="material-symbols-outlined text-base" data-icon="palette">palette</span>
+</div>
+<div>
+<div class="text-xs font-semibold text-[#F2F0E6]">Figma tokens</div>
+<div class="text-[11px] text-[#A7AC9C]">restored 3× this month</div>
+</div>
+</div>
+<button class="px-3 py-1 bg-[#222720] hover:bg-[#2A3027] text-[#DDEB9D] border border-[#2A3027] rounded-full text-xs font-medium transition-colors">
+                Safelist
+              </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

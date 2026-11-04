@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>03e-onboarding-shadow-and-done-light</title>
+<!-- Tailwind CSS CDN with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Newsreader (Serif) & DM Sans (UI Sans) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Custom Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              green: '#4F8A4B',
+              greenDark: '#3E703A',
+              cream: '#FAF6E9',
+              border: '#E8E2CC',
+              dark: '#1A2016',
+              muted: '#5F6355',
+              backdrop: '#7FA77A',
+              lightGreen: '#E5F0D6',
+              limeFill: '#A0C878'
+            }
+          }
+        }
+      }
+    };
+  </script>
+<!-- Custom Typography & Micro-adjustments Style -->
+<style data-purpose="custom-styling">
+    .font-serif-title {
+      font-family: 'Newsreader', Georgia, serif;
+      letter-spacing: -0.015em;
+    }
+    .custom-shadow-window {
+      box-shadow: 0 35px 65px -15px rgba(22, 40, 20, 0.35), 0 0 1px 1px rgba(0, 0, 0, 0.04);
+    }
+    .traffic-red { background-color: #FF5F57; }
+    .traffic-yellow { background-color: #FEBC2E; }
+    .traffic-green { background-color: #28C840; }
+  </style>
+</head>
+<body class="bg-[#7FA77A] min-h-screen text-[#1A2016] font-sans antialiased p-6 lg:p-12 flex flex-col items-center justify-center">
+<!-- BEGIN: DesktopBackdropContainer -->
+<main class="w-full max-w-[1600px] flex flex-col xl:flex-row items-center justify-center gap-10">
+<!-- ======================================================== -->
+<!-- BEGIN: WindowA (Step 5 of 6: Shadow Mode) -->
+<!-- ======================================================== -->
+<section aria-label="Decay Setup Assistant - Step 5 Shadow Mode" class="w-full max-w-[760px] h-[580px] bg-[#FAF6E9] border border-[#E8E2CC] rounded-[26px] custom-shadow-window flex flex-col overflow-hidden relative" data-purpose="onboarding-window-step-5">
+<!-- BEGIN: WindowA Titlebar -->
+<header class="h-[42px] px-5 flex items-center justify-between border-b border-[#E8E2CC]/70 select-none flex-shrink-0">
+<!-- Traffic light buttons -->
+<div class="flex items-center gap-2 w-20">
+<span class="w-3 h-3 rounded-full traffic-red inline-block border border-black/10"></span>
+<span class="w-3 h-3 rounded-full traffic-yellow inline-block border border-black/10"></span>
+<span class="w-3 h-3 rounded-full traffic-green inline-block border border-black/10"></span>
+</div>
+<!-- Titlebar Label -->
+<span class="text-xs font-medium text-[#5F6355] tracking-tight">Decay Setup Assistant</span>
+<div class="w-20"></div>
+</header>
+<!-- END: WindowA Titlebar -->
+<!-- BEGIN: WindowA MainContent -->
+<div class="p-3.5 flex flex-1 gap-4 overflow-hidden">
+<!-- BEGIN: LeftPanel (Sidebar Navigation) -->
+<aside class="w-[230px] rounded-[18px] bg-[#4F8A4B] text-white p-5 flex flex-col justify-between flex-shrink-0 select-none shadow-inner">
+<div>
+<!-- Decay Logo & Version -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+<!-- Leaf Logo Icon -->
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+<path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+</svg>
+</div>
+<span class="font-serif-title text-xl font-medium text-white tracking-wide">Decay</span>
+</div>
+<span class="text-[11px] font-medium bg-white/20 px-2 py-0.5 rounded-full text-white/90">v1.4</span>
+</div>
+<!-- Onboarding Step Indicator List -->
+<nav aria-label="Setup steps" class="space-y-3.5 text-[13px] font-medium">
+<!-- Step 1: Completed -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>1 Welcome</span>
+</div>
+<!-- Step 2: Completed -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>2 Choose pace</span>
+</div>
+<!-- Step 3: Completed -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>3 Connect browsers</span>
+</div>
+<!-- Step 4: Completed -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>4 Window access</span>
+</div>
+<!-- Step 5: Active -->
+<div class="flex items-center gap-3 text-white font-semibold">
+<span class="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B]"></span>
+</span>
+<span class="text-white">5 Shadow mode</span>
+</div>
+<!-- Step 6: Inactive -->
+<div class="flex items-center gap-3 text-white/50">
+<span class="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center flex-shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</span>
+<span>6 All set</span>
+</div>
+</nav>
+</div>
+<!-- Bottom Security Badge -->
+<div class="bg-white/10 border border-white/20 rounded-xl p-3 text-[11px] leading-relaxed text-white/90 backdrop-blur-sm">
+<div class="flex items-start gap-2">
+<svg class="w-4 h-4 text-white/80 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.</span>
+</div>
+</div>
+</aside>
+<!-- END: LeftPanel -->
+<!-- BEGIN: RightPanel (Window A Content) -->
+<section class="flex-1 flex flex-col justify-between px-5 py-4 overflow-y-auto" data-purpose="step-5-content">
+<div>
+<!-- Step Meta Tag -->
+<div class="text-[11px] font-bold tracking-wider uppercase text-[#5F6355] mb-1">
+              STEP 5 OF 6
+            </div>
+<!-- Headline -->
+<h1 class="font-serif-title text-[26px] font-medium text-[#1A2016] leading-tight">
+              First, a quiet week in shadow mode
+            </h1>
+<!-- Subtitle -->
+<p class="text-[13px] text-[#5F6355] mt-1.5 leading-snug mb-5">
+              For 7 days Decay only shows what it would have done. Nothing is closed until you say so.
+            </p>
+<!-- Shadow Mode Information Card -->
+<div class="bg-white rounded-2xl p-4 border border-[#E8E2CC] shadow-sm">
+<!-- 7-Segment Days Progress Visualizer -->
+<div class="mb-4">
+<div class="grid grid-cols-7 gap-1.5 mb-2">
+<div class="h-2 rounded-full bg-[#4F8A4B]" title="Day 1"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 2"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 3"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 4"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 5"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 6"></div>
+<div class="h-2 rounded-full bg-[#EBE6D6]" title="Day 7"></div>
+</div>
+<div class="flex justify-between items-center text-[11px] font-medium text-[#5F6355]">
+<span>Day 1 → Day 7</span>
+<span class="text-[#4F8A4B] font-semibold">then you decide</span>
+</div>
+</div>
+<!-- Feature Bullet Rows -->
+<div class="space-y-3 pt-3 border-t border-[#F2ECE0]">
+<!-- Row 1 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center text-[#4F8A4B] flex-shrink-0">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[13px] text-[#1A2016] font-normal">See a daily list of what would be archived</span>
+</div>
+<!-- Row 2 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center text-[#4F8A4B] flex-shrink-0">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[13px] text-[#1A2016] font-normal">Protect anything with one click</span>
+</div>
+<!-- Row 3 -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center text-[#4F8A4B] flex-shrink-0">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[13px] text-[#1A2016] font-normal">Turn on automatic mode when it feels right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- BEGIN: WindowA Footer Controls -->
+<footer class="pt-4 border-t border-[#E8E2CC]/80 flex items-center justify-between">
+<!-- Back Button -->
+<button class="px-5 py-2 rounded-full bg-white border border-[#E8E2CC] text-[#1A2016] text-[13px] font-medium shadow-xs hover:bg-[#F2ECE0] transition-colors focus:outline-none focus:ring-2 focus:ring-[#4F8A4B]/30" type="button">
+              Back
+            </button>
+<!-- Pagination Dots (Indicator 5 active) -->
+<div aria-label="Step progress indicator" class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#5F6355]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#5F6355]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#5F6355]/40"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#5F6355]/40"></span>
+<span class="w-4 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-[#5F6355]/40"></span>
+</div>
+<!-- Primary Action Button -->
+<button class="px-6 py-2 rounded-full bg-[#1A2016] hover:bg-black text-white text-[13px] font-medium shadow-sm transition-colors flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-black/40" type="button">
+<span>Start shadow mode</span>
+<span class="text-sm font-light">→</span>
+</button>
+</footer>
+<!-- END: WindowA Footer Controls -->
+</section>
+<!-- END: RightPanel (Window A) -->
+</div>
+<!-- END: WindowA MainContent -->
+</section>
+<!-- ======================================================== -->
+<!-- END: WindowA -->
+<!-- ======================================================== -->
+<!-- ======================================================== -->
+<!-- BEGIN: WindowB (Step 6 of 6: All Set / Completion) -->
+<!-- ======================================================== -->
+<section aria-label="Decay Setup Assistant - Step 6 All Set" class="w-full max-w-[760px] h-[580px] bg-[#FAF6E9] border border-[#E8E2CC] rounded-[26px] custom-shadow-window flex flex-col overflow-hidden relative" data-purpose="onboarding-window-step-6">
+<!-- BEGIN: WindowB Titlebar -->
+<header class="h-[42px] px-5 flex items-center justify-between border-b border-[#E8E2CC]/70 select-none flex-shrink-0">
+<!-- Traffic light buttons -->
+<div class="flex items-center gap-2 w-20">
+<span class="w-3 h-3 rounded-full traffic-red inline-block border border-black/10"></span>
+<span class="w-3 h-3 rounded-full traffic-yellow inline-block border border-black/10"></span>
+<span class="w-3 h-3 rounded-full traffic-green inline-block border border-black/10"></span>
+</div>
+<!-- Centered Title -->
+<span class="text-xs font-medium text-[#5F6355] tracking-tight">Decay Setup Assistant</span>
+<div class="w-20"></div>
+</header>
+<!-- END: WindowB Titlebar -->
+<!-- BEGIN: WindowB MainContent -->
+<div class="p-3.5 flex flex-1 gap-4 overflow-hidden">
+<!-- BEGIN: LeftPanel (Sidebar Navigation with Step 1-5 checked) -->
+<aside class="w-[230px] rounded-[18px] bg-[#4F8A4B] text-white p-5 flex flex-col justify-between flex-shrink-0 select-none shadow-inner">
+<div>
+<!-- Decay Logo & Version -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+<path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+</svg>
+</div>
+<span class="font-serif-title text-xl font-medium text-white tracking-wide">Decay</span>
+</div>
+<span class="text-[11px] font-medium bg-white/20 px-2 py-0.5 rounded-full text-white/90">v1.4</span>
+</div>
+<!-- Steps Progress: 1-5 checked, 6 highlighted -->
+<nav aria-label="Setup steps" class="space-y-3.5 text-[13px] font-medium">
+<!-- Step 1: Checked -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>1 Welcome</span>
+</div>
+<!-- Step 2: Checked -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>2 Choose pace</span>
+</div>
+<!-- Step 3: Checked -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>3 Connect browsers</span>
+</div>
+<!-- Step 4: Checked -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>4 Window access</span>
+</div>
+<!-- Step 5: Checked -->
+<div class="flex items-center gap-3 text-white/85">
+<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span>5 Shadow mode</span>
+</div>
+<!-- Step 6: Active Finish -->
+<div class="flex items-center gap-3 text-white font-semibold">
+<span class="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B]"></span>
+</span>
+<span class="text-white">6 All set</span>
+</div>
+</nav>
+</div>
+<!-- Bottom Shield Note -->
+<div class="bg-white/10 border border-white/20 rounded-xl p-3 text-[11px] leading-relaxed text-white/90 backdrop-blur-sm">
+<div class="flex items-start gap-2">
+<svg class="w-4 h-4 text-white/80 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.</span>
+</div>
+</div>
+</aside>
+<!-- END: LeftPanel -->
+<!-- BEGIN: RightPanel (Window B Centered Completion) -->
+<section class="flex-1 flex flex-col justify-between px-8 py-5 text-center overflow-y-auto" data-purpose="step-6-content">
+<div class="flex flex-col items-center">
+<!-- Success Badge Icon -->
+<div class="w-16 h-16 rounded-full bg-[#E5F0D6] border border-[#CDE0B7] flex items-center justify-center text-[#4F8A4B] mt-2 mb-3 shadow-inner">
+<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+<path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+</svg>
+</div>
+<!-- Headline -->
+<h1 class="font-serif-title text-[28px] font-medium text-[#1A2016] tracking-tight">
+              You're all set
+            </h1>
+<!-- Subtitle -->
+<p class="text-[13px] text-[#5F6355] mt-1 mb-5 max-w-xs">
+              Decay is now in your menu bar. It's watching quietly.
+            </p>
+<!-- Keyboard Shortcut White Card -->
+<div class="bg-white rounded-2xl p-4 border border-[#E8E2CC] shadow-sm w-full max-w-[340px] mb-3.5">
+<!-- Keycaps container -->
+<div class="flex items-center justify-center gap-1.5">
+<kbd class="min-w-[32px] h-8 px-2 flex items-center justify-center rounded-lg bg-[#FAF6E9] border border-[#D8D2BC] text-sm font-semibold text-[#1A2016] shadow-xs">⌥</kbd>
+<kbd class="min-w-[32px] h-8 px-2 flex items-center justify-center rounded-lg bg-[#FAF6E9] border border-[#D8D2BC] text-sm font-semibold text-[#1A2016] shadow-xs">⌘</kbd>
+<kbd class="min-w-[32px] h-8 px-2 flex items-center justify-center rounded-lg bg-[#FAF6E9] border border-[#D8D2BC] text-sm font-semibold text-[#1A2016] shadow-xs">D</kbd>
+</div>
+<p class="text-[11px] font-medium text-[#5F6355] mt-2.5">
+                Open search from anywhere
+              </p>
+</div>
+<!-- Auto-start Preferences Toggle Row -->
+<div class="bg-white/80 rounded-xl p-3 border border-[#E8E2CC] flex items-center justify-between w-full max-w-[340px]">
+<span class="text-[13px] font-medium text-[#1A2016]">Launch Decay at login</span>
+<!-- Toggle Switch (ON) -->
+<div aria-checked="true" class="w-10 h-6 bg-[#4F8A4B] rounded-full p-0.5 flex items-center justify-end cursor-pointer shadow-inner transition-colors" role="switch">
+<span class="w-5 h-5 rounded-full bg-white shadow-sm block"></span>
+</div>
+</div>
+</div>
+<!-- BEGIN: WindowB Footer Controls -->
+<footer class="pt-4 border-t border-[#E8E2CC]/80 flex items-center justify-center w-full">
+<button class="w-full max-w-[280px] py-2.5 rounded-full bg-[#1A2016] hover:bg-black text-white text-[13px] font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-black/40 hover:scale-[1.01]" type="button">
+              Open Decay
+            </button>
+</footer>
+<!-- END: WindowB Footer Controls -->
+</section>
+<!-- END: RightPanel (Window B) -->
+</div>
+<!-- END: WindowB MainContent -->
+</section>
+<!-- ======================================================== -->
+<!-- END: WindowB -->
+<!-- ======================================================== -->
+</main>
+<!-- END: DesktopBackdropContainer -->
+</body></html>

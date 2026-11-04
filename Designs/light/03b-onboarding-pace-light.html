@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>03b-onboarding-pace-light</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            sage: {
+              desktop: '#7FA77A',
+            },
+            decay: {
+              green: '#4F8A4B',
+              darkgreen: '#3c6e39',
+              lime: '#DDEB9D',
+              surface: '#FDFBF4',
+              cream: '#FAF6ED',
+              card: '#FFFFFF',
+              border: '#E8E4DA',
+              borderDark: '#41723D',
+              ink: '#1C1D1A',
+              muted: '#73776C',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #7FA77A;
+      font-family: 'DM Sans', sans-serif;
+      color: #1C1D1A;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-serif {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full flex items-center justify-center p-6 bg-[#7FA77A]">
+
+  <!-- macOS Window Frame (960x640) -->
+  <div class="w-[960px] h-[640px] bg-[#FAF6ED] rounded-[24px] shadow-[0_24px_60px_rgba(28,45,22,0.22),0_8px_20px_rgba(0,0,0,0.08)] border border-[rgba(255,255,255,0.4)] overflow-hidden flex flex-col relative select-none">
+    
+    <!-- Window Title Bar -->
+    <div class="h-10 px-4 flex items-center justify-between border-b border-[#EBE7DD]/80 bg-[#FAF6ED] shrink-0">
+      <!-- macOS Traffic Lights -->
+      <div class="flex items-center space-x-2 w-20">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block shadow-sm"></span>
+      </div>
+
+      <!-- Title -->
+      <div class="text-[13px] font-medium text-[#73776C] tracking-tight">
+        Decay Setup Assistant
+      </div>
+
+      <!-- Spacer -->
+      <div class="w-20"></div>
+    </div>
+
+    <!-- Window Body Split -->
+    <div class="flex-1 flex overflow-hidden p-3.5 gap-4">
+
+      <!-- LEFT Green Panel (312px) -->
+      <div class="w-[312px] bg-[#4F8A4B] rounded-[20px] p-6 flex flex-col justify-between text-white shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        
+        <!-- Top: Logo & Steps -->
+        <div>
+          <!-- Logo & Version -->
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                <!-- Decay Leaf SVG -->
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                </svg>
+              </div>
+              <span class="font-serif text-[22px] tracking-tight text-white font-medium">Decay</span>
+            </div>
+            <span class="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-white/90">v1.4</span>
+          </div>
+
+          <!-- Setup Step List -->
+          <div class="space-y-4 text-[13.5px]">
+            <!-- Step 1: Welcome (Done) -->
+            <div class="flex items-center gap-3 text-white/90">
+              <div class="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-white shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <span class="font-normal">1 Welcome</span>
+            </div>
+
+            <!-- Step 2: Choose pace (CURRENT) -->
+            <div class="flex items-center gap-3 text-white font-semibold">
+              <div class="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[#4F8A4B] shrink-0 shadow-sm">
+                <div class="w-2 h-2 rounded-full bg-[#4F8A4B]"></div>
+              </div>
+              <span class="tracking-tight">2 Choose pace</span>
+            </div>
+
+            <!-- Step 3: Connect browsers -->
+            <div class="flex items-center gap-3 text-white/45">
+              <div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+                <div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+              </div>
+              <span class="font-normal">3 Connect browsers</span>
+            </div>
+
+            <!-- Step 4: Window access -->
+            <div class="flex items-center gap-3 text-white/45">
+              <div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+                <div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+              </div>
+              <span class="font-normal">4 Window access</span>
+            </div>
+
+            <!-- Step 5: Shadow mode -->
+            <div class="flex items-center gap-3 text-white/45">
+              <div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+                <div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+              </div>
+              <span class="font-normal">5 Shadow mode</span>
+            </div>
+
+            <!-- Step 6: All set -->
+            <div class="flex items-center gap-3 text-white/45">
+              <div class="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center shrink-0">
+                <div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+              </div>
+              <span class="font-normal">6 All set</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Frosted Notice -->
+        <div class="bg-white/10 border border-white/20 rounded-xl p-3.5 backdrop-blur-sm">
+          <div class="flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-white/90 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+            <p class="text-[12px] leading-relaxed text-white/90">
+              Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT Content Column -->
+      <div class="flex-1 flex flex-col justify-between pt-3 pb-2 px-4">
+        
+        <!-- Header & Main Content -->
+        <div>
+          <!-- Step indicator & Title -->
+          <div class="mb-5">
+            <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#73776C] mb-1">
+              STEP 2 OF 6
+            </div>
+            <h1 class="font-serif text-[32px] leading-tight text-[#1C1D1A] font-medium tracking-tight mb-1">
+              How tidy do you like it?
+            </h1>
+            <p class="text-[13.5px] text-[#73776C]">
+              You can change this any time in Settings.
+            </p>
+          </div>
+
+          <!-- Three Large Pace Cards (side-by-side) -->
+          <div class="grid grid-cols-3 gap-3.5 mb-5">
+            
+            <!-- Card 1: Gentle -->
+            <div class="bg-white rounded-[22px] p-4 border border-[#E8E4DA] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:border-[#CCD5C5] transition-all cursor-pointer flex flex-col justify-between h-[236px] group">
+              <div>
+                <div class="flex items-start justify-between mb-1.5">
+                  <h2 class="font-serif text-[20px] font-medium text-[#1C1D1A] group-hover:text-[#4F8A4B] transition-colors">
+                    Gentle
+                  </h2>
+                </div>
+                <p class="text-[12px] leading-snug text-[#73776C] mb-4">
+                  For people who keep research open for days.
+                </p>
+              </div>
+
+              <!-- Threshold breakdown -->
+              <div class="bg-[#FAF8F2] rounded-xl p-2.5 border border-[#EFECE3] space-y-1.5 text-[11.5px]">
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Stale</span>
+                  <span class="font-medium text-[#1C1D1A]">24 h</span>
+                </div>
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Hide</span>
+                  <span class="font-medium text-[#1C1D1A]">72 h</span>
+                </div>
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Archive</span>
+                  <span class="font-medium text-[#1C1D1A]">120 h</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Balanced (SELECTED) -->
+            <div class="bg-[#FAFBEF] rounded-[22px] p-4 border-2 border-[#4F8A4B] shadow-[0_6px_16px_rgba(79,138,75,0.12)] relative flex flex-col justify-between h-[236px] ring-2 ring-[#DDEB9D]/60">
+              
+              <!-- Checkmark badge top-right -->
+              <div class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#4F8A4B] text-white flex items-center justify-center shadow-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <h2 class="font-serif text-[20px] font-semibold text-[#1C1D1A]">
+                    Balanced
+                  </h2>
+                  <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#DDEB9D] text-[#335830] border border-[#CCDDA0]">
+                    Recommended
+                  </span>
+                </div>
+                <p class="text-[12px] leading-snug text-[#5E6457] mb-4">
+                  A good default for most work.
+                </p>
+              </div>
+
+              <!-- Threshold breakdown -->
+              <div class="bg-white rounded-xl p-2.5 border border-[#DFE7D4] space-y-1.5 text-[11.5px] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div class="flex justify-between items-center">
+                  <span class="text-[#73776C]">Stale</span>
+                  <span class="font-semibold text-[#2B4B27]">12 h</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-[#73776C]">Hide</span>
+                  <span class="font-semibold text-[#2B4B27]">36 h</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-[#73776C]">Archive</span>
+                  <span class="font-semibold text-[#2B4B27]">60 h</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Aggressive -->
+            <div class="bg-white rounded-[22px] p-4 border border-[#E8E4DA] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:border-[#CCD5C5] transition-all cursor-pointer flex flex-col justify-between h-[236px] group">
+              <div>
+                <div class="flex items-start justify-between mb-1.5">
+                  <h2 class="font-serif text-[20px] font-medium text-[#1C1D1A] group-hover:text-[#4F8A4B] transition-colors">
+                    Aggressive
+                  </h2>
+                </div>
+                <p class="text-[12px] leading-snug text-[#73776C] mb-4">
+                  Keep only what you're using today.
+                </p>
+              </div>
+
+              <!-- Threshold breakdown -->
+              <div class="bg-[#FAF8F2] rounded-xl p-2.5 border border-[#EFECE3] space-y-1.5 text-[11.5px]">
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Stale</span>
+                  <span class="font-medium text-[#1C1D1A]">4 h</span>
+                </div>
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Hide</span>
+                  <span class="font-medium text-[#1C1D1A]">12 h</span>
+                </div>
+                <div class="flex justify-between items-center text-[#555A50]">
+                  <span class="text-[#73776C]">Archive</span>
+                  <span class="font-medium text-[#1C1D1A]">24 h</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Helper Note & Customise Link -->
+          <div class="flex items-center justify-between px-1 text-[12px]">
+            <span class="text-[#73776C]">
+              Hours are active hours — the clock pauses when you're away.
+            </span>
+            <button class="text-[#4F8A4B] hover:text-[#386434] font-medium underline underline-offset-2 transition-colors">
+              Customise thresholds
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer Row -->
+        <div class="pt-4 border-t border-[#EBE7DD]/80 flex items-center justify-between">
+          <!-- Back button (white pill secondary) -->
+          <button class="px-5 py-2 rounded-full bg-white hover:bg-[#F5F2E9] text-[#1C1D1A] text-[13px] font-medium border border-[#E0DCD1] shadow-sm transition-colors active:scale-95">
+            Back
+          </button>
+
+          <!-- Step dots (2nd dot elongated green) -->
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#C8C4B8]"></span>
+            <span class="w-5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#C8C4B8]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#C8C4B8]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#C8C4B8]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#C8C4B8]"></span>
+          </div>
+
+          <!-- Continue button (black pill primary) -->
+          <button class="px-5 py-2 rounded-full bg-[#1C1D1A] hover:bg-[#2D2E2A] text-white text-[13px] font-medium shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+            <span>Continue</span>
+            <span>→</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

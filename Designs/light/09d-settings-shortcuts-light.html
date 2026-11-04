@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay Settings — Shortcuts</title>
+<!-- Google Fonts: Newsreader, DM Sans, JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed": "#0c4a13",
+            "surface-container-high": "#f2efd5",
+            "on-primary-fixed-variant": "#2e672d",
+            "surface": "#fffbff",
+            "surface-bright": "#fffbff",
+            "on-surface": "#3a3924",
+            "error-container": "#fe8b70",
+            "tertiary": "#5e6a2a",
+            "secondary-container": "#c6ef9b",
+            "tertiary-container": "#edfbac",
+            "surface-container": "#f8f4df",
+            "background": "#fffbff",
+            "on-secondary-container": "#395b18",
+            "on-secondary-fixed": "#274705",
+            "primary-dim": "#245e25",
+            "surface-tint": "#316a2f",
+            "on-tertiary": "#ffffff",
+            "secondary": "#4b6e29",
+            "surface-container-lowest": "#ffffff",
+            "on-background": "#3a3924",
+            "on-secondary-fixed-variant": "#436521",
+            "on-error": "#ffffff",
+            "on-error-container": "#742410",
+            "tertiary-dim": "#525d1f",
+            "tertiary-fixed-dim": "#dfed9e",
+            "outline": "#848269",
+            "primary-container": "#b2f3a8",
+            "error-dim": "#5c1202",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "on-tertiary-container": "#556122",
+            "primary-fixed-dim": "#a4e49b",
+            "primary-fixed": "#b2f3a8",
+            "error": "#a54731",
+            "on-primary-container": "#235d24",
+            "surface-variant": "#ede9cc",
+            "primary": "#316a2f",
+            "on-primary": "#e6ffdd",
+            "secondary-dim": "#3f611e",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#edfbac",
+            "on-surface-variant": "#67654e",
+            "inverse-surface": "#0f0e08",
+            "surface-container-low": "#fefae8",
+            "secondary-fixed": "#c6ef9b",
+            "on-tertiary-fixed": "#444e11",
+            "outline-variant": "#bdba9f",
+            "surface-dim": "#e7e4c3",
+            "inverse-primary": "#bafcb0",
+            "inverse-on-surface": "#a09d92",
+            "secondary-fixed-dim": "#b8e18e",
+            "surface-container-highest": "#ede9cc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "gutter": "1rem",
+            "margin": "1.5rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Newsreader", "serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "body-medium": ["DM Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 17px;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #bdba9f;
+      border-radius: 9999px;
+    }
+    @keyframes cursor-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .blinking-cursor {
+      animation: cursor-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#7FA77A] p-6 flex items-center justify-center font-body-md text-on-surface antialiased select-none">
+<!-- macOS Window Frame (1100 x 900) -->
+<main class="w-[1100px] h-[900px] bg-surface-container-low rounded-[20px] shadow-[0_24px_70px_rgba(25,36,20,0.32)] border border-[#E8E2CC] flex flex-col overflow-hidden relative">
+<!-- macOS Window Header Bar -->
+<header class="h-11 bg-surface-container px-4 flex items-center justify-between border-b border-outline-variant/60 shrink-0 select-none">
+<!-- Traffic Light Controls -->
+<div class="flex items-center gap-2 w-28">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] inline-block shadow-sm"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] inline-block shadow-sm"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] inline-block shadow-sm"></span>
+</div>
+<!-- Centered Window Title -->
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">tune</span>
+<span class="font-body-medium text-body-medium text-on-surface font-medium tracking-tight">Settings</span>
+</div>
+<!-- Trailing Version Indicator -->
+<div class="w-28 flex justify-end">
+<span class="font-code-sm text-code-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant border border-outline-variant/50">v1.4</span>
+</div>
+</header>
+<!-- Window Body: Sidebar + Main Canvas -->
+<div class="flex-1 flex overflow-hidden p-3 gap-3 bg-surface-container-low">
+<!-- Left Sidebar Navigation Card -->
+<aside class="w-56 bg-surface-container-lowest rounded-2xl p-3 border border-outline-variant/60 shadow-sm flex flex-col justify-between shrink-0">
+<!-- Navigation Tab List -->
+<nav aria-label="Settings navigation" class="space-y-0.5">
+<!-- General -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">tune</span>
+<span>General</span>
+</a>
+<!-- Aging -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">hourglass_empty</span>
+<span>Aging</span>
+</a>
+<!-- Protection -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">verified_user</span>
+<span>Protection</span>
+</a>
+<!-- Browsers -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">tab</span>
+<span>Browsers</span>
+</a>
+<!-- Rules -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">checklist</span>
+<span>Rules</span>
+</a>
+<!-- Privacy & data -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">lock</span>
+<span>Privacy &amp; data</span>
+</a>
+<!-- Shortcuts (ACTIVE STATE: Lime #DDEB9D pill, dark forest green text) -->
+<a aria-current="page" class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-secondary-container text-on-secondary-container font-body-medium text-body-medium font-semibold shadow-[0_1px_2px_rgba(31,36,24,0.06)]" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-secondary-container">keyboard</span>
+<span>Shortcuts</span>
+</a>
+<!-- Notifications -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">notifications</span>
+<span>Notifications</span>
+</a>
+<!-- License (with PRO badge) -->
+<a class="flex items-center justify-between px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">workspace_premium</span>
+<span>License</span>
+</div>
+<span class="font-code-sm text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded bg-tertiary-container text-on-tertiary-container border border-outline-variant/40">PRO</span>
+</a>
+<!-- Updates -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">update</span>
+<span>Updates</span>
+</a>
+<!-- About -->
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant group-hover:text-on-surface">info</span>
+<span>About</span>
+</a>
+</nav>
+<!-- Sidebar Footer Status Pill -->
+<div class="pt-3 border-t border-outline-variant/50">
+<div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container-high/60 border border-outline-variant/50 text-on-surface">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-body-medium text-[11px] font-medium tracking-tight text-on-surface">Engine active</span>
+</div>
+</div>
+</aside>
+<!-- Right Content Area -->
+<section class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4 flex flex-col space-y-5" tabindex="0">
+<!-- Main Header -->
+<header class="space-y-1 select-text">
+<h1 class="font-display-lg text-display-lg text-[#1C1D1A]">Shortcuts</h1>
+<p class="font-body-md text-body-md text-[#575953]">Decay is built to be used from the keyboard. Click a shortcut to change it.</p>
+</header>
+<!-- Content Container -->
+<div class="space-y-4 pb-4">
+<!-- Card 1: GLOBAL -->
+<article class="rounded-[22px] p-6 bg-surface-container-lowest border border-outline-variant/60 shadow-[0_1px_2px_rgba(31,36,24,0.04)] space-y-4">
+<h2 class="font-label-sm text-label-sm font-semibold tracking-wider text-[#767970]">GLOBAL</h2>
+<!-- Row 1: Open search panel -->
+<div class="flex items-center justify-between py-2 border-b border-surface-container-high">
+<div class="space-y-0.5 max-w-md">
+<p class="font-body-medium text-body-medium text-on-surface font-semibold">Open search panel</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">Summon Decay search from anywhere on your Mac</p>
+</div>
+<div class="flex items-center gap-2.5">
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌥</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)] font-medium">D</kbd>
+</div>
+<button class="font-body-md text-label-sm px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/60 shadow-sm transition-colors active:opacity-80" type="button">Change</button>
+</div>
+</div>
+<!-- Row 2: Sweep now -->
+<div class="flex items-center justify-between py-2">
+<div class="space-y-0.5 max-w-md">
+<p class="font-body-medium text-body-medium text-on-surface font-semibold">Sweep now</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">Trigger immediate background sweep</p>
+</div>
+<div class="flex items-center gap-2.5">
+<span class="font-body-md text-label-sm text-on-surface-variant/80 italic">Not set</span>
+<button class="font-body-md text-label-sm px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/60 shadow-sm transition-colors active:opacity-80" type="button">Record</button>
+</div>
+</div>
+</article>
+<!-- Card 2: IN SEARCH & LIBRARY -->
+<article class="rounded-[22px] p-6 bg-surface-container-lowest border border-outline-variant/60 shadow-[0_1px_2px_rgba(31,36,24,0.04)] space-y-3">
+<h2 class="font-label-sm text-label-sm font-semibold tracking-wider text-[#767970] mb-2">IN SEARCH &amp; LIBRARY</h2>
+<div class="divide-y divide-surface-container-high text-on-surface">
+<!-- Restore selected -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Restore selected</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">↵</kbd>
+</div>
+</div>
+<!-- Restore group -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Restore group</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">↵</kbd>
+</div>
+</div>
+<!-- Open in new window -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Open in new window</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌥</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">↵</kbd>
+</div>
+</div>
+<!-- Protect (always keep) -->
+<div class="flex items-center justify-between py-2 px-2 -mx-2 rounded-xl bg-surface-container-high/40 border border-outline-variant/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span class="font-body-medium text-body-medium text-on-surface font-semibold">Protect (always keep)</span>
+</div>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container-lowest border border-outline-variant/80 text-on-surface font-semibold shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container-lowest border border-outline-variant/80 text-on-surface font-semibold shadow-[0_1px_0_rgba(0,0,0,0.08)]">P</kbd>
+</div>
+</div>
+<!-- Delete from archive -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Delete from archive</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌫</kbd>
+</div>
+</div>
+<!-- Show details -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Show details</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">I</kbd>
+</div>
+</div>
+<!-- Filter by app -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Filter by app</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[34px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)] font-code-sm">1…9</kbd>
+</div>
+</div>
+<!-- Open Library (Recording State) -->
+<div class="flex items-center justify-between py-2 px-2 -mx-2 rounded-xl bg-surface-container/60 border border-secondary-container/80">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-on-surface font-semibold">Open Library</span>
+</div>
+<div class="flex items-center gap-2">
+<!-- Recording pill in lime #DDEB9D -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container border border-secondary/30 shadow-inner">
+<span class="font-code-sm text-[11px] font-medium">Press new shortcut…</span>
+<span class="w-1.5 h-3.5 bg-on-secondary-container rounded-sm blinking-cursor"></span>
+<button class="ml-1 w-4 h-4 rounded-full flex items-center justify-center hover:bg-on-secondary-container/10 transition-colors text-on-secondary-container" title="Cancel" type="button">
+<span class="text-xs font-semibold leading-none">×</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Undo last sweep -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Undo last sweep</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">Z</kbd>
+</div>
+</div>
+<!-- Shortcut cheat sheet -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Shortcut cheat sheet</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">⌘</kbd>
+<kbd class="font-code-sm text-code-sm min-w-[26px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)]">/</kbd>
+</div>
+</div>
+<!-- Close -->
+<div class="flex items-center justify-between py-2">
+<span class="font-body-medium text-body-medium text-on-surface">Close</span>
+<div class="flex items-center gap-1">
+<kbd class="font-code-sm text-code-sm min-w-[32px] h-6 px-1.5 flex items-center justify-center rounded-lg bg-surface-container border border-outline-variant/70 text-on-surface shadow-[0_1px_0_rgba(0,0,0,0.08)] font-code-sm">esc</kbd>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3: NOTIFICATIONS -->
+<article class="rounded-[22px] p-6 bg-surface-container-lowest border border-outline-variant/60 shadow-[0_1px_2px_rgba(31,36,24,0.04)] space-y-4">
+<h2 class="font-label-sm text-label-sm font-semibold tracking-wider text-[#767970]">NOTIFICATIONS</h2>
+<!-- Row 1: Daily summary -->
+<div class="flex items-center justify-between py-1 border-b border-surface-container-high pb-3">
+<div class="space-y-0.5 max-w-md">
+<p class="font-body-medium text-body-medium text-on-surface font-semibold">Daily summary at 9:00 AM</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">Review pruned tabs and reclaimed RAM each morning</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="font-code-sm text-code-sm px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/60 flex items-center gap-1 shadow-sm transition-colors active:opacity-80" type="button">
+<span>9:00 AM</span>
+<span class="text-[10px] text-on-surface-variant">▾</span>
+</button>
+<!-- Switch ON (Forest green: #386A20 / bg-primary) -->
+<button aria-checked="true" class="w-10 h-6 bg-primary rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none shadow-inner flex items-center justify-end" role="switch" type="button">
+<span class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-md transition-transform duration-200"></span>
+</button>
+</div>
+</div>
+<!-- Row 2: Notify after each sweep -->
+<div class="flex items-center justify-between py-1 border-b border-surface-container-high pb-3">
+<div class="space-y-0.5 max-w-md">
+<p class="font-body-medium text-body-medium text-on-surface font-semibold">Notify after each sweep</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">Post a discreet banner when items decay to archive</p>
+</div>
+<!-- Switch ON -->
+<button aria-checked="true" class="w-10 h-6 bg-primary rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none shadow-inner flex items-center justify-end" role="switch" type="button">
+<span class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-md transition-transform duration-200"></span>
+</button>
+</div>
+<!-- Row 3: Quiet during Focus modes -->
+<div class="flex items-center justify-between py-1">
+<div class="space-y-0.5 max-w-md">
+<p class="font-body-medium text-body-medium text-on-surface font-semibold">Quiet during Focus modes</p>
+<p class="font-body-md text-[12px] text-on-surface-variant">Suppress notifications while macOS Do Not Disturb is active</p>
+</div>
+<!-- Switch ON -->
+<button aria-checked="true" class="w-10 h-6 bg-primary rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none shadow-inner flex items-center justify-end" role="switch" type="button">
+<span class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-md transition-transform duration-200"></span>
+</button>
+</div>
+</article>
+</div>
+</section>
+</div>
+</main>
+<script>
+    // Lightweight toggle interactivity for switches
+    document.querySelectorAll('[role="switch"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isChecked = btn.getAttribute('aria-checked') === 'true';
+        btn.setAttribute('aria-checked', (!isChecked).toString());
+        if (isChecked) {
+          btn.classList.remove('bg-primary', 'justify-end');
+          btn.classList.add('bg-outline-variant', 'justify-start');
+        } else {
+          btn.classList.remove('bg-outline-variant', 'justify-start');
+          btn.classList.add('bg-primary', 'justify-end');
+        }
+      });
+    });
+  </script>
+</body></html>

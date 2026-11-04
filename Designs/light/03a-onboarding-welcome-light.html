@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay Setup Assistant - Welcome</title>
+<!-- Material Symbols & Typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed": "#0c4a13",
+            "on-secondary": "#ffffff",
+            "outline-variant": "#bdba9f",
+            "secondary-fixed": "#c6ef9b",
+            "secondary-container": "#c6ef9b",
+            "on-primary-container": "#235d24",
+            "tertiary-fixed": "#edfbac",
+            "surface-bright": "#fffbff",
+            "secondary-dim": "#3f611e",
+            "error": "#a54731",
+            "tertiary": "#5e6a2a",
+            "background": "#fffbff",
+            "inverse-on-surface": "#a09d92",
+            "primary-fixed": "#b2f3a8",
+            "tertiary-container": "#edfbac",
+            "on-secondary-fixed": "#274705",
+            "tertiary-fixed-dim": "#dfed9e",
+            "surface-dim": "#e7e4c3",
+            "surface-tint": "#316a2f",
+            "on-primary": "#e6ffdd",
+            "on-surface-variant": "#67654e",
+            "primary-dim": "#245e25",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#fefae8",
+            "inverse-primary": "#bafcb0",
+            "surface-variant": "#ede9cc",
+            "on-primary-fixed-variant": "#2e672d",
+            "on-background": "#3a3924",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#742410",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "error-dim": "#5c1202",
+            "outline": "#848269",
+            "error-container": "#fe8b70",
+            "tertiary-dim": "#525d1f",
+            "on-surface": "#3a3924",
+            "primary-fixed-dim": "#a4e49b",
+            "primary-container": "#b2f3a8",
+            "surface-container-highest": "#ede9cc",
+            "surface": "#fffbff",
+            "inverse-surface": "#0f0e08",
+            "secondary": "#4b6e29",
+            "on-secondary-container": "#395b18",
+            "on-tertiary-fixed": "#444e11",
+            "on-secondary-fixed-variant": "#436521",
+            "on-tertiary-container": "#556122",
+            "on-error": "#ffffff",
+            "surface-container-high": "#f2efd5",
+            "surface-container": "#f8f4df",
+            "primary": "#316a2f",
+            "secondary-fixed-dim": "#b8e18e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "body-medium": ["DM Sans", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "headline-md": ["Newsreader", "serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "body-md": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "display-lg": ["Newsreader", "serif"]
+          },
+          "fontSize": {
+            "body-medium": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "display-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .custom-backdrop {
+      background-color: #7FA77A;
+      background-image: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.05) 100%);
+    }
+    .stepper-active-dot {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+    }
+    .window-shadow {
+      box-shadow: 0 28px 70px -15px rgba(27, 43, 23, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="custom-backdrop min-h-screen w-full flex items-center justify-center p-4 md:p-8 antialiased select-none font-body-md text-on-surface">
+<!-- macOS Window Frame (960x640 Target Geometry) -->
+<main class="w-full max-w-[960px] h-[640px] bg-[#FAF8F0] rounded-[20px] window-shadow flex flex-col overflow-hidden border border-[#E8E2CC]/80">
+<!-- Window macOS Title Bar -->
+<header class="h-10 bg-[#FAF8F0] border-b border-[#E8E2CC]/60 flex items-center justify-between px-4 shrink-0 select-none">
+<!-- Traffic Light Controls -->
+<div class="flex items-center space-x-2 w-28">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 cursor-default"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 cursor-default"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 cursor-default"></div>
+</div>
+<!-- Centered Window Title -->
+<div class="flex items-center gap-1.5 text-on-surface-variant font-body-medium text-body-medium tracking-tight">
+<span class="text-stone-500 font-medium">Decay Setup Assistant</span>
+</div>
+<!-- Right Spacer for Perfect Centering -->
+<div class="w-28 flex justify-end items-center">
+<span class="text-[11px] font-mono text-stone-400">macOS</span>
+</div>
+</header>
+<!-- Main Window Layout Container: Sidebar + Content Area -->
+<div class="flex-1 flex overflow-hidden p-3 gap-3 bg-[#FAF8F0]">
+<!-- LEFT PANEL: Brand Stepper Sidebar -->
+<aside class="w-[248px] bg-[#4F8A4B] rounded-[14px] flex flex-col justify-between p-5 text-white shrink-0 select-none relative overflow-hidden shadow-inner">
+<!-- Subtle Organic Background Glow -->
+<div class="absolute -top-16 -right-16 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<!-- Sidebar Brand Header -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-[20px] text-emerald-100" data-icon="eco">eco</span>
+<span class="font-headline-lg text-headline-lg font-medium tracking-tight text-white">Decay</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-white/15 border border-white/20 text-emerald-50">v1.4</span>
+</div>
+<!-- Vertical Stepper Steps 1 through 6 -->
+<nav aria-label="Setup steps" class="space-y-4">
+<!-- Step 1: Active -->
+<div class="flex items-center space-x-3 text-white cursor-default group">
+<div class="w-5 h-5 rounded-full bg-white text-[#4F8A4B] flex items-center justify-center text-[11px] font-bold stepper-active-dot shrink-0">
+                1
+              </div>
+<span class="font-body-medium text-body-medium font-semibold text-white tracking-tight">Welcome</span>
+</div>
+<!-- Step 2 -->
+<div class="flex items-center space-x-3 text-white/50 cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/35 flex items-center justify-center text-[10px] font-medium shrink-0">
+                2
+              </div>
+<span class="font-body-md text-body-md tracking-tight">Choose pace</span>
+</div>
+<!-- Step 3 -->
+<div class="flex items-center space-x-3 text-white/50 cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/35 flex items-center justify-center text-[10px] font-medium shrink-0">
+                3
+              </div>
+<span class="font-body-md text-body-md tracking-tight">Connect browsers</span>
+</div>
+<!-- Step 4 -->
+<div class="flex items-center space-x-3 text-white/50 cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/35 flex items-center justify-center text-[10px] font-medium shrink-0">
+                4
+              </div>
+<span class="font-body-md text-body-md tracking-tight">Window access</span>
+</div>
+<!-- Step 5 -->
+<div class="flex items-center space-x-3 text-white/50 cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/35 flex items-center justify-center text-[10px] font-medium shrink-0">
+                5
+              </div>
+<span class="font-body-md text-body-md tracking-tight">Shadow mode</span>
+</div>
+<!-- Step 6 -->
+<div class="flex items-center space-x-3 text-white/50 cursor-default">
+<div class="w-5 h-5 rounded-full border border-white/35 flex items-center justify-center text-[10px] font-medium shrink-0">
+                6
+              </div>
+<span class="font-body-md text-body-md tracking-tight">All set</span>
+</div>
+</nav>
+</div>
+<!-- Bottom Frosted Notice Card -->
+<div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-3.5 space-y-2">
+<div class="flex items-center space-x-1.5 text-emerald-100">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified_user">verified_user</span>
+<span class="text-[11px] font-semibold tracking-wide uppercase">Shadow Guarantee</span>
+</div>
+<p class="text-[11px] leading-[16px] text-emerald-100/90 font-normal">
+            Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+          </p>
+</div>
+</aside>
+<!-- RIGHT COLUMN: Welcome Onboarding Content Canvas -->
+<section class="flex-1 bg-[#FFFDF6] rounded-[14px] border border-[#E8E2CC]/70 flex flex-col justify-between px-10 py-7 overflow-y-auto">
+<div class="flex-1 flex flex-col justify-center max-w-[560px]">
+<!-- Step Counter Badge -->
+<div class="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500 mb-1.5 flex items-center gap-2">
+<span>STEP 1 OF 6</span>
+<span class="h-1 w-1 rounded-full bg-stone-300"></span>
+<span class="text-stone-400 font-normal normal-case tracking-normal">Introduction</span>
+</div>
+<!-- Editorial Headline -->
+<h1 class="font-display-lg text-[32px] leading-[38px] text-stone-900 font-normal tracking-tight mb-2">
+            A calmer desktop, without losing anything
+          </h1>
+<!-- Body Description -->
+<p class="font-body-md text-[13px] leading-[20px] text-stone-600 mb-5">
+            Decay notices the tabs and windows you've stopped using and quietly puts them away. Search and bring anything back in a keystroke.
+          </p>
+<!-- 3 Feature Assurance Bento Cards -->
+<div class="space-y-2.5">
+<!-- Card 1 -->
+<div class="bg-white border border-[#E8E5D8] rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm hover:border-[#D9D3C0] transition-colors">
+<div class="w-9 h-9 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center shrink-0 text-[#4F8A4B]">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-body-medium text-[13px] font-semibold text-stone-900 leading-tight">Only active time counts</h4>
+<p class="font-body-md text-[12px] text-stone-500 leading-snug mt-0.5">Nights, weekends and meetings don't age your tabs.</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white border border-[#E8E5D8] rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm hover:border-[#D9D3C0] transition-colors">
+<div class="w-9 h-9 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center shrink-0 text-[#4F8A4B]">
+<span class="material-symbols-outlined text-[18px]" data-icon="shield">shield</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-body-medium text-[13px] font-semibold text-stone-900 leading-tight">Never loses work</h4>
+<p class="font-body-md text-[12px] text-stone-500 leading-snug mt-0.5">Pinned, playing and unsaved tabs are always protected.</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white border border-[#E8E5D8] rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm hover:border-[#D9D3C0] transition-colors">
+<div class="w-9 h-9 rounded-full bg-[#FAF6E9] border border-[#E8E2CC] flex items-center justify-center shrink-0 text-[#4F8A4B]">
+<span class="material-symbols-outlined text-[18px]" data-icon="search">search</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-body-medium text-[13px] font-semibold text-stone-900 leading-tight">Everything comes back</h4>
+<p class="font-body-md text-[12px] text-stone-500 leading-snug mt-0.5">
+                  Press <kbd class="font-code-sm bg-[#FAF8F0] border border-stone-300 rounded px-1.5 py-0.5 text-[11px] text-stone-700 shadow-xs font-medium">⌥⌘D</kbd> to search and restore anytime.
+                </p>
+</div>
+</div>
+</div>
+<!-- Local Privacy Assurance Banner -->
+<div class="flex items-center gap-2 mt-4 text-[12px] text-stone-500">
+<span class="material-symbols-outlined text-[15px] text-stone-400" data-icon="lock">lock</span>
+<span>Runs entirely on this device. No account. No tracking.</span>
+</div>
+</div>
+<!-- Footer Action Strip -->
+<footer class="pt-4 border-t border-[#E8E2CC]/60 flex items-center justify-between select-none">
+<!-- Left Empty Slot to balance center alignment -->
+<div class="w-24"></div>
+<!-- Stepper Dots -->
+<div aria-hidden="true" class="flex items-center space-x-1.5">
+<div class="w-6 h-1.5 bg-[#4F8A4B] rounded-full transition-all"></div>
+<div class="w-1.5 h-1.5 bg-stone-300 rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-stone-300 rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-stone-300 rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-stone-300 rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-stone-300 rounded-full"></div>
+</div>
+<!-- Primary CTA Button -->
+<div class="w-24 flex justify-end">
+<button class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-body-medium text-[13px] tracking-tight shadow-sm active:scale-[0.98] transition-all cursor-pointer">
+<span>Get started</span>
+<span class="material-symbols-outlined text-[16px] leading-none" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</footer>
+</section>
+</div>
+</main>
+</body></html>

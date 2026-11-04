@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay Settings - Notifications</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error-container": "#fe8b70",
+            "on-surface-variant": "#67654e",
+            "surface-container-highest": "#ede9cc",
+            "surface-container": "#f8f4df",
+            "on-tertiary-container": "#556122",
+            "on-tertiary-fixed": "#444e11",
+            "secondary": "#4b6e29",
+            "on-surface": "#3a3924",
+            "on-error-container": "#742410",
+            "surface-container-lowest": "#ffffff",
+            "secondary-container": "#c6ef9b",
+            "surface-container-high": "#f2efd5",
+            "surface": "#fffbff",
+            "inverse-surface": "#0f0e08",
+            "on-primary-container": "#235d24",
+            "primary-dim": "#245e25",
+            "secondary-dim": "#3f611e",
+            "surface-tint": "#316a2f",
+            "outline-variant": "#bdba9f",
+            "error-dim": "#5c1202",
+            "on-primary": "#e6ffdd",
+            "on-background": "#3a3924",
+            "tertiary-dim": "#525d1f",
+            "on-secondary-container": "#395b18",
+            "tertiary-container": "#edfbac",
+            "primary-fixed": "#b2f3a8",
+            "on-tertiary-fixed-variant": "#606c2c",
+            "tertiary": "#5e6a2a",
+            "secondary-fixed-dim": "#b8e18e",
+            "primary-container": "#b2f3a8",
+            "on-error": "#ffffff",
+            "on-secondary-fixed": "#274705",
+            "surface-variant": "#ede9cc",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed": "#0c4a13",
+            "error": "#a54731",
+            "inverse-primary": "#bafcb0",
+            "on-primary-fixed-variant": "#2e672d",
+            "primary-fixed-dim": "#a4e49b",
+            "primary": "#316a2f",
+            "surface-bright": "#fffbff",
+            "inverse-on-surface": "#a09d92",
+            "tertiary-fixed-dim": "#dfed9e",
+            "surface-container-low": "#fefae8",
+            "background": "#fffbff",
+            "tertiary-fixed": "#edfbac",
+            "secondary-fixed": "#c6ef9b",
+            "outline": "#848269",
+            "on-tertiary": "#ffffff",
+            "surface-dim": "#e7e4c3",
+            "on-secondary-fixed-variant": "#436521"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "margin": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem"
+          },
+          fontFamily: {
+            "body-medium": ["DM Sans"],
+            "body-md": ["DM Sans"],
+            "headline-md": ["Newsreader"],
+            "label-sm": ["DM Sans"],
+            "display-lg": ["Newsreader"],
+            "code-sm": ["JetBrains Mono"],
+            "headline-lg": ["Newsreader"]
+          },
+          fontSize: {
+            "body-medium": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "headline-md": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "400" }],
+            "display-lg": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "code-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "headline-lg": ["20px", { lineHeight: "26px", fontWeight: "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Custom Scrollbars for sober native desktop feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(132, 130, 105, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(132, 130, 105, 0.45);
+    }
+  </style>
+</head>
+<body class="bg-[#7FA77A] text-[#1B1C18] antialiased min-h-screen w-full flex items-center justify-center p-6 select-none font-body-md text-body-md overflow-x-hidden">
+<!-- Main macOS Window Frame (1100px x 900px) -->
+<div class="w-[1100px] h-[900px] max-h-[942px] bg-[#FAF7F0] rounded-[24px] shadow-[0_24px_70px_rgba(25,35,20,0.22)] border border-[#E6E1D6] flex flex-col overflow-hidden relative">
+<!-- Top Window Titlebar -->
+<header class="h-10 w-full bg-[#FAF7F0] border-b border-[#E6E1D6] px-4 flex items-center justify-between shrink-0 select-none z-10">
+<!-- Traffic Light Buttons -->
+<div class="flex items-center gap-2 w-28">
+<span class="w-3 h-3 rounded-full bg-[#ED6A5E] border border-[#CF5247]/40 block shadow-inner"></span>
+<span class="w-3 h-3 rounded-full bg-[#F5BF4F] border border-[#D5A237]/40 block shadow-inner"></span>
+<span class="w-3 h-3 rounded-full bg-[#62C554] border border-[#48A53B]/40 block shadow-inner"></span>
+</div>
+<!-- Centered Window Title -->
+<div class="flex items-center justify-center gap-1.5 text-center">
+<span class="font-body-medium text-body-medium text-[#1B1C18] font-medium tracking-tight">Settings</span>
+</div>
+<!-- Right Window Version Anchor -->
+<div class="w-28 flex justify-end items-center">
+<span class="font-code-sm text-code-sm text-[#7D8572] bg-[#EFE9DC] px-2 py-0.5 rounded-md border border-[#E1DACB]">v1.4</span>
+</div>
+</header>
+<!-- Window Body Layout (Split Columns) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- LEFT SIDEBAR NAV (232px width) -->
+<aside class="w-[232px] shrink-0 bg-[#FFFDF6] border-r border-[#E6E1D6] flex flex-col justify-between p-3 select-none">
+<!-- Navigation Groups -->
+<div class="flex flex-col gap-0.5">
+<!-- App context indicator -->
+<div class="px-2.5 py-2 mb-2 flex items-center gap-2 border-b border-[#EFE9DC]/80 pb-2.5">
+<div class="w-5 h-5 rounded-md bg-[#3D683A] text-white flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[13px]" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<div class="flex flex-col leading-tight">
+<span class="font-body-medium text-body-medium text-[#1B1C18] font-semibold text-xs tracking-tight">Decay Core</span>
+<span class="text-[10px] text-[#7D8572]">Preferences</span>
+</div>
+</div>
+<!-- Section 1: Main Config -->
+<nav aria-label="Settings Categories" class="space-y-0.5">
+<!-- General -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="settings">settings</span>
+<span class="font-body-medium text-body-medium text-xs">General</span>
+</a>
+<!-- Aging -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="hourglass_empty">hourglass_empty</span>
+<span class="font-body-medium text-body-medium text-xs">Aging</span>
+</a>
+<!-- Protection -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="verified_user">verified_user</span>
+<span class="font-body-medium text-body-medium text-xs">Protection</span>
+</a>
+<!-- Browsers -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="tab">tab</span>
+<span class="font-body-medium text-body-medium text-xs">Browsers</span>
+</a>
+<!-- Rules -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="tune">tune</span>
+<span class="font-body-medium text-body-medium text-xs">Rules</span>
+</a>
+<!-- Privacy & data -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="shield">shield</span>
+<span class="font-body-medium text-body-medium text-xs">Privacy &amp; data</span>
+</a>
+<!-- Shortcuts -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="keyboard">keyboard</span>
+<span class="font-body-medium text-body-medium text-xs">Shortcuts</span>
+</a>
+<!-- Notifications (ACTIVE) -->
+<a aria-current="page" class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[#DDEB9D] text-[#1A381E] font-medium transition-colors" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-[#1A381E]" data-icon="notifications" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<span class="font-body-medium text-body-medium text-xs font-semibold text-[#1A381E]">Notifications</span>
+</div>
+<span class="w-1.5 h-1.5 rounded-full bg-[#3D683A]"></span>
+</a>
+</nav>
+<!-- Divider -->
+<div class="h-px bg-[#EAE4D5] my-2 mx-1"></div>
+<!-- Section 2: Account & System -->
+<nav class="space-y-0.5">
+<!-- License -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="key">key</span>
+<span class="font-body-medium text-body-medium text-xs">License</span>
+</div>
+<span class="font-code-sm text-[10px] font-medium bg-[#E8E2CC] text-[#3A3924] px-1.5 py-0.2 rounded border border-[#DDD5BD]">PRO</span>
+</a>
+<!-- Updates -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="update">update</span>
+<span class="font-body-medium text-body-medium text-xs">Updates</span>
+</a>
+<!-- About -->
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[#67654E] hover:bg-[#F4EFE6] hover:text-[#1B1C18] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[17px] text-[#7D8572] group-hover:text-[#1B1C18]" data-icon="info">info</span>
+<span class="font-body-medium text-body-medium text-xs">About</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Footer Status -->
+<div class="pt-3 border-t border-[#EAE4D5] px-1.5 flex items-center justify-between text-[11px] text-[#7D8572]">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+<span class="font-body-medium text-xs text-[#4A5442]">Engine active</span>
+</div>
+<span class="font-code-sm text-[10px] bg-[#EFE9DC] text-[#636C59] px-1.5 py-0.5 rounded border border-[#E0D8C8]">macOS</span>
+</div>
+</aside>
+<!-- RIGHT CONTENT AREA -->
+<main class="flex-1 bg-[#FAF7F0] overflow-y-auto px-10 py-8">
+<!-- Header -->
+<header class="mb-6">
+<h1 class="font-headline-lg text-display-lg text-[#1B1C18] tracking-tight font-normal mb-1">Notifications</h1>
+<p class="font-body-md text-body-md text-[#55624C]">Decay stays quiet. Choose the few moments it's allowed to speak.</p>
+</header>
+<!-- Stack of 4 Clean White Cards (16px vertical gap) -->
+<div class="flex flex-col gap-4 pb-8">
+<!-- CARD 1: DAILY SUMMARY -->
+<section class="bg-white rounded-[22px] p-6 border border-[#E6E1D6] shadow-[0_1px_3px_rgba(31,36,24,0.03)]">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-body-medium text-[11px] font-bold tracking-wider text-[#7D8572] uppercase">DAILY SUMMARY</h2>
+</div>
+<!-- Row: Morning Summary with Time Selector & Switch -->
+<div class="flex items-center justify-between py-1 gap-4">
+<div class="flex-1 pr-4">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Morning summary</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">What was archived yesterday and anything worth a look.</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<!-- Time Selector Pill -->
+<button class="flex items-center gap-1.5 bg-[#FAF7F0] hover:bg-[#F3EEDC] text-[#1B1C18] font-body-medium text-xs px-3 py-1.5 rounded-lg border border-[#DDD7C9] transition-colors focus:outline-none focus:ring-1 focus:ring-[#3D683A]" type="button">
+<span>9:00 AM</span>
+<span class="material-symbols-outlined text-[14px] text-[#6F7865]" data-icon="expand_more">expand_more</span>
+</button>
+<!-- Active Toggle Switch (ON) -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+</div>
+<!-- Mini macOS Notification Preview Box -->
+<div class="mt-4 pt-3.5 border-t border-[#F2ECE1]">
+<div class="bg-[#F4EFE6] rounded-2xl p-3.5 border border-[#E8E1D3] shadow-xs flex items-start gap-3 max-w-[520px]">
+<!-- Icon badge -->
+<div class="w-7 h-7 rounded-full bg-[#3D683A] text-white flex items-center justify-center shrink-0 shadow-inner mt-0.5">
+<span class="material-symbols-outlined text-[15px]" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<!-- Content text -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5 text-xs text-[#7D8572] leading-none mb-1">
+<span class="font-semibold text-[#1B1C18]">Decay</span>
+<span>·</span>
+<span class="text-[#6F7865]">Good morning</span>
+<span>·</span>
+<span class="font-code-sm text-[10px] text-[#8C9381]">9:00 AM</span>
+</div>
+<p class="font-body-md text-xs text-[#2A2F22] leading-snug">
+                    Yesterday Decay archived 14 tabs and hid 3 windows.
+                  </p>
+</div>
+</div>
+</div>
+</section>
+<!-- CARD 2: SWEEPS -->
+<section class="bg-white rounded-[22px] p-6 border border-[#E6E1D6] shadow-[0_1px_3px_rgba(31,36,24,0.03)]">
+<h2 class="font-body-medium text-[11px] font-bold tracking-wider text-[#7D8572] uppercase mb-3">SWEEPS</h2>
+<div class="divide-y divide-[#F4EFE6]">
+<!-- Row 1: Notify after each sweep (ON) -->
+<div class="flex items-center justify-between py-3 first:pt-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Notify after each sweep</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Brief notification when a scheduled sweep finishes archiving stale tabs.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+<!-- Row 2: Only when more than 10 items (OFF) -->
+<div class="flex items-center justify-between py-3">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Only when more than 10 items are archived</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Suppress notices for minor cleanups to prevent distraction.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#D5D0C5] rounded-full peer peer-checked:bg-[#3D683A] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+<!-- Row 3: Show undo toast in app (ON) -->
+<div class="flex items-center justify-between py-3 last:pb-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Show undo toast in the app</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Floating banner with one-click restore and countdown bar.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- CARD 3: HEALTH -->
+<section class="bg-white rounded-[22px] p-6 border border-[#E6E1D6] shadow-[0_1px_3px_rgba(31,36,24,0.03)]">
+<h2 class="font-body-medium text-[11px] font-bold tracking-wider text-[#7D8572] uppercase mb-3">HEALTH</h2>
+<div class="divide-y divide-[#F4EFE6]">
+<!-- Row 1: Browser disconnect (ON) -->
+<div class="flex items-center justify-between py-3 first:pt-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Tell me if a browser disconnects</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Alert if the Chrome, Arc, or Edge helper extension loses connection.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+<!-- Row 2: Permission turned off (ON) -->
+<div class="flex items-center justify-between py-3 last:pb-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Tell me if a permission is turned off</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Alert if macOS Accessibility permission needed to hide windows is revoked.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- CARD 4: QUIET TIMES -->
+<section class="bg-white rounded-[22px] p-6 border border-[#E6E1D6] shadow-[0_1px_3px_rgba(31,36,24,0.03)]">
+<h2 class="font-body-medium text-[11px] font-bold tracking-wider text-[#7D8572] uppercase mb-3">QUIET TIMES</h2>
+<div class="divide-y divide-[#F4EFE6]">
+<!-- Row 1: Respect focus modes (ON) -->
+<div class="flex items-center justify-between py-3 first:pt-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Respect Focus modes</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Silently queue notifications when Do Not Disturb or Work focus is active.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+<!-- Row 2: Meetings & screen sharing (ON) -->
+<div class="flex items-center justify-between py-3 last:pb-1">
+<div class="pr-6">
+<div class="font-body-medium text-body-medium font-semibold text-[#1B1C18]">Stay silent during meetings and screen sharing</div>
+<div class="font-body-md text-xs text-[#6F7865] mt-0.5">Never pop up alerts while Zoom, Google Meet, or display capture is running.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-6 bg-[#3D683A] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+<script>
+    // Micro-interactions: allow toggling preview switches dynamically
+    document.querySelectorAll('input[type="checkbox"]').forEach(toggle => {
+      toggle.addEventListener('change', (e) => {
+        const slider = e.target.nextElementSibling;
+        if (!e.target.checked) {
+          slider.classList.remove('bg-[#3D683A]');
+          slider.classList.add('bg-[#D5D0C5]');
+        } else {
+          slider.classList.remove('bg-[#D5D0C5]');
+          slider.classList.add('bg-[#3D683A]');
+        }
+      });
+    });
+  </script>
+</body></html>

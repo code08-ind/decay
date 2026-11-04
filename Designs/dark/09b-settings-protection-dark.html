@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>09b-settings-protection-dark</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            desktop: '#1C2A1B',
+            canvas: '#121511',
+            card: '#1A1E18',
+            cardBorder: '#2A3027',
+            chipBg: '#222720',
+            primarySage: '#A0C878',
+            darkGreenCard: '#2F5A2E',
+            textIvory: '#F2F0E6',
+            textMuted: '#A7AC9C',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill-1 {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+  </style>
+</head>
+<body class="bg-[#1C2A1B] text-[#F2F0E6] font-sans antialiased min-h-screen flex items-center justify-center p-6 selection:bg-[#A0C878]/30 selection:text-[#F2F0E6]">
+
+  <!-- macOS Window Frame: 1100px x 900px -->
+  <div class="w-[1100px] h-[900px] bg-[#121511] rounded-[24px] shadow-[0_25px_70px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col overflow-hidden relative border border-[#2A3027]/80">
+    
+    <!-- Window Header / Title Bar -->
+    <div class="h-11 px-5 flex items-center justify-between border-b border-[#2A3027]/70 select-none bg-[#141813]/90 backdrop-blur-sm z-20 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 inline-block shadow-sm"></span>
+      </div>
+      <div class="flex items-center gap-1.5 text-xs text-[#A7AC9C] font-medium tracking-tight">
+        <span class="material-symbols-outlined text-[15px] text-[#A7AC9C]">tune</span>
+        <span>Settings</span>
+      </div>
+      <div class="text-[11px] font-mono text-[#A7AC9C]/60 tracking-wider">
+        v1.4
+      </div>
+    </div>
+
+    <!-- Main Window Layout (Sidebar + Content) -->
+    <div class="flex flex-1 overflow-hidden relative">
+      
+      <!-- Left Sidebar Navigation -->
+      <aside class="w-[236px] bg-[#121511] border-r border-[#2A3027]/70 p-3.5 flex flex-col justify-between shrink-0 select-none">
+        <div class="space-y-4">
+          
+          <!-- Engine badge -->
+          <div class="p-2.5 rounded-xl bg-[#1A1E18] border border-[#2A3027] flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-[#222720] flex items-center justify-center text-[#A0C878] border border-[#2A3027]">
+              <span class="material-symbols-outlined text-[16px]">eco</span>
+            </div>
+            <div class="leading-tight">
+              <div class="text-xs font-medium text-[#F2F0E6]">Decay Engine</div>
+              <div class="text-[10px] text-[#A7AC9C]">Monitoring Active</div>
+            </div>
+          </div>
+
+          <!-- Nav Items -->
+          <nav class="space-y-0.5 text-xs">
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">settings</span>
+              <span>General</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">hourglass_empty</span>
+              <span>Aging</span>
+            </a>
+            <!-- Active: Protection -->
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[#A0C878]/15 text-[#A0C878] font-medium border border-[#A0C878]/30 transition-colors">
+              <span class="material-symbols-outlined text-[17px] text-[#A0C878] fill-1">verified_user</span>
+              <span>Protection</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">public</span>
+              <span>Browsers</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">rule</span>
+              <span>Rules</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">lock</span>
+              <span>Privacy & data</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">keyboard</span>
+              <span>Shortcuts</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+              <span class="material-symbols-outlined text-[17px]">notifications</span>
+              <span>Notifications</span>
+            </a>
+
+            <div class="pt-3 pb-1 border-t border-[#2A3027]/50 mt-3 space-y-0.5">
+              <a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-[17px]">key</span>
+                  <span>License</span>
+                </div>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#222720] text-[#A0C878] border border-[#2A3027]">PRO</span>
+              </a>
+              <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+                <span class="material-symbols-outlined text-[17px]">sync</span>
+                <span>Updates</span>
+              </a>
+              <a href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#1A1E18]/60 transition-colors">
+                <span class="material-symbols-outlined text-[17px]">info</span>
+                <span>About</span>
+              </a>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Sidebar Footer Status -->
+        <div class="pt-3 border-t border-[#2A3027]/60 flex items-center justify-between text-[11px] text-[#A7AC9C] px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#A0C878] shadow-[0_0_8px_#A0C878]"></span>
+            <span>Engine active</span>
+          </div>
+          <span class="font-mono text-[10px] text-[#A7AC9C]/50">macOS</span>
+        </div>
+      </aside>
+
+      <!-- Right Main Content Panel -->
+      <main class="flex-1 overflow-y-auto p-8 space-y-5 bg-[#121511]">
+        
+        <!-- Header -->
+        <div class="space-y-1">
+          <h1 class="font-serif text-3xl font-medium tracking-tight text-[#F2F0E6]">Protection</h1>
+          <p class="text-xs text-[#A7AC9C]">Decay never touches these. When in doubt, it waits.</p>
+        </div>
+
+        <!-- CARD 1: ALWAYS PROTECT -->
+        <div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 space-y-4 shadow-sm">
+          <div class="text-[10px] uppercase font-mono tracking-wider text-[#A7AC9C] font-semibold">Always Protect</div>
+          
+          <div class="divide-y divide-[#2A3027]/60 text-xs">
+            
+            <!-- Row 1: Pinned tabs -->
+            <div class="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">push_pin</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Pinned tabs</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Always exempt from decay rules.</div>
+                </div>
+              </div>
+              <!-- Sage Toggle ON -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end transition-colors cursor-pointer shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+            <!-- Row 2: Tabs playing audio or video -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">volume_up</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Tabs playing audio or video</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Audio streams, video playback or calls won't be muted or closed.</div>
+                </div>
+              </div>
+              <!-- Sage Toggle ON -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end transition-colors cursor-pointer shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+            <!-- Row 3: Tabs with unsaved form input -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">edit_note</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Tabs with unsaved form input</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Forms, editors, or draft states are strictly preserved.</div>
+                </div>
+              </div>
+              <!-- Sage Toggle ON -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end transition-colors cursor-pointer shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+            <!-- Row 4: Tabs in a tab group -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A7AC9C] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">folder_open</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Tabs in a tab group</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Safeguard entire grouped collections.</div>
+                </div>
+              </div>
+              <!-- Toggle OFF -->
+              <button class="w-11 h-6 rounded-full bg-[#2A3027] p-0.5 flex items-center justify-start transition-colors cursor-pointer border border-[#343B30]">
+                <span class="w-5 h-5 rounded-full bg-[#A7AC9C] shadow-sm block"></span>
+              </button>
+            </div>
+
+            <!-- Row 5: The active tab in every window (always on) -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">tab</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium text-[#F2F0E6]">The active tab in every window</span>
+                  <span class="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#222720] text-[#A7AC9C] border border-[#2A3027]">
+                    <span class="material-symbols-outlined text-[11px]">lock</span>
+                    always on
+                  </span>
+                </div>
+              </div>
+              <!-- Sage Toggle ON (disabled/always on) -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end cursor-not-allowed opacity-90 shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CARD 2: WINDOWS -->
+        <div class="bg-[#1A1E18] border border-[#2A3027] rounded-[22px] p-6 space-y-4 shadow-sm">
+          <div class="text-[10px] uppercase font-mono tracking-wider text-[#A7AC9C] font-semibold">Windows</div>
+          
+          <div class="divide-y divide-[#2A3027]/60 text-xs">
+            
+            <!-- Row 1: Windows with unsaved documents (always on) -->
+            <div class="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">description</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium text-[#F2F0E6]">Windows with unsaved documents</span>
+                  <span class="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#222720] text-[#A7AC9C] border border-[#2A3027]">
+                    <span class="material-symbols-outlined text-[11px]">lock</span>
+                    always on
+                  </span>
+                </div>
+              </div>
+              <!-- Sage Toggle ON -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end cursor-not-allowed opacity-90 shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+            <!-- Row 2: Full-screen windows -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A0C878] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">fullscreen</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Full-screen windows</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Exempt focused fullscreen spaces and dedicated presentations.</div>
+                </div>
+              </div>
+              <!-- Sage Toggle ON -->
+              <button class="w-11 h-6 rounded-full bg-[#A0C878] p-0.5 flex items-center justify-end transition-colors cursor-pointer shadow-inner">
+                <span class="w-5 h-5 rounded-full bg-[#121511] shadow-md block"></span>
+              </button>
+            </div>
+
+            <!-- Row 3: Windows on other displays -->
+            <div class="py-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-[#222720] border border-[#2A3027] flex items-center justify-center text-[#A7AC9C] shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">desktop_windows</span>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-[#F2F0E6]">Windows on other displays</div>
+                  <div class="text-[11px] text-[#A7AC9C]">Keep secondary monitors untouched during background routines.</div>
+                </div>
+              </div>
+              <!-- Toggle OFF -->
+              <button class="w-11 h-6 rounded-full bg-[#2A3027] p-0.5 flex items-center justify-start transition-colors cursor-pointer border border-[#343B30]">
+                <span class="w-5 h-5 rounded-full bg-[#A7AC9C] shadow-sm block"></span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CARD 3: PROTECTED RIGHT NOW (Deep green #2F5A2E) -->
+        <div class="bg-[#2F5A2E] border border-[#3D6E3B] rounded-[22px] p-6 space-y-4 shadow-md text-[#F2F0E6]">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-[#1C3E1C]/80 border border-[#A0C878]/30 flex items-center justify-center text-[#A0C878]">
+                <span class="material-symbols-outlined text-[18px]">shield</span>
+              </div>
+              <div>
+                <h3 class="font-serif text-lg font-medium tracking-tight text-[#F2F0E6]">Protected right now</h3>
+                <div class="text-[11px] text-[#F2F0E6]/75">12 items actively shielded from aging policies</div>
+              </div>
+            </div>
+            
+            <!-- Ivory Pill CTA -->
+            <a href="#" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F2F0E6] text-[#121511] hover:bg-[#FFFFFF] text-xs font-medium tracking-tight transition-all shadow-sm active:scale-95">
+              <span>See in Live now</span>
+              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+          </div>
+
+          <!-- Frosted Summary Tiles -->
+          <div class="grid grid-cols-4 gap-2.5 text-xs">
+            <div class="p-3 rounded-xl bg-[#1C3E1C]/60 border border-[#A0C878]/20 flex flex-col justify-between backdrop-blur-xs">
+              <div class="text-[11px] text-[#F2F0E6]/80 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px] text-[#A0C878]">push_pin</span>
+                <span>Pinned</span>
+              </div>
+              <div class="text-xl font-medium mt-1 font-serif text-[#F2F0E6]">4 tabs</div>
+            </div>
+            <div class="p-3 rounded-xl bg-[#1C3E1C]/60 border border-[#A0C878]/20 flex flex-col justify-between backdrop-blur-xs">
+              <div class="text-[11px] text-[#F2F0E6]/80 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px] text-[#A0C878]">volume_up</span>
+                <span>Playing</span>
+              </div>
+              <div class="text-xl font-medium mt-1 font-serif text-[#F2F0E6]">1 tab</div>
+            </div>
+            <div class="p-3 rounded-xl bg-[#1C3E1C]/60 border border-[#A0C878]/20 flex flex-col justify-between backdrop-blur-xs">
+              <div class="text-[11px] text-[#F2F0E6]/80 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px] text-[#A0C878]">edit_note</span>
+                <span>Unsaved</span>
+              </div>
+              <div class="text-xl font-medium mt-1 font-serif text-[#F2F0E6]">2 forms</div>
+            </div>
+            <div class="p-3 rounded-xl bg-[#1C3E1C]/60 border border-[#A0C878]/20 flex flex-col justify-between backdrop-blur-xs">
+              <div class="text-[11px] text-[#F2F0E6]/80 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px] text-[#A0C878]">rule</span>
+                <span>Rules</span>
+              </div>
+              <div class="text-xl font-medium mt-1 font-serif text-[#F2F0E6]">5 domains</div>
+            </div>
+          </div>
+
+          <!-- Safe-listed Domains / Site Chips -->
+          <div class="pt-3 border-t border-[#A0C878]/20 space-y-2">
+            <div class="text-[11px] font-medium text-[#F2F0E6]/80 flex items-center justify-between">
+              <span>Always-protected websites & domains</span>
+              <span class="text-[10px] text-[#A0C878]">5 safelisted</span>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 items-center">
+              <!-- Site chip 1 -->
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1C3E1C]/90 border border-[#A0C878]/30 text-xs font-mono text-[#F2F0E6]">
+                <span>github.com</span>
+                <button class="hover:text-[#A0C878] text-[#A7AC9C] transition-colors"><span class="material-symbols-outlined text-[13px]">close</span></button>
+              </span>
+              <!-- Site chip 2 -->
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1C3E1C]/90 border border-[#A0C878]/30 text-xs font-mono text-[#F2F0E6]">
+                <span>figma.com</span>
+                <button class="hover:text-[#A0C878] text-[#A7AC9C] transition-colors"><span class="material-symbols-outlined text-[13px]">close</span></button>
+              </span>
+              <!-- Site chip 3 -->
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1C3E1C]/90 border border-[#A0C878]/30 text-xs font-mono text-[#F2F0E6]">
+                <span>mail.google.com</span>
+                <button class="hover:text-[#A0C878] text-[#A7AC9C] transition-colors"><span class="material-symbols-outlined text-[13px]">close</span></button>
+              </span>
+              <!-- Site chip 4 -->
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1C3E1C]/90 border border-[#A0C878]/30 text-xs font-mono text-[#F2F0E6]">
+                <span>linear.app</span>
+                <button class="hover:text-[#A0C878] text-[#A7AC9C] transition-colors"><span class="material-symbols-outlined text-[13px]">close</span></button>
+              </span>
+              <!-- Site chip 5 -->
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1C3E1C]/90 border border-[#A0C878]/30 text-xs font-mono text-[#F2F0E6]">
+                <span>stripe.com</span>
+                <button class="hover:text-[#A0C878] text-[#A7AC9C] transition-colors"><span class="material-symbols-outlined text-[13px]">close</span></button>
+              </span>
+
+              <!-- + Add site outline pill -->
+              <button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-[#A0C878]/50 text-xs text-[#A0C878] hover:bg-[#A0C878]/10 hover:border-[#A0C878] transition-all">
+                <span class="material-symbols-outlined text-[13px]">add</span>
+                <span class="font-sans">Add site</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Notice within panel -->
+        <div class="flex items-center justify-between text-[11px] text-[#A7AC9C] pt-2 px-1 pb-4">
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[14px] text-[#A0C878]">verified</span>
+            <span>Rules are evaluated locally before every background sweep.</span>
+          </div>
+          <span class="italic text-[#A7AC9C]/60">Changes save automatically</span>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

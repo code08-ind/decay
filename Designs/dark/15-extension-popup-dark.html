@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>15-extension-popup-dark</title>
+  <!-- Google Fonts: Newsreader and DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+          colors: {
+            desktop: '#1C2A1B',
+            chromeBg: '#1A1E18',
+            chromeAddress: '#222720',
+            chromeBorder: '#282F24',
+            popupBg: '#1A1E18',
+            popupBorder: '#2A3027',
+            tileBg: '#222720',
+            tileBorder: '#2C342A',
+            ivory: '#F2F0E6',
+            mutedText: '#A7AC9C',
+            sageGreen: '#A0C878',
+            deepGreenCard: '#2F5A2E',
+            deepGreenBorder: '#3D6F3C',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #1C2A1B;
+      color: #F2F0E6;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#1C2A1B] flex items-center justify-center p-6 md:p-12 relative overflow-hidden select-none">
+
+  <!-- Desktop Backdrop Glow/Subtle Vignette -->
+  <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(47,90,46,0.18)_0%,transparent_70%)]"></div>
+
+  <!-- Browser Window Wrapper -->
+  <div class="relative w-full max-w-[1360px] h-[860px] rounded-2xl bg-[#141812] border border-[#262D22] shadow-[0_30px_70px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden">
+    
+    <!-- Chrome Tab Strip / Window Header -->
+    <div class="h-11 bg-[#1A1E18] border-b border-[#242A20] flex items-center px-4 justify-between relative z-10">
+      <!-- Mac Window Controls -->
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 inline-block"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 inline-block"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 inline-block"></span>
+      </div>
+
+      <!-- Tab Strip Tabs -->
+      <div class="flex items-end gap-1.5 ml-4 flex-1 max-w-[700px] h-full pt-1.5">
+        <!-- Active Tab: decay-app/decay -->
+        <div class="h-9 px-3.5 bg-[#222720] border-t border-x border-[#2C3429] rounded-t-xl flex items-center gap-2.5 max-w-[240px] text-xs font-medium text-[#F2F0E6] shadow-sm relative">
+          <!-- GitHub Icon -->
+          <svg class="w-3.5 h-3.5 text-[#A7AC9C] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span class="truncate">decay-app/decay: Gentle work...</span>
+          <button class="ml-auto text-[#798170] hover:text-[#F2F0E6] text-xs">×</button>
+        </div>
+
+        <!-- Inactive Tab: Stripe Docs -->
+        <div class="h-8 px-3 rounded-t-lg flex items-center gap-2 max-w-[190px] text-xs text-[#878E7D] hover:bg-[#1E241C] transition-colors cursor-pointer">
+          <div class="w-3.5 h-3.5 rounded-sm bg-[#635BFF] flex items-center justify-center text-[9px] font-bold text-white shrink-0">S</div>
+          <span class="truncate">Stripe Docs</span>
+        </div>
+
+        <!-- Inactive Tab: Linear -->
+        <div class="h-8 px-3 rounded-t-lg flex items-center gap-2 max-w-[190px] text-xs text-[#878E7D] hover:bg-[#1E241C] transition-colors cursor-pointer">
+          <div class="w-3.5 h-3.5 rounded-sm bg-[#5E6AD2] flex items-center justify-center text-[9px] font-bold text-white shrink-0">L</div>
+          <span class="truncate">Linear — Cycle 42</span>
+        </div>
+
+        <!-- New Tab Button -->
+        <button class="w-6 h-6 flex items-center justify-center text-[#7E8574] hover:text-[#F2F0E6] rounded text-sm mb-1 hover:bg-[#222720] transition-colors">+</button>
+      </div>
+
+      <!-- Right Window Controls / Spacer -->
+      <div class="w-16"></div>
+    </div>
+
+    <!-- Navigation & URL Toolbar -->
+    <div class="h-11 bg-[#1A1E18] border-b border-[#242A20] flex items-center px-4 gap-3 relative z-10">
+      <!-- Back, Forward, Reload -->
+      <div class="flex items-center gap-2 text-[#7E8574]">
+        <svg class="w-4 h-4 cursor-pointer hover:text-[#F2F0E6] transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        <svg class="w-4 h-4 cursor-pointer hover:text-[#F2F0E6] transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        <svg class="w-4 h-4 cursor-pointer hover:text-[#F2F0E6] transition-colors ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </div>
+
+      <!-- Address Bar -->
+      <div class="flex-1 h-8 bg-[#222720] border border-[#2B3328] rounded-full px-3.5 flex items-center justify-between text-xs text-[#A7AC9C]">
+        <div class="flex items-center gap-2">
+          <!-- Lock Icon -->
+          <svg class="w-3.5 h-3.5 text-[#868D7C]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span class="text-[#F2F0E6] font-normal tracking-tight">https://github.com/decay-app/decay</span>
+        </div>
+        <!-- Favorite Star -->
+        <svg class="w-3.5 h-3.5 text-[#7E8574] hover:text-[#F2F0E6] cursor-pointer" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+      </div>
+
+      <!-- Extension Icons & Profile -->
+      <div class="flex items-center gap-2.5 relative">
+        <svg class="w-4 h-4 text-[#7E8574] hover:text-[#F2F0E6] cursor-pointer" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+        <svg class="w-4 h-4 text-[#7E8574] hover:text-[#F2F0E6] cursor-pointer" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+
+        <!-- Active Decay Toolbar Button (Anchor for Extension Popup) -->
+        <div id="decay-toolbar-icon" class="w-7 h-7 rounded-lg bg-[#273523] border border-[#3E5536] flex items-center justify-center cursor-pointer shadow-sm relative">
+          <!-- Decay Leaf Icon in Sage Green -->
+          <svg class="w-4 h-4 text-[#A0C878]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.5 3C11.5 3 6.5 7.5 6.5 13.5c0 2.2.7 4.2 1.9 5.8L7 21l3.5-.8c1.3.5 2.8.8 4.5.8 6 0 11-4.5 11-10.5C26 6.5 21.5 3 17.5 3zm-2.2 13.2c-2.4 0-4.3-1.9-4.3-4.3 0-1.8 1.1-3.3 2.7-3.9-.2.8-.2 1.6 0 2.4.3 1.2 1.3 2.2 2.5 2.5.8.2 1.6.2 2.4 0-.6 1.9-2.1 3.3-3.3 3.3z" transform="scale(0.85) translate(1, 1)"/>
+          </svg>
+        </div>
+
+        <!-- User Profile Pill -->
+        <div class="w-6 h-6 rounded-full bg-[#272E24] border border-[#353E31] flex items-center justify-center text-[10px] font-medium text-[#A7AC9C]">D</div>
+      </div>
+    </div>
+
+    <!-- Web Page Content Area (Simulated GitHub Repo Page - Dark Wireframe Skeleton) -->
+    <div class="flex-1 bg-[#131611] p-10 relative overflow-hidden">
+      <!-- Dark Wireframe Blocks representing GitHub repo page -->
+      <div class="max-w-4xl space-y-6">
+        <div class="w-56 h-7 bg-[#1A1F18] rounded-md"></div>
+        <div class="w-96 h-12 bg-[#171C15] rounded-lg"></div>
+        
+        <div class="grid grid-cols-3 gap-6 pt-4">
+          <div class="h-44 bg-[#171C15] rounded-xl border border-[#21281D]"></div>
+          <div class="h-44 bg-[#171C15] rounded-xl border border-[#21281D]"></div>
+          <div class="h-44 bg-[#171C15] rounded-xl border border-[#21281D]"></div>
+        </div>
+
+        <div class="w-full h-40 bg-[#161B14] rounded-xl border border-[#20271C] mt-6"></div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- EXTENSION POPUP: Hanging under Decay Icon      -->
+      <!-- ============================================== -->
+      <div class="absolute top-2 right-12 w-[392px] rounded-[18px] bg-[#1A1E18] border border-[#2A3027] shadow-[0_20px_50px_rgba(0,0,0,0.7),0_2px_10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col p-4">
+        
+        <!-- Header: Logo, Title, Status Pill, Settings Gear -->
+        <div class="flex items-center justify-between pb-3.5">
+          <div class="flex items-center gap-2.5">
+            <!-- Decay Logo Icon -->
+            <div class="w-6 h-6 rounded-md bg-[#253322] border border-[#3A4E34] flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-[#A0C878]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.5 3C11.5 3 6.5 7.5 6.5 13.5c0 2.2.7 4.2 1.9 5.8L7 21l3.5-.8c1.3.5 2.8.8 4.5.8 6 0 11-4.5 11-10.5C26 6.5 21.5 3 17.5 3zm-2.2 13.2c-2.4 0-4.3-1.9-4.3-4.3 0-1.8 1.1-3.3 2.7-3.9-.2.8-.2 1.6 0 2.4.3 1.2 1.3 2.2 2.5 2.5.8.2 1.6.2 2.4 0-.6 1.9-2.1 3.3-3.3 3.3z" transform="scale(0.85) translate(1, 1)"/>
+              </svg>
+            </div>
+            <!-- Serif App Name -->
+            <span class="font-serif font-medium text-base text-[#F2F0E6] tracking-tight">Decay</span>
+            
+            <!-- Lime Shadow Mode Pill -->
+            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#273722] border border-[#3C5334]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#A0C878] inline-block animate-pulse"></span>
+              <span class="text-[11px] font-medium text-[#C8E89A] tracking-tight">Shadow mode · day 6</span>
+            </div>
+          </div>
+
+          <!-- Settings Cog -->
+          <button class="w-6 h-6 rounded-md flex items-center justify-center text-[#8C9381] hover:text-[#F2F0E6] hover:bg-[#222720] transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Search Archived Tabs Bar -->
+        <div class="h-9 w-full bg-[#222720] border border-[#2B3327] rounded-xl px-3 flex items-center justify-between text-xs text-[#A7AC9C] mb-3 focus-within:border-[#41553B] transition-colors">
+          <div class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#79806F]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <span class="text-[#848C7B]">Search archived tabs</span>
+          </div>
+          <!-- Shortcut Pill -->
+          <div class="px-1.5 py-0.5 rounded bg-[#1A1E18] border border-[#2B3327] text-[10px] text-[#A7AC9C] font-mono font-medium">⌥D</div>
+        </div>
+
+        <!-- Stat Tiles: 41 open tabs & 7 would archive today -->
+        <div class="grid grid-cols-2 gap-2.5 mb-3">
+          <!-- Open tabs tile -->
+          <div class="bg-[#222720] border border-[#2B3327] rounded-xl p-3 flex flex-col justify-between">
+            <div class="font-serif text-3xl font-medium text-[#F2F0E6] tracking-tight leading-none mb-1">41</div>
+            <div class="text-[11px] font-medium text-[#A7AC9C]">open tabs</div>
+          </div>
+          <!-- Would archive today tile -->
+          <div class="bg-[#222720] border border-[#2B3327] rounded-xl p-3 flex flex-col justify-between relative">
+            <div class="flex items-start justify-between">
+              <span class="font-serif text-3xl font-medium text-[#F2F0E6] tracking-tight leading-none mb-1">7</span>
+              <span class="w-2 h-2 rounded-full bg-[#A0C878] mt-1 shadow-[0_0_8px_rgba(160,200,120,0.6)]"></span>
+            </div>
+            <div class="text-[11px] font-medium text-[#A7AC9C]">would archive today</div>
+          </div>
+        </div>
+
+        <!-- Deep Green Featured Card: "Nothing is closed yet" -->
+        <div class="bg-[#2F5A2E] border border-[#3D6F3C] rounded-2xl p-4 mb-3.5 relative overflow-hidden shadow-inner">
+          <!-- Decorative subtle leaf watermark in background -->
+          <svg class="absolute -right-6 -bottom-6 w-32 h-32 text-black/10 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.5 3C11.5 3 6.5 7.5 6.5 13.5c0 2.2.7 4.2 1.9 5.8L7 21l3.5-.8c1.3.5 2.8.8 4.5.8 6 0 11-4.5 11-10.5C26 6.5 21.5 3 17.5 3z"/>
+          </svg>
+
+          <div class="relative z-10">
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#C2E394] mb-1">SHADOW MODE</div>
+            <h3 class="font-serif text-lg font-medium text-[#FFFFFF] leading-snug tracking-tight mb-0.5">Nothing is closed yet</h3>
+            <p class="text-[11px] text-[#E0EED4] mb-3 leading-relaxed">In 1 day you can switch on automatic archiving.</p>
+
+            <!-- Ivory Action Pill -->
+            <button class="w-full py-2 px-3 rounded-full bg-[#F2F0E6] hover:bg-white text-[#192718] font-medium text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-[0.99]">
+              <span>Review what Decay would do</span>
+              <span class="text-sm">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recently Archived Section -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8A9180] mb-2 px-0.5">
+            <span>RECENTLY ARCHIVED</span>
+            <span class="font-normal lowercase tracking-normal text-[#757C6C]">3 tabs</span>
+          </div>
+
+          <!-- List of Recently Archived Tabs -->
+          <div class="space-y-1.5">
+            <!-- Row 1: Stripe pricing -->
+            <div class="h-10 bg-[#222720] border border-[#2B3327] rounded-xl px-2.5 flex items-center justify-between hover:bg-[#272D24] transition-colors group">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <div class="w-4 h-4 rounded bg-[#635BFF] flex items-center justify-center text-[9px] font-bold text-white shrink-0">S</div>
+                <span class="text-xs text-[#F2F0E6] truncate font-normal tracking-tight">Stripe pricing — Compare plans</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] text-[#868E7E] font-mono">2:14 PM</span>
+                <button class="w-5 h-5 rounded-full flex items-center justify-center text-[#959D8C] hover:text-[#F2F0E6] hover:bg-[#30382D] transition-colors" title="Restore tab">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Row 2: Linear — Cycle 42 -->
+            <div class="h-10 bg-[#222720] border border-[#2B3327] rounded-xl px-2.5 flex items-center justify-between hover:bg-[#272D24] transition-colors group">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <div class="w-4 h-4 rounded bg-[#5E6AD2] flex items-center justify-center text-[9px] font-bold text-white shrink-0">L</div>
+                <span class="text-xs text-[#F2F0E6] truncate font-normal tracking-tight">Linear — Cycle 42</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] text-[#868E7E] font-mono">1:50 PM</span>
+                <button class="w-5 h-5 rounded-full flex items-center justify-center text-[#959D8C] hover:text-[#F2F0E6] hover:bg-[#30382D] transition-colors" title="Restore tab">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Row 3: Figma — Design System v2.4 -->
+            <div class="h-10 bg-[#222720] border border-[#2B3327] rounded-xl px-2.5 flex items-center justify-between hover:bg-[#272D24] transition-colors group">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <div class="w-4 h-4 rounded bg-[#F24E1E] flex items-center justify-center text-[9px] font-bold text-white shrink-0">F</div>
+                <span class="text-xs text-[#F2F0E6] truncate font-normal tracking-tight">Figma — Design System v2.4</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] text-[#868E7E] font-mono">10:05 AM</span>
+                <button class="w-5 h-5 rounded-full flex items-center justify-center text-[#959D8C] hover:text-[#F2F0E6] hover:bg-[#30382D] transition-colors" title="Restore tab">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer: Desktop App Link & Outline Pill "Pause on this site" -->
+        <div class="pt-2 border-t border-[#252C21] flex items-center justify-between text-xs mt-1">
+          <!-- Text link to desktop app -->
+          <a href="#" class="text-[#A7AC9C] hover:text-[#F2F0E6] flex items-center gap-1 transition-colors text-[11px]">
+            <span>Get the desktop app for window hiding</span>
+            <span class="text-xs">→</span>
+          </a>
+
+          <!-- Outline Pill "Pause on this site" -->
+          <button class="px-2.5 py-1 rounded-full border border-[#343F30] hover:border-[#4B5B45] hover:bg-[#222720] text-[#D8DCCE] text-[11px] font-medium transition-colors">
+            Pause on this site
+          </button>
+        </div>
+
+      </div>
+      <!-- End Extension Popup -->
+
+    </div>
+  </div>
+
+</body>
+</html>

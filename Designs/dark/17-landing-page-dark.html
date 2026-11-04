@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decay — Your tabs, gently put away.</title>
+<!-- Google Fonts: Newsreader (Editorial Serif) & DM Sans & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=JetBrains+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "tertiary-fixed-dim": "#97d68f",
+            "tertiary-container": "#8dcb85",
+            "on-tertiary": "#003908",
+            "error-container": "#93000a",
+            "surface-container-lowest": "#0c0f0b",
+            "on-secondary-container": "#b2bf76",
+            "surface-container-low": "#191c18",
+            "surface-container-high": "#282b26",
+            "surface-bright": "#373a35",
+            "tertiary-fixed": "#b2f3a8",
+            "on-surface": "#e1e3dc",
+            "surface": "#111410",
+            "primary": "#bbe491",
+            "on-tertiary-fixed": "#002203",
+            "on-primary-fixed": "#0e2000",
+            "on-surface-variant": "#c3c9b8",
+            "inverse-surface": "#e1e3dc",
+            "error": "#ffb4ab",
+            "inverse-on-surface": "#2e312d",
+            "secondary-container": "#434e11",
+            "tertiary": "#a7e89e",
+            "secondary-fixed-dim": "#c0cd82",
+            "on-primary-container": "#335411",
+            "on-primary": "#1c3700",
+            "surface-tint": "#aad382",
+            "surface-dim": "#111410",
+            "surface-container-highest": "#333631",
+            "outline": "#8d9384",
+            "surface-variant": "#333631",
+            "surface-container": "#1d201c",
+            "on-tertiary-container": "#1c561e",
+            "on-secondary-fixed-variant": "#414b0e",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "on-error": "#690005",
+            "on-background": "#e1e3dc",
+            "primary-fixed-dim": "#aad382",
+            "on-secondary": "#2b3400",
+            "inverse-primary": "#456824",
+            "outline-variant": "#43493c",
+            "background": "#111410",
+            "on-error-container": "#ffdad6",
+            "secondary-fixed": "#dcea9c",
+            "primary-container": "#a0c878",
+            "on-secondary-fixed": "#181e00",
+            "secondary": "#c0cd82",
+            "on-tertiary-fixed-variant": "#16521a",
+            "primary-fixed": "#c6ef9b"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-sm": "0.5rem",
+            "margin": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "gutter": "1rem",
+            "space-xl": "2rem",
+            "space-md": "1rem"
+          },
+          fontFamily: {
+            "headline-sm": ["Newsreader", "serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "label-sm": ["DM Sans", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-md": ["DM Sans", "sans-serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "body-md": ["DM Sans", "sans-serif"]
+          },
+          fontSize: {
+            "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+            "body-sm": ["11px", { lineHeight: "16px", fontWeight: "400" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }],
+            "code-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "label-md": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "headline-lg": ["32px", { lineHeight: "38px", fontWeight: "600" }],
+            "headline-md": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+    }
+    ::selection {
+      background-color: #434e11;
+      color: #e1e3dc;
+    }
+  </style>
+</head>
+<body class="bg-[#121511] text-[#e1e3dc] font-body-md text-body-md antialiased selection:bg-[#434e11] selection:text-[#bbe491]">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full bg-[#121511]/90 backdrop-blur-md border-b border-[#2E3327]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+<!-- Brand Logo -->
+<a class="flex items-center gap-2.5 group" href="#">
+<div class="w-6 h-6 rounded-md bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#A0C878] group-hover:border-[#A0C878] transition-colors">
+<span class="material-symbols-outlined text-[15px]" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<span class="font-headline-md text-headline-md tracking-tight text-[#e1e3dc]">Decay</span>
+</a>
+<!-- Desktop Nav Links -->
+<nav class="hidden md:flex items-center gap-7 text-[#c3c9b8] font-label-md text-label-md">
+<a class="hover:text-[#e1e3dc] transition-colors" href="#features">Features</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#how-it-works">How it works</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#craft">Craft</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#pricing">Pricing</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#privacy">Privacy</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#faq">FAQ</a>
+</nav>
+<!-- Nav CTA Cluster -->
+<div class="flex items-center gap-3">
+<a aria-label="GitHub Repository" class="p-2 text-[#c3c9b8] hover:text-[#e1e3dc] rounded-full hover:bg-[#1A1D16] transition-colors flex items-center justify-center" href="https://github.com" rel="noreferrer" target="_blank">
+<svg class="w-4 h-4 fill-current" viewbox="0 0 24 24">
+<path clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" fill-rule="evenodd"></path>
+</svg>
+</a>
+<a class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#e1e3dc] text-[#111410] font-label-md text-label-md hover:bg-white transition-all shadow-sm" href="#download">
+<span>Download for Mac</span>
+<span class="text-xs">↓</span>
+</a>
+</div>
+</div>
+</header>
+<!-- Hero Section -->
+<section class="relative pt-16 pb-20 md:pt-24 md:pb-28 overflow-hidden">
+<!-- Atmospheric subtle ambient glow -->
+<div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#434e11]/15 blur-[120px] pointer-events-none rounded-full"></div>
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+<!-- Beta Pill Badge -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#191c18] border border-[#2E3327] text-xs font-label-sm mb-6">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878] animate-pulse"></span>
+<span class="text-[#a0c878]">Now in beta · macOS &amp; Windows</span>
+</div>
+<!-- Headline -->
+<h1 class="font-headline-lg text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-[#e1e3dc] max-w-3xl mx-auto leading-[1.08] mb-6">
+        Your tabs, gently put away.
+      </h1>
+<!-- Subhead -->
+<p class="font-body-md text-base sm:text-lg text-[#c3c9b8] max-w-2xl mx-auto leading-relaxed mb-8">
+        Decay watches what you actually use and quietly archives the rest. Search and restore anything in a keystroke — nothing is ever lost.
+      </p>
+<!-- CTA Action Cluster -->
+<div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4">
+<a class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#e1e3dc] text-[#111410] font-label-md text-label-md font-semibold hover:bg-white transition-all shadow-lg shadow-black/40" href="#download">
+<span>Download for Mac</span>
+<span class="text-sm"></span>
+</a>
+<a class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#191c18] border border-[#2E3327] text-[#e1e3dc] font-label-md text-label-md font-medium hover:border-[#43493c] hover:bg-[#1d201c] transition-all" href="#download-win">
+<span>Download for Windows</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="laptop_windows">laptop_windows</span>
+</a>
+</div>
+<!-- Microcopy -->
+<p class="text-xs font-body-sm text-[#8d9384] tracking-normal mb-14">
+        Free · Pro is a one-time $24 · Chrome, Arc, Brave, Edge
+      </p>
+<!-- Hero Product Shot Mockup Container -->
+<div class="relative mx-auto rounded-[28px] sm:rounded-[32px] bg-[#141d13] border border-[#253923] p-4 sm:p-6 lg:p-8 shadow-2xl text-left">
+<!-- Main Library UI Window -->
+<div class="rounded-2xl bg-[#111410] border border-[#2E3327] overflow-hidden shadow-xl">
+<!-- macOS Window Titlebar -->
+<div class="h-10 bg-[#191c18] border-b border-[#2E3327] px-4 flex items-center justify-between select-none">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-[#ff5f56]/80 border border-black/20"></span>
+<span class="w-3 h-3 rounded-full bg-[#ffbd2e]/80 border border-black/20"></span>
+<span class="w-3 h-3 rounded-full bg-[#27c93f]/80 border border-black/20"></span>
+<span class="ml-3 font-code-sm text-code-sm text-[#8d9384]">Decay v1.4</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#23271E] border border-[#2E3327] text-xs font-label-sm text-[#c3c9b8]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878]"></span>
+<span>Automatic Mode: Active</span>
+</div>
+</div>
+</div>
+<!-- Window Inner Layout -->
+<div class="p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- Left & Center: Library Stats + Tabs Table (8 cols) -->
+<div class="lg:col-span-8 space-y-5">
+<!-- Window Header -->
+<div class="flex items-center justify-between pb-1">
+<div>
+<h2 class="font-headline-md text-headline-md text-[#e1e3dc]">Library</h2>
+<p class="font-body-sm text-body-sm text-[#8d9384]">Browsing session state · 41 open across 3 workspaces</p>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm bg-[#23271E] text-[#a0c878] border border-[#2E3327]">41 tabs active</span>
+</div>
+</div>
+<!-- Stats Pill Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+<div class="p-3 rounded-xl bg-[#191c18] border border-[#2E3327]">
+<span class="text-[11px] text-[#8d9384] font-label-sm block">Open tabs</span>
+<span class="font-headline-sm text-headline-sm text-[#e1e3dc] font-semibold">41</span>
+</div>
+<div class="p-3 rounded-xl bg-[#191c18] border border-[#2E3327]">
+<span class="text-[11px] text-[#8d9384] font-label-sm block">Archived today</span>
+<span class="font-headline-sm text-headline-sm text-[#bbe491] font-semibold">14</span>
+</div>
+<div class="p-3 rounded-xl bg-[#191c18] border border-[#2E3327]">
+<span class="text-[11px] text-[#8d9384] font-label-sm block">Restored</span>
+<span class="font-headline-sm text-headline-sm text-[#e1e3dc] font-semibold">3</span>
+</div>
+<div class="p-3 rounded-xl bg-[#191c18] border border-[#2E3327]">
+<span class="text-[11px] text-[#8d9384] font-label-sm block">Active hours</span>
+<span class="font-headline-sm text-headline-sm text-[#e1e3dc] font-semibold">5.2h</span>
+</div>
+</div>
+<!-- Tabs Table Mockup -->
+<div class="rounded-xl border border-[#2E3327] overflow-hidden bg-[#141712]">
+<div class="px-3.5 py-2 bg-[#191c18] border-b border-[#2E3327] flex items-center justify-between text-[11px] font-label-sm text-[#8d9384]">
+<span>Title &amp; Domain</span>
+<span class="hidden sm:inline">Decay Status</span>
+<span>Age</span>
+</div>
+<div class="divide-y divide-[#2E3327]/60 text-xs font-body-sm">
+<!-- Row 1 -->
+<div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-[#1d201c] transition-colors">
+<div class="flex items-center gap-2.5 truncate max-w-[240px] sm:max-w-xs">
+<span class="w-2 h-2 rounded-full bg-[#a0c878]"></span>
+<span class="text-[#e1e3dc] font-medium truncate">Stripe · Billing portal configuration</span>
+<span class="text-[#8d9384] text-[11px]">stripe.com</span>
+</div>
+<span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-[#191c18] text-[#a0c878] border border-[#2E3327]">Active window</span>
+<span class="text-[#8d9384] font-code-sm text-[11px]">12m ago</span>
+</div>
+<!-- Row 2 -->
+<div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-[#1d201c] transition-colors">
+<div class="flex items-center gap-2.5 truncate max-w-[240px] sm:max-w-xs">
+<span class="w-2 h-2 rounded-full bg-[#c0cd82]"></span>
+<span class="text-[#e1e3dc] font-medium truncate">Linear · Sprint cycle 42 roadmap</span>
+<span class="text-[#8d9384] text-[11px]">linear.app</span>
+</div>
+<span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-[#191c18] text-[#c0cd82] border border-[#2E3327]">Subtle dim</span>
+<span class="text-[#8d9384] font-code-sm text-[11px]">1.4h ago</span>
+</div>
+<!-- Row 3 -->
+<div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-[#1d201c] transition-colors">
+<div class="flex items-center gap-2.5 truncate max-w-[240px] sm:max-w-xs">
+<span class="w-2 h-2 rounded-full bg-[#8dcb85]"></span>
+<span class="text-[#e1e3dc] font-medium truncate">Pull request #418: Cache inval engine</span>
+<span class="text-[#8d9384] text-[11px]">github.com</span>
+</div>
+<span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-[#23271E] text-[#e1e3dc] border border-[#2E3327]">Queued archive</span>
+<span class="text-[#8d9384] font-code-sm text-[11px]">3.8h ago</span>
+</div>
+<!-- Row 4 -->
+<div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-[#1d201c] transition-colors">
+<div class="flex items-center gap-2.5 truncate max-w-[240px] sm:max-w-xs">
+<span class="w-2 h-2 rounded-full bg-[#ffb4ab]"></span>
+<span class="text-[#c3c9b8] truncate">Figma tokens: Core dark theme spec</span>
+<span class="text-[#8d9384] text-[11px]">figma.com</span>
+</div>
+<span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-[#191c18] text-[#ffb4ab] border border-[#2E3327]">Archived</span>
+<span class="text-[#8d9384] font-code-sm text-[11px]">6.1h ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Inspector Card (4 cols) in rich forest green -->
+<div class="lg:col-span-4 rounded-xl bg-[#1d351c] border border-[#2f5a2e] p-4 text-[#e1e3dc] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="text-[11px] font-label-sm uppercase tracking-wider text-[#a0c878]">Inspector Panel</span>
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="tune">tune</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-[#e1e3dc] mb-1">Stripe · Billing portal</h3>
+<p class="font-body-sm text-body-sm text-[#c3c9b8] mb-4">Focused tab in Workspace 1 (Brave Browser)</p>
+<div class="space-y-2.5 text-xs font-body-sm">
+<div class="flex justify-between py-1 border-b border-[#2f5a2e]/60">
+<span class="text-[#c3c9b8]">Total active gaze</span>
+<span class="font-code-sm text-[#e1e3dc]">24m 10s</span>
+</div>
+<div class="flex justify-between py-1 border-b border-[#2f5a2e]/60">
+<span class="text-[#c3c9b8]">Safety shield</span>
+<span class="text-[#a0c878] font-medium">Form data detected</span>
+</div>
+<div class="flex justify-between py-1 border-b border-[#2f5a2e]/60">
+<span class="text-[#c3c9b8]">Window position</span>
+<span class="text-[#e1e3dc]">Display 1 (Main)</span>
+</div>
+<div class="flex justify-between py-1">
+<span class="text-[#c3c9b8]">Decay rule</span>
+<span class="text-[#c0cd82]">stripe.com → 8h limit</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-[#2f5a2e]/60 flex gap-2">
+<button class="flex-1 py-1.5 rounded-lg bg-[#23271E] border border-[#2E3327] text-xs font-label-sm text-[#e1e3dc] hover:bg-[#282b26] transition-colors">Protect Tab</button>
+<button class="flex-1 py-1.5 rounded-lg bg-[#dcea9c] text-[#181e00] text-xs font-label-sm font-semibold hover:bg-white transition-colors">Archive Now</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Overlapping Corner Spotlight Search Overlay (Inspired by SCREEN_41) -->
+<div class="mt-4 lg:mt-0 lg:absolute -bottom-6 -right-4 lg:w-[420px] rounded-2xl bg-[#161a14] border border-[#2E3327] p-4 shadow-2xl backdrop-blur-xl">
+<div class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#111410] border border-[#2E3327] mb-3">
+<span class="material-symbols-outlined text-[18px] text-[#a0c878]" data-icon="search">search</span>
+<div class="flex-1 flex items-center font-code-sm text-xs text-[#e1e3dc]">
+<span>pricing</span>
+<span class="w-1.5 h-3.5 bg-[#a0c878] ml-0.5 animate-pulse"></span>
+</div>
+<kbd class="px-1.5 py-0.5 text-[10px] rounded bg-[#23271E] border border-[#2E3327] text-[#8d9384] font-code-sm">ESC</kbd>
+</div>
+<div class="flex items-center gap-2 mb-2 px-1">
+<span class="text-[10px] font-label-sm uppercase tracking-wider text-[#8d9384]">Matches</span>
+<span class="px-1.5 py-0.2 rounded text-[10px] bg-[#434e11] text-[#bbe491] font-code-sm">2 results</span>
+</div>
+<div class="space-y-1.5">
+<div class="p-2 rounded-lg bg-[#23271E] border border-[#43493c] flex items-center justify-between text-xs">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-[#a0c878]" data-icon="restore_page">restore_page</span>
+<span class="text-[#e1e3dc] font-medium truncate">Stripe · Pricing Matrix 2026</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] bg-[#dcea9c] text-[#181e00] font-medium">↵ Restore</span>
+</div>
+<div class="p-2 rounded-lg bg-[#111410] border border-[#2E3327] flex items-center justify-between text-xs hover:bg-[#191c18] transition-colors">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-[#8d9384]" data-icon="tab">tab</span>
+<span class="text-[#c3c9b8] truncate">AWS Calculator - EC2 pricing</span>
+</div>
+<span class="text-[10px] text-[#8d9384]">Archived 3d ago</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Browser Logo Strip -->
+<section class="border-y border-[#2E3327] bg-[#141712] py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<p class="font-label-sm text-[11px] uppercase tracking-widest text-[#7a8070] mb-6">
+        Works quietly across your daily tools &amp; window managers
+      </p>
+<div class="flex flex-wrap items-center justify-center gap-8 sm:gap-14 text-[#c3c9b8]/80 text-sm font-label-md">
+<!-- Google Chrome -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="globe">globe</span>
+<span>Google Chrome</span>
+</div>
+<!-- Arc -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="cyclone">cyclone</span>
+<span>Arc</span>
+</div>
+<!-- Brave -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="shield">shield</span>
+<span>Brave</span>
+</div>
+<!-- Microsoft Edge -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="surfing">surfing</span>
+<span>Microsoft Edge</span>
+</div>
+<!-- macOS Finder -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="desktop_mac">desktop_mac</span>
+<span>macOS Finder</span>
+</div>
+<!-- Windows Explorer -->
+<div class="flex items-center gap-2 hover:text-[#e1e3dc] transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="folder_copy">folder_copy</span>
+<span>Windows Explorer</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Calm Automation Section -->
+<section class="py-24 bg-[#121511]" id="how-it-works">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-3xl mx-auto text-center mb-16">
+<span class="text-xs font-label-sm uppercase tracking-widest text-[#a0c878] block mb-3 font-semibold">Calm Automation</span>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4">
+          How Decay stays out of your way.
+        </h2>
+<p class="font-body-md text-[#c3c9b8] text-base leading-relaxed">
+          Tabs should reflect what is currently engaging your mind — not the residue of every question you explored this month.
+        </p>
+</div>
+<!-- 3 Feature Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+<!-- Feature 1 -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-7 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="w-8 h-8 rounded-full bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-xs font-headline-sm text-[#a0c878] mb-5">
+              1
+            </div>
+<h3 class="font-headline-md text-xl font-semibold text-[#e1e3dc] mb-2.5">It watches quietly</h3>
+<p class="font-body-md text-sm text-[#c3c9b8] leading-relaxed mb-6">
+              Time only ticks while you're actively working. Decay pauses when your screen is locked and while you're in a meeting.
+            </p>
+</div>
+<!-- Mini UI Preview: Active Clock Card -->
+<div class="rounded-xl bg-[#111410] border border-[#2E3327] p-3.5 space-y-2">
+<div class="flex items-center justify-between text-xs">
+<span class="text-[#8d9384] font-label-sm">Active Session Clock</span>
+<span class="flex items-center gap-1 text-[#a0c878] font-code-sm text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#a0c878] animate-ping"></span>
+                Tracking
+              </span>
+</div>
+<div class="flex items-center justify-between bg-[#191c18] rounded-lg p-2 border border-[#2E3327]/60">
+<span class="text-xs text-[#e1e3dc]">Zoom meeting detected</span>
+<span class="px-2 py-0.5 text-[10px] rounded bg-[#434e11] text-[#bbe491]">Timer Paused</span>
+</div>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-7 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="w-8 h-8 rounded-full bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-xs font-headline-sm text-[#a0c878] mb-5">
+              2
+            </div>
+<h3 class="font-headline-md text-xl font-semibold text-[#e1e3dc] mb-2.5">Stale things fade</h3>
+<p class="font-body-md text-sm text-[#c3c9b8] leading-relaxed mb-6">
+              Tabs move across an explicit, gentle progression: fresh while you work, subtly dimmed when stale, background windows hidden, and archived after threshold.
+            </p>
+</div>
+<!-- Mini UI Preview: Progression track -->
+<div class="rounded-xl bg-[#111410] border border-[#2E3327] p-3.5 space-y-2.5">
+<div class="text-[11px] font-label-sm text-[#8d9384]">Lifecycle Threshold Track</div>
+<div class="flex items-center gap-1.5">
+<div class="flex-1 text-center py-1.5 rounded bg-[#1d351c] text-[#bbe491] text-[10px] font-medium border border-[#2f5a2e]">Fresh</div>
+<span class="text-[#8d9384] text-xs">→</span>
+<div class="flex-1 text-center py-1.5 rounded bg-[#23271E] text-[#c0cd82] text-[10px] font-medium border border-[#2E3327]">Dimmed</div>
+<span class="text-[#8d9384] text-xs">→</span>
+<div class="flex-1 text-center py-1.5 rounded bg-[#191c18] text-[#8d9384] text-[10px] font-medium border border-[#2E3327]">Hidden</div>
+<span class="text-[#8d9384] text-xs">→</span>
+<div class="flex-1 text-center py-1.5 rounded bg-[#2a1d1d] text-[#ffb4ab] text-[10px] font-medium border border-[#93000a]/40">Archived</div>
+</div>
+</div>
+</div>
+<!-- Feature 3 -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-7 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="w-8 h-8 rounded-full bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-xs font-headline-sm text-[#a0c878] mb-5">
+              3
+            </div>
+<h3 class="font-headline-md text-xl font-semibold text-[#e1e3dc] mb-2.5">Everything comes back</h3>
+<p class="font-body-md text-sm text-[#c3c9b8] leading-relaxed mb-6">
+              Summon the overlay with ⌥⌘D. Type any keyword or domain, hit Enter, and your tab restores into its original window.
+            </p>
+</div>
+<!-- Mini UI Preview: Instant search card -->
+<div class="rounded-xl bg-[#111410] border border-[#2E3327] p-3.5 space-y-2">
+<div class="flex items-center justify-between text-xs">
+<span class="text-[#8d9384] font-label-sm">Global Instant Search</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] bg-[#23271E] text-[#a0c878] font-code-sm">Low Regret</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-[#191c18] border border-[#2E3327]">
+<div class="flex items-center gap-2">
+<kbd class="px-1.5 py-0.5 rounded bg-[#23271E] border border-[#2E3327] text-[10px] font-code-sm text-[#e1e3dc]">⌥⌘D</kbd>
+<span class="text-xs text-[#c3c9b8]">Search 1,280 history</span>
+</div>
+<span class="text-[11px] text-[#bbe491] font-medium">10ms response</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sober Craft: Bento Grid Section -->
+<section class="py-24 bg-[#161a14] border-t border-[#2E3327]" id="craft">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-3xl mx-auto text-center mb-16">
+<span class="text-xs font-label-sm uppercase tracking-widest text-[#a0c878] block mb-3 font-semibold">Sober Craft</span>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4">
+          Designed for thoughtful focus.
+        </h2>
+<p class="font-body-md text-[#c3c9b8] text-base leading-relaxed">
+          No nagging notifications. No cloud tracking. Just a calm background engine taking care of digital sprawl.
+        </p>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+<!-- Hero Card (2 cols span) in deep forest green -->
+<div class="md:col-span-2 lg:col-span-2 rounded-[22px] bg-[#1e3a1d] text-[#e1e3dc] p-8 border border-[#3e703c] flex flex-col justify-between shadow-lg">
+<div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2f5a2e] border border-[#437a41] text-xs font-label-sm text-[#bbe491] mb-5">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified_user">verified_user</span>
+<span>Safety Guarantee</span>
+</div>
+<h3 class="font-headline-md text-2xl font-semibold text-[#e1e3dc] mb-3 leading-snug">
+              Shadow mode first — for 7 days Decay only shows what it would do.
+            </h3>
+<p class="font-body-md text-sm text-[#c3c9b8] leading-relaxed mb-6">
+              Before closing or hiding a single tab, Decay monitors your real work habits for a week. You inspect the simulation, tweak thresholds, and turn on automatic mode only when you're 100% comfortable.
+            </p>
+</div>
+<!-- Nested dark stats widget -->
+<div class="rounded-xl bg-[#111410] border border-[#2E3327] p-4 grid grid-cols-3 gap-3 text-center">
+<div>
+<span class="font-headline-sm text-lg font-semibold text-[#bbe491] block">63</span>
+<span class="text-[11px] text-[#8d9384] font-body-sm">Simulated tabs</span>
+</div>
+<div class="border-x border-[#2E3327]">
+<span class="font-headline-sm text-lg font-semibold text-[#e1e3dc] block">9</span>
+<span class="text-[11px] text-[#8d9384] font-body-sm">Windows hidden</span>
+</div>
+<div>
+<span class="font-headline-sm text-lg font-semibold text-[#a0c878] block">3%</span>
+<span class="text-[11px] text-[#8d9384] font-body-sm">Regret rate</span>
+</div>
+</div>
+</div>
+<!-- Bento Card: Rules in Plain Language -->
+<div class="md:col-span-1 lg:col-span-2 rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-6 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-sm text-xs text-[#a0c878] uppercase tracking-wider">Granular Rules</span>
+<span class="material-symbols-outlined text-[18px] text-[#8d9384]" data-icon="tune">tune</span>
+</div>
+<h4 class="font-headline-md text-xl font-semibold text-[#e1e3dc] mb-2">Rules in plain language</h4>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed mb-4">
+              Write rules for domains, paths, or window titles without writing code.
+            </p>
+</div>
+<!-- Rule Pills List -->
+<div class="space-y-2">
+<div class="p-2.5 rounded-xl bg-[#111410] border border-[#2E3327] flex items-center justify-between text-xs font-body-sm">
+<span class="font-code-sm text-[#e1e3dc] text-[11px]">mail.google.com</span>
+<span class="px-2 py-0.5 rounded text-[10px] bg-[#1d351c] text-[#bbe491] border border-[#2f5a2e]">Never archive</span>
+</div>
+<div class="p-2.5 rounded-xl bg-[#111410] border border-[#2E3327] flex items-center justify-between text-xs font-body-sm">
+<span class="font-code-sm text-[#e1e3dc] text-[11px]">github.com/*/pull/*</span>
+<span class="px-2 py-0.5 rounded text-[10px] bg-[#23271E] text-[#c0cd82] border border-[#2E3327]">Keep 2x longer</span>
+</div>
+<div class="p-2.5 rounded-xl bg-[#111410] border border-[#2E3327] flex items-center justify-between text-xs font-body-sm">
+<span class="font-code-sm text-[#e1e3dc] text-[11px]">youtube.com</span>
+<span class="px-2 py-0.5 rounded text-[10px] bg-[#191c18] text-[#8d9384] border border-[#2E3327]">Archive 4h</span>
+</div>
+</div>
+</div>
+<!-- Bento Card: Undo Any Sweep -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-6 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="w-8 h-8 rounded-lg bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878] mb-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="undo">undo</span>
+</div>
+<h4 class="font-headline-md text-lg font-semibold text-[#e1e3dc] mb-1.5">Undo any sweep</h4>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed mb-4">
+              Every automatic clean creates a reversible batch record.
+            </p>
+</div>
+<div class="p-3 rounded-xl bg-[#111410] border border-[#2E3327] space-y-2">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#8d9384]">Sweep #409</span>
+<span class="text-[#bbe491]">8 tabs</span>
+</div>
+<button class="w-full py-1 rounded bg-[#23271E] hover:bg-[#282b26] border border-[#2E3327] text-xs font-label-sm text-[#e1e3dc] transition-colors">
+              Revert sweep
+            </button>
+</div>
+</div>
+<!-- Bento Card: Smart Safety Shields -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-6 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="w-8 h-8 rounded-lg bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878] mb-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="shield">shield</span>
+</div>
+<h4 class="font-headline-md text-lg font-semibold text-[#e1e3dc] mb-1.5">Smart safety shields</h4>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed mb-4">
+              Decay pauses if it detects critical foreground activity.
+            </p>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-1 rounded-md text-[11px] bg-[#111410] border border-[#2E3327] text-[#c3c9b8]">Pinned tabs</span>
+<span class="px-2 py-1 rounded-md text-[11px] bg-[#111410] border border-[#2E3327] text-[#c3c9b8]">Audio playing</span>
+<span class="px-2 py-1 rounded-md text-[11px] bg-[#111410] border border-[#2E3327] text-[#c3c9b8]">Unsaved forms</span>
+<span class="px-2 py-1 rounded-md text-[11px] bg-[#111410] border border-[#2E3327] text-[#c3c9b8]">Web meetings</span>
+</div>
+</div>
+<!-- Bento Card: Search Everything (2 cols on md) -->
+<div class="md:col-span-2 rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 hover:border-[#43493c] transition-all">
+<div class="space-y-2">
+<span class="font-label-sm text-xs text-[#a0c878] uppercase tracking-wider">Fast Keystroke Summon</span>
+<h4 class="font-headline-md text-xl font-semibold text-[#e1e3dc]">Search everything with ⌥⌘D</h4>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed max-w-sm">
+              No need to dig through browser history menus. All saved tabs are indexed full-text locally in under 15ms.
+            </p>
+</div>
+<div class="w-full sm:w-auto p-4 rounded-xl bg-[#111410] border border-[#2E3327] flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px] text-[#a0c878]" data-icon="keyboard">keyboard</span>
+<div>
+<div class="flex items-center gap-1">
+<kbd class="px-2 py-1 rounded bg-[#23271E] border border-[#2E3327] font-code-sm text-xs text-[#e1e3dc]">⌥</kbd>
+<kbd class="px-2 py-1 rounded bg-[#23271E] border border-[#2E3327] font-code-sm text-xs text-[#e1e3dc]">⌘</kbd>
+<kbd class="px-2 py-1 rounded bg-[#23271E] border border-[#2E3327] font-code-sm text-xs text-[#e1e3dc]">D</kbd>
+</div>
+<span class="text-[10px] text-[#8d9384] block mt-1">Global shortcut</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Big Numbers Section -->
+<section class="py-20 bg-[#121511]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-[#2E3327]">
+<!-- Stat 1 -->
+<div class="pt-6 md:pt-0 md:px-6">
+<div class="font-headline-lg text-5xl sm:text-6xl font-semibold text-[#e1e3dc] mb-3">
+            78 <span class="text-[#a0c878]">→</span> 34
+          </div>
+<h3 class="font-headline-sm text-headline-sm text-[#e1e3dc] mb-1">Average open tabs across working hours</h3>
+<p class="font-body-sm text-body-sm text-[#8d9384]">Cleaner minds, zero browser thrashing</p>
+</div>
+<!-- Stat 2 -->
+<div class="pt-6 md:pt-0 md:px-6">
+<div class="font-headline-lg text-5xl sm:text-6xl font-semibold text-[#e1e3dc] mb-3">
+            2.1%
+          </div>
+<h3 class="font-headline-sm text-headline-sm text-[#e1e3dc] mb-1">Low-regret precision archive</h3>
+<p class="font-body-sm text-body-sm text-[#8d9384]">of archived tabs were reopened within a day</p>
+</div>
+<!-- Stat 3 -->
+<div class="pt-6 md:pt-0 md:px-6">
+<div class="font-headline-lg text-5xl sm:text-6xl font-semibold text-[#a0c878] mb-3">
+            0 bytes
+          </div>
+<h3 class="font-headline-sm text-headline-sm text-[#e1e3dc] mb-1">Everything stays on your computer</h3>
+<p class="font-body-sm text-body-sm text-[#8d9384]">Completely local storage &amp; telemetry</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Privacy Band Section -->
+<section class="py-16 bg-[#121511]" id="privacy">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="rounded-[28px] bg-[#1a3419] border border-[#2f5a2e] p-8 sm:p-12 lg:p-14 text-[#e1e3dc] shadow-2xl relative overflow-hidden">
+<div class="max-w-3xl mb-12">
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2f5a2e] border border-[#437a41] text-xs font-label-sm text-[#bbe491] mb-4">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span>
+<span>Privacy Architecture</span>
+</div>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4 leading-tight">
+            Private by design. Local-only. Open source core.
+          </h2>
+<p class="font-body-md text-[#c3c9b8] text-base leading-relaxed">
+            Your web browsing habits reveal your inner thoughts, research, and unfinished ideas. They should never leave your machine.
+          </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-[#2f5a2e]">
+<!-- Column 1 -->
+<div>
+<div class="w-8 h-8 rounded-lg bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878] mb-4">
+<span class="material-symbols-outlined text-[18px]" data-icon="cloud_off">cloud_off</span>
+</div>
+<h3 class="font-headline-sm text-lg font-semibold text-[#e1e3dc] mb-2">Zero Cloud Analytics</h3>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed">
+              Decay never uploads your browsing history, page contents, titles, or URLs to any server. All state lives inside your native local SQLite database.
+            </p>
+</div>
+<!-- Column 2 -->
+<div>
+<div class="w-8 h-8 rounded-lg bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878] mb-4">
+<span class="material-symbols-outlined text-[18px]" data-icon="terminal">terminal</span>
+</div>
+<h3 class="font-headline-sm text-lg font-semibold text-[#e1e3dc] mb-2">Auditable Code</h3>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed">
+              The daemon and browser communication bridges are publicly available on GitHub under the MIT license. Review every line of code before running.
+            </p>
+</div>
+<!-- Column 3 -->
+<div>
+<div class="w-8 h-8 rounded-lg bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878] mb-4">
+<span class="material-symbols-outlined text-[18px]" data-icon="person_off">person_off</span>
+</div>
+<h3 class="font-headline-sm text-lg font-semibold text-[#e1e3dc] mb-2">No account needed</h3>
+<p class="font-body-sm text-xs text-[#c3c9b8] leading-relaxed">
+              Decay works the moment you install it. There's nothing to sign up for, no passwords, and no subscription auth tokens.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-24 bg-[#161a14] border-t border-[#2E3327]" id="pricing">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-3xl mx-auto text-center mb-16">
+<span class="text-xs font-label-sm uppercase tracking-widest text-[#a0c878] block mb-3 font-semibold">Simple Ownership</span>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4">
+          Fair software without subscriptions.
+        </h2>
+<p class="font-body-md text-[#c3c9b8] text-base leading-relaxed">
+          Try the core experience free forever. Upgrade once when you need window control and multi-browser rules.
+        </p>
+</div>
+<!-- 2 Pricing Cards -->
+<div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+<!-- Free Card -->
+<div class="rounded-[22px] bg-[#1a1e18] border border-[#2a3027] p-8 flex flex-col justify-between hover:border-[#43493c] transition-all">
+<div>
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-2xl font-semibold text-[#e1e3dc]">Personal</h3>
+<span class="px-2.5 py-0.5 rounded-full text-xs font-label-sm bg-[#23271E] border border-[#2E3327] text-[#c3c9b8]">Free forever</span>
+</div>
+<div class="mb-6">
+<span class="font-headline-lg text-4xl font-semibold text-[#e1e3dc]">$0</span>
+<span class="font-body-sm text-xs text-[#8d9384] ml-2">no credit card required</span>
+</div>
+<p class="font-body-md text-xs text-[#c3c9b8] leading-relaxed mb-6">
+              Essential tab decay and fast keystroke search for single-browser users.
+            </p>
+<ul class="space-y-3 text-xs font-body-sm text-[#c3c9b8] mb-8">
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Active gaze decay timers</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Instant restore overlay (⌥⌘D)</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Single browser connection</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>7-day search history</span>
+</li>
+</ul>
+</div>
+<a class="w-full py-3 rounded-full bg-[#23271E] hover:bg-[#282b26] border border-[#2E3327] text-center font-label-md text-label-md text-[#e1e3dc] font-medium transition-colors" href="#download">
+            Download Free
+          </a>
+</div>
+<!-- Pro Card (Featured) -->
+<div class="rounded-[22px] bg-[#1a1e18] border-2 border-[#a0c878] p-8 flex flex-col justify-between shadow-2xl relative">
+<div class="absolute -top-3.5 right-6 px-3 py-0.5 rounded-full bg-[#dcea9c] text-[#121511] font-label-sm text-xs font-semibold uppercase tracking-wider">
+            Best value · Pay once
+          </div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-2xl font-semibold text-[#e1e3dc]">One-time license</h3>
+<span class="px-2.5 py-0.5 rounded-full text-xs font-label-sm bg-[#434e11] text-[#bbe491]">Pro</span>
+</div>
+<div class="mb-6">
+<span class="font-headline-lg text-4xl font-semibold text-[#e1e3dc]">$24</span>
+<span class="font-body-sm text-xs text-[#8d9384] ml-2">pay once, own forever</span>
+</div>
+<p class="font-body-md text-xs text-[#c3c9b8] leading-relaxed mb-6">
+              Full desktop automation, advanced window control, and custom rule configurations.
+            </p>
+<ul class="space-y-3 text-xs font-body-sm text-[#c3c9b8] mb-8">
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span class="text-[#e1e3dc] font-medium">All core archiving features</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Background window auto-hiding</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Domain &amp; URL pattern rules engine</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Multi-browser simultaneous monitoring</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Unlimited searchable history archive</span>
+</li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="check">check</span>
+<span>Valid on up to 2 personal machines</span>
+</li>
+</ul>
+</div>
+<a class="w-full py-3 rounded-full bg-[#dcea9c] hover:bg-white text-center font-label-md text-label-md text-[#121511] font-semibold transition-all shadow-md" href="#buy">
+            Get Pro — $24
+          </a>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="py-24 bg-[#121511]" id="faq">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-16">
+<span class="text-xs font-label-sm uppercase tracking-widest text-[#a0c878] block mb-3 font-semibold">Clear Answers</span>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4">
+          Frequently asked questions
+        </h2>
+<p class="font-body-md text-[#c3c9b8] text-base leading-relaxed">
+          Everything you need to know about how Decay operates.
+        </p>
+</div>
+<div class="space-y-4">
+<!-- FAQ 1 -->
+<div class="rounded-xl bg-[#1a1e18] border border-[#2a3027] p-5.5 hover:border-[#43493c] transition-colors">
+<h3 class="font-headline-sm text-base font-semibold text-[#e1e3dc] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="help_outline">help_outline</span>
+            Will Decay close forms I am actively filling out?
+          </h3>
+<p class="font-body-md text-xs sm:text-sm text-[#c3c9b8] leading-relaxed pl-6">
+            Never. Tabs with unsaved form input, audio output, or pinned states are protected by default through our built-in safety shields. Decay explicitly checks for dirty form state before queuing an archive.
+          </p>
+</div>
+<!-- FAQ 2 -->
+<div class="rounded-xl bg-[#1a1e18] border border-[#2a3027] p-5.5 hover:border-[#43493c] transition-colors">
+<h3 class="font-headline-sm text-base font-semibold text-[#e1e3dc] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="help_outline">help_outline</span>
+            How does active hour calculation work when my computer is asleep?
+          </h3>
+<p class="font-body-md text-xs sm:text-sm text-[#c3c9b8] leading-relaxed pl-6">
+            Decay calculates tab age using actual active user gaze. Time pauses automatically when your screen locks, during screensavers, or when video conferencing tools have active mic or camera streams.
+          </p>
+</div>
+<!-- FAQ 3 -->
+<div class="rounded-xl bg-[#1a1e18] border border-[#2a3027] p-5.5 hover:border-[#43493c] transition-colors">
+<h3 class="font-headline-sm text-base font-semibold text-[#e1e3dc] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="help_outline">help_outline</span>
+            Does Decay read or store the contents of my web pages?
+          </h3>
+<p class="font-body-md text-xs sm:text-sm text-[#c3c9b8] leading-relaxed pl-6">
+            Never. Decay only reads tab URLs and document titles locally. Page text, DOM nodes, cookies, and network payloads are never indexed, read, or transmitted anywhere.
+          </p>
+</div>
+<!-- FAQ 4 -->
+<div class="rounded-xl bg-[#1a1e18] border border-[#2a3027] p-5.5 hover:border-[#43493c] transition-colors">
+<h3 class="font-headline-sm text-base font-semibold text-[#e1e3dc] mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-[#a0c878]" data-icon="help_outline">help_outline</span>
+            What happens if I need a tab back after weeks or months?
+          </h3>
+<p class="font-body-md text-xs sm:text-sm text-[#c3c9b8] leading-relaxed pl-6">
+            All archived tabs remain permanently searchable in your local Library. Hitting ⌥⌘D allows you to summon tabs from days or months ago instantaneously, restoring scroll position whenever supported by the browser.
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final Call-to-Action Section -->
+<section class="py-20 bg-[#161a14] border-t border-[#2E3327]" id="download">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="rounded-[28px] bg-[#1a1e18] border border-[#2a3027] p-10 sm:p-14 text-center shadow-2xl relative overflow-hidden">
+<div class="w-12 h-12 rounded-2xl bg-[#23271E] border border-[#2E3327] mx-auto flex items-center justify-center text-[#a0c878] mb-6 shadow-md">
+<span class="material-symbols-outlined text-[24px]" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<h2 class="font-headline-lg text-3xl sm:text-5xl font-semibold tracking-tight text-[#e1e3dc] mb-4">
+          Close fewer tabs. Lose nothing.
+        </h2>
+<p class="font-body-md text-base text-[#c3c9b8] max-w-xl mx-auto leading-relaxed mb-8">
+          Start with the 7-day shadow mode. Let Decay quietly safeguard your desktop from cluttered overload today.
+        </p>
+<!-- Action cluster -->
+<div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-5">
+<a class="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#e1e3dc] text-[#111410] font-label-md text-label-md font-semibold hover:bg-white transition-all shadow-md" href="#download-mac">
+<span>Download for Mac</span>
+<span class="text-sm"></span>
+</a>
+<a class="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#23271E] border border-[#2E3327] text-[#e1e3dc] font-label-md text-label-md font-medium hover:border-[#43493c] transition-all" href="#download-win-file" id="download-win">
+<span>Download for Windows</span>
+<span class="material-symbols-outlined text-[15px]" data-icon="laptop_windows">laptop_windows</span>
+</a>
+</div>
+<p class="font-body-sm text-xs text-[#8d9384]">
+          Free forever for basic tab archiving · No account required
+        </p>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="border-t border-[#2E3327] bg-[#111410] py-12 text-xs font-body-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+<!-- Left: Logo & Copyright -->
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded bg-[#23271E] border border-[#2E3327] flex items-center justify-center text-[#a0c878]">
+<span class="material-symbols-outlined text-[13px]" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<span class="font-headline-sm text-sm text-[#e1e3dc] font-semibold">Decay</span>
+<span class="text-[#8d9384]">·</span>
+<span class="text-[#8d9384]">© 2026 Decay. Crafted for thoughtful focus.</span>
+</div>
+<!-- Right: Footer Links -->
+<div class="flex items-center gap-6 text-[#c3c9b8] font-label-md">
+<a class="hover:text-[#e1e3dc] transition-colors" href="#features">Features</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#privacy">Privacy</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#pricing">Pricing</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="https://github.com" rel="noreferrer" target="_blank">GitHub</a>
+<a class="hover:text-[#e1e3dc] transition-colors" href="#security">Security</a>
+</div>
+</div>
+</footer>
+</body></html>

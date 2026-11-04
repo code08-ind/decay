@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decay — Your tabs, gently put away.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            page: '#FAF6E9',
+            card: '#FFFFFF',
+            ivory: '#FFFDF6',
+            sage: {
+              DEFAULT: '#A0C878',
+              50: '#F4F8EE',
+              100: '#E7F2DA',
+              200: '#D3E6BE',
+              300: '#BBD89D',
+              400: '#A0C878',
+              500: '#7FA77A',
+              600: '#5C8A57',
+              700: '#4F8A4B',
+              800: '#386335',
+              900: '#234121',
+            },
+            lime: {
+              highlight: '#DDEB9D',
+            },
+            forest: '#4F8A4B',
+            darkforest: '#244521',
+            charcoal: '#191C18',
+            ink: '#2A3027',
+            muted: '#6E7668',
+            subtle: '#8C9585',
+            hairline: 'rgba(80, 100, 70, 0.12)',
+            cardborder: 'rgba(0, 0, 0, 0.06)',
+          },
+          boxShadow: {
+            soft: '0 12px 36px -8px rgba(35, 65, 33, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
+            elevated: '0 28px 64px -14px rgba(30, 50, 25, 0.16), 0 8px 24px -4px rgba(0, 0, 0, 0.06)',
+            window: '0 32px 80px -16px rgba(25, 45, 20, 0.22), 0 4px 20px -2px rgba(0, 0, 0, 0.06)',
+            popover: '0 20px 48px -10px rgba(18, 36, 16, 0.28), 0 2px 10px rgba(0, 0, 0, 0.08)',
+          },
+          borderRadius: {
+            '22': '22px',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FAF6E9;
+      color: #2A3027;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .font-serif-headline {
+      font-family: 'Newsreader', Georgia, serif;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    .hairline-border {
+      border: 1px solid rgba(80, 100, 70, 0.12);
+    }
+    .card-border {
+      border: 1px solid rgba(0, 0, 0, 0.07);
+    }
+    .backdrop-blur-glass {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="selection:bg-lime-highlight selection:text-charcoal">
+
+  <!-- 1. NAVIGATION -->
+  <header class="sticky top-0 z-50 bg-[#FAF6E9]/90 backdrop-blur-md border-b border-[rgba(80,100,70,0.1)] transition-all">
+    <div class="max-w-[1240px] mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo & Brand -->
+      <a href="#" class="flex items-center gap-2.5 group">
+        <div class="w-8 h-8 rounded-full bg-[#4F8A4B] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5c0 2.5 1.5 4.5 4 4.5 2 0 4.5-1.5 6-3.5 1-1.33 3-4.5 5-6.5z"/>
+          </svg>
+        </div>
+        <span class="font-serif-headline text-xl font-medium tracking-tight text-charcoal">Decay</span>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center gap-7 text-xs font-medium text-muted tracking-tight">
+        <a href="#features" class="hover:text-charcoal transition-colors">Features</a>
+        <a href="#how-it-works" class="hover:text-charcoal transition-colors">How it works</a>
+        <a href="#pricing" class="hover:text-charcoal transition-colors">Pricing</a>
+        <a href="#privacy" class="hover:text-charcoal transition-colors">Privacy</a>
+        <a href="#faq" class="hover:text-charcoal transition-colors">Changelog</a>
+      </nav>
+
+      <!-- Trailing CTAs -->
+      <div class="flex items-center gap-4">
+        <a href="https://github.com" target="_blank" rel="noreferrer" class="text-xs font-medium text-muted hover:text-charcoal transition-colors flex items-center gap-1.5">
+          <svg class="w-4 h-4 fill-current opacity-80" viewBox="0 0 24 24">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a href="#pricing" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-charcoal text-[#FAF6E9] text-xs font-medium hover:bg-black transition-all shadow-sm">
+          <span>Download for Mac</span>
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 2. HERO SECTION -->
+    <section class="pt-20 pb-16 md:pt-28 md:pb-24 px-6 relative">
+      <div class="max-w-[1040px] mx-auto text-center flex flex-col items-center">
+        <!-- Status Pill -->
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E7F2DA]/70 border border-[#A0C878]/50 text-[#386335] text-xs font-medium tracking-tight mb-8">
+          <span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+          <span>Now in beta · macOS &amp; Windows</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="font-serif-headline text-5xl sm:text-6xl md:text-[68px] leading-[1.08] text-charcoal font-medium tracking-tight max-w-[820px] mb-6">
+          Your tabs, gently put away.
+        </h1>
+
+        <!-- Subhead -->
+        <p class="text-base sm:text-lg text-muted max-w-[620px] leading-relaxed mb-9 font-normal">
+          Decay watches what you actually use and quietly archives the rest. Search and restore anything in a keystroke — nothing is ever lost.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-4">
+          <a href="#pricing" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-charcoal text-[#FAF6E9] text-sm font-medium hover:bg-black transition-all shadow-md">
+            <svg class="w-4 h-4 fill-current opacity-90" viewBox="0 0 24 24">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.67-.82 1.13-1.96 1.01-3.1-.98.04-2.16.65-2.85 1.47-.61.71-1.15 1.88-1.01 2.99 1.1.09 2.2-.56 2.85-1.36z"/>
+            </svg>
+            <span>Download for Mac</span>
+          </a>
+          <a href="#pricing" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-charcoal card-border text-sm font-medium hover:bg-white/80 transition-all shadow-sm">
+            <svg class="w-4 h-4 fill-current text-charcoal" viewBox="0 0 24 24">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.551H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.951"/>
+            </svg>
+            <span>Download for Windows</span>
+          </a>
+        </div>
+
+        <!-- Microcopy -->
+        <p class="text-xs text-subtle font-normal mb-14 tracking-tight">
+          Free · Pro is a one-time $24 · Chrome, Arc, Brave, Edge
+        </p>
+
+        <!-- Product Screenshot Stage -->
+        <div class="w-full max-w-[1160px] relative mt-4">
+          <!-- Soft sage rounded canvas frame behind app window (#7FA77A) -->
+          <div class="bg-[#7FA77A]/35 p-6 sm:p-10 md:p-12 rounded-[32px] sm:rounded-[40px] border border-[#7FA77A]/40 shadow-inner relative overflow-hidden">
+            
+            <!-- Atmospheric gentle glow inside frame -->
+            <div class="absolute -top-32 -left-32 w-96 h-96 bg-white/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-[#4F8A4B]/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Library App Window (Tilt effect) -->
+            <div class="relative transform rotate-[-0.6deg] hover:rotate-0 transition-transform duration-500 ease-out shadow-window rounded-[24px] bg-[#FAF6E9] border border-black/10 overflow-hidden text-left">
+              
+              <!-- Window Chrome Header -->
+              <div class="px-5 py-3.5 bg-[#FAF6E9] border-b border-black/[0.06] flex items-center justify-between select-none">
+                <div class="flex items-center gap-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/10 inline-block"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/10 inline-block"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-black/10 inline-block"></span>
+                  </div>
+                  <div class="h-4 w-px bg-black/10 mx-1.5"></div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded-full bg-[#4F8A4B] text-white flex items-center justify-center text-[10px]">
+                      <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5c0 2.5 1.5 4.5 4 4.5 2 0 4.5-1.5 6-3.5 1-1.33 3-4.5 5-6.5z"/></svg>
+                    </div>
+                    <span class="font-serif-headline text-xs font-semibold text-charcoal">Decay</span>
+                    <span class="text-[10px] text-muted bg-black/[0.04] px-1.5 py-0.5 rounded">v1.4</span>
+                  </div>
+                </div>
+
+                <!-- Window Nav Tabs -->
+                <div class="hidden sm:flex items-center gap-1 bg-black/[0.04] p-1 rounded-full text-[11px] font-medium text-muted">
+                  <span class="px-2.5 py-0.5 rounded-full hover:text-charcoal cursor-pointer">Overview</span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-white text-charcoal shadow-xs font-semibold flex items-center gap-1">
+                    <svg class="w-3 h-3 text-forest fill-current" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                    Library
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-full hover:text-charcoal cursor-pointer">Live now</span>
+                  <span class="px-2.5 py-0.5 rounded-full hover:text-charcoal cursor-pointer">Sweeps</span>
+                  <span class="px-2.5 py-0.5 rounded-full hover:text-charcoal cursor-pointer">Rules</span>
+                </div>
+
+                <!-- Window Right Controls -->
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] px-2 py-0.5 rounded-full bg-[#E7F2DA] text-[#386335] font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Automatic
+                  </span>
+                </div>
+              </div>
+
+              <!-- Window Inner Content -->
+              <div class="p-6 md:p-8 bg-[#FAF6E9]">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 gap-2">
+                  <div>
+                    <h2 class="font-serif-headline text-3xl text-charcoal font-medium tracking-tight">Library</h2>
+                    <p class="text-xs text-muted font-serif italic mt-0.5">318 tabs and windows archived · nothing is ever lost</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs px-3 py-1.5 rounded-full bg-white card-border text-charcoal font-medium shadow-xs">Shadow review</span>
+                    <span class="text-xs px-3 py-1.5 rounded-full bg-charcoal text-white font-medium shadow-xs flex items-center gap-1.5">
+                      <span>+ Sweep now</span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 4 Stat Cards Row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+                  <div class="bg-white rounded-22 p-4 card-border shadow-xs">
+                    <div class="flex justify-between items-start text-xs text-muted mb-1 font-medium">
+                      <span>Open tabs</span>
+                      <svg class="w-3.5 h-3.5 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <div class="font-serif-headline text-3xl font-medium text-charcoal">41</div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#E7F2DA] text-[#386335] font-medium">↓ 38% this week</span>
+                    </div>
+                  </div>
+
+                  <div class="bg-white rounded-22 p-4 card-border shadow-xs">
+                    <div class="flex justify-between items-start text-xs text-muted mb-1 font-medium">
+                      <span>Archived today</span>
+                      <svg class="w-3.5 h-3.5 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    </div>
+                    <div class="font-serif-headline text-3xl font-medium text-charcoal">14</div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[10px] text-muted font-normal">11 tabs · 3 windows</span>
+                    </div>
+                  </div>
+
+                  <div class="bg-white rounded-22 p-4 card-border shadow-xs">
+                    <div class="flex justify-between items-start text-xs text-muted mb-1 font-medium">
+                      <span>Restored</span>
+                      <svg class="w-3.5 h-3.5 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    </div>
+                    <div class="font-serif-headline text-3xl font-medium text-charcoal">3</div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#DDEB9D]/80 text-[#2A3027] font-medium">regret rate 2.1%</span>
+                    </div>
+                  </div>
+
+                  <div class="bg-white rounded-22 p-4 card-border shadow-xs">
+                    <div class="flex justify-between items-start text-xs text-muted mb-1 font-medium">
+                      <span>Active hours</span>
+                      <svg class="w-3.5 h-3.5 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div class="font-serif-headline text-3xl font-medium text-charcoal">5.2<span class="text-sm font-sans font-normal text-muted ml-0.5">h</span></div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[10px] text-muted">Across 6 active apps</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Main Grid: Table & Green Detail Card -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                  <!-- Table Container -->
+                  <div class="lg:col-span-7 bg-white rounded-22 card-border p-4 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <!-- Search bar inside app -->
+                      <div class="flex items-center justify-between pb-3.5 border-b border-black/[0.06] mb-3">
+                        <div class="flex items-center gap-1.5 text-xs text-muted">
+                          <span class="px-2.5 py-1 rounded-full bg-charcoal text-white font-medium">All (318)</span>
+                          <span class="px-2.5 py-1 rounded-full hover:bg-black/[0.04]">Tabs (284)</span>
+                          <span class="px-2.5 py-1 rounded-full hover:bg-black/[0.04]">Windows (34)</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs text-muted bg-[#FAF6E9] px-3 py-1 rounded-lg">
+                          <svg class="w-3 h-3 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                          <span class="text-[11px] text-subtle">Filter tabs...</span>
+                          <kbd class="text-[9px] bg-white border border-black/10 px-1 rounded">⌘K</kbd>
+                        </div>
+                      </div>
+
+                      <!-- Table rows -->
+                      <div class="space-y-1.5 text-xs">
+                        <!-- Active Selected Row -->
+                        <div class="p-2.5 rounded-xl bg-[#F4F8EE] border-l-4 border-[#4F8A4B] flex items-center justify-between">
+                          <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded bg-[#635BFF] text-white flex items-center justify-center font-bold text-[10px]">S</div>
+                            <div>
+                              <div class="font-medium text-charcoal">Stripe pricing — Compare plans</div>
+                              <div class="text-[11px] text-muted">stripe.com/pricing</div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#E7F2DA] text-[#386335]">Unused 61h</span>
+                            <span class="text-[10px] text-subtle">2:14 PM</span>
+                          </div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="p-2.5 rounded-xl hover:bg-black/[0.02] flex items-center justify-between border-l-4 border-transparent">
+                          <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded bg-[#5E6AD2] text-white flex items-center justify-center font-bold text-[10px]">L</div>
+                            <div>
+                              <div class="font-medium text-charcoal">Linear — Cycle 42 roadmap</div>
+                              <div class="text-[11px] text-muted">linear.app</div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] text-muted">Unused 48h</span>
+                            <span class="text-[10px] text-subtle">1:50 PM</span>
+                          </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="p-2.5 rounded-xl hover:bg-black/[0.02] flex items-center justify-between border-l-4 border-transparent">
+                          <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded bg-[#24292F] text-white flex items-center justify-center font-bold text-[10px]">G</div>
+                            <div>
+                              <div class="font-medium text-charcoal">Pull request #418: Cache logic</div>
+                              <div class="text-[11px] text-muted">github.com</div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] text-muted">Unused 24h</span>
+                            <span class="text-[10px] text-subtle">11:20 AM</span>
+                          </div>
+                        </div>
+
+                        <!-- Row 4 -->
+                        <div class="p-2.5 rounded-xl hover:bg-black/[0.02] flex items-center justify-between border-l-4 border-transparent">
+                          <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded bg-[#F24E1E] text-white flex items-center justify-center font-bold text-[10px]">F</div>
+                            <div>
+                              <div class="font-medium text-charcoal">Design System v2.4 (Components)</div>
+                              <div class="text-[11px] text-muted">figma.com</div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] text-muted">Unused 18h</span>
+                            <span class="text-[10px] text-subtle">10:05 AM</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-black/[0.06] text-[11px] text-subtle flex justify-between items-center mt-3">
+                      <span>Displaying 5 of 318 archived records</span>
+                      <span class="text-[#4F8A4B] font-medium cursor-pointer">Export JSON</span>
+                    </div>
+                  </div>
+
+                  <!-- Green Detail Card (#4F8A4B) -->
+                  <div class="lg:col-span-5 bg-[#4F8A4B] rounded-22 p-5 text-white flex flex-col justify-between shadow-soft">
+                    <div>
+                      <div class="flex items-center justify-between text-[11px] text-white/80 uppercase tracking-wider mb-2 font-medium">
+                        <span>● Archived Item Detail</span>
+                        <span class="text-white/60">Sweep #409</span>
+                      </div>
+
+                      <h3 class="font-serif-headline text-2xl font-medium leading-snug mb-3">
+                        Stripe pricing — Compare plans
+                      </h3>
+
+                      <div class="bg-black/20 rounded-xl p-2.5 text-xs text-white/90 font-mono mb-4 flex items-center justify-between border border-white/10">
+                        <span class="truncate">stripe.com/pricing</span>
+                        <svg class="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </div>
+
+                      <!-- Compact Lifecycle Track -->
+                      <div class="space-y-2 text-xs mb-5">
+                        <div class="flex items-center justify-between text-white/80">
+                          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-white"></span> Opened</span>
+                          <span class="text-white/60 text-[11px]">Mon 9:02 AM</span>
+                        </div>
+                        <div class="flex items-center justify-between text-white/80">
+                          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-white"></span> Last active</span>
+                          <span class="text-white/60 text-[11px]">Mon 9:18 AM</span>
+                        </div>
+                        <div class="flex items-center justify-between text-white/80">
+                          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span> Stale marked</span>
+                          <span class="text-white/60 text-[11px]">Tue 9:18 AM</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[#DDEB9D] font-medium">
+                          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span> Archived</span>
+                          <span class="text-[11px]">Today 2:14 PM</span>
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 rounded-xl p-3 text-[11px] text-white/85 leading-relaxed border border-white/10 mb-4">
+                        Decay saves the exact URL, tab grouping, and window state. Unsaved inputs won't come back.
+                      </div>
+                    </div>
+
+                    <!-- Bottom Action Pills inside Card -->
+                    <div class="flex items-center gap-2 pt-2">
+                      <button class="flex-1 py-2 px-3 rounded-full bg-white text-charcoal text-xs font-semibold hover:bg-white/90 transition-all text-center">
+                        Restore
+                      </button>
+                      <button class="flex-1 py-2 px-3 rounded-full bg-white/15 border border-white/30 text-white text-xs font-medium hover:bg-white/20 transition-all text-center">
+                        Always protect
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Overlapping Search Panel (Bottom Right overlap) -->
+            <div class="absolute -bottom-6 -right-2 sm:right-6 md:right-10 w-[92%] sm:w-[480px] bg-[#FFFDF6] card-border rounded-22 shadow-popover p-5 border border-black/10 z-20 transform hover:scale-[1.02] transition-transform">
+              <div class="flex items-center justify-between border-b border-black/[0.08] pb-3 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <span class="font-serif-headline text-lg font-medium text-charcoal">pricing<span class="animate-pulse font-sans text-forest">|</span></span>
+                </div>
+                <div class="flex items-center gap-1 text-[10px] text-muted">
+                  <span class="px-2 py-0.5 rounded-full bg-charcoal text-white font-medium">All</span>
+                  <span class="px-2 py-0.5 rounded-full hover:bg-black/[0.04]">Tabs</span>
+                  <span class="px-2 py-0.5 rounded-full hover:bg-black/[0.04]">Windows</span>
+                </div>
+              </div>
+
+              <!-- Search Match item -->
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2.5 rounded-xl bg-[#F4F8EE] border border-[#A0C878]/50 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-5 h-5 rounded bg-[#635BFF] text-white flex items-center justify-center text-[9px] font-bold">S</span>
+                    <div>
+                      <div class="font-medium text-charcoal">Stripe <span class="bg-[#DDEB9D] px-1 py-0.2 rounded text-charcoal">pricing</span> — Compare</div>
+                      <div class="text-[10px] text-muted">stripe.com / pricing</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-[#4F8A4B] font-medium">↵ Restore</span>
+                </div>
+                <div class="p-2 rounded-xl hover:bg-black/[0.02] flex items-center justify-between opacity-80">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-5 h-5 rounded bg-black text-white flex items-center justify-center text-[9px] font-bold">▲</span>
+                    <div>
+                      <div class="font-medium text-charcoal">Vercel <span class="bg-[#DDEB9D] px-1 py-0.2 rounded text-charcoal">pricing</span></div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-subtle">Unused 48h</span>
+                </div>
+              </div>
+
+              <div class="pt-3 mt-2 border-t border-black/[0.06] flex items-center justify-between text-[10px] text-subtle">
+                <span>⌥⌘D to summon from anywhere</span>
+                <span class="font-medium text-[#4F8A4B]">5 matching items</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. LOGO STRIP OF SUPPORTED BROWSERS -->
+    <section class="py-12 border-y border-[rgba(80,100,70,0.08)] bg-[#FAF6E9]/60">
+      <div class="max-w-[1140px] mx-auto px-6">
+        <p class="text-center text-xs font-medium uppercase tracking-wider text-subtle mb-7">
+          Works quietly across your daily tools &amp; window managers
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-8 sm:gap-14 md:gap-18 opacity-75 grayscale hover:grayscale-0 transition-all">
+          
+          <!-- Chrome -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.383 0 0 5.383 0 12s5.383 12 12 12 12-5.383 12-12S18.617 0 12 0zm0 4.909c2.355 0 4.417 1.152 5.69 2.923H8.384A7.097 7.097 0 0 1 12 4.909zM4.909 12c0-1.84.71-3.518 1.884-4.773L9.58 12H4.909zm7.091 7.091c-2.355 0-4.417-1.152-5.69-2.923h9.306A7.097 7.097 0 0 1 12 19.091zm7.091-7.091c0 1.84-.71 3.518-1.884 4.773L14.42 12h4.671z"/></svg>
+            <span class="tracking-tight">Google Chrome</span>
+          </div>
+
+          <!-- Arc -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2V7h2v10z"/></svg>
+            <span class="tracking-tight">Arc</span>
+          </div>
+
+          <!-- Brave -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2l8 4.5v6.5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V6.5L12 2zm0 3.2L6 8.5v4.5c0 3.8 2.6 7.2 6 8.5 3.4-1.3 6-4.7 6-8.5V8.5L12 5.2z"/></svg>
+            <span class="tracking-tight">Brave</span>
+          </div>
+
+          <!-- Edge -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-10 10c0 5.52 4.48 10 10 10 5.2 0 9.47-3.96 9.94-9.06A6 6 0 0 0 16 7a5.99 5.99 0 0 0-5.5 3.58A3.5 3.5 0 0 1 12 9a3.5 3.5 0 0 1 3.5 3.5c0 1.93-1.57 3.5-3.5 3.5-1.93 0-3.5-1.57-3.5-3.5 0-.7.21-1.36.57-1.91A6 6 0 0 0 6 16c0 3.31 2.69 6 6 6s6-2.69 6-6a8 8 0 0 0-6-8z"/></svg>
+            <span class="tracking-tight">Microsoft Edge</span>
+          </div>
+
+          <!-- Finder -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M3 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H3zm5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm8 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm-9 6.5c1 1.5 2.5 2 5 2s4-.5 5-2l1.5 1c-1.5 2-3.5 2.5-6.5 2.5s-5-.5-6.5-2.5l1.5-1z"/></svg>
+            <span class="tracking-tight">macOS Finder</span>
+          </div>
+
+          <!-- File Explorer -->
+          <div class="flex items-center gap-2 text-charcoal font-medium text-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            <span class="tracking-tight">Windows Explorer</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. HOW IT WORKS -->
+    <section id="how-it-works" class="py-24 px-6">
+      <div class="max-w-[1140px] mx-auto">
+        <div class="text-center max-w-[640px] mx-auto mb-16">
+          <span class="text-xs font-semibold uppercase tracking-wider text-forest">Calm Automation</span>
+          <h2 class="font-serif-headline text-4xl sm:text-5xl font-medium text-charcoal mt-2 mb-4 tracking-tight">
+            How Decay stays out of your way.
+          </h2>
+          <p class="text-muted text-base leading-relaxed">
+            Tabs should reflect what is currently engaging your mind — not the residue of every question you explored this month.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Step 1 -->
+          <div class="bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+            <div>
+              <div class="w-10 h-10 rounded-full bg-[#E7F2DA] text-[#386335] font-serif-headline text-lg font-medium flex items-center justify-center mb-6">
+                1
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-3">
+                It watches quietly
+              </h3>
+              <p class="text-muted text-sm leading-relaxed mb-6 font-normal">
+                Time only ticks while you are actively working. Decay pauses automatically whenever your screen is locked, during Zoom meetings, and over weekends.
+              </p>
+            </div>
+            
+            <!-- Graphic element inside Step 1 -->
+            <div class="bg-[#FAF6E9] p-4 rounded-xl border border-black/[0.05]">
+              <div class="flex items-center justify-between text-xs mb-2">
+                <span class="text-charcoal font-medium">Active clock today</span>
+                <span class="text-[#4F8A4B] font-mono text-[11px]">5.2 h</span>
+              </div>
+              <div class="w-full bg-black/[0.06] h-1.5 rounded-full overflow-hidden">
+                <div class="bg-[#4F8A4B] h-full w-[65%] rounded-full"></div>
+              </div>
+              <div class="text-[10px] text-subtle mt-2 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Paused during screen lock &amp; calls
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+            <div>
+              <div class="w-10 h-10 rounded-full bg-[#E7F2DA] text-[#386335] font-serif-headline text-lg font-medium flex items-center justify-center mb-6">
+                2
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-3">
+                Stale things fade
+              </h3>
+              <p class="text-muted text-sm leading-relaxed mb-6 font-normal">
+                Tabs move across an explicit, gentle progression: fresh while you work, subtly dimmed when stale, background windows hidden, and archived after threshold.
+              </p>
+            </div>
+
+            <!-- Graphic element inside Step 2: Tab Progression Bar -->
+            <div class="bg-[#FAF6E9] p-4 rounded-xl border border-black/[0.05]">
+              <div class="text-[10px] text-muted uppercase font-medium tracking-wider mb-2">Tab Lifecycle Progression</div>
+              <div class="h-2 w-full rounded-full flex overflow-hidden mb-2">
+                <div class="w-[20%] bg-[#E7F2DA]" title="Fresh"></div>
+                <div class="w-[25%] bg-[#DDEB9D]" title="Stale"></div>
+                <div class="w-[30%] bg-[#A0C878]" title="Hidden"></div>
+                <div class="w-[25%] bg-[#4F8A4B]" title="Archived"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-subtle">
+                <span>Fresh</span>
+                <span>Stale</span>
+                <span>Hidden</span>
+                <span class="text-[#386335] font-medium">Archived</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+            <div>
+              <div class="w-10 h-10 rounded-full bg-[#E7F2DA] text-[#386335] font-serif-headline text-lg font-medium flex items-center justify-center mb-6">
+                3
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-3">
+                Everything comes back
+              </h3>
+              <p class="text-muted text-sm leading-relaxed mb-6 font-normal">
+                Summon the overlay with <kbd class="px-1.5 py-0.5 rounded bg-black/[0.06] text-[11px] font-mono text-charcoal">⌥⌘D</kbd>. Type any keyword or domain, hit Enter, and your tab restores into its original window.
+              </p>
+            </div>
+
+            <!-- Graphic element inside Step 3 -->
+            <div class="bg-[#FAF6E9] p-4 rounded-xl border border-black/[0.05]">
+              <div class="flex items-center gap-2 text-xs mb-2">
+                <span class="px-2 py-0.5 rounded bg-charcoal text-white font-mono text-[10px]">⌥⌘D</span>
+                <span class="text-charcoal font-medium">Global instant search</span>
+              </div>
+              <div class="text-[11px] text-muted flex items-center justify-between pt-1 border-t border-black/[0.06]">
+                <span>1-key instant restore</span>
+                <span class="text-[#4F8A4B] font-semibold text-[10px]">98% low regret</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. FEATURE BENTO GRID -->
+    <section id="features" class="py-20 px-6">
+      <div class="max-w-[1140px] mx-auto">
+        <div class="text-center max-w-[640px] mx-auto mb-16">
+          <span class="text-xs font-semibold uppercase tracking-wider text-forest">Sober Craft</span>
+          <h2 class="font-serif-headline text-4xl sm:text-5xl font-medium text-charcoal mt-2 mb-4 tracking-tight">
+            Designed for thoughtful focus.
+          </h2>
+          <p class="text-muted text-base">
+            No nagging notifications. No cloud tracking. Just a calm background engine taking care of digital sprawl.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          
+          <!-- Bento 1: Big DEEP GREEN card (Shadow Mode) -->
+          <div class="md:col-span-8 bg-[#4F8A4B] rounded-22 p-8 md:p-10 text-white flex flex-col justify-between shadow-elevated relative overflow-hidden">
+            <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="max-w-[520px] mb-8 relative z-10">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-medium mb-4 backdrop-blur-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span> Safety Guarantee
+              </span>
+              <h3 class="font-serif-headline text-3xl sm:text-4xl font-medium leading-tight mb-4">
+                Shadow mode first — for 7 days Decay only shows what it would do.
+              </h3>
+              <p class="text-white/80 text-sm sm:text-base leading-relaxed">
+                Before closing or hiding a single tab, Decay monitors your real work habits for a week. You inspect the simulation, tweak thresholds, and turn on automatic mode only when you're 100% comfortable.
+              </p>
+            </div>
+
+            <!-- Frosted mini simulation list -->
+            <div class="bg-black/20 backdrop-blur-glass p-5 rounded-22 border border-white/15 relative z-10">
+              <div class="flex items-center justify-between text-xs text-white/90 mb-3 pb-2 border-b border-white/10">
+                <span class="font-medium">Shadow Review (Day 6 of 7)</span>
+                <span class="text-[#DDEB9D] font-mono text-[11px]">3% regret rate · 2 reopened</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="bg-white/10 p-3 rounded-xl">
+                  <div class="text-white/70 text-[11px]">Simulated archive</div>
+                  <div class="font-serif-headline text-2xl font-medium mt-1">63 tabs</div>
+                </div>
+                <div class="bg-white/10 p-3 rounded-xl">
+                  <div class="text-white/70 text-[11px]">Simulated hidden</div>
+                  <div class="font-serif-headline text-2xl font-medium mt-1">9 windows</div>
+                </div>
+                <div class="bg-white/10 p-3 rounded-xl flex flex-col justify-between">
+                  <div class="text-white/70 text-[11px]">Readiness</div>
+                  <div class="text-xs text-[#DDEB9D] font-medium mt-1">Ready for auto →</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento 2: Rules in plain language -->
+          <div class="md:col-span-4 bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 rounded-full bg-[#E7F2DA] text-[#386335] flex items-center justify-center mb-5">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-2">
+                Rules in plain language
+              </h3>
+              <p class="text-muted text-xs leading-relaxed mb-6 font-normal">
+                Tell Decay what to keep indefinitely, what to tidy sooner, and what to exempt completely.
+              </p>
+            </div>
+
+            <!-- Rule chips representation -->
+            <div class="space-y-2">
+              <div class="p-2.5 rounded-xl bg-[#FAF6E9] border border-black/[0.05] flex items-center justify-between text-xs">
+                <span class="font-mono text-[11px] text-charcoal">mail.google.com</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#E7F2DA] text-[#386335] font-medium">Never archive</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#FAF6E9] border border-black/[0.05] flex items-center justify-between text-xs">
+                <span class="font-mono text-[11px] text-charcoal">github.com/*/pull/*</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#DDEB9D] text-charcoal font-medium">Keep 2× longer</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#FAF6E9] border border-black/[0.05] flex items-center justify-between text-xs">
+                <span class="font-mono text-[11px] text-charcoal">youtube.com</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.05] text-muted">Archive 4h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento 3: Undo any sweep -->
+          <div class="md:col-span-4 bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 rounded-full bg-[#E7F2DA] text-[#386335] flex items-center justify-center mb-5">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-2">
+                Undo any sweep
+              </h3>
+              <p class="text-muted text-xs leading-relaxed mb-6 font-normal">
+                Accidentally closed a session? Every sweep is grouped as an atomic snapshot that can be restored with a single click.
+              </p>
+            </div>
+
+            <div class="p-3 bg-[#FAF6E9] rounded-xl border border-black/[0.05] flex items-center justify-between">
+              <div>
+                <div class="text-xs font-medium text-charcoal">Sweep #409</div>
+                <div class="text-[10px] text-subtle">11 tabs · 3 windows</div>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-white card-border text-xs font-semibold text-charcoal hover:bg-black/[0.02] cursor-pointer shadow-xs">
+                Undo
+              </span>
+            </div>
+          </div>
+
+          <!-- Bento 4: Protects pinned, playing and unsaved tabs -->
+          <div class="md:col-span-4 bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 rounded-full bg-[#E7F2DA] text-[#386335] flex items-center justify-center mb-5">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-2">
+                Smart safety shields
+              </h3>
+              <p class="text-muted text-xs leading-relaxed mb-5 font-normal">
+                Decay detects background activity and immediately exempts active items.
+              </p>
+            </div>
+
+            <!-- Shield Pills -->
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <span class="p-2 rounded-xl bg-[#FAF6E9] border border-black/[0.05] text-charcoal flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Pinned tabs
+              </span>
+              <span class="p-2 rounded-xl bg-[#FAF6E9] border border-black/[0.05] text-charcoal flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Audio playing
+              </span>
+              <span class="p-2 rounded-xl bg-[#FAF6E9] border border-black/[0.05] text-charcoal flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Unsaved forms
+              </span>
+              <span class="p-2 rounded-xl bg-[#FAF6E9] border border-black/[0.05] text-charcoal flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span> Web meetings
+              </span>
+            </div>
+          </div>
+
+          <!-- Bento 5: Search everything with keycap -->
+          <div class="md:col-span-4 bg-white rounded-22 p-8 card-border shadow-soft flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 rounded-full bg-[#E7F2DA] text-[#386335] flex items-center justify-center mb-5">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              </div>
+              <h3 class="font-serif-headline text-2xl font-medium text-charcoal mb-2">
+                Search everything
+              </h3>
+              <p class="text-muted text-xs leading-relaxed mb-6 font-normal">
+                Never bookmark again. Your closed tabs turn into an ultra-fast searchable local index.
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between p-3 bg-[#FAF6E9] rounded-xl border border-black/[0.05]">
+              <span class="text-xs text-muted font-medium">Hotkey summon</span>
+              <div class="flex items-center gap-1 font-mono text-xs font-semibold text-charcoal">
+                <kbd class="px-2 py-1 rounded bg-white card-border shadow-xs">⌥</kbd>
+                <kbd class="px-2 py-1 rounded bg-white card-border shadow-xs">⌘</kbd>
+                <kbd class="px-2 py-1 rounded bg-white card-border shadow-xs">D</kbd>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. BIG NUMBERS ROW IN SERIF -->
+    <section class="py-20 border-y border-[rgba(80,100,70,0.12)] bg-[#FAF6E9]">
+      <div class="max-w-[1140px] mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-[rgba(80,100,70,0.12)]">
+          
+          <div class="pt-6 md:pt-0">
+            <div class="font-serif-headline text-5xl sm:text-6xl text-charcoal font-medium tracking-tight mb-2">
+              78 → 34
+            </div>
+            <p class="text-sm font-medium text-muted">Average open tabs across working hours</p>
+            <p class="text-xs text-subtle mt-1">Clearer minds, zero browser thrashing</p>
+          </div>
+
+          <div class="pt-6 md:pt-0 md:px-6">
+            <div class="font-serif-headline text-5xl sm:text-6xl text-charcoal font-medium tracking-tight mb-2">
+              2.1%
+            </div>
+            <p class="text-sm font-medium text-muted">Regret rate after 30 days of archiving</p>
+            <p class="text-xs text-subtle mt-1">98 out of 100 tabs were truly no longer needed</p>
+          </div>
+
+          <div class="pt-6 md:pt-0 md:pl-6">
+            <div class="font-serif-headline text-5xl sm:text-6xl text-[#4F8A4B] font-medium tracking-tight mb-2">
+              0 bytes
+            </div>
+            <p class="text-sm font-medium text-muted">Leave your Mac or Windows machine</p>
+            <p class="text-xs text-subtle mt-1">Completely local storage &amp; telemetry</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. PRIVACY BAND (DEEP GREEN, WHITE TEXT) -->
+    <section id="privacy" class="py-24 px-6 bg-[#4F8A4B] text-white">
+      <div class="max-w-[1040px] mx-auto text-center">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-[#DDEB9D] text-xs font-medium mb-5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          Privacy Architecture
+        </span>
+        <h2 class="font-serif-headline text-4xl sm:text-5xl font-medium tracking-tight max-w-[780px] mx-auto mb-14 leading-tight">
+          Private by design. Local-only. Open source core.
+        </h2>
+
+        <!-- Three Frosted Points -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          
+          <div class="bg-black/15 backdrop-blur-glass p-7 rounded-22 border border-white/15 hover:bg-black/20 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mb-4 text-[#DDEB9D]">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            </div>
+            <h3 class="font-serif-headline text-xl font-medium mb-2">Zero Cloud Analytics</h3>
+            <p class="text-white/80 text-xs sm:text-sm leading-relaxed">
+              Decay never uploads your browsing history, page contents, titles, or URLs to any server. All state lives inside your native local SQLite database.
+            </p>
+          </div>
+
+          <div class="bg-black/15 backdrop-blur-glass p-7 rounded-22 border border-white/15 hover:bg-black/20 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mb-4 text-[#DDEB9D]">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+            </div>
+            <h3 class="font-serif-headline text-xl font-medium mb-2">Auditable Code</h3>
+            <p class="text-white/80 text-xs sm:text-sm leading-relaxed">
+              The daemon and browser communication bridges are publicly available on GitHub under the MIT license. Review every line of code before running.
+            </p>
+          </div>
+
+          <div class="bg-black/15 backdrop-blur-glass p-7 rounded-22 border border-white/15 hover:bg-black/20 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mb-4 text-[#DDEB9D]">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+            </div>
+            <h3 class="font-serif-headline text-xl font-medium mb-2">Optional Native Sync</h3>
+            <p class="text-white/80 text-xs sm:text-sm leading-relaxed">
+              If you want your archive accessible across your work and personal computers, sync operates end-to-end encrypted through your personal Apple iCloud or Windows OneDrive.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. PRICING -->
+    <section id="pricing" class="py-24 px-6">
+      <div class="max-w-[960px] mx-auto">
+        <div class="text-center max-w-[600px] mx-auto mb-16">
+          <span class="text-xs font-semibold uppercase tracking-wider text-forest">Simple Ownership</span>
+          <h2 class="font-serif-headline text-4xl sm:text-5xl font-medium text-charcoal mt-2 mb-4 tracking-tight">
+            Fair software without subscriptions.
+          </h2>
+          <p class="text-muted text-base">
+            Try the core experience free forever. Upgrade once when you need window control and multi-browser rules.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          
+          <!-- Free Tier Card -->
+          <div class="bg-white rounded-22 p-8 sm:p-10 card-border shadow-soft flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-baseline mb-4">
+                <h3 class="font-serif-headline text-2xl font-medium text-charcoal">Free</h3>
+                <span class="text-xs font-medium text-muted bg-[#FAF6E9] px-2.5 py-1 rounded-full">Personal</span>
+              </div>
+              <div class="font-serif-headline text-4xl font-medium text-charcoal mb-4">
+                $0
+              </div>
+              <p class="text-muted text-sm leading-relaxed mb-8">
+                Essential tab decay and fast keystroke search for individual browsers.
+              </p>
+
+              <div class="space-y-3.5 text-xs text-charcoal mb-8 border-t border-black/[0.06] pt-6">
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>Quiet tab archiving after 48h active time</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>Full-text keystroke search overlay (⌥⌘D)</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>One-click undo for every sweep</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>Works with Chrome or Edge</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-subtle line-through opacity-70">
+                  <svg class="w-4 h-4 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <span>Window background tucking &amp; hiding</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-subtle line-through opacity-70">
+                  <svg class="w-4 h-4 text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <span>Custom domain rules &amp; pace multiplier</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="w-full py-3 rounded-full bg-white card-border text-charcoal text-xs font-semibold hover:bg-black/[0.03] transition-all shadow-xs">
+              Download
+            </button>
+          </div>
+
+          <!-- Pro Tier Card ($24 Once) -->
+          <div class="bg-white rounded-22 p-8 sm:p-10 border-2 border-[#A0C878] shadow-elevated flex flex-col justify-between relative">
+            <!-- Best value chip -->
+            <div class="absolute -top-3.5 right-8 px-3 py-1 rounded-full bg-[#DDEB9D] text-charcoal font-semibold text-[11px] shadow-xs">
+              Best value
+            </div>
+
+            <div>
+              <div class="flex justify-between items-baseline mb-4">
+                <h3 class="font-serif-headline text-2xl font-medium text-charcoal">Pro</h3>
+                <span class="text-xs font-medium text-[#386335] bg-[#E7F2DA] px-2.5 py-1 rounded-full">One-time license</span>
+              </div>
+              <div class="font-serif-headline text-4xl font-medium text-charcoal mb-4">
+                $24 <span class="text-sm font-sans font-normal text-muted">once</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed mb-8">
+                Complete window management, cross-browser rules, and productivity analytics.
+              </p>
+
+              <div class="space-y-3.5 text-xs text-charcoal mb-8 border-t border-black/[0.06] pt-6">
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span class="font-medium">All core archiving and instant search</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Window hiding:</strong> tuck away background spaces</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Rules engine:</strong> URL patterns, tab groups, app filters</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Multi-browser monitoring:</strong> Chrome, Arc, Brave, Edge</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>Insights dashboard &amp; memory reclamation stats</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <svg class="w-4 h-4 text-[#4F8A4B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  <span>Valid on up to 3 personal machines</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="w-full py-3.5 rounded-full bg-charcoal text-[#FAF6E9] text-xs font-semibold hover:bg-black transition-all shadow-md">
+              Get Pro
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. FAQ ACCORDION -->
+    <section id="faq" class="py-20 px-6 bg-[#FAF6E9]">
+      <div class="max-w-[760px] mx-auto">
+        <div class="text-center mb-12">
+          <span class="text-xs font-semibold uppercase tracking-wider text-forest">Clear Answers</span>
+          <h2 class="font-serif-headline text-4xl font-medium text-charcoal mt-2 mb-3 tracking-tight">
+            Frequently asked questions
+          </h2>
+          <p class="text-muted text-sm">Everything you need to know about how Decay operates.</p>
+        </div>
+
+        <div class="space-y-3">
+          
+          <!-- Accordion Row 1 -->
+          <details class="group bg-white rounded-22 p-5 sm:p-6 card-border shadow-xs open:shadow-soft transition-all">
+            <summary class="flex justify-between items-center cursor-pointer list-none text-base font-serif-headline font-medium text-charcoal">
+              <span>Will Decay close forms I am actively filling out?</span>
+              <span class="w-7 h-7 rounded-full bg-[#FAF6E9] flex items-center justify-center text-muted group-open:rotate-45 transition-transform text-sm font-sans font-bold">
+                +
+              </span>
+            </summary>
+            <div class="mt-4 pt-3 border-t border-black/[0.06] text-xs sm:text-sm text-muted leading-relaxed font-sans">
+              Never. Decay checks DOM activity states. Any tab with an active unsaved input field, playing media stream, or pinned status is permanently exempt from scheduled sweeps until submitted or closed manually.
+            </div>
+          </details>
+
+          <!-- Accordion Row 2 -->
+          <details class="group bg-white rounded-22 p-5 sm:p-6 card-border shadow-xs open:shadow-soft transition-all">
+            <summary class="flex justify-between items-center cursor-pointer list-none text-base font-serif-headline font-medium text-charcoal">
+              <span>How does active hour calculation work when my computer is asleep?</span>
+              <span class="w-7 h-7 rounded-full bg-[#FAF6E9] flex items-center justify-center text-muted group-open:rotate-45 transition-transform text-sm font-sans font-bold">
+                +
+              </span>
+            </summary>
+            <div class="mt-4 pt-3 border-t border-black/[0.06] text-xs sm:text-sm text-muted leading-relaxed font-sans">
+              Decay only counts seconds when you are actively using your computer. If you lock your screen, take lunch, or close your laptop for the weekend, the decay timer halts entirely. A 48-hour threshold equates to approximately 6 full working workdays.
+            </div>
+          </details>
+
+          <!-- Accordion Row 3 -->
+          <details class="group bg-white rounded-22 p-5 sm:p-6 card-border shadow-xs open:shadow-soft transition-all">
+            <summary class="flex justify-between items-center cursor-pointer list-none text-base font-serif-headline font-medium text-charcoal">
+              <span>Does Decay read or store the contents of my web pages?</span>
+              <span class="w-7 h-7 rounded-full bg-[#FAF6E9] flex items-center justify-center text-muted group-open:rotate-45 transition-transform text-sm font-sans font-bold">
+                +
+              </span>
+            </summary>
+            <div class="mt-4 pt-3 border-t border-black/[0.06] text-xs sm:text-sm text-muted leading-relaxed font-sans">
+              No. Decay only collects browser tab URLs, titles, and timestamps via local native APIs. It never inspects HTML bodies, cookies, session credentials, or keystrokes.
+            </div>
+          </details>
+
+          <!-- Accordion Row 4 -->
+          <details class="group bg-white rounded-22 p-5 sm:p-6 card-border shadow-xs open:shadow-soft transition-all">
+            <summary class="flex justify-between items-center cursor-pointer list-none text-base font-serif-headline font-medium text-charcoal">
+              <span>What happens if I need a tab back after weeks or months?</span>
+              <span class="w-7 h-7 rounded-full bg-[#FAF6E9] flex items-center justify-center text-muted group-open:rotate-45 transition-transform text-sm font-sans font-bold">
+                +
+              </span>
+            </summary>
+            <div class="mt-4 pt-3 border-t border-black/[0.06] text-xs sm:text-sm text-muted leading-relaxed font-sans">
+              Your archive is perpetual. Press ⌥⌘D (or Ctrl+K on Windows) anytime to search by URL keyword, page title, or date. Clicking restore reopens the tab in your preferred browser with one click.
+            </div>
+          </details>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. FINAL CTA CARD & FOOTER -->
+    <section class="py-20 px-6">
+      <div class="max-w-[1040px] mx-auto">
+        <!-- Big Rounded Card -->
+        <div class="bg-white rounded-22 p-10 sm:p-16 card-border shadow-elevated text-center relative overflow-hidden">
+          <div class="max-w-[620px] mx-auto relative z-10">
+            <div class="w-12 h-12 rounded-full bg-[#E7F2DA] text-[#4F8A4B] flex items-center justify-center mx-auto mb-6">
+              <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5c0 2.5 1.5 4.5 4 4.5 2 0 4.5-1.5 6-3.5 1-1.33 3-4.5 5-6.5z"/>
+              </svg>
+            </div>
+            
+            <h2 class="font-serif-headline text-4xl sm:text-5xl font-medium text-charcoal mb-5 tracking-tight leading-tight">
+              Close fewer tabs. Lose nothing.
+            </h2>
+            
+            <p class="text-muted text-base leading-relaxed mb-9">
+              Start with the 7-day shadow mode. Let Decay quietly safeguard your desktop from cluttered overload today.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+              <a href="#pricing" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-charcoal text-[#FAF6E9] text-sm font-medium hover:bg-black transition-all shadow-md">
+                <span>Download for Mac</span>
+                <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"/></svg>
+              </a>
+              <a href="#pricing" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-charcoal card-border text-sm font-medium hover:bg-black/[0.02] transition-all shadow-xs">
+                <span>Download for Windows</span>
+              </a>
+            </div>
+
+            <p class="text-xs text-subtle mt-5 font-normal">
+              Free forever for basic tab archiving · No account required
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-16 pt-8 border-t border-[rgba(80,100,70,0.12)] flex flex-col sm:flex-row items-center justify-between text-xs text-muted gap-4">
+          <div class="flex items-center gap-2">
+            <span class="font-serif-headline font-semibold text-charcoal text-sm">Decay</span>
+            <span>·</span>
+            <span>© 2026 Decay. Crafted for thoughtful focus.</span>
+          </div>
+
+          <div class="flex items-center gap-6">
+            <a href="#features" class="hover:text-charcoal transition-colors">Features</a>
+            <a href="#privacy" class="hover:text-charcoal transition-colors">Privacy</a>
+            <a href="#pricing" class="hover:text-charcoal transition-colors">Pricing</a>
+            <a href="https://github.com" target="_blank" rel="noreferrer" class="hover:text-charcoal transition-colors">GitHub</a>
+            <a href="#" class="hover:text-charcoal transition-colors">Security</a>
+          </div>
+        </footer>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>

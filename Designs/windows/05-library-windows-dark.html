@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05-library-windows-dark</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          serif: ['Newsreader', 'serif'],
+          sans: ['"DM Sans"', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+        colors: {
+          desktop: '#1C2A1B',
+          canvas: '#121511',
+          surface: '#1A1E18',
+          tile: '#222720',
+          titlebar: '#161A14',
+          hairline: '#2A3027',
+          ivory: '#F2F0E6',
+          muted: '#A7AC9C',
+          sage: '#A0C878',
+          lime: '#DDEB9D',
+          darkgreen: '#2F5A2E',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #2A3027;
+    border-radius: 9999px;
+  }
+</style>
+</head>
+<body class="bg-desktop min-h-screen w-full flex flex-col justify-between items-center relative overflow-hidden text-ivory">
+
+  <!-- Desktop ambient backdrop glow & subtle desktop pattern -->
+  <div class="absolute inset-0 bg-radial from-[#223521]/60 via-[#1C2A1B] to-[#121A11] pointer-events-none"></div>
+
+  <!-- Main Desktop Area with Centered App Window -->
+  <main class="w-full flex-1 flex items-center justify-center p-6 relative z-10">
+    
+    <!-- Window Container: 1240 x 800 px, 8px radius (Windows 11 standard) -->
+    <div class="w-[1240px] h-[800px] bg-canvas rounded-[8px] border border-hairline shadow-[0_24px_64px_rgba(0,0,0,0.65),0_4px_16px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden relative">
+
+      <!-- Dark Mica Title Bar: #161A14, h-10, Windows 11 style -->
+      <header class="h-10 bg-titlebar border-b border-hairline flex items-center justify-between px-3 select-none shrink-0 z-20">
+        <!-- Left: Leaf icon + serif Decay -->
+        <div class="flex items-center gap-2 pl-1">
+          <!-- Decay Leaf Logo (SVG) -->
+          <div class="w-5 h-5 rounded-full flex items-center justify-center text-sage">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </div>
+          <span class="font-serif text-[15px] font-medium tracking-tight text-ivory">Decay</span>
+        </div>
+
+        <!-- Center: Empty drag region -->
+        <div class="flex-1 h-full"></div>
+
+        <!-- Right: Windows 11 Caption Controls (Min, Max, Close) -->
+        <div class="flex items-center h-full -mr-3">
+          <button class="h-full px-4 flex items-center justify-center text-muted hover:bg-[#252C22] hover:text-ivory transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+              <rect y="7.5" width="16" height="1" rx="0.5"/>
+            </svg>
+          </button>
+          <button class="h-full px-4 flex items-center justify-center text-muted hover:bg-[#252C22] hover:text-ivory transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="2.5" y="2.5" width="11" height="11" rx="1"/>
+            </svg>
+          </button>
+          <button class="h-full px-4 flex items-center justify-center text-muted hover:bg-[#C42B1C] hover:text-white transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- App Header / Toolbar -->
+      <section class="px-6 pt-4 pb-3 flex items-center justify-between border-b border-hairline/60 shrink-0">
+        <!-- Navigation Pill Tabs -->
+        <nav class="flex items-center gap-1 bg-surface p-1 rounded-full border border-hairline/80">
+          <button class="px-3.5 py-1 text-xs font-medium text-muted hover:text-ivory transition-colors rounded-full">Overview</button>
+          <button class="px-3.5 py-1 text-xs font-medium text-ivory bg-[#2A3027] shadow-sm rounded-full flex items-center gap-1.5">
+            <span>Library</span>
+            <span class="px-1.5 py-0.2 bg-lime/20 text-lime rounded-full text-[10px] font-semibold">318</span>
+          </button>
+          <button class="px-3.5 py-1 text-xs font-medium text-muted hover:text-ivory transition-colors rounded-full">Live now</button>
+          <button class="px-3.5 py-1 text-xs font-medium text-muted hover:text-ivory transition-colors rounded-full">Sweeps</button>
+          <button class="px-3.5 py-1 text-xs font-medium text-muted hover:text-ivory transition-colors rounded-full">Rules</button>
+          <button class="px-3.5 py-1 text-xs font-medium text-muted hover:text-ivory transition-colors rounded-full">Insights</button>
+        </nav>
+
+        <!-- Right Utilities -->
+        <div class="flex items-center gap-2.5">
+          <!-- Circle Search Button -->
+          <button class="w-8 h-8 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted hover:text-ivory hover:border-muted/50 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <!-- Circle Bell Button -->
+          <button class="w-8 h-8 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted hover:text-ivory hover:border-muted/50 transition-colors relative">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <!-- Pill Status "● Automatic" -->
+          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-hairline rounded-full text-xs font-medium text-ivory">
+            <span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+            <span>Automatic</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Window Interior View -->
+      <div class="flex-1 px-6 py-4 flex flex-col gap-4 overflow-hidden">
+
+        <!-- Title & Primary Top Actions -->
+        <div class="flex items-end justify-between shrink-0">
+          <div>
+            <h1 class="font-serif text-[28px] font-normal tracking-tight text-ivory leading-none">Library</h1>
+            <p class="text-xs text-muted italic mt-1.5">318 tabs and windows archived · nothing is ever lost</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Outline "Shadow review" -->
+            <button class="h-8 px-3 rounded-full border border-hairline bg-surface/50 hover:bg-surface text-xs font-medium text-ivory flex items-center gap-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>Shadow review</span>
+            </button>
+
+            <!-- Circle Undo -->
+            <button class="w-8 h-8 rounded-full border border-hairline bg-surface/50 hover:bg-surface text-muted hover:text-ivory flex items-center justify-center transition-colors" title="Undo">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path d="M9 14 4 9l5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" stroke-linecap="round"/>
+              </svg>
+            </button>
+
+            <!-- Ivory Pill "+ Sweep now" with dark text and Windows shortcut pill -->
+            <button class="h-8 pl-3.5 pr-2.5 rounded-full bg-ivory hover:bg-[#FAF8F0] text-canvas text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors">
+              <span>+ Sweep now</span>
+              <kbd class="px-1.5 py-0.5 bg-black/10 rounded text-[10px] font-mono font-medium text-canvas/80">Ctrl+↵</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- Four Stat Cards Grid: 22px radius, 1px #2A3027 hairline, #1A1E18 -->
+        <div class="grid grid-cols-4 gap-3 shrink-0">
+          
+          <!-- Card 1: Open tabs -->
+          <div class="bg-surface rounded-[22px] border border-hairline p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between text-muted">
+              <span class="text-xs font-medium">Open tabs</span>
+              <svg class="w-4 h-4 text-muted/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="M3 10h18"/>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="text-[32px] font-sans font-medium tracking-tight text-ivory leading-tight">41</div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded-full bg-sage/15 text-sage text-[11px] font-medium flex items-center gap-1">
+                  <span>↓</span> 38% this week
+                </span>
+              </div>
+              <p class="text-[11px] text-muted/80 mt-1">Down from 66 on Monday</p>
+            </div>
+          </div>
+
+          <!-- Card 2: Archived today -->
+          <div class="bg-surface rounded-[22px] border border-hairline p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between text-muted">
+              <span class="text-xs font-medium">Archived today</span>
+              <svg class="w-4 h-4 text-muted/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="text-[32px] font-sans font-medium tracking-tight text-ivory leading-tight">14</div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded-full bg-[#273024] text-sage text-[11px] font-medium border border-sage/20">
+                  11 tabs · 3 windows
+                </span>
+              </div>
+              <p class="text-[11px] text-muted/80 mt-1">All restorable</p>
+            </div>
+          </div>
+
+          <!-- Card 3: Restored -->
+          <div class="bg-surface rounded-[22px] border border-hairline p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between text-muted">
+              <span class="text-xs font-medium">Restored</span>
+              <svg class="w-4 h-4 text-muted/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M12 7v5l4 2"/>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="text-[32px] font-sans font-medium tracking-tight text-ivory leading-tight">3</div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded-full bg-lime/15 text-lime text-[11px] font-medium">
+                  regret rate 2.1%
+                </span>
+              </div>
+              <p class="text-[11px] text-muted/80 mt-1">Restored within minutes of a sweep</p>
+            </div>
+          </div>
+
+          <!-- Card 4: Active hours today -->
+          <div class="bg-surface rounded-[22px] border border-hairline p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between text-muted">
+              <span class="text-xs font-medium">Active hours today</span>
+              <svg class="w-4 h-4 text-muted/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="mt-2">
+              <div class="text-[32px] font-sans font-medium tracking-tight text-ivory leading-tight">5.2 <span class="text-xl font-normal text-muted">h</span></div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded-full bg-sage/15 text-sage text-[11px] font-medium flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage"></span> Across 6 apps
+                </span>
+              </div>
+              <p class="text-[11px] text-muted/80 mt-1">Clock pauses when you're away</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Split Content Area: Table List (Left) + Detail Card (Right) -->
+        <div class="flex-1 grid grid-cols-12 gap-3 min-h-0">
+
+          <!-- Left Table Card: 8 Columns, #1A1E18, 22px radius -->
+          <div class="col-span-8 bg-surface rounded-[22px] border border-hairline p-4 flex flex-col justify-between overflow-hidden">
+            
+            <!-- Filter Bar & Search -->
+            <div class="flex items-center justify-between gap-3 mb-3 shrink-0">
+              <!-- Filter Pills: All · Tabs · Windows -->
+              <div class="flex items-center gap-1 bg-tile p-1 rounded-full border border-hairline">
+                <button class="px-3 py-1 rounded-full bg-[#2A3027] text-ivory text-xs font-medium">All (318)</button>
+                <button class="px-3 py-1 rounded-full text-muted hover:text-ivory text-xs font-medium transition-colors">Tabs (284)</button>
+                <button class="px-3 py-1 rounded-full text-muted hover:text-ivory text-xs font-medium transition-colors">Windows (34)</button>
+              </div>
+
+              <!-- Search Bar with Ctrl+K badge -->
+              <div class="flex-1 max-w-[320px] relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <input type="text" placeholder="Search by title, site or date…" class="w-full bg-tile border border-hairline rounded-full pl-9 pr-14 py-1.5 text-xs text-ivory placeholder-muted/60 focus:outline-none focus:border-sage transition-colors" readonly>
+                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center">
+                  <kbd class="px-1.5 py-0.5 bg-[#1A1E18] border border-hairline rounded text-[10px] font-mono text-muted">Ctrl+K</kbd>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table Header -->
+            <div class="grid grid-cols-12 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-muted/80 border-b border-hairline/70 shrink-0">
+              <span class="col-span-6">ITEM</span>
+              <span class="col-span-3">SOURCE</span>
+              <span class="col-span-2">REASON</span>
+              <span class="col-span-1 text-right">ARCHIVED</span>
+            </div>
+
+            <!-- Table Rows List: Exactly 5 items, Stripe selected with sage tint and left bar -->
+            <div class="flex-1 flex flex-col justify-between py-1 overflow-hidden">
+              
+              <!-- Row 1 (Selected): Stripe pricing -->
+              <div class="grid grid-cols-12 items-center px-3 py-2 rounded-xl bg-sage/10 border-l-2 border-sage relative">
+                <!-- Item -->
+                <div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+                  <div class="w-6 h-6 rounded-md bg-[#635BFF] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    S
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium text-ivory truncate">Stripe pricing — Compare plans</div>
+                    <div class="text-[11px] font-mono text-muted/70 truncate">stripe.com/pricing</div>
+                  </div>
+                </div>
+                <!-- Source -->
+                <div class="col-span-3 flex items-center gap-1.5 text-xs text-muted">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage shrink-0"></span>
+                  <span class="truncate">Chrome — Research</span>
+                </div>
+                <!-- Reason (Sage dot) -->
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tile text-[11px] font-medium text-sage border border-sage/20">
+                    <span class="w-1 h-1 rounded-full bg-sage"></span> Unused 61 h
+                  </span>
+                </div>
+                <!-- Archived -->
+                <div class="col-span-1 text-right text-[11px] text-muted">
+                  Today, 2:14 PM
+                </div>
+              </div>
+
+              <!-- Row 2: Linear — Cycle 42 -->
+              <div class="grid grid-cols-12 items-center px-3 py-2 rounded-xl hover:bg-tile/60 transition-colors">
+                <!-- Item -->
+                <div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+                  <div class="w-6 h-6 rounded-md bg-[#5E6AD2] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    L
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium text-ivory truncate">Linear — Cycle 42 roadmap</div>
+                    <div class="text-[11px] font-mono text-muted/70 truncate">linear.app</div>
+                  </div>
+                </div>
+                <!-- Source -->
+                <div class="col-span-3 flex items-center gap-1.5 text-xs text-muted">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage shrink-0"></span>
+                  <span class="truncate">Chrome — Product</span>
+                </div>
+                <!-- Reason (Sage dot) -->
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tile text-[11px] font-medium text-sage border border-sage/20">
+                    <span class="w-1 h-1 rounded-full bg-sage"></span> Unused 48 h
+                  </span>
+                </div>
+                <!-- Archived -->
+                <div class="col-span-1 text-right text-[11px] text-muted">
+                  Today, 1:50 PM
+                </div>
+              </div>
+
+              <!-- Row 3: Pull request #418 (Edge) -->
+              <div class="grid grid-cols-12 items-center px-3 py-2 rounded-xl hover:bg-tile/60 transition-colors">
+                <!-- Item -->
+                <div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+                  <div class="w-6 h-6 rounded-md bg-[#24292F] border border-hairline flex items-center justify-center text-white text-[11px] font-mono shrink-0">
+                    &lt;&gt;
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium text-ivory truncate">Pull request #418: cache invalidation</div>
+                    <div class="text-[11px] font-mono text-muted/70 truncate">github.com</div>
+                  </div>
+                </div>
+                <!-- Source -->
+                <div class="col-span-3 flex items-center gap-1.5 text-xs text-muted">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage shrink-0"></span>
+                  <span class="truncate">Edge — Engineering</span>
+                </div>
+                <!-- Reason (Sage dot) -->
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tile text-[11px] font-medium text-sage border border-sage/20">
+                    <span class="w-1 h-1 rounded-full bg-sage"></span> Unused 24 h
+                  </span>
+                </div>
+                <!-- Archived -->
+                <div class="col-span-1 text-right text-[11px] text-muted">
+                  Today, 11:20 AM
+                </div>
+              </div>
+
+              <!-- Row 4: Design System v2.4 (Edge) -->
+              <div class="grid grid-cols-12 items-center px-3 py-2 rounded-xl hover:bg-tile/60 transition-colors">
+                <!-- Item -->
+                <div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+                  <div class="w-6 h-6 rounded-md bg-[#F24E1E] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    F
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium text-ivory truncate">Design System v2.4 (Components &amp; tokens)</div>
+                    <div class="text-[11px] font-mono text-muted/70 truncate">figma.com</div>
+                  </div>
+                </div>
+                <!-- Source -->
+                <div class="col-span-3 flex items-center gap-1.5 text-xs text-muted">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage shrink-0"></span>
+                  <span class="truncate">Edge — Design</span>
+                </div>
+                <!-- Reason (Sage dot) -->
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tile text-[11px] font-medium text-sage border border-sage/20">
+                    <span class="w-1 h-1 rounded-full bg-sage"></span> Unused 18 h
+                  </span>
+                </div>
+                <!-- Archived -->
+                <div class="col-span-1 text-right text-[11px] text-muted">
+                  Today, 10:05 AM
+                </div>
+              </div>
+
+              <!-- Row 5: Windows Explorer Window -->
+              <div class="grid grid-cols-12 items-center px-3 py-2 rounded-xl hover:bg-tile/60 transition-colors">
+                <!-- Item -->
+                <div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+                  <div class="w-6 h-6 rounded-md bg-[#0078D4]/20 border border-[#0078D4]/40 flex items-center justify-center text-[#4CC2FF] text-xs shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium text-ivory truncate">Invoices-2024</div>
+                    <div class="text-[11px] font-mono text-muted/70 truncate">C:\Users\Aryan\Downloads\Invoices</div>
+                  </div>
+                </div>
+                <!-- Source -->
+                <div class="col-span-3 flex items-center gap-1.5 text-xs text-muted">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sage shrink-0"></span>
+                  <span class="truncate">File Explorer</span>
+                </div>
+                <!-- Reason (Sage dot) -->
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tile text-[11px] font-medium text-sage border border-sage/20">
+                    <span class="w-1 h-1 rounded-full bg-sage"></span> Inactive 3 days
+                  </span>
+                </div>
+                <!-- Archived -->
+                <div class="col-span-1 text-right text-[11px] text-muted">
+                  Today, 9:15 AM
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Table Footer -->
+            <div class="pt-2 border-t border-hairline/60 flex items-center justify-between text-[11px] text-muted/80 shrink-0">
+              <span>Displaying 5 of 318 archived records</span>
+              <button class="hover:text-ivory flex items-center gap-1 transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export JSON</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Right Detail Card: 4 Columns, Deep green #2F5A2E, 22px radius, compact -->
+          <div class="col-span-4 bg-darkgreen rounded-[22px] p-4 flex flex-col justify-between text-ivory shadow-lg relative overflow-hidden border border-sage/20">
+            
+            <!-- Card Header: Title + Dismiss -->
+            <div>
+              <div class="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-lime/90 mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
+                  ARCHIVED ITEM DETAIL
+                </span>
+                <button class="text-ivory/70 hover:text-ivory p-0.5 rounded hover:bg-black/15 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Title & mono URL -->
+              <h2 class="font-serif text-lg font-normal leading-snug text-ivory mt-1">Stripe pricing — Compare plans</h2>
+              
+              <div class="mt-2.5 flex items-center justify-between px-3 py-1.5 rounded-lg bg-black/20 border border-white/10 text-xs font-mono text-ivory/90">
+                <span class="truncate">stripe.com/pricing</span>
+                <button class="text-ivory/60 hover:text-ivory pl-2 transition-colors" title="Copy URL">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <rect width="14" height="14" x="8" y="8" rx="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Compact 4-Row Lifecycle Track -->
+            <div class="my-2 bg-black/15 rounded-xl p-3 border border-white/5">
+              <div class="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-ivory/70 mb-2">
+                <span>LIFECYCLE HISTORY</span>
+                <span class="text-lime">SWEEP #409</span>
+              </div>
+
+              <div class="relative pl-4 space-y-2 text-xs">
+                <!-- Vertical Line -->
+                <div class="absolute left-1.5 top-1 bottom-1 w-px bg-white/20"></div>
+
+                <!-- Point 1: Opened -->
+                <div class="relative flex items-center justify-between">
+                  <div class="absolute -left-4 w-2 h-2 rounded-full border border-darkgreen bg-white/70"></div>
+                  <span class="text-ivory/80 text-[11px]">Opened</span>
+                  <span class="font-mono text-[10px] text-ivory/60">Mon 9:02 AM</span>
+                </div>
+
+                <!-- Point 2: Last used -->
+                <div class="relative flex items-center justify-between">
+                  <div class="absolute -left-4 w-2 h-2 rounded-full border border-darkgreen bg-white/70"></div>
+                  <span class="text-ivory/80 text-[11px]">Last used</span>
+                  <span class="font-mono text-[10px] text-ivory/60">Mon 4:40 PM</span>
+                </div>
+
+                <!-- Point 3: Stale -->
+                <div class="relative flex items-center justify-between">
+                  <div class="absolute -left-4 w-2 h-2 rounded-full border border-darkgreen bg-white/70"></div>
+                  <span class="text-ivory/80 text-[11px]">Stale</span>
+                  <span class="font-mono text-[10px] text-ivory/60">Wed 9:18 AM</span>
+                </div>
+
+                <!-- Point 4: Archived (Active) -->
+                <div class="relative flex items-center justify-between font-medium">
+                  <div class="absolute -left-4 w-2 h-2 rounded-full border border-darkgreen bg-lime shadow-[0_0_8px_rgba(221,235,157,0.8)]"></div>
+                  <span class="text-ivory text-[11px] font-semibold">Archived</span>
+                  <span class="font-mono text-[10px] text-lime">Today 2:14 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Short Safety Note -->
+            <div class="p-2.5 rounded-lg bg-black/20 border border-white/5 flex items-start gap-2 text-[11px] text-ivory/80 leading-relaxed mb-3">
+              <svg class="w-3.5 h-3.5 text-lime shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <span>Decay saves the address, not the page. Unsaved form input won't come back.</span>
+            </div>
+
+            <!-- Fully Visible Bottom Action Row: Ivory pill "Restore", outline "Always protect", circle × -->
+            <div class="flex items-center gap-2 pt-1 border-t border-white/10 shrink-0">
+              <!-- Ivory pill "Restore" -->
+              <button class="flex-1 h-8 rounded-full bg-ivory hover:bg-white text-canvas text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors">
+                <svg class="w-3.5 h-3.5 text-canvas" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+                <span>Restore</span>
+              </button>
+
+              <!-- Outline pill "Always protect" -->
+              <button class="flex-1 h-8 rounded-full border border-white/30 hover:border-white/60 hover:bg-white/10 text-xs font-medium text-ivory flex items-center justify-center gap-1.5 transition-colors">
+                <svg class="w-3.5 h-3.5 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
+                </svg>
+                <span>Always protect</span>
+              </button>
+
+              <!-- Circle Dismiss × -->
+              <button class="w-8 h-8 rounded-full border border-white/20 hover:border-white/50 hover:bg-white/10 text-ivory/80 hover:text-ivory flex items-center justify-center transition-colors shrink-0" title="Dismiss">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Windows 11 Dark Taskbar: h-12, #121812/90 frosted, centered app pins, right system tray -->
+  <footer class="w-full h-12 bg-[#141A13]/90 backdrop-blur-xl border-t border-hairline/80 flex items-center justify-between px-3 select-none relative z-30">
+    
+    <!-- Left: Weather Widget (Windows 11 standard) -->
+    <div class="flex items-center gap-2 px-2.5 py-1 rounded-md hover:bg-white/5 text-ivory/90 text-xs transition-colors cursor-default">
+      <svg class="w-4 h-4 text-[#F7BA1E]" fill="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5"/>
+        <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div class="leading-none">
+        <span class="font-medium text-[11px] block">68°F</span>
+        <span class="text-[9px] text-muted block">Mostly sunny</span>
+      </div>
+    </div>
+
+    <!-- Center: Windows 11 App Icons (Start, Search, Task View, Widgets, File Explorer, Edge, Decay) -->
+    <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+      <!-- Windows Start -->
+      <button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-[#0078D4]">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.8"/>
+        </svg>
+      </button>
+
+      <!-- Windows Search -->
+      <button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-ivory/80">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+
+      <!-- Windows Task View -->
+      <button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-ivory/80">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <rect x="3" y="4" width="12" height="12" rx="1.5"/>
+          <rect x="9" y="8" width="12" height="12" rx="1.5"/>
+        </svg>
+      </button>
+
+      <!-- Windows File Explorer -->
+      <button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+        <svg class="w-4.5 h-4.5 text-[#FCE183]" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </button>
+
+      <!-- Microsoft Edge -->
+      <button class="w-9 h-9 rounded-md flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+        <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-[#0078D4] via-[#00C853] to-[#00B0FF] flex items-center justify-center">
+          <div class="w-2 h-2 rounded-full bg-[#141A13]"></div>
+        </div>
+      </button>
+
+      <!-- Active Decay App in Taskbar (Raised with active indicator pill) -->
+      <button class="w-9 h-9 rounded-md bg-white/10 flex items-center justify-center relative active:scale-95 transition-all group">
+        <div class="w-5 h-5 rounded-full bg-sage/20 border border-sage/40 flex items-center justify-center text-sage">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+        </div>
+        <!-- Active bottom bar -->
+        <div class="absolute bottom-0 w-3.5 h-0.5 bg-sage rounded-full"></div>
+      </button>
+    </div>
+
+    <!-- Right: System Tray & Clock -->
+    <div class="flex items-center gap-2">
+      <!-- Chevron expand tray -->
+      <button class="px-1.5 py-1 rounded hover:bg-white/10 text-muted hover:text-ivory transition-colors">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="m18 15-6-6-6 6"/>
+        </svg>
+      </button>
+
+      <!-- Decay Tray Icon with small "7" badge -->
+      <div class="relative px-1.5 py-1 rounded hover:bg-white/10 cursor-pointer flex items-center transition-colors">
+        <div class="w-4 h-4 text-sage">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+        </div>
+        <!-- Small "7" badge -->
+        <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-sage text-canvas font-bold text-[9px] rounded-full flex items-center justify-center leading-none">
+          7
+        </span>
+      </div>
+
+      <!-- Quick Settings Group (WiFi, Volume, Battery) -->
+      <div class="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/10 text-ivory/80 transition-colors cursor-pointer">
+        <!-- WiFi -->
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M5 13a10 10 0 0 1 14 0" stroke-linecap="round"/>
+          <path d="M8.5 16.5a5 5 0 0 1 7 0" stroke-linecap="round"/>
+          <circle cx="12" cy="20" r="1" fill="currentColor"/>
+        </svg>
+        <!-- Volume -->
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke-linecap="round"/>
+        </svg>
+        <!-- Battery -->
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <rect x="2" y="7" width="16" height="10" rx="2" ry="2"/>
+          <line x1="20" y1="11" x2="20" y2="13"/>
+          <rect x="4" y="9" width="10" height="6" fill="currentColor" rx="1"/>
+        </svg>
+      </div>
+
+      <!-- Clock & Date: "2:21 PM" and "11/4/2026" -->
+      <div class="px-2 py-1 rounded-md hover:bg-white/10 text-right text-ivory/90 leading-tight transition-colors cursor-pointer">
+        <span class="text-[11px] font-medium block">2:21 PM</span>
+        <span class="text-[10px] text-muted block">11/4/2026</span>
+      </div>
+    </div>
+
+  </footer>
+
+</body>
+</html>

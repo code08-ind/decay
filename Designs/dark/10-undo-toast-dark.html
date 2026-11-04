@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>10-undo-toast-dark (v2)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#282b26",
+            "on-error": "#690005",
+            "surface": "#111410",
+            "secondary-container": "#434e11",
+            "on-background": "#e1e3dc",
+            "on-secondary": "#2b3400",
+            "on-surface-variant": "#c3c9b8",
+            "on-primary-fixed-variant": "#2f4f0c",
+            "on-primary": "#1c3700",
+            "error": "#ffb4ab",
+            "inverse-primary": "#456824",
+            "primary": "#bbe491",
+            "inverse-surface": "#e1e3dc",
+            "tertiary-fixed-dim": "#97d68f",
+            "surface-bright": "#373a35",
+            "on-tertiary-fixed-variant": "#16521a",
+            "on-tertiary": "#003908",
+            "on-secondary-fixed-variant": "#414b0e",
+            "on-secondary-container": "#b2bf76",
+            "primary-fixed": "#c6ef9b",
+            "on-primary-container": "#335411",
+            "surface-container-highest": "#333631",
+            "surface-container-lowest": "#0c0f0b",
+            "primary-container": "#a0c878",
+            "inverse-on-surface": "#2e312d",
+            "surface-dim": "#111410",
+            "surface-container-low": "#191c18",
+            "background": "#111410",
+            "tertiary-fixed": "#b2f3a8",
+            "on-secondary-fixed": "#181e00",
+            "outline-variant": "#43493c",
+            "outline": "#8d9384",
+            "surface-container": "#1d201c",
+            "on-tertiary-container": "#1c561e",
+            "tertiary-container": "#8dcb85",
+            "surface-tint": "#aad382",
+            "primary-fixed-dim": "#aad382",
+            "on-primary-fixed": "#0e2000",
+            "secondary": "#c0cd82",
+            "tertiary": "#a7e89e",
+            "on-error-container": "#ffdad6",
+            "secondary-fixed-dim": "#c0cd82",
+            "on-surface": "#e1e3dc",
+            "on-tertiary-fixed": "#002203",
+            "error-container": "#93000a",
+            "secondary-fixed": "#dcea9c",
+            "surface-variant": "#333631"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "1.5rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "label-sm": ["DM Sans"],
+            "headline-lg": ["Newsreader"],
+            "headline-md": ["Newsreader"],
+            "body-sm": ["DM Sans"],
+            "headline-sm": ["Newsreader"],
+            "code-sm": ["JetBrains Mono"],
+            "body-md": ["DM Sans"],
+            "label-md": ["DM Sans"]
+          },
+          "fontSize": {
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "headline-lg": ["32px", { "lineHeight": "38px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    @keyframes countdown {
+      from { width: 100%; }
+      to { width: 0%; }
+    }
+    .animate-progress-shrink {
+      animation: countdown 30s linear forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#1C2A1B] text-on-surface antialiased min-h-screen w-full relative overflow-x-hidden p-6 md:p-8 flex flex-col items-center justify-center font-body-md select-none">
+<!-- ================= SUBDUED BACKGROUND DESKTOP WINDOW ================= -->
+<div class="w-full max-w-[1360px] h-[860px] bg-[#111410] border border-[#272B24] rounded-2xl shadow-2xl flex flex-col overflow-hidden opacity-85 transition-opacity duration-300">
+<!-- Titlebar macOS style -->
+<div class="h-10 bg-[#161A14] border-b border-[#272B24] px-4 flex items-center justify-between select-none">
+<div class="flex items-center gap-3">
+<!-- Traffic lights -->
+<div class="flex items-center gap-2 pr-2">
+<div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
+<div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
+</div>
+<!-- App Title & Icon -->
+<div class="flex items-center gap-1.5 pl-1 text-on-surface">
+<span class="material-symbols-outlined text-primary text-base" data-icon="eco">eco</span>
+<span class="font-headline-sm text-sm font-semibold tracking-tight text-on-surface">Decay v1.4</span>
+</div>
+<!-- Pill Nav tabs -->
+<div class="flex items-center gap-1 ml-4 bg-[#111410] p-1 rounded-lg border border-[#272B24]">
+<span class="px-2.5 py-1 text-xs text-on-surface-variant hover:text-on-surface cursor-pointer rounded">Overview</span>
+<div class="px-2.5 py-0.5 text-xs bg-[#24351D] text-primary font-medium rounded flex items-center gap-1.5 border border-[#344D29]">
+<span>Library</span>
+<span class="bg-[#355227] text-on-primary-container px-1 rounded-full text-[10px] font-mono">318</span>
+</div>
+<span class="px-2.5 py-1 text-xs text-on-surface-variant hover:text-on-surface cursor-pointer rounded">Live now</span>
+<span class="px-2.5 py-1 text-xs text-on-surface-variant hover:text-on-surface cursor-pointer rounded">Sweeps</span>
+<span class="px-2.5 py-1 text-xs text-on-surface-variant hover:text-on-surface cursor-pointer rounded">Rules</span>
+<span class="px-2.5 py-1 text-xs text-on-surface-variant hover:text-on-surface cursor-pointer rounded">Insights</span>
+</div>
+</div>
+<!-- Right controls -->
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-on-surface cursor-pointer text-base" data-icon="search">search</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-on-surface cursor-pointer text-base" data-icon="notifications">notifications</span>
+<div class="flex items-center gap-1.5 bg-[#1B2219] border border-[#2D3929] px-2.5 py-1 rounded-full text-[11px] text-[#A0C878] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>Automatic</span>
+</div>
+</div>
+</div>
+<!-- Main Content Area -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-[#111410]">
+<!-- Page Header -->
+<div class="flex items-baseline justify-between border-b border-[#272B24] pb-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Library</h1>
+<p class="font-headline-sm italic text-on-surface-variant text-sm mt-0.5">318 tabs and windows archived · nothing is ever lost</p>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="bg-[#1C201A] border border-[#2E352B] text-on-surface hover:bg-[#252C22] px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs" data-icon="visibility">visibility</span>
+<span>Shadow review</span>
+</button>
+<button class="bg-[#1C201A] border border-[#2E352B] text-on-surface hover:bg-[#252C22] px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs" data-icon="undo">undo</span>
+<span>Undo</span>
+</button>
+<button class="bg-primary text-on-primary hover:bg-primary-fixed px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
+<span>+ Sweep now</span>
+</button>
+</div>
+</div>
+<!-- 4 Top Stat Cards -->
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-[#171B15] border border-[#272B24] rounded-xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant text-xs">
+<span>Open tabs</span>
+<span class="material-symbols-outlined text-sm" data-icon="tab">tab</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="text-2xl font-semibold font-headline-md text-on-surface">41</span>
+<span class="bg-[#1E2918] text-primary border border-[#2F4426] text-[10px] font-medium px-2 py-0.5 rounded-full">↓ 38% this week</span>
+</div>
+</div>
+<div class="bg-[#171B15] border border-[#272B24] rounded-xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant text-xs">
+<span>Archived today</span>
+<span class="material-symbols-outlined text-sm" data-icon="archive">archive</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="text-2xl font-semibold font-headline-md text-on-surface">14</span>
+<span class="text-xs text-on-surface-variant">11 tabs · 3 windows</span>
+</div>
+</div>
+<div class="bg-[#171B15] border border-[#272B24] rounded-xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant text-xs">
+<span>Restored</span>
+<span class="material-symbols-outlined text-sm" data-icon="settings_backup_restore">settings_backup_restore</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="text-2xl font-semibold font-headline-md text-on-surface">3</span>
+<span class="bg-[#1B291C] text-[#A0C878] border border-[#2C452C] text-[10px] font-medium px-2 py-0.5 rounded-full">low regret rate 2.1%</span>
+</div>
+</div>
+<div class="bg-[#171B15] border border-[#272B24] rounded-xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant text-xs">
+<span>Active hours today</span>
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+</div>
+<div class="flex items-baseline justify-between mt-2">
+<span class="text-2xl font-semibold font-headline-md text-on-surface">5.2 h</span>
+<span class="text-xs text-on-surface-variant">Across 6 active applications</span>
+</div>
+</div>
+</div>
+<!-- Two Column Layout: Table + Detail -->
+<div class="grid grid-cols-12 gap-5 flex-1 min-h-0">
+<!-- Left Table Column (8 Cols) -->
+<div class="col-span-8 flex flex-col gap-3">
+<!-- Filters & Search -->
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-1.5">
+<span class="bg-[#24351D] text-primary border border-[#344D29] text-xs px-3 py-1 rounded-full font-medium cursor-pointer">All (318)</span>
+<span class="text-on-surface-variant hover:text-on-surface text-xs px-3 py-1 rounded-full border border-transparent hover:border-[#272B24] cursor-pointer">Tabs</span>
+<span class="text-on-surface-variant hover:text-on-surface text-xs px-3 py-1 rounded-full border border-transparent hover:border-[#272B24] cursor-pointer">Windows</span>
+</div>
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-sm text-outline" data-icon="search">search</span>
+<input class="w-full bg-[#171B15] border border-[#272B24] rounded-lg text-xs py-1.5 pl-8 pr-3 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container" disabled="" placeholder="Search by title, site or date... ⌘K" type="text"/>
+</div>
+</div>
+<!-- Table Header -->
+<div class="bg-[#161A14] border border-[#272B24] rounded-t-lg px-4 py-2 grid grid-cols-12 text-[11px] font-medium text-outline uppercase tracking-wider">
+<span class="col-span-6">ITEM</span>
+<span class="col-span-2">SOURCE</span>
+<span class="col-span-2">REASON</span>
+<span class="col-span-2 text-right">ARCHIVED</span>
+</div>
+<!-- Table Rows -->
+<div class="border-x border-b border-[#272B24] rounded-b-lg divide-y divide-[#21261E] bg-[#141712] overflow-hidden">
+<!-- Row 1: Selected -->
+<div class="px-4 py-2.5 grid grid-cols-12 items-center bg-[#1B291A] border-l-2 border-l-primary cursor-pointer">
+<div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-5 h-5 rounded bg-[#635BFF] flex items-center justify-center text-white text-[10px] font-bold shrink-0">S</div>
+<div class="truncate">
+<div class="text-xs font-medium text-on-surface truncate">Stripe pricing — Compare plans</div>
+<div class="text-[10px] text-outline truncate">stripe.com/pricing</div>
+</div>
+</div>
+<div class="col-span-2 text-xs text-on-surface-variant truncate">Chrome — Research</div>
+<div class="col-span-2 text-[11px] text-outline truncate">Unused 61 active h</div>
+<div class="col-span-2 text-xs text-on-surface-variant text-right">Today, 2:14 PM</div>
+</div>
+<!-- Row 2 -->
+<div class="px-4 py-2.5 grid grid-cols-12 items-center hover:bg-[#181D16] cursor-pointer">
+<div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-5 h-5 rounded bg-[#5E6AD2] flex items-center justify-center text-white text-[10px] font-bold shrink-0">L</div>
+<div class="truncate">
+<div class="text-xs font-medium text-on-surface truncate">Linear — Cycle 42 roadmap</div>
+<div class="text-[10px] text-outline truncate">linear.app</div>
+</div>
+</div>
+<div class="col-span-2 text-xs text-on-surface-variant truncate">Chrome — Product</div>
+<div class="col-span-2 text-[11px] text-outline truncate">Unused 48 active h</div>
+<div class="col-span-2 text-xs text-on-surface-variant text-right">Today, 1:50 PM</div>
+</div>
+<!-- Row 3 -->
+<div class="px-4 py-2.5 grid grid-cols-12 items-center hover:bg-[#181D16] cursor-pointer">
+<div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-5 h-5 rounded bg-[#24292F] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+<span class="material-symbols-outlined text-xs" data-icon="code">code</span>
+</div>
+<div class="truncate">
+<div class="text-xs font-medium text-on-surface truncate">Pull request #418: cache invalidation</div>
+<div class="text-[10px] text-outline truncate">github.com</div>
+</div>
+</div>
+<div class="col-span-2 text-xs text-on-surface-variant truncate">Arc — Engineering</div>
+<div class="col-span-2 text-[11px] text-outline truncate">Unused 24 active h</div>
+<div class="col-span-2 text-xs text-on-surface-variant text-right">Today, 11:20 AM</div>
+</div>
+<!-- Row 4 -->
+<div class="px-4 py-2.5 grid grid-cols-12 items-center hover:bg-[#181D16] cursor-pointer">
+<div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-5 h-5 rounded bg-[#F24E1E] flex items-center justify-center text-white text-[10px] font-bold shrink-0">F</div>
+<div class="truncate">
+<div class="text-xs font-medium text-on-surface truncate">Design System v2.4 (Components &amp; tokens)</div>
+<div class="text-[10px] text-outline truncate">figma.com</div>
+</div>
+</div>
+<div class="col-span-2 text-xs text-on-surface-variant truncate">Arc — Design</div>
+<div class="col-span-2 text-[11px] text-outline truncate">Unused 18 active h</div>
+<div class="col-span-2 text-xs text-on-surface-variant text-right">Today, 10:05 AM</div>
+</div>
+<!-- Row 5 -->
+<div class="px-4 py-2.5 grid grid-cols-12 items-center hover:bg-[#181D16] cursor-pointer">
+<div class="col-span-6 flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-5 h-5 rounded bg-[#FB542B] flex items-center justify-center text-white text-[10px] shrink-0">
+<span class="material-symbols-outlined text-xs" data-icon="folder">folder</span>
+</div>
+<div class="truncate">
+<div class="text-xs font-medium text-on-surface truncate">~/Downloads/Invoices-2024</div>
+<div class="text-[10px] text-outline truncate">Local Window</div>
+</div>
+</div>
+<div class="col-span-2 text-xs text-on-surface-variant truncate">Brave — Work</div>
+<div class="col-span-2 text-[11px] text-outline truncate">Inactive 3 days</div>
+<div class="col-span-2 text-xs text-on-surface-variant text-right">Today, 9:15 AM</div>
+</div>
+</div>
+</div>
+<!-- Right Detail Column (4 Cols) -->
+<div class="col-span-4 bg-[#182C1B] border border-[#2A432F] rounded-xl p-5 flex flex-col justify-between shadow-lg">
+<div class="space-y-4">
+<div class="flex items-center justify-between text-[10px] font-mono tracking-wider uppercase text-[#A0C878]">
+<span>ARCHIVED ITEM DETAIL</span>
+<span class="material-symbols-outlined text-sm cursor-pointer text-on-surface-variant hover:text-on-surface" data-icon="close">close</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-base text-on-surface font-semibold">Stripe pricing — Compare plans</h3>
+<div class="flex items-center justify-between bg-[#122014] border border-[#253D28] px-2.5 py-1.5 rounded-lg mt-2 text-xs text-on-surface-variant">
+<span class="truncate">stripe.com/pricing</span>
+<span class="material-symbols-outlined text-xs cursor-pointer hover:text-on-surface ml-1" data-icon="content_copy">content_copy</span>
+</div>
+</div>
+<!-- Lifecycle track -->
+<div class="border-t border-[#253D28] pt-3">
+<div class="text-[10px] font-mono uppercase text-[#8D9B86] tracking-wider mb-2">LIFECYCLE TRACK (SWEEP #409)</div>
+<div class="space-y-1.5 text-xs text-on-surface-variant">
+<div class="flex justify-between">
+<span class="text-outline">Opened</span>
+<span>Mon 9:02 AM</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">Last used</span>
+<span>Mon 4:40 PM</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">Stale</span>
+<span>Wed 9:18 AM</span>
+</div>
+<div class="flex justify-between font-medium text-primary">
+<span>Archived</span>
+<span>Today 2:14 PM</span>
+</div>
+</div>
+</div>
+<!-- Callout info box -->
+<div class="bg-[#122014] border border-[#2F4E34] rounded-lg p-3 text-[11px] text-[#C3C9B8] leading-relaxed flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0 mt-0.5" data-icon="info">info</span>
+<span>Decay saves the address, not the page. Unsaved form input won't come back.</span>
+</div>
+</div>
+<!-- Bottom Actions -->
+<div class="flex items-center gap-2 pt-4 border-t border-[#253D28]">
+<button class="flex-1 bg-primary text-on-primary font-medium text-xs py-2 rounded-lg hover:bg-primary-fixed flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="settings_backup_restore">settings_backup_restore</span>
+<span>Restore</span>
+</button>
+<button class="bg-[#1F3624] border border-[#34553A] text-on-surface font-medium text-xs py-2 px-3 rounded-lg hover:bg-[#28452E] flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="shield">shield</span>
+<span>Always protect</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= CRISP OVERLAYS (HIGH Z-INDEX) ================= -->
+<!-- 1) Top-Right macOS Notification Overlay -->
+<div class="fixed top-6 right-6 z-50 w-[380px] bg-[#1A1E18]/95 backdrop-blur-md border border-[#2E352B] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] p-4 flex items-center justify-between gap-3 text-on-surface">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-[#24351D] border border-[#37522B] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="eco">eco</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-[#F2F0E6]">Decay</span>
+<span class="text-[10px] text-[#A7AC9C]">now</span>
+</div>
+<p class="text-[11px] text-[#A7AC9C] truncate mt-0.5">Archived 14 tabs · Undo available for 30s</p>
+</div>
+</div>
+<button class="border border-[#3E473A] bg-[#222820] text-[#F2F0E6] hover:bg-[#2A3227] px-3.5 py-1.5 text-xs font-medium rounded-lg shrink-0 transition-colors">
+      Undo
+    </button>
+</div>
+<!-- 2) Center-Bottom Floating Follow-up Card (Restored follow-up) -->
+<div class="fixed bottom-24 z-50 left-1/2 -translate-x-1/2 w-[460px] bg-[#1A1E18] border border-[#2A3027] rounded-[22px] shadow-[0_24px_60px_rgba(0,0,0,0.7)] p-5 text-on-surface">
+<!-- Top row -->
+<div class="flex items-center justify-between">
+<span class="font-mono text-[10px] tracking-wider uppercase bg-[#233F23] text-[#A0C878] border border-[#325A32] px-2.5 py-0.5 rounded-full font-semibold">
+        RESTORED
+      </span>
+<span class="text-xs text-[#A7AC9C]">Just now</span>
+</div>
+<!-- Item row -->
+<div class="flex items-center gap-2.5 mt-3">
+<div class="w-5 h-5 rounded bg-[#635BFF] flex items-center justify-center text-white text-[11px] font-bold shrink-0">S</div>
+<span class="font-semibold text-sm text-[#F2F0E6]">Stripe pricing — Compare plans</span>
+</div>
+<!-- Message & Question -->
+<p class="text-xs text-[#A7AC9C] mt-1.5">You brought this back 4 minutes after it was archived.</p>
+<p class="text-sm font-medium text-[#F2F0E6] mt-2">Always keep stripe.com open?</p>
+<!-- Buttons -->
+<div class="flex items-center gap-3 mt-4">
+<button class="bg-[#F2F0E6] hover:bg-white text-[#111410] font-medium text-xs py-2 px-5 rounded-full flex-1 flex items-center justify-center gap-1.5 shadow-sm transition-colors">
+<span class="material-symbols-outlined text-sm text-[#111410]" data-icon="shield">shield</span>
+<span>Always protect</span>
+</button>
+<button class="border border-[#363E32] text-[#A7AC9C] hover:text-[#F2F0E6] text-xs py-2 px-4 rounded-full transition-colors">
+        Not now
+      </button>
+</div>
+</div>
+<!-- 3) Bottom-Centre Floating UNDO TOAST -->
+<div class="fixed bottom-6 z-50 left-1/2 -translate-x-1/2 w-[560px] bg-[#F2F0E6] text-[#111410] rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.55)] border border-[#E2DFCFC0] px-5 py-3 flex items-center justify-between text-xs font-medium overflow-hidden">
+<!-- Left text with wind / airflow icon -->
+<div class="flex items-center gap-2.5 min-w-0 pr-3">
+<svg class="w-4 h-4 text-[#2F5A2E] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="truncate text-[#111410]">Archived 14 tabs you hadn't used in 3 working days</span>
+</div>
+<!-- Right controls -->
+<div class="flex items-center gap-2.5 shrink-0">
+<button class="text-[#2F5A2E] hover:text-[#1F3D1F] font-semibold flex items-center gap-1.5 transition-colors">
+<span>Undo</span>
+<span class="bg-[#E4E1D4] px-1.5 py-0.5 rounded text-[10px] font-mono border border-[#D5D1C0] text-[#111410]">⌘Z</span>
+</button>
+<span class="text-[#A5A295] text-xs">|</span>
+<button class="text-[#2F5A2E] hover:text-[#1F3D1F] font-medium transition-colors">
+        View
+      </button>
+<button class="text-[#5A5E54] hover:text-[#111410] ml-1 p-0.5 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+<!-- Countdown Progress Line along the bottom -->
+<div class="absolute bottom-0 left-0 right-0 h-[2px] bg-[#E2DFCFC0]">
+<div class="h-full bg-[#2F5A2E] animate-progress-shrink"></div>
+</div>
+</div>
+</body></html>

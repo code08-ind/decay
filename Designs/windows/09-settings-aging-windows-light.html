@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09-settings-aging-windows-light (v2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              green: '#4F8A4B',
+              darkGreen: '#3D6C3A',
+              lightGreen: '#7FA77A',
+              lime: '#DDEB9D',
+              deepLime: '#A0C878',
+              surface: '#FFFDF6',
+              bgLight: '#F7F4EB',
+              borderLight: '#E8E4D8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body class="m-0 p-0 overflow-hidden font-sans select-none bg-[#7FA77A] text-[#1E201D] antialiased">
+
+  <!-- Desktop Canvas: 1440 x 1000 fixed viewport -->
+  <div class="relative w-[1440px] h-[1000px] overflow-hidden flex flex-col justify-between items-center shadow-2xl">
+
+    <!-- Top & Desktop Space: Centering the Windows 11 window -->
+    <!-- Window is 1100px wide, ~844px high. Desktop height = 1000px - 44px taskbar = 956px work area.
+         Top margin ~54px, window 844px, bottom space to taskbar ~58px (> 40px guaranteed space). -->
+    <div class="w-full flex-1 flex items-start justify-center pt-[50px]">
+      
+      <!-- Windows 11 Window Container: 1100px x 844px, 8px rounded corners, Mica-like translucent cream border & shadow -->
+      <div class="w-[1100px] h-[846px] rounded-[8px] bg-[#FAF8F2]/95 backdrop-blur-2xl border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden ring-1 ring-black/5">
+        
+        <!-- Windows 11 Title Bar (Mica translucent cream, 38px height) -->
+        <header class="h-[38px] w-full px-3.5 flex items-center justify-between border-b border-[#ECE7DA] bg-[#FAF8F2]/90 flex-shrink-0">
+          <!-- Left: Gear Icon + "Decay Settings" -->
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-[17px] text-[#464B43]">settings</span>
+            <span class="text-[12.5px] font-semibold text-[#232722] tracking-tight">Decay Settings</span>
+          </div>
+
+          <!-- Right: Windows 11 Window Controls (Minimize, Maximize, Close) -->
+          <div class="flex items-center -mr-3.5 h-full">
+            <button class="w-[44px] h-full flex items-center justify-center text-[#555A52] hover:bg-black/5 transition-colors" title="Minimize">
+              <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
+                <rect width="10" height="1" rx="0.5"/>
+              </svg>
+            </button>
+            <button class="w-[44px] h-full flex items-center justify-center text-[#555A52] hover:bg-black/5 transition-colors" title="Maximize">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="0.5" y="0.5" width="9" height="9" rx="1"/>
+              </svg>
+            </button>
+            <button class="w-[46px] h-full flex items-center justify-center text-[#555A52] hover:bg-[#E81123] hover:text-white transition-colors" title="Close">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+                <line x1="1" y1="1" x2="9" y2="9"/>
+                <line x1="9" y1="1" x2="1" y2="9"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Window Inner Layout (Sidebar + Main Content) -->
+        <div class="flex-1 flex overflow-hidden p-3 gap-3 bg-[#F4F1E6]">
+          
+          <!-- Left White Nav Card: 218px width, rounded-[16px] -->
+          <aside class="w-[218px] bg-[#FFFDF6] rounded-[16px] border border-[#EBE7D8] shadow-sm flex flex-col justify-between p-2 flex-shrink-0">
+            <!-- Nav Items list -->
+            <div class="space-y-0.5">
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">dashboard</span>
+                <span>General</span>
+              </button>
+              
+              <!-- Aging: Active with lime #DDEB9D pill -->
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-[9px] text-[12px] font-semibold bg-[#DDEB9D] text-[#1E331B] shadow-xs text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-[16px] text-[#2F542A]" style="font-variation-settings: 'FILL' 1;">hourglass_top</span>
+                  <span>Aging</span>
+                </div>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#4F8A4B]"></span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">shield</span>
+                <span>Protection</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">language</span>
+                <span>Browsers</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">tune</span>
+                <span>Rules</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">lock</span>
+                <span>Privacy &amp; data</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">keyboard</span>
+                <span>Shortcuts</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">notifications</span>
+                <span>Notifications</span>
+              </button>
+            </div>
+
+            <!-- Lower Nav: License · PRO, Updates, About & Status -->
+            <div class="pt-2 border-t border-[#ECE7DA] space-y-0.5">
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-[16px] text-[#697064]">key</span>
+                  <span>License</span>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-[#1B211A] text-[#DDEB9D] tracking-wide">PRO</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">sync</span>
+                <span>Updates</span>
+              </button>
+
+              <button class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[9px] text-[12px] font-medium text-[#4B5047] hover:bg-black/[0.03] transition-colors text-left">
+                <span class="material-symbols-outlined text-[16px] text-[#697064]">info</span>
+                <span>About</span>
+              </button>
+
+              <!-- Footer Badge -->
+              <div class="mt-2 pt-2 px-3 pb-1 flex items-center justify-between border-t border-[#ECE7DA]/70">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#4F8A4B] animate-pulse"></span>
+                  <span class="text-[10.5px] font-medium text-[#5B6357]">Engine active</span>
+                </div>
+                <span class="text-[9.5px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#EAE5D4] text-[#677062]">Windows</span>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Right Content Column: Aging Settings Section -->
+          <!-- Height calibrated with compact spacing so all 4 cards fit cleanly without clipping -->
+          <main class="flex-1 flex flex-col justify-between overflow-hidden pr-0.5">
+            
+            <!-- Header: serif "Aging" + muted helper -->
+            <div class="mb-2 px-1">
+              <h1 class="font-serif text-[27px] font-medium text-[#1A1F18] leading-tight tracking-tight">Aging</h1>
+              <p class="text-[12px] text-[#646A5F] mt-0.5">How long things can sit unused before Decay steps in. Time counts only while you're active.</p>
+            </div>
+
+            <!-- Card 1: PACE (White 22px card, 16px vertical padding, 20px horizontal) -->
+            <section class="bg-[#FFFDF6] rounded-[22px] border border-[#E8E4D6] shadow-sm px-5 py-3.5 mb-2.5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-[10.5px] uppercase font-bold text-[#727A6D] tracking-wider mb-0.5">Pace</h2>
+                  <p class="text-[12.5px] text-[#2D332B] font-medium">Preset for archiving tabs and windows</p>
+                </div>
+                <!-- Segmented Control: Gentle · Balanced (black) · Aggressive · Custom -->
+                <div class="bg-[#ECE8DC] p-1 rounded-full flex items-center gap-0.5">
+                  <button class="px-3.5 py-1 text-[11.5px] font-medium text-[#575E52] hover:text-[#1F241C] rounded-full transition-all">Gentle</button>
+                  <button class="px-4 py-1 text-[11.5px] font-semibold bg-[#1C211A] text-[#FAF8F2] rounded-full shadow-sm">Balanced</button>
+                  <button class="px-3.5 py-1 text-[11.5px] font-medium text-[#575E52] hover:text-[#1F241C] rounded-full transition-all">Aggressive</button>
+                  <button class="px-3.5 py-1 text-[11.5px] font-medium text-[#575E52] hover:text-[#1F241C] rounded-full transition-all">Custom</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Card 2: THRESHOLDS (White 22px card, compact slider rows + age scale bar) -->
+            <section class="bg-[#FFFDF6] rounded-[22px] border border-[#E8E4D6] shadow-sm px-5 py-3.5 mb-2.5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] uppercase font-bold text-[#727A6D] tracking-wider">Thresholds</span>
+                <span class="text-[11px] text-[#7A8374]">Active hours calculation</span>
+              </div>
+
+              <!-- 3 Slider Rows -->
+              <div class="space-y-2.5">
+                <!-- Row 1: Mark as stale after 12 active h -->
+                <div class="flex items-center justify-between gap-4">
+                  <div class="w-[200px] flex-shrink-0">
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Mark as stale after</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Dimmed in tab bar &amp; menus</div>
+                  </div>
+                  <!-- Slider Track -->
+                  <div class="flex-1 relative flex items-center">
+                    <div class="w-full h-1.5 bg-[#EAE5D6] rounded-full relative">
+                      <div class="w-[20%] h-full bg-[#A0C878] rounded-full"></div>
+                      <div class="absolute left-[20%] top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-2 border-[#4F8A4B] shadow-sm cursor-pointer"></div>
+                    </div>
+                  </div>
+                  <!-- Value Badge -->
+                  <div class="flex items-center gap-2 w-[180px] justify-end flex-shrink-0">
+                    <span class="bg-[#F3EFE3] text-[#242A21] px-2.5 py-0.5 rounded-[6px] text-[11.5px] font-bold font-mono">12 active h</span>
+                    <span class="text-[11px] text-[#7A8374] whitespace-nowrap">≈ 1.5 work days</span>
+                  </div>
+                </div>
+
+                <!-- Row 2: Hide windows after 36 active h -->
+                <div class="flex items-center justify-between gap-4">
+                  <div class="w-[200px] flex-shrink-0">
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Hide windows after</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Background spaces tucked away</div>
+                  </div>
+                  <!-- Slider Track -->
+                  <div class="flex-1 relative flex items-center">
+                    <div class="w-full h-1.5 bg-[#EAE5D6] rounded-full relative">
+                      <div class="w-[55%] h-full bg-[#7FA77A] rounded-full"></div>
+                      <div class="absolute left-[55%] top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-2 border-[#4F8A4B] shadow-sm cursor-pointer"></div>
+                    </div>
+                  </div>
+                  <!-- Value Badge -->
+                  <div class="flex items-center gap-2 w-[180px] justify-end flex-shrink-0">
+                    <span class="bg-[#F3EFE3] text-[#242A21] px-2.5 py-0.5 rounded-[6px] text-[11.5px] font-bold font-mono">36 active h</span>
+                    <span class="text-[11px] text-[#7A8374] whitespace-nowrap">≈ 4.5 work days</span>
+                  </div>
+                </div>
+
+                <!-- Row 3: Archive tabs after 60 active h -->
+                <div class="flex items-center justify-between gap-4">
+                  <div class="w-[200px] flex-shrink-0">
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Archive tabs after</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Saved safely to Library</div>
+                  </div>
+                  <!-- Slider Track -->
+                  <div class="flex-1 relative flex items-center">
+                    <div class="w-full h-1.5 bg-[#EAE5D6] rounded-full relative">
+                      <div class="w-[78%] h-full bg-[#4F8A4B] rounded-full"></div>
+                      <div class="absolute left-[78%] top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white border-2 border-[#4F8A4B] shadow-sm cursor-pointer"></div>
+                    </div>
+                  </div>
+                  <!-- Value Badge -->
+                  <div class="flex items-center gap-2 w-[180px] justify-end flex-shrink-0">
+                    <span class="bg-[#F3EFE3] text-[#242A21] px-2.5 py-0.5 rounded-[6px] text-[11.5px] font-bold font-mono">60 active h</span>
+                    <span class="text-[11px] text-[#7A8374] whitespace-nowrap">≈ 1.5 work weeks</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4-segment Age Bar & Progression -->
+              <div class="mt-3 pt-2.5 border-t border-[#EFECE1]">
+                <div class="flex items-center justify-between text-[10px] text-[#727B6E] font-medium mb-1.5">
+                  <span>Tab Lifecycle Progression</span>
+                  <span class="font-mono">0h → 60h+</span>
+                </div>
+                <!-- 4 segmented bar -->
+                <div class="w-full h-2 rounded-full overflow-hidden flex gap-0.5 bg-[#EAE6D6] p-0.5">
+                  <div class="h-full rounded-l-full bg-[#C2E098]" style="width: 20%;"></div>
+                  <div class="h-full bg-[#8EB87D]" style="width: 35%;"></div>
+                  <div class="h-full bg-[#5C9453]" style="width: 25%;"></div>
+                  <div class="h-full rounded-r-full bg-[#34592F]" style="width: 20%;"></div>
+                </div>
+                <!-- Legend -->
+                <div class="flex items-center justify-between text-[10px] text-[#6F776B] mt-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#C2E098]"></span>
+                    <span>Fresh (0–12h)</span>
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#8EB87D]"></span>
+                    <span>Stale (12–36h)</span>
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#5C9453]"></span>
+                    <span>Hidden (36–60h)</span>
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#34592F]"></span>
+                    <span>Archived (60h+)</span>
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Card 3: PREVIEW WITH THESE SETTINGS (Green #4F8A4B 22px card) -->
+            <section class="bg-[#4F8A4B] text-white rounded-[22px] px-5 py-3 shadow-sm mb-2.5 flex items-center justify-between">
+              <div>
+                <h3 class="font-serif text-[17px] font-medium text-white mb-1.5 tracking-tight">Preview with these settings</h3>
+                <!-- Two frosted chips -->
+                <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1.5 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-medium text-[#FAF8F0] border border-white/10">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+                    <span>9 tabs would be archived today</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-medium text-[#FAF8F0] border border-white/10">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#DDEB9D]"></span>
+                    <span>2 windows would be hidden</span>
+                  </div>
+                </div>
+              </div>
+              <!-- CTA button: white pill "Open shadow review →" -->
+              <button class="bg-[#FFFDF6] hover:bg-white text-[#1C2619] font-medium text-[12px] px-4 py-2 rounded-full shadow-sm flex items-center gap-1.5 transition-all flex-shrink-0">
+                <span>Open shadow review</span>
+                <span class="text-[14px]">→</span>
+              </button>
+            </section>
+
+            <!-- Card 4: CLOCK (White 22px card, all three rows fully visible) -->
+            <section class="bg-[#FFFDF6] rounded-[22px] border border-[#E8E4D6] shadow-sm px-5 py-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] uppercase font-bold text-[#727A6D] tracking-wider">Clock</span>
+                <span class="text-[11px] text-[#7A8374]">Idle &amp; calendar awareness</span>
+              </div>
+
+              <!-- 3 Toggle Rows -->
+              <div class="space-y-2">
+                <!-- Toggle 1: Pause the clock while the PC is locked (ON) -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Pause the clock while the PC is locked</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Stops tab age from ticking during breaks and overnight sleep</div>
+                  </div>
+                  <!-- Switch ON (Green) -->
+                  <div class="w-10 h-5 bg-[#4F8A4B] rounded-full p-0.5 cursor-pointer flex items-center justify-end shadow-inner transition-colors">
+                    <div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+
+                <!-- Toggle 2: Pause during meetings and screen sharing (ON) -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Pause during meetings and screen sharing</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Detects active Teams, Zoom, Meet, and display broadcast</div>
+                  </div>
+                  <!-- Switch ON (Green) -->
+                  <div class="w-10 h-5 bg-[#4F8A4B] rounded-full p-0.5 cursor-pointer flex items-center justify-end shadow-inner transition-colors">
+                    <div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+
+                <!-- Toggle 3: Count weekends (OFF) -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-[12.5px] font-medium text-[#20251E]">Count weekends</div>
+                    <div class="text-[10.5px] text-[#7A8275]">Allow decay clock to run on Saturday and Sunday</div>
+                  </div>
+                  <!-- Switch OFF (Grey) -->
+                  <div class="w-10 h-5 bg-[#DDD8C9] rounded-full p-0.5 cursor-pointer flex items-center justify-start shadow-inner transition-colors">
+                    <div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </main>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Slim Light Windows 11 Taskbar at the Very Bottom: 44px height -->
+    <footer class="w-full h-[44px] bg-[#FAF8F2]/90 backdrop-blur-xl border-t border-black/10 px-4 flex items-center justify-between z-30 shadow-md">
+      
+      <!-- Left: Weather Widget (Windows 11 style) -->
+      <div class="flex items-center gap-2 pl-1 cursor-pointer hover:bg-black/5 px-2 py-1 rounded transition-colors">
+        <span class="material-symbols-outlined text-[19px] text-[#E5A93B]">wb_sunny</span>
+        <div class="flex flex-col text-left leading-tight">
+          <span class="text-[11px] font-medium text-[#252A22]">68°F</span>
+          <span class="text-[9.5px] text-[#697263]">Mostly sunny</span>
+        </div>
+      </div>
+
+      <!-- Center: Windows 11 Taskbar App Icons (Centered) -->
+      <div class="flex items-center gap-1 -translate-x-6">
+        <!-- Start Button (Windows logo) -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#0078D4] transition-colors" title="Start">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 2.247a.3.3 0 0 1 .347-.297l6.574.94a.3.3 0 0 1 .259.296v4.314H0V2.247zm0 5.953h7.18v4.314a.3.3 0 0 1-.259.296l-6.574.94A.3.3 0 0 1 0 13.453V8.2zm8.02-5.748a.3.3 0 0 1 .257-.297l7.376-1.054a.3.3 0 0 1 .347.297V7.5H8.02V2.452zm0 5.748h7.98v5.35a.3.3 0 0 1-.347.297l-7.376-1.054a.3.3 0 0 1-.257-.297V8.2z"/>
+          </svg>
+        </button>
+
+        <!-- Search -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#4A5145] transition-colors" title="Search">
+          <span class="material-symbols-outlined text-[19px]">search</span>
+        </button>
+
+        <!-- Task View -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#4A5145] transition-colors" title="Task View">
+          <span class="material-symbols-outlined text-[19px]">splitscreen</span>
+        </button>
+
+        <!-- Widgets / Copilot -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#4A5145] transition-colors" title="Widgets">
+          <span class="material-symbols-outlined text-[19px]">widgets</span>
+        </button>
+
+        <!-- File Explorer -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#E69E2A] transition-colors" title="File Explorer">
+          <span class="material-symbols-outlined text-[19px]">folder</span>
+        </button>
+
+        <!-- Browser (Edge) -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] hover:bg-black/5 text-[#0078D4] transition-colors" title="Microsoft Edge">
+          <span class="material-symbols-outlined text-[19px]">language</span>
+        </button>
+
+        <!-- Decay Settings (Active Window Icon with indicator) -->
+        <button class="w-[38px] h-[34px] flex items-center justify-center rounded-[4px] bg-black/[0.06] text-[#4F8A4B] relative transition-colors" title="Decay Settings (Active)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+          <!-- Active bar indicator -->
+          <span class="absolute bottom-0.5 w-4 h-0.5 rounded-full bg-[#4F8A4B]"></span>
+        </button>
+      </div>
+
+      <!-- Right: System Tray & Clock -->
+      <div class="flex items-center gap-2 pr-1">
+        <!-- System Tray Overflow Chevron -->
+        <button class="w-6 h-7 flex items-center justify-center text-[#5A6355] hover:bg-black/5 rounded">
+          <span class="material-symbols-outlined text-[16px]">expand_less</span>
+        </button>
+
+        <!-- Decay Leaf Icon in System Tray -->
+        <div class="flex items-center justify-center p-1 rounded hover:bg-black/5 cursor-pointer text-[#4F8A4B]" title="Decay is active (Windows)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+        </div>
+
+        <!-- Network, Volume, Battery grouping -->
+        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/5 cursor-pointer text-[#50594B]">
+          <span class="material-symbols-outlined text-[15px]">wifi</span>
+          <span class="material-symbols-outlined text-[15px]">volume_up</span>
+          <span class="material-symbols-outlined text-[15px]">battery_full</span>
+        </div>
+
+        <!-- Clock & Date: "2:21 PM" and "11/4/2026" -->
+        <div class="flex flex-col items-end leading-tight px-1.5 py-0.5 rounded hover:bg-black/5 cursor-pointer text-[#252A22]">
+          <span class="text-[11px] font-medium">2:21 PM</span>
+          <span class="text-[10px] text-[#697263]">11/4/2026</span>
+        </div>
+      </div>
+
+    </footer>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02-tray-windows-dark</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-serif: 'Newsreader', serif;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: #1C2A1B;
+      color: #F2F0E6;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-serif {
+      font-family: var(--font-serif);
+    }
+    .font-mono {
+      font-family: var(--font-mono);
+    }
+    /* Windows 11 Desktop Texture */
+    .win-desktop {
+      background-color: #1C2A1B;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 75% 35%, rgba(68, 107, 65, 0.22) 0%, transparent 70%),
+        radial-gradient(circle at 20% 80%, rgba(38, 58, 36, 0.45) 0%, transparent 60%);
+    }
+    /* Mica & Acrylic dark effects */
+    .mica-dark {
+      background: rgba(26, 30, 24, 0.94);
+      backdrop-filter: blur(36px) saturate(140%);
+      -webkit-backdrop-filter: blur(36px) saturate(140%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+    .menu-dark {
+      background: rgba(26, 30, 24, 0.96);
+      backdrop-filter: blur(28px) saturate(130%);
+      -webkit-backdrop-filter: blur(28px) saturate(130%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    /* Taskbar styling */
+    .taskbar-dark {
+      background: rgba(18, 22, 17, 0.92);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+  </style>
+</head>
+<body class="win-desktop flex flex-col justify-between relative">
+
+  <!-- Desktop Canvas Area -->
+  <main class="flex-1 w-full h-full relative" aria-label="Windows Desktop Workspace">
+    
+    <!-- Right-click Context Menu (to the left of the popover) -->
+    <div class="menu-dark absolute bottom-4 right-[388px] w-[210px] rounded-[8px] p-1.5 z-40 text-xs font-normal text-[#F2F0E6] flex flex-col gap-0.5">
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[#2B3227] transition-colors text-left group">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#9EB384]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9 9 9 0 0 0-9 9c0 4.97 4.03 9 9 9Z" fill="currentColor" fill-opacity="0.15"/>
+            <path d="M12 3c-4.97 0-9 4.03-9 9 0 4.97 4.03 9 9 9s9-4.03 9-9c0-4.97-4.03-9-9-9Z"/>
+            <path d="M12 7v10M7 12h10" stroke-linecap="round"/>
+          </svg>
+          <span class="font-medium text-[#F2F0E6]">Open Decay</span>
+        </span>
+        <span class="text-[10px] text-[#868C7D] font-mono">Ctrl+L</span>
+      </button>
+
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[#2B3227] transition-colors text-left">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#A7AC9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span class="text-[#D8DCD0]">Search archive</span>
+        </span>
+        <span class="text-[10px] text-[#868C7D] font-mono">Ctrl+Alt+D</span>
+      </button>
+
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[#2B3227] transition-colors text-left">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#A7AC9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m13 2-2 10h7L9 22l2-10H4z"/>
+          </svg>
+          <span class="text-[#D8DCD0]">Sweep now</span>
+        </span>
+        <span class="text-[10px] text-[#868C7D] font-mono">Ctrl+↵</span>
+      </button>
+
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[#2B3227] transition-colors text-left">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#A7AC9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="4" width="4" height="16" rx="1"/>
+            <rect x="14" y="4" width="4" height="16" rx="1"/>
+          </svg>
+          <span class="text-[#D8DCD0]">Pause for 1 hour</span>
+        </span>
+      </button>
+
+      <div class="h-[1px] bg-[#2E3529] my-1 mx-1.5"></div>
+
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[#2B3227] transition-colors text-left">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#A7AC9C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="text-[#D8DCD0]">Settings</span>
+        </span>
+      </button>
+
+      <button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-[rgba(239,68,68,0.15)] transition-colors text-left group">
+        <span class="flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#E57373]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>
+          </svg>
+          <span class="text-[#F87171] group-hover:text-red-300">Quit Decay</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Decay Tray Popover (360px wide, ~500px, 8px corners, dark Mica) -->
+    <!-- Positioned bottom-right above taskbar, aligned over the highlighted tray icon -->
+    <div class="mica-dark absolute bottom-3 right-5 w-[360px] rounded-[8px] p-3.5 flex flex-col gap-3.5 z-50 text-[#F2F0E6]">
+      
+      <!-- Popover Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <!-- Decay Brand Leaf Logo -->
+          <div class="w-5 h-5 flex items-center justify-center text-[#9EB384]">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+          </div>
+          <h1 class="font-serif text-[17px] font-semibold tracking-tight text-[#F2F0E6]">Decay</h1>
+          <span class="text-[11px] text-[#868C7D] font-mono ml-0.5">v1.4</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#242A21] border border-[#343C30] text-[11px] text-[#A7AC9C] font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#7FA77A]"></span>
+            <span>Automatic</span>
+          </div>
+          <button class="w-7 h-7 flex items-center justify-center rounded-[6px] text-[#A7AC9C] hover:text-[#F2F0E6] hover:bg-[#282F24] transition-colors" title="Settings">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Archive Input Pill on #222720 -->
+      <div class="w-full bg-[#222720] border border-[#2F362C] rounded-[6px] px-3 py-2 flex items-center justify-between cursor-pointer hover:border-[#424C3E] transition-colors group">
+        <div class="flex items-center gap-2 text-[#8F9585] text-xs">
+          <svg class="w-3.5 h-3.5 group-hover:text-[#F2F0E6] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span class="group-hover:text-[#D8DCD0] transition-colors">Search archive</span>
+        </div>
+        <kbd class="text-[10px] font-mono text-[#868C7D] bg-[#1A1E18] px-1.5 py-0.5 rounded border border-[#2D3429]">Ctrl+Alt+D</kbd>
+      </div>
+
+      <!-- Stat Tiles Row on #222720 -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-[#222720] border border-[#2F362C] rounded-[6px] p-2.5 flex flex-col justify-between h-[66px]">
+          <div class="flex items-center justify-between text-[11px] text-[#A7AC9C]">
+            <span>Open tabs</span>
+            <svg class="w-3.5 h-3.5 text-[#868C7D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect width="18" height="14" x="3" y="5" rx="2"/>
+              <path d="M12 5v14"/>
+            </svg>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-xl font-semibold text-[#F2F0E6] tracking-tight">41</span>
+            <span class="text-[11px] text-[#7FA77A] font-medium flex items-center">
+              ↓ 38%
+            </span>
+          </div>
+        </div>
+
+        <div class="bg-[#222720] border border-[#2F362C] rounded-[6px] p-2.5 flex flex-col justify-between h-[66px]">
+          <div class="flex items-center justify-between text-[11px] text-[#A7AC9C]">
+            <span>Getting stale</span>
+            <svg class="w-3.5 h-3.5 text-[#868C7D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+            </svg>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-xl font-semibold text-[#F2F0E6] tracking-tight">7</span>
+            <span class="text-[11px] text-[#868C7D]">in 18m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Last Sweep Card (#2F5A2E deep green) -->
+      <div class="bg-[#2F5A2E] rounded-[6px] p-3.5 flex flex-col gap-2.5 relative overflow-hidden border border-[#3E743D]">
+        <div class="flex items-center justify-between text-[10px] uppercase tracking-wider text-[#A6C9A3] font-semibold">
+          <span>LAST SWEEP · 2:14 PM</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-[#B9E2B6] animate-pulse"></span>
+        </div>
+
+        <div>
+          <h2 class="font-serif text-lg font-medium leading-snug text-[#F2F0E6]">Archived 14 tabs</h2>
+          <p class="text-[11px] text-[#C4DEC1] mt-0.5">11 tabs · 3 windows · all restorable</p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-0.5">
+          <!-- Ivory Pill "Undo" with Dark Text -->
+          <button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#F2F0E6] hover:bg-white text-[#1A1E18] text-xs font-semibold shadow-sm transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M9 14 4 9l5-5"/>
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+            </svg>
+            <span>Undo</span>
+          </button>
+
+          <!-- Outline Pill "View" -->
+          <button class="px-3 py-1.5 rounded-full bg-transparent hover:bg-[rgba(255,255,255,0.1)] border border-[#528751] text-[#F2F0E6] text-xs font-medium transition-colors">
+            View
+          </button>
+        </div>
+      </div>
+
+      <!-- Pause Sweeps Controls -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[10px] text-[#868C7D] font-medium uppercase tracking-wider">Pause sweeps</span>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button class="py-1.5 px-2 rounded-[5px] border border-[#2F362C] bg-[#222720] hover:bg-[#2A3127] hover:border-[#3D4739] text-[11px] text-[#D8DCD0] font-medium text-center transition-colors">
+            1 hour
+          </button>
+          <button class="py-1.5 px-2 rounded-[5px] border border-[#2F362C] bg-[#222720] hover:bg-[#2A3127] hover:border-[#3D4739] text-[11px] text-[#D8DCD0] font-medium text-center transition-colors">
+            Until tomorrow
+          </button>
+          <button class="py-1.5 px-2 rounded-[5px] border border-[#2F362C] bg-[#222720] hover:bg-[#2A3127] hover:border-[#3D4739] text-[11px] text-[#D8DCD0] font-medium text-center transition-colors truncate">
+            Meeting mode
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Action: Full-width Ivory Pill "Open Decay" -->
+      <div class="pt-0.5 flex flex-col gap-2">
+        <button class="w-full py-2 px-3 rounded-[6px] bg-[#F2F0E6] hover:bg-white text-[#1A1E18] text-xs font-semibold flex items-center justify-between shadow transition-colors group">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[#2E472D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            </svg>
+            <span>Open Decay</span>
+          </span>
+          <kbd class="text-[10px] font-mono text-[#4C5346] bg-[#E1DEC7] px-1.5 py-0.5 rounded font-medium">Ctrl+L</kbd>
+        </button>
+
+        <!-- Muted Footer Links -->
+        <div class="flex items-center justify-center gap-3 text-[11px] text-[#868C7D] pt-0.5">
+          <button class="hover:text-[#F2F0E6] transition-colors">Shadow review</button>
+          <span>·</span>
+          <button class="hover:text-[#F2F0E6] transition-colors">Settings</button>
+          <span>·</span>
+          <button class="hover:text-[#F2F0E6] transition-colors">Quit</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Windows 11 Taskbar at Bottom (h-12 / 48px) -->
+  <footer class="taskbar-dark h-12 w-full flex items-center justify-between px-3 relative z-30 select-none" aria-label="Windows Taskbar">
+    
+    <!-- Left: Weather Widget (Windows 11) -->
+    <div class="flex items-center gap-2 px-2 py-1 rounded hover:bg-[rgba(255,255,255,0.06)] cursor-pointer transition-colors text-xs text-[#D8DCD0]">
+      <svg class="w-4 h-4 text-[#FACC15]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      <div class="flex flex-col leading-tight">
+        <span class="text-[11px] font-medium text-[#F2F0E6]">68°F</span>
+        <span class="text-[9px] text-[#868C7D]">Mostly sunny</span>
+      </div>
+    </div>
+
+    <!-- Center: Windows 11 Centered App Icons -->
+    <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
+      <!-- Windows Start Logo -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] active:scale-95 transition-all">
+        <div class="grid grid-cols-2 gap-[2px] w-4 h-4">
+          <div class="bg-[#0078D4] rounded-[1px]"></div>
+          <div class="bg-[#0078D4] rounded-[1px]"></div>
+          <div class="bg-[#0078D4] rounded-[1px]"></div>
+          <div class="bg-[#0078D4] rounded-[1px]"></div>
+        </div>
+      </button>
+
+      <!-- Taskbar Search Icon -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+
+      <!-- Task View Icon -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="7" height="15" x="3" y="4.5" rx="1"/>
+          <rect width="7" height="15" x="14" y="4.5" rx="1"/>
+        </svg>
+      </button>
+
+      <!-- Widgets Icon -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <div class="grid grid-cols-2 gap-[2px] w-3.5 h-3.5 border border-[#868C7D] rounded-[1px] p-[1px]">
+          <div class="bg-[#868C7D] rounded-[0.5px]"></div>
+          <div class="bg-[#868C7D] rounded-[0.5px]"></div>
+        </div>
+      </button>
+
+      <!-- File Explorer Icon -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" fill="#F59E0B" fill-opacity="0.9"/>
+          <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" fill="#FBBF24"/>
+        </svg>
+      </button>
+
+      <!-- Browser Icon (Edge/Chrome style) -->
+      <button class="w-10 h-10 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors">
+        <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0078D4] to-[#00C7FF] flex items-center justify-center shadow-sm">
+          <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Right: System Tray Area -->
+    <div class="flex items-center gap-1.5 text-xs text-[#D8DCD0]">
+      
+      <!-- Chevron / Overflow "^" -->
+      <button class="w-7 h-8 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="m18 15-6-6-6 6"/>
+        </svg>
+      </button>
+
+      <!-- Highlighted Decay Tray Icon with Badge "7" (Active Tray Target) -->
+      <!-- Styled as active tray trigger directly below the popover -->
+      <button class="h-8 px-2 rounded-[5px] bg-[#2E3C2B] border border-[#44563E] flex items-center gap-1.5 text-[#F2F0E6] shadow-sm relative group" aria-label="Decay Tray Status">
+        <!-- Decay Leaf Icon -->
+        <svg class="w-3.5 h-3.5 text-[#A0C878]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+        </svg>
+        <!-- Stale tab count badge "7" -->
+        <span class="text-[11px] font-semibold text-[#A0C878] font-mono leading-none">7</span>
+        <!-- Small indicator underline for active tray popover in Windows 11 -->
+        <div class="absolute -bottom-1 left-2 right-2 h-[2px] bg-[#A0C878] rounded-full"></div>
+      </button>
+
+      <!-- Network / Wi-Fi -->
+      <button class="w-7 h-8 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+        </svg>
+      </button>
+
+      <!-- Volume -->
+      <button class="w-7 h-8 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+      </button>
+
+      <!-- System Clock & Date "2:21 PM 11/4/2026" -->
+      <div class="flex flex-col items-end justify-center px-1.5 py-0.5 rounded hover:bg-[rgba(255,255,255,0.06)] cursor-pointer transition-colors leading-tight text-right">
+        <span class="text-[11px] font-medium text-[#F2F0E6]">2:21 PM</span>
+        <span class="text-[10px] text-[#A7AC9C]">11/4/2026</span>
+      </div>
+
+      <!-- Action Center / Notification Bell -->
+      <button class="w-7 h-8 flex items-center justify-center rounded hover:bg-[rgba(255,255,255,0.06)] text-[#A7AC9C] hover:text-[#F2F0E6] transition-colors ml-0.5">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+      </button>
+
+      <!-- Show Desktop Bar (Windows thin strip on far right) -->
+      <div class="w-[3px] h-5 bg-[rgba(255,255,255,0.15)] ml-1 rounded-sm"></div>
+
+    </div>
+
+  </footer>
+
+</body>
+</html>
