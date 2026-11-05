@@ -1,6 +1,12 @@
 import { type DecayDB, isLive, LIVE_STATES } from '../db/db';
 import type { Item, ItemEvent, Rule } from '../db/types';
 import { isExcluded, type PolicyContext } from '../policy/policy';
+import {
+  emptyMetrics,
+  localDay,
+  planShadowSweep,
+  SHADOW_SWEEP_INTERVAL_MS,
+} from '../shadow/shadow';
 import { computeCredit, type IdleState } from './clock';
 import { applyLifecycle } from './lifecycle';
 import { applyTick, reconcile } from './reconcile';
@@ -35,7 +41,7 @@ export interface TrackerDeps {
   getIdleCutoffS: () => Promise<number>;
   /** Current mode, hold, thresholds and rules (read fresh for every tick and handler). */
   /** Current mode, hold and thresholds. Rules are read from the DB inside each transaction. */
-  getPolicy: () => Promise<Omit<PolicyContext, 'now' | 'rules'>>;
+  getPolicy: () => Promise<TrackerPolicy>;
   now?: () => number;
   /**
    * How long an activation must last to count as use. Browsers briefly activate tabs
@@ -44,12 +50,21 @@ export interface TrackerDeps {
   activationSettleMs?: number;
 }
 
+export type TrackerPolicy = Omit<PolicyContext, 'now' | 'rules'> & {
+  /** Cap per (shadow) sweep; default 50. */
+  maxItemsPerSweep?: number;
+};
+
 export interface TickResult {
   creditS: number;
   liveCount: number;
   written: number;
   deleted: number;
+  shadowSweepId?: string;
 }
+
+/** An activation this soon after a close in the same window is Chrome's doing. */
+const AUTO_ACTIVATION_WINDOW_MS = 1500;
 
 /** How long handler writes are remembered to protect them from older tick snapshots. */
 const TOUCH_MEMORY_MS = 5 * 60_000;
@@ -70,7 +85,7 @@ export class Tracker {
   private readonly api: BrowserApi;
   private readonly appId: string;
   private readonly getIdleCutoffS: () => Promise<number>;
-  private readonly getPolicy: () => Promise<Omit<PolicyContext, 'now' | 'rules'>>;
+  private readonly getPolicy: () => Promise<TrackerPolicy>;
   private readonly now: () => number;
   private tickChain: Promise<unknown> = Promise.resolve();
   /** tab id → last time a handler wrote or removed it. In memory: same worker as ticks. */
@@ -80,6 +95,8 @@ export class Tracker {
   /** tab id → when it was closed; late `onCreated`/`onUpdated` handlers must not revive it. */
   private readonly removed = new Map<string, number>();
   private readonly activationSettleMs: number;
+  /** windowId → when a tab in it was last closed (Chrome then activates a neighbour). */
+  private readonly lastCloseInWindow = new Map<number, number>();
 
   constructor(deps: TrackerDeps) {
     this.db = deps.db;
@@ -119,7 +136,8 @@ export class Tracker {
       anyAudible: visible.some((t) => t.audible),
     });
 
-    const tables = [this.db.items, this.db.events, this.db.rules];
+    const db = this.db;
+    const tables = [db.items, db.events, db.rules, db.metrics, db.sweeps];
     const result = await this.db.transaction('rw', tables, async () => {
       // Rules are read inside the transaction, so a rule created concurrently (and its
       // purge) is either fully before or fully after this tick — never half-applied.
@@ -143,12 +161,43 @@ export class Tracker {
         skipTabIds: this.touchedSince(snapshotAt),
         missingSince: this.missingSince,
       });
-      const tickEvents = applyTick(r.items, inUse, creditS, now, r.dirty);
-      applyLifecycle(r.items, tabsById, { ...policy, rules, now }, r.dirty, tickEvents);
+      let regrets = 0;
+      const tickEvents = applyTick(r.items, inUse, creditS, now, r.dirty, () => regrets++);
+      const decisions = applyLifecycle(
+        r.items,
+        tabsById,
+        { ...policy, rules, now },
+        r.dirty,
+        tickEvents,
+      );
+
+      // Shadow mode (F2): simulate a sweep at most every 15 min; nothing is closed.
+      let flagged = 0;
+      let sweepId: string | undefined;
+      if (policy.mode === 'shadow') {
+        const last = await db.sweeps.where('isShadow').equals(1).last();
+        if (!last || now - last.startedAt >= SHADOW_SWEEP_INTERVAL_MS) {
+          const plan = planShadowSweep(r.items, decisions, now, policy.maxItemsPerSweep ?? 50);
+          if (plan) {
+            await db.sweeps.add(plan.sweep);
+            for (const item of plan.flagged) r.dirty.add(item);
+            tickEvents.push(...plan.events);
+            flagged = plan.flagged.length;
+            sweepId = plan.sweep.id;
+          }
+        }
+      }
+
+      await this.recordMetrics(now, {
+        activeSeconds: creditS,
+        flagged,
+        regrets,
+        automatic: policy.mode === 'automatic',
+      });
       await this.deleteItems(r.deleteIds);
-      if (r.dirty.size) await this.db.items.bulkPut([...r.dirty]);
+      if (r.dirty.size) await db.items.bulkPut([...r.dirty]);
       await this.addEvents([...r.events, ...tickEvents]);
-      return { r, liveCount: r.items.length, written: r.dirty.size };
+      return { r, liveCount: r.items.length, written: r.dirty.size, sweepId };
     });
     this.missingSince = result.r.missingSince;
     // Only after a successful write, so a failed tick's time is credited by the next one.
@@ -159,7 +208,25 @@ export class Tracker {
       liveCount: result.liveCount,
       written: result.written,
       deleted: result.r.deleteIds.length,
+      shadowSweepId: result.sweepId,
     };
+  }
+
+  /** Adds to today's on-device metrics row (PRD §9 metrics, F2 shadow stats). */
+  private async recordMetrics(
+    now: number,
+    add: { activeSeconds: number; flagged: number; regrets: number; automatic?: boolean },
+  ): Promise<void> {
+    if (!add.activeSeconds && !add.flagged && !add.regrets) return;
+    const day = localDay(now);
+    const row = (await this.db.metrics.get(day)) ?? emptyMetrics(day);
+    // Adoption metric (PRD §9 Gate 0): the day counts as "auto mode on" if it was on
+    // during any active tick.
+    if (add.automatic) row.autoModeOn = 1;
+    row.activeSeconds = (row.activeSeconds ?? 0) + add.activeSeconds;
+    row.shadowFlaggedCount = (row.shadowFlaggedCount ?? 0) + add.flagged;
+    row.shadowRegretCount = (row.shadowRegretCount ?? 0) + add.regrets;
+    await this.db.metrics.put(row);
   }
 
   /**
@@ -167,7 +234,10 @@ export class Tracker {
    * A tab id we don't know first tries to reclaim an item whose tab is gone but has
    * the same URL ("reopen closed window", session restore racing the first tick).
    */
-  async upsertTab(tab: TabInfo, opts: { used?: boolean } = {}): Promise<void> {
+  async upsertTab(
+    tab: TabInfo,
+    opts: { used?: boolean; deliberate?: boolean } = {},
+  ): Promise<void> {
     if (tab.id === undefined || tab.incognito) return;
     const tabId = String(tab.id);
     const known = await this.db.findLiveByExternalId(this.appId, tabId);
@@ -175,7 +245,8 @@ export class Tracker {
       this.groupsFor(tab),
       known ? Promise.resolve(undefined) : this.openTabIds(),
     ]);
-    await this.db.transaction('rw', [this.db.items, this.db.events, this.db.rules], async () => {
+    const tables = [this.db.items, this.db.events, this.db.rules, this.db.metrics];
+    await this.db.transaction('rw', tables, async () => {
       if (this.removed.has(tabId)) return; // closed while this handler was waiting
       const now = this.now();
       const rules = await this.db.rules.toArray();
@@ -198,8 +269,9 @@ export class Tracker {
         events.push({ itemId: item.id, type: 'seen', at: now });
       }
       if (opts.used) {
-        const used = markUsed(item, now);
-        if (used) events.push(used);
+        const { event, regret } = markUsed(item, now, opts.deliberate ?? true);
+        if (event) events.push(event);
+        if (regret) await this.recordMetrics(now, { activeSeconds: 0, flagged: 0, regrets: 1 });
       }
       await this.db.items.put(item);
       await this.addEvents(events);
@@ -211,13 +283,27 @@ export class Tracker {
    * `tabs.onActivated`, or audio started: the tab is in use now — if it is still
    * active (or audible) after a short settle delay (API Design §4.1: debounced).
    */
-  async tabUsed(tabId: number): Promise<void> {
+  async tabUsed(
+    tabId: number,
+    opts: { deliberate?: boolean; activatedInWindow?: number } = {},
+  ): Promise<void> {
+    const at = this.now();
+    // An activation right after a close in the same window is Chrome picking the
+    // neighbour, not the user choosing it: it keeps the tab young but isn't regret.
+    let deliberate = opts.deliberate ?? true;
+    if (opts.activatedInWindow !== undefined) {
+      const closedAt = this.lastCloseInWindow.get(opts.activatedInWindow);
+      if (closedAt !== undefined && at - closedAt <= AUTO_ACTIVATION_WINDOW_MS) deliberate = false;
+    }
     if (this.activationSettleMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, this.activationSettleMs));
     }
     const tab = await this.api.getTab(tabId);
     if (!tab) return;
-    await this.upsertTab(tab, { used: tab.active || tab.audible === true });
+    await this.upsertTab(tab, {
+      used: tab.active || tab.audible === true,
+      deliberate: deliberate && tab.active,
+    });
   }
 
   /** Re-reads a tab and updates its item (moves, attaches, group changes). */
@@ -259,7 +345,8 @@ export class Tracker {
    * is closing — which also happens when the browser quits — the tick decides later,
    * so tabs that come back (session restore, reopen window) keep their age.
    */
-  async tabRemoved(tabId: number, isWindowClosing: boolean): Promise<void> {
+  async tabRemoved(tabId: number, isWindowClosing: boolean, windowId?: number): Promise<void> {
+    if (windowId !== undefined) this.lastCloseInWindow.set(windowId, this.now());
     if (isWindowClosing) return;
     await this.forgetTab(String(tabId), { closed: true });
   }

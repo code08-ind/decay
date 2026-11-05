@@ -1,0 +1,132 @@
+/*
+ * Decay design tokens — Sage direction (Docs/Progress.md decisions, Designs/).
+ * Components use these variables only; never raw hex values.
+ * Theme: follows the OS unless <html data-theme="light|dark"> is set.
+ */
+:root {
+  color-scheme: light;
+  --canvas: #f7f3e8;
+  --surface: #fffdf7;
+  --surface-2: #f3eedf;
+  --surface-3: #ebe5d2;
+  --border: #e6dfcb;
+  --border-strong: #d6cfb8;
+  --text: #1d2219;
+  --text-muted: #5d6253;
+  --text-faint: #8a8d7c;
+  --accent: #4f8a4b;
+  --accent-dot: #5aa03f;
+  --accent-text: #3d6f3a;
+  /* Design green #4f8a4b darkened to #3d6f3a so all text on it meets WCAG AA (≥ 4.5:1). */
+  --feature: #3d6f3a;
+  --feature-text: #ffffff;
+  --feature-sub: #eef6e6;
+  --feature-tile: rgba(0, 0, 0, 0.12);
+  --feature-tile-border: rgba(255, 255, 255, 0.22);
+  --chip: #eef3dc;
+  --chip-text: #3d5a1f;
+  --lime: #ddeb9d;
+  --lime-text: #2f4614;
+  --primary: #1d2219;
+  --primary-text: #ffffff;
+  --cta: #ffffff;
+  --cta-text: #1d2219;
+  --warning: #b7791f;
+  --danger: #a54731;
+  --focus: #4f8a4b;
+  --avatar-1: #e8e6f8;
+  --avatar-1-text: #4b45a8;
+  --avatar-2: #e2edf8;
+  --avatar-2-text: #2c5f93;
+  --avatar-3: #f8e4e1;
+  --avatar-3-text: #a03a2c;
+  --avatar-4: #e6f1dc;
+  --avatar-4-text: #3d6f3a;
+  --radius-card: 22px;
+  --radius-tile: 14px;
+  --shadow-card: 0 1px 0 rgba(29, 34, 25, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: #121410;
+    --surface: #191c17;
+    --surface-2: #20241e;
+    --surface-3: #282d25;
+    --border: #2b3028;
+    --border-strong: #3a4036;
+    --text: #edf0e5;
+    --text-muted: #a7ac9d;
+    --text-faint: #777c6f;
+    --accent: #8cc66e;
+    --accent-dot: #8cc66e;
+    --accent-text: #b8e08e;
+    --feature: #234723;
+    --feature-text: #f2f5ea;
+    --feature-sub: #b8e08e;
+    --feature-tile: rgba(10, 20, 10, 0.35);
+    --feature-tile-border: rgba(184, 224, 142, 0.12);
+    --chip: #253021;
+    --chip-text: #b8e08e;
+    --lime: #ddeb9d;
+    --lime-text: #1f2a12;
+    --primary: #f1eedf;
+    --primary-text: #121410;
+    --cta: #f1eedf;
+    --cta-text: #121410;
+    --warning: #e0b252;
+    --danger: #e08a72;
+    --focus: #8cc66e;
+    --avatar-1: #2a2846;
+    --avatar-1-text: #b9b4f2;
+    --avatar-2: #1f2f40;
+    --avatar-2-text: #9cc3ea;
+    --avatar-3: #3d221e;
+    --avatar-3-text: #f0a598;
+    --avatar-4: #23331f;
+    --avatar-4-text: #b8e08e;
+    --shadow-card: none;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #121410;
+  --surface: #191c17;
+  --surface-2: #20241e;
+  --surface-3: #282d25;
+  --border: #2b3028;
+  --border-strong: #3a4036;
+  --text: #edf0e5;
+  --text-muted: #a7ac9d;
+  --text-faint: #777c6f;
+  --accent: #8cc66e;
+  --accent-dot: #8cc66e;
+  --accent-text: #b8e08e;
+  --feature: #234723;
+  --feature-text: #f2f5ea;
+  --feature-sub: #b8e08e;
+  --feature-tile: rgba(10, 20, 10, 0.35);
+  --feature-tile-border: rgba(184, 224, 142, 0.12);
+  --chip: #253021;
+  --chip-text: #b8e08e;
+  --lime: #ddeb9d;
+  --lime-text: #1f2a12;
+  --primary: #f1eedf;
+  --primary-text: #121410;
+  --cta: #f1eedf;
+  --cta-text: #121410;
+  --warning: #e0b252;
+  --danger: #e08a72;
+  --focus: #8cc66e;
+  --avatar-1: #2a2846;
+  --avatar-1-text: #b9b4f2;
+  --avatar-2: #1f2f40;
+  --avatar-2-text: #9cc3ea;
+  --avatar-3: #3d221e;
+  --avatar-3-text: #f0a598;
+  --avatar-4: #23331f;
+  --avatar-4-text: #b8e08e;
+  --shadow-card: none;
+}

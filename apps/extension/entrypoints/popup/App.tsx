@@ -18,6 +18,12 @@ export function App() {
           {current.thresholds.stale}/{current.thresholds.archive} active h)
         </p>
       )}
+      <button
+        type="button"
+        onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/review.html') })}
+      >
+        Open shadow review
+      </button>
     </main>
   );
 }

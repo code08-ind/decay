@@ -66,7 +66,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 19 tests; code review + QA passed after fixes |
 | P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ✅ `lib/tracker`: 30 s alarm tick reconciles tabs ↔ DB, credits active time only (idle/locked/sleep-safe), restart-safe matching; 57 tests; review + QA passed after fixes |
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ✅ `lib/policy`, `lib/rules`, lifecycle in tick; 92 tests; review + QA passed after fixes |
-| P0.4 | Shadow mode + review page | F2 | ⬜ |
+| P0.4 | Shadow mode + review page | F2 | ✅ `lib/shadow`, `review.html` (Designs/04); 118 tests; review + QA passed after fixes |
 | P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ⬜ |
 | P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ⬜ |
 | P0.7 | Form/`beforeunload` probe | §7.3 | ⬜ |
@@ -149,7 +149,7 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 | 1 | Search panel | 🟨 | 🟨 | — | ⬜ |
 | 2 | Tray popover (+ Windows right-click menu) | 🟨 | 🟨 | 🟨 | ⬜ |
 | 3 | Onboarding (welcome, pace, connect, window access, shadow + done) | 🟨 | 🟨 | 🟨 connect step | ⬜ |
-| 4 | Shadow review | 🟨 | 🟨 | — | ⬜ |
+| 4 | Shadow review | 🟨 | 🟨 | — | ✅ extension (no nav / Would hide) |
 | 5 | Library | 🟨 | 🟨 | 🟨 | ⬜ |
 | 6 | Live now | 🟨 | 🟨 | — | ⬜ |
 | 7 | Sweep history | 🟨 | 🟨 | — | ⬜ |
@@ -167,6 +167,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-05** — P0.4 shadow mode + Shadow review page (first UI; tokens in `packages/ui/tokens.css`, Tailwind 4, bundled Latin woff2 fonts, local `_favicon`). Active time per local day → 7 active days (≥ 1 h); simulated sweeps every 15 min (≤ 50, each tab flagged once); regret = flagged tab deliberately used again within 24 h; `autoModeOn` recorded per day. Review/QA fixes before push: automatic mode not offered until the P0.5 executor exists (flag `AUTOMATIC_MODE_AVAILABLE`), confirm step + "Back to shadow mode"; passive use (visible after a close, Chrome's neighbour activation, autoplay) no longer counts as regret; layout overflow < 1024 px; WCAG AA contrast (light feature green #4F8A4B → #3D6F3A); full ARIA tabs pattern; load races/unhandled errors; paused/automatic copy; "Always keep site" protects the host, not the registrable domain; day numbering; letter tiles when no favicon.
 
 - **2026-11-05** — P0.3 policy engine: hold/pause → hard protections (pinned, active, audible, grace, unrestorable URLs) → rules (protect wins, else most specific custom threshold) → thresholds; Active⇄Stale marking each tick; rules store with validation; exclude rules never stored and purge existing data. Review/QA fixes before push: ReDoS-proof matching (linear glob matcher, unsafe title patterns refused), "exclude everything" rules and bare public suffixes rejected, purge count + preview for confirmation, rules read inside the tick/handler transaction (no exclude race), title excludes wait for the page title, invalid stored thresholds fall back to presets, legacy rules can always be disabled, holds freeze states (no duplicate stale events), IPs match exactly. Thresholds now 1–720 h, strictly ordered. Decision: chrome://newtab/about:blank archivable; data:/blob:/file: protected.
 

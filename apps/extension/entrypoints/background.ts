@@ -14,7 +14,12 @@ export default defineBackground(() => {
     getIdleCutoffS: () => settings.get('idleCutoffS'),
     getPolicy: async () => {
       const all = await settings.getAll();
-      return { mode: all.mode, holdUntil: all.holdUntil, thresholds: all.thresholds };
+      return {
+        mode: all.mode,
+        holdUntil: all.holdUntil,
+        thresholds: all.thresholds,
+        maxItemsPerSweep: all.maxItemsPerSweep,
+      };
     },
   });
 
@@ -34,22 +39,26 @@ export default defineBackground(() => {
   });
   browser.tabs.onCreated.addListener((tab) => run('tab created', () => tracker.upsertTab(tab)));
   browser.tabs.onUpdated.addListener((tabId, change, tab) => {
-    if (change.audible === true) run('tab audible', () => tracker.tabUsed(tabId));
-    else if (
-      'url' in change ||
-      'title' in change ||
-      'pinned' in change ||
-      'groupId' in change ||
-      change.status === 'complete'
+    if (change.audible === true) {
+      // Audio keeps a tab young, but autoplay isn't a deliberate choice (no regret).
+      run('tab audible', () => tracker.tabUsed(tabId, { deliberate: false }));
+    }
+    if (
+      change.audible !== true &&
+      ('url' in change ||
+        'title' in change ||
+        'pinned' in change ||
+        'groupId' in change ||
+        change.status === 'complete')
     ) {
       run('tab updated', () => tracker.upsertTab(tab));
     }
   });
-  browser.tabs.onActivated.addListener(({ tabId }) =>
-    run('tab activated', () => tracker.tabUsed(tabId)),
+  browser.tabs.onActivated.addListener(({ tabId, windowId }) =>
+    run('tab activated', () => tracker.tabUsed(tabId, { activatedInWindow: windowId })),
   );
   browser.tabs.onRemoved.addListener((tabId, info) =>
-    run('tab removed', () => tracker.tabRemoved(tabId, info.isWindowClosing)),
+    run('tab removed', () => tracker.tabRemoved(tabId, info.isWindowClosing, info.windowId)),
   );
   browser.tabs.onMoved.addListener((tabId) => run('tab moved', () => tracker.refreshTab(tabId)));
   browser.tabs.onAttached.addListener((tabId) =>

@@ -70,6 +70,8 @@ export interface Item {
   activeAgeS: number;
   firstSeenAt: number;
   lastUsedAt: number;
+  /** Phase 0 only: when a shadow sweep last flagged this item as "would archive". */
+  shadowFlaggedAt?: number;
   /** Phase 0 only: when the last sampled `used` event was written (≤ 1 per 10 min). */
   lastUsedEventAt?: number;
   stateChangedAt: number;
@@ -163,4 +165,8 @@ export interface MetricsDay {
   searchCount: number;
   searchToRestoreMsP50: number;
   autoModeOn: 0 | 1;
+  /** Phase 0: items a shadow sweep flagged as "would archive" this day. */
+  shadowFlaggedCount: number;
+  /** Phase 0: flagged items used again within 24 h (shadow regret). */
+  shadowRegretCount: number;
 }

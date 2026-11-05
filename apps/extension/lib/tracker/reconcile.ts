@@ -137,14 +137,17 @@ export function applyTick(
   creditS: number,
   now: number,
   dirty: Set<Item> = new Set(),
+  onRegret: () => void = () => {},
 ): ItemEvent[] {
   const events: ItemEvent[] = [];
   if (creditS <= 0) return events;
   for (const item of items) {
     if (item.state === 'archiving') continue;
     if (item.externalId && inUse.has(item.externalId)) {
-      const event = markUsed(item, now);
+      // Visible/audible at a tick is passive use: no regret (see markUsed).
+      const { event, regret } = markUsed(item, now, false);
       if (event) events.push(event);
+      if (regret) onRegret();
     } else {
       item.activeAgeS += creditS;
     }

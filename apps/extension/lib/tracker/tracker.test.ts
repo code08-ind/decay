@@ -359,6 +359,123 @@ describe('Tracker', () => {
     expect(await db.events.count()).toBe(0);
   });
 
+  it('runs shadow sweeps every 15 min and records metrics and regret', async () => {
+    fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
+    await tracker.tick();
+    const item = await db.findLiveByExternalId('com.google.Chrome', '2');
+    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    const first = await tickAfter(30_000);
+    expect(first.shadowSweepId).toBeDefined();
+    const sweep = await db.sweeps.get(first.shadowSweepId ?? '');
+    expect(sweep).toMatchObject({ isShadow: 1, itemCount: 1 });
+    expect(await db.events.where({ type: 'shadow_would_archive' }).count()).toBe(1);
+    // Nothing is closed: the item is still live.
+    expect((await db.findLiveByExternalId('com.google.Chrome', '2'))?.state).toBe('stale');
+    // Already flagged → not flagged again; and no new sweep within 15 min.
+    expect((await tickAfter(30_000)).shadowSweepId).toBeUndefined();
+    // Using it within 24 h counts as regret.
+    fake.tabs = [makeTab({ id: 1 }), makeTab({ id: 2, url: 'https://b.com/', active: true })];
+    await tracker.tabUsed(2);
+    const metrics = await db.metrics.toArray();
+    expect(metrics.reduce((n, m) => n + m.shadowRegretCount, 0)).toBe(1);
+    expect(metrics.reduce((n, m) => n + m.shadowFlaggedCount, 0)).toBe(1);
+    expect(metrics.reduce((n, m) => n + m.activeSeconds, 0)).toBe(60);
+  });
+
+  it('does not count passive use (visible after a close, autoplay) as regret', async () => {
+    fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
+    await tracker.tick();
+    const item = await db.findLiveByExternalId('com.google.Chrome', '2');
+    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    await tickAfter(30_000); // flagged
+    // Tab 1 closed; Chrome activates tab 2; the user is elsewhere. Next tick sees it visible.
+    fake.tabs = [makeTab({ id: 2, url: 'https://b.com/', active: true, audible: true })];
+    await tickAfter(30_000);
+    await tracker.tabUsed(2, { deliberate: false }); // autoplay
+    let metrics = await db.metrics.toArray();
+    expect(metrics.reduce((n, m) => n + m.shadowRegretCount, 0)).toBe(0);
+    const still = await db.findLiveByExternalId('com.google.Chrome', '2');
+    expect(still?.shadowFlaggedAt).toBeDefined();
+    expect(still?.activeAgeS).toBe(0); // but it stays young
+    // Chrome activating it right after a close in the same window isn't regret either.
+    await tracker.tabRemoved(99, false, 1);
+    await tracker.tabUsed(2, { activatedInWindow: 1 });
+    metrics = await db.metrics.toArray();
+    expect(metrics.reduce((n, m) => n + m.shadowRegretCount, 0)).toBe(0);
+    clock += 5000;
+    // The user then deliberately focuses it: that is regret.
+    await tracker.tabUsed(2);
+    metrics = await db.metrics.toArray();
+    expect(metrics.reduce((n, m) => n + m.shadowRegretCount, 0)).toBe(1);
+  });
+
+  it('marks days with automatic mode on for the adoption metric', async () => {
+    tracker = new Tracker({
+      db,
+      api: fake,
+      appId: 'com.google.Chrome',
+      getIdleCutoffS: async () => 300,
+      getPolicy: async () => ({
+        mode: 'automatic',
+        holdUntil: null,
+        thresholds: { stale: 12, hidden: 36, archive: 60 },
+      }),
+      now: () => clock,
+      activationSettleMs: 0,
+    });
+    fake.tabs = [makeTab({ id: 1 })];
+    await tracker.tick();
+    await tickAfter(30_000);
+    expect((await db.metrics.toArray())[0]?.autoModeOn).toBe(1);
+  });
+
+  it('caps a shadow sweep at maxItemsPerSweep', async () => {
+    tracker = new Tracker({
+      db,
+      api: fake,
+      appId: 'com.google.Chrome',
+      getIdleCutoffS: async () => 300,
+      getPolicy: async () => ({
+        mode: 'shadow',
+        holdUntil: null,
+        thresholds: { stale: 12, hidden: 36, archive: 60 },
+        maxItemsPerSweep: 3,
+      }),
+      now: () => clock,
+      activationSettleMs: 0,
+    });
+    fake.tabs = Array.from({ length: 6 }, (_, i) =>
+      makeTab({ id: i + 1, url: `https://s${i}.com/` }),
+    );
+    await tracker.tick();
+    for (const it of await db.items.toArray())
+      await db.items.update(it.id, { activeAgeS: 70 * 3600 });
+    const r = await tickAfter(30_000);
+    expect((await db.sweeps.get(r.shadowSweepId ?? ''))?.itemCount).toBe(3);
+  });
+
+  it('runs no shadow sweeps outside shadow mode', async () => {
+    tracker = new Tracker({
+      db,
+      api: fake,
+      appId: 'com.google.Chrome',
+      getIdleCutoffS: async () => 300,
+      getPolicy: async () => ({
+        mode: 'automatic',
+        holdUntil: null,
+        thresholds: { stale: 12, hidden: 36, archive: 60 },
+      }),
+      now: () => clock,
+      activationSettleMs: 0,
+    });
+    fake.tabs = [makeTab({ id: 2 })];
+    await tracker.tick();
+    const item = await db.findLiveByExternalId('com.google.Chrome', '2');
+    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    expect((await tickAfter(30_000)).shadowSweepId).toBeUndefined();
+    expect(await db.sweeps.count()).toBe(0);
+  });
+
   it('skips writes when nothing changed', async () => {
     fake.tabs = [makeTab({ id: 1 }), makeTab({ id: 2, url: 'https://b.com/' })];
     await tracker.tick();

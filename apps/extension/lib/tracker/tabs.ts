@@ -116,12 +116,31 @@ export function inUseTabIds(tabs: readonly TabInfo[], windows: readonly WindowIn
   return ids;
 }
 
+/** A flagged item used again within this window counts as shadow regret. */
+export const SHADOW_REGRET_WINDOW_MS = 24 * 3600_000;
+
+export interface UseResult {
+  event?: ItemEvent;
+  /** The item had been flagged "would archive" by shadow mode within the last 24 h. */
+  regret: boolean;
+}
+
 /**
  * Marks an item as used: age back to 0, state back to `active`.
  * Emits a `used` event at most once per item per 10 min.
+ *
+ * `deliberate`: the user chose this tab (a settled activation or window focus). Only
+ * deliberate use resolves a shadow flag — and counts as regret within 24 h. Passive
+ * use (visible because Chrome switched to it after a close, or autoplaying audio)
+ * keeps the tab young but must not inflate the regret metric (PRD §9 kill criterion).
  */
-export function markUsed(item: Item, now: number): ItemEvent | undefined {
+export function markUsed(item: Item, now: number, deliberate = true): UseResult {
   let event: ItemEvent | undefined;
+  let regret = false;
+  if (deliberate && item.shadowFlaggedAt !== undefined) {
+    regret = now - item.shadowFlaggedAt <= SHADOW_REGRET_WINDOW_MS;
+    delete item.shadowFlaggedAt;
+  }
   if (item.lastUsedEventAt === undefined || now - item.lastUsedEventAt >= USED_EVENT_SAMPLE_MS) {
     event = { itemId: item.id, type: 'used', at: now };
     item.lastUsedEventAt = now;
@@ -132,5 +151,5 @@ export function markUsed(item: Item, now: number): ItemEvent | undefined {
     item.state = 'active';
     item.stateChangedAt = now;
   }
-  return event;
+  return { event, regret };
 }

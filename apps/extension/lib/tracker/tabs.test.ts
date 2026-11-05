@@ -61,8 +61,18 @@ describe('newItemFromTab / markUsed', () => {
     const item = newItemFromTab(makeTab(), 'app', new Map(), 0);
     item.activeAgeS = 50_000;
     item.state = 'stale';
-    expect(markUsed(item, 11 * 60_000)?.type).toBe('used');
+    expect(markUsed(item, 11 * 60_000).event?.type).toBe('used');
     expect(item).toMatchObject({ activeAgeS: 0, state: 'active', lastUsedAt: 11 * 60_000 });
-    expect(markUsed(item, 12 * 60_000)).toBeUndefined(); // within 10 min
+    expect(markUsed(item, 12 * 60_000).event).toBeUndefined(); // within 10 min
+  });
+
+  it('reports shadow regret only within 24 h of the flag, then clears it', () => {
+    const item = newItemFromTab(makeTab(), 'app', new Map(), 0);
+    item.shadowFlaggedAt = 1000;
+    expect(markUsed(item, 1000 + 3600_000).regret).toBe(true);
+    expect(item.shadowFlaggedAt).toBeUndefined();
+    expect(markUsed(item, 2 * 3600_000).regret).toBe(false);
+    item.shadowFlaggedAt = 0;
+    expect(markUsed(item, 25 * 3600_000).regret).toBe(false);
   });
 });

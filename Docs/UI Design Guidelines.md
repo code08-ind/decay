@@ -206,3 +206,10 @@ Design every screen in **light and dark**, at **macOS** chrome first; then produ
 - **01 Search panel:** "A floating Spotlight-style search panel 680 px wide with a frosted-glass background. Large search input with the query 'pricing'. Results grouped by day and source window, e.g. 'Last Tuesday · Chrome — Research window'. Each row: favicon, page title, domain in grey, a small reason chip like 'Unused 61 active h', and the relative time on the right. The first row is selected with a soft amber highlight and a left accent bar. Footer hint bar with keycaps: ↵ Restore, ⌘↵ Restore batch, ⌘P Protect, Esc Close."
 - **05 Library:** "Main window 1100×720 with a transparent macOS titlebar and sidebar: Today, This week, All, By source, By app, Live now, Protected, Sweeps, with counts. Main list of archived tabs grouped by day with sticky headers and a 'Restore all' button. Right detail drawer showing a large favicon, title, monospace URL with a copy button, source window, tab group chip, and a vertical timeline (Opened, Last used, Stale, Archived). A top banner in amber: 'Shadow mode · 3 days left — nothing is being closed yet. Review'."
 - **03 Onboarding — Connect browser:** "Onboarding step 3 of 6, centred card 640×560. Title 'Connect your browser'. A list of detected browsers (Chrome, Arc, Brave, Edge) with their icons and status: 'Connected ✓' in green, 'Install extension' button, 'Not installed' in grey. Footer: Back, Continue (primary amber), and a progress dot indicator."
+
+## Implementation notes (from the build)
+
+- Tokens live in `packages/ui/tokens.css` (Sage direction) and are mapped to Tailwind 4 utilities in each app; components never use raw hex.
+- Light-theme feature card green is **#3D6F3A** (design used #4F8A4B) so white/cream text on it meets WCAG AA (≥ 4.5:1).
+- Chrome extension pages default `body` to 75% font size; app CSS resets it to `1rem`.
+- Fonts are bundled (Latin woff2 only); favicons come from Chrome's local `_favicon` cache — pages make no network requests.

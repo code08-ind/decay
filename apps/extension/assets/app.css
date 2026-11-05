@@ -1,0 +1,115 @@
+@import "tailwindcss";
+@import "@decay/ui/tokens.css";
+
+/* Bundled fonts, Latin woff2 only (no network requests, smallest payload). */
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("@fontsource/newsreader/files/newsreader-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("@fontsource/newsreader/files/newsreader-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("@fontsource/dm-sans/files/dm-sans-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("@fontsource/dm-sans/files/dm-sans-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("@fontsource/dm-mono/files/dm-mono-latin-400-normal.woff2") format("woff2");
+}
+
+/* Tailwind utilities map onto the design tokens (bg-surface, text-muted, …). */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-dot: var(--accent-dot);
+  --color-accent-text: var(--accent-text);
+  --color-feature: var(--feature);
+  --color-feature-ink: var(--feature-text);
+  --color-feature-sub: var(--feature-sub);
+  --color-feature-tile: var(--feature-tile);
+  --color-feature-tile-line: var(--feature-tile-border);
+  --color-chip: var(--chip);
+  --color-chip-ink: var(--chip-text);
+  --color-lime: var(--lime);
+  --color-lime-ink: var(--lime-text);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-text);
+  --color-cta: var(--cta);
+  --color-cta-ink: var(--cta-text);
+  --color-danger: var(--danger);
+  --color-avatar-1: var(--avatar-1);
+  --color-avatar-1-ink: var(--avatar-1-text);
+  --color-avatar-2: var(--avatar-2);
+  --color-avatar-2-ink: var(--avatar-2-text);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-3-ink: var(--avatar-3-text);
+  --color-avatar-4: var(--avatar-4);
+  --color-avatar-4-ink: var(--avatar-4-text);
+  --radius-card: var(--radius-card);
+  --radius-tile: var(--radius-tile);
+  --font-serif: "Newsreader", ui-serif, Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  /* Chrome's built-in extension-page stylesheet sets body to 75%; undo it. */
+  font-size: 1rem;
+  line-height: 1.5;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Reduced motion must beat any component transition, hence !important. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
+    transition: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
+    animation: none !important;
+  }
+}
