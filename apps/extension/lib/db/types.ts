@@ -1,6 +1,9 @@
 // Phase 0 record types for the extension's IndexedDB archive.
-// Field names mirror the SQL schema in Docs/DB Design.md §3 (camelCase) so the
-// Phase 1 `import.archive` migration to the desktop app is a direct mapping.
+// Field names mirror the SQL schema in Docs/DB Design.md §3 (camelCase) and enum values
+// follow Docs/API Design.md. The Phase 1 `import.archive` migration still needs a small
+// mapping step: camelCase enums → snake_case CHECK values (urlGlob → url_glob, …),
+// settings keys → snake_case, `faviconUrl` → fetched `favicon` BLOB, and defaults for
+// columns tabs don't use (`saveState = 'n/a'`, `path = NULL`). `profile` lives on `sources`.
 // IndexedDB cannot index booleans, so indexed flags are stored as 0 | 1.
 
 export type ItemKind = 'tab' | 'window';

@@ -286,22 +286,26 @@ WHERE day >= date('now','-14 days');
 
 - Embedded SQL files `crates/decay-store/migrations/V{n}__{name}.sql`, applied at startup inside a transaction, after an automatic pre-migration backup.
 - Forward-only; a down-migration is a restore from the pre-migration backup.
-- V1 creates everything above, plus default rules: protect `accounts.google.com`, `*.zoom.us`, `meet.google.com`, `teams.microsoft.com`, and the default app catalog with `close_allowed` for Finder / Explorer folder windows.
+- V1 creates everything above, plus default rules: protect `accounts.google.com`, `zoom.us` (domain rules match the host and its subdomains), `meet.google.com`, `teams.microsoft.com`, and the default app catalog with `close_allowed` for Finder / Explorer folder windows.
 
 ## 7. Extension IndexedDB schema (Phase 0)
 
 ```ts
 db.version(1).stores({
-  items:   'id, state, domain, archivedAt, sweepId, [state+activeAgeS]',
+  items:   'id, state, domain, archivedAt, lastSweepId, [state+activeAgeS], [appId+externalId]',
   events:  '++id, itemId, type, at',
   sweeps:  'id, startedAt, isShadow',
-  rules:   'id, scope, match',
+  rules:   'id, scope, match, &[scope+match+action]',
   settings:'key',
   metrics: 'day'
 });
 // Search in Phase 0: MiniSearch index over title/url/domain, rebuilt on load (≤ 20k items).
 ```
-Field names mirror the SQL schema (camelCase) so the `ImportArchive` migration is a direct mapping.
+Field names mirror the SQL schema (camelCase). Phase 0 differences:
+- `sweeps` records embed their `items` (no separate `sweep_items` store); `isShadow`/`autoModeOn` are `0|1` because IndexedDB can't index booleans.
+- `[appId+externalId]` is not unique or state-aware like `idx_items_live_ext`, so `externalId` is cleared when an item leaves a live state and lookups use `findLiveByExternalId`.
+- Domain rule matches are stored lowercase.
+- The `ImportArchive` migration maps camelCase enums and settings keys to the snake_case SQL values, fetches `faviconUrl` into the `favicon` BLOB, and fills `saveState='n/a'`.
 
 ## 8. Export format (JSON, v1)
 

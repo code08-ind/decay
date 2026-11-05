@@ -76,4 +76,41 @@ describe('DecayDB', () => {
     const found = await d.items.get({ appId: 'com.google.Chrome', externalId: '42' });
     expect(found?.id).toBe(item.id);
   });
+
+  it('does not re-seed default rules when reopened', async () => {
+    const d = freshDb();
+    await d.rules.count();
+    d.close();
+    await d.open();
+    expect(await d.rules.count()).toBe(4);
+  });
+
+  it('ignores archived records that reused a tab id', async () => {
+    const d = freshDb();
+    const old = tab({ externalId: '42' });
+    await d.items.add(old);
+    await d.items.update(old.id, { state: 'archived', archivedAt: Date.now() });
+    expect((await d.items.get(old.id))?.externalId).toBeUndefined();
+
+    const live = tab({ externalId: '42' });
+    await d.items.add(live);
+    expect((await d.findLiveByExternalId('com.google.Chrome', '42'))?.id).toBe(live.id);
+  });
+
+  it('drops externalId when an item is created in a non-live state', async () => {
+    const d = freshDb();
+    const item = tab({ state: 'archived', externalId: '7' });
+    await d.items.add(item);
+    expect((await d.items.get(item.id))?.externalId).toBeUndefined();
+    expect(await d.findLiveByExternalId('com.google.Chrome', '7')).toBeUndefined();
+  });
+
+  it('stores domain rules lowercase so case variants are duplicates', async () => {
+    const d = freshDb();
+    const [first] = await d.rules.toArray();
+    if (!first) throw new Error('no seeded rules');
+    await expect(
+      d.rules.add({ ...first, id: uuidv7(), match: ` ${first.match.toUpperCase()} ` }),
+    ).rejects.toThrow();
+  });
 });

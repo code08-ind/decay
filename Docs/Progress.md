@@ -35,6 +35,10 @@
 
 ---
 
+## Workflow per sub-phase
+
+Build → run a **code-review agent** and a **manual-QA agent** in parallel → share both reports → fix every issue (with regression tests) → only then commit and push → update this file.
+
 ## Build notes (read before implementing UI)
 
 - **Source of truth for designs is `Designs/`** — `light/` (31), `dark/` (31), `windows/` (6); PNG + HTML per screen, final versions only. Stitch still holds older copies (API can't delete single screens); in Stitch, the "(v2)"/"(v3)" screens are current.
@@ -59,7 +63,7 @@
 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
-| P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 9 tests |
+| P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 19 tests; code review + QA passed after fixes |
 | P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ⬜ |
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ⬜ |
 | P0.4 | Shadow mode + review page | F2 | ⬜ |
@@ -163,6 +167,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-05** — P0.1 review + QA fixes: settings writes are all validated (unknown presets/modes, bad numbers, `undefined` values) and keep `preset`/`thresholds` in sync; reads return copies (shared defaults could be mutated); first-run setup runs on every service-worker start; archived items drop their tab id so reused ids find the live tab; domain rules are lowercased; DB Design §6–7 updated to match.
 
 - **2026-11-05** — Monorepo scaffold (pnpm, Turborepo, Biome, CI) and extension P0.1: WXT + React popup placeholder, Dexie DB (items/events/sweeps/rules/settings/metrics), settings store with Gentle/Balanced/Aggressive presets. Notes: sweep items are embedded in `sweeps` records in Phase 0; indexed flags (`isShadow`) are stored as 0/1 because IndexedDB can't index booleans.
 
