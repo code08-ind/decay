@@ -16,3 +16,7 @@ node_modules/
 target/
 dist/
 .turbo/
+.output/
+.wxt/
+coverage/
+*.tsbuildinfo

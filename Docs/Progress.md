@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| **Last updated** | 4 Nov 2026 |
+| **Last updated** | 5 Nov 2026 |
 | **Legend (design)** | 🟨 = generated in Stitch, awaiting your approval |
-| **Current phase** | Phase −1 — Design (in progress) |
+| **Current phase** | Phase 0 — Extension validation (designs awaiting review) |
 | **Capacity assumption** | ~15 h/week |
 | **Legend** | ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked · ⏭️ Skipped |
 
@@ -53,13 +53,13 @@
 | S5 | Design screens 1–5, 7–10, 12 (P0) light + dark | 🟨 all done in light + dark; awaiting review |
 | S6 | Design screens 6, 11, 13, 14, 16 (P1) | 🟨 light + dark; awaiting review |
 | S7 | Windows variants for screens 3, 5, 9 | 🟨 light + dark |
-| S8 | Init git repo, monorepo scaffold (pnpm + Cargo workspaces, Turborepo, Biome, CI) | 🟨 git repo live (github.com/code08-ind/decay, private); scaffold not started |
+| S8 | Init git repo, monorepo scaffold (pnpm + Cargo workspaces, Turborepo, Biome, CI) | ✅ JS side: pnpm + Turborepo + Biome + GitHub Actions. Cargo workspace deferred to Phase 1 (Rust not installed yet) |
 
 ## Phase 0 — Extension validation (weeks 1–4) · **GATE**
 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
-| P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ⬜ |
+| P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 9 tests |
 | P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ⬜ |
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ⬜ |
 | P0.4 | Shadow mode + review page | F2 | ⬜ |
@@ -163,6 +163,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-05** — Monorepo scaffold (pnpm, Turborepo, Biome, CI) and extension P0.1: WXT + React popup placeholder, Dexie DB (items/events/sweeps/rules/settings/metrics), settings store with Gentle/Balanced/Aggressive presets. Notes: sweep items are embedded in `sweeps` records in Phase 0; indexed flags (`isShadow`) are stored as 0/1 because IndexedDB can't index booleans.
 
 - **2026-11-04** — Fixed undo toast, states board, Live now (dark), Windows Settings; added Settings Browsers/Notifications/Updates/About and Windows tray (light + dark). 68 screens exported to `Designs/`.
 
