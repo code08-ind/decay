@@ -12,6 +12,10 @@ export default defineBackground(() => {
     api: chromeApi,
     appId: detectAppId(),
     getIdleCutoffS: () => settings.get('idleCutoffS'),
+    getPolicy: async () => {
+      const all = await settings.getAll();
+      return { mode: all.mode, holdUntil: all.holdUntil, thresholds: all.thresholds };
+    },
   });
 
   // Every handler is idempotent and logs instead of throwing, so one bad event
@@ -31,7 +35,13 @@ export default defineBackground(() => {
   browser.tabs.onCreated.addListener((tab) => run('tab created', () => tracker.upsertTab(tab)));
   browser.tabs.onUpdated.addListener((tabId, change, tab) => {
     if (change.audible === true) run('tab audible', () => tracker.tabUsed(tabId));
-    else if ('url' in change || 'title' in change || 'pinned' in change || 'groupId' in change) {
+    else if (
+      'url' in change ||
+      'title' in change ||
+      'pinned' in change ||
+      'groupId' in change ||
+      change.status === 'complete'
+    ) {
       run('tab updated', () => tracker.upsertTab(tab));
     }
   });

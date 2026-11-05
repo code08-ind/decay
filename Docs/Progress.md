@@ -65,7 +65,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | --- | --- | --- | --- |
 | P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 19 tests; code review + QA passed after fixes |
 | P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ✅ `lib/tracker`: 30 s alarm tick reconciles tabs ↔ DB, credits active time only (idle/locked/sleep-safe), restart-safe matching; 57 tests; review + QA passed after fixes |
-| P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ⬜ |
+| P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ✅ `lib/policy`, `lib/rules`, lifecycle in tick; 92 tests; review + QA passed after fixes |
 | P0.4 | Shadow mode + review page | F2 | ⬜ |
 | P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ⬜ |
 | P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ⬜ |
@@ -167,6 +167,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-05** — P0.3 policy engine: hold/pause → hard protections (pinned, active, audible, grace, unrestorable URLs) → rules (protect wins, else most specific custom threshold) → thresholds; Active⇄Stale marking each tick; rules store with validation; exclude rules never stored and purge existing data. Review/QA fixes before push: ReDoS-proof matching (linear glob matcher, unsafe title patterns refused), "exclude everything" rules and bare public suffixes rejected, purge count + preview for confirmation, rules read inside the tick/handler transaction (no exclude race), title excludes wait for the page title, invalid stored thresholds fall back to presets, legacy rules can always be disabled, holds freeze states (no duplicate stale events), IPs match exactly. Thresholds now 1–720 h, strictly ordered. Decision: chrome://newtab/about:blank archivable; data:/blob:/file: protected.
 
 - **2026-11-05** — P0.2 tab tracker + aging clock. Review/QA fixes before push: tick no longer overwrites handler writes made after its snapshot (navigation rollback, closed-tab ghosts); deleting an item deletes its events; `used` events sampled on their own timestamp; only changed items are written; missing tabs deleted only after 60 s (session restore / reopen window keep ages); new tab ids reclaim orphaned items by URL; activations must last 500 ms to count (window-restore flicker); listeners for move/attach/replace/group changes; `minimum_chrome_version` 120. Open question for P0.3: whether internal pages (`chrome://newtab`, `about:blank`) can be archived.
 

@@ -31,7 +31,9 @@ export type ProtectedBy =
   | 'rule'
   | 'hold'
   | 'meeting'
-  | 'grace';
+  | 'grace'
+  /** Phase 0 addition: the URL can't be reliably reopened (data:, blob:, file:, …). */
+  | 'unrestorable';
 
 /** Machine-readable reason for every state transition (Docs/API Design.md). */
 export type Reason =

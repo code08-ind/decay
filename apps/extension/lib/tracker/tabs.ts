@@ -16,6 +16,7 @@ export interface TabInfo {
   active: boolean;
   groupId?: number;
   incognito: boolean;
+  status?: string; // 'loading' | 'complete' | 'unloaded'
 }
 
 export interface WindowInfo {

@@ -43,8 +43,20 @@ interface Item {
 type Reason =
   | { type: 'unused'; activeHours: number; threshold: number }
   | { type: 'customRule'; ruleId: string; activeHours: number }
-  | { type: 'protected'; by: 'pinned' | 'activeTab' | 'audible' | 'formInput' | 'download' | 'call' | 'unsaved' | 'unknownSaveState' | 'rule' | 'hold' | 'meeting' | 'grace'; ruleId?: string };
+  | { type: 'protected'; by: 'pinned' | 'activeTab' | 'audible' | 'formInput' | 'download' | 'call' | 'unsaved' | 'unknownSaveState' | 'rule' | 'hold' | 'meeting' | 'grace' | 'unrestorable'; ruleId?: string };
 
+// Rule semantics (decided in P0.3):
+// - Any matching `protect` rule wins over a more specific `customThreshold` (safety first);
+//   otherwise the most specific customThreshold applies: urlGlob > titleRegex > domain > app > global.
+// - `exclude` beats `protect` (excluded = never stored). Exclude can't be global/app scope and
+//   is rejected if it matches more than one unrelated sample site; creating/enabling it purges
+//   stored items + events (`previewExclude` returns the count for a confirmation step).
+// - Domains match host + subdomains (IPs exactly); bare public suffixes (com, github.io) rejected.
+// - urlGlob: only `*` is a wildcard (`?` literal), case-insensitive, userinfo ignored.
+// - titleRegex: case-insensitive, ≤ 200 chars, no quantified groups/back-refs/lookarounds,
+//   ≤ 2 unbounded quantifiers; titles are matched on their first 256 chars.
+// - Tabs with URLs that can't be reopened exactly (data:, blob:, file:, javascript:, none)
+//   are protected as `unrestorable`; chrome://newtab and about:blank are archivable.
 interface Rule {
   id: string; scope: 'app' | 'domain' | 'urlGlob' | 'titleRegex' | 'global';
   match: string; action: 'protect' | 'exclude' | 'customThreshold' | 'closeAllowed';

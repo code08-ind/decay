@@ -1,5 +1,6 @@
 import { type DecayDB, db as defaultDb } from '../db/db';
 import type { Mode, Thresholds } from '../db/types';
+import { areValidThresholds, thresholdsProblem } from '../policy/thresholds';
 
 export type Preset = 'gentle' | 'balanced' | 'aggressive' | 'custom';
 
@@ -100,6 +101,19 @@ export function normalizePatch(patch: Partial<Settings>): Partial<Settings> {
   return out;
 }
 
+/**
+ * Stored thresholds that are no longer valid (written by an older version, or by hand)
+ * fall back to the preset's — or Balanced — instead of driving the policy with nonsense.
+ */
+function sanitize(all: Settings): Settings {
+  if (!areValidThresholds(all.thresholds)) {
+    const preset: NamedPreset = all.preset in PRESETS ? (all.preset as NamedPreset) : 'balanced';
+    all.thresholds = { ...PRESETS[preset] };
+    all.preset = preset;
+  }
+  return all;
+}
+
 function sameThresholds(a: Thresholds, b: Thresholds): boolean {
   return a.stale === b.stale && a.hidden === b.hidden && a.archive === b.archive;
 }
@@ -112,6 +126,7 @@ function matchPreset(t: Thresholds): Preset {
 export function createSettingsStore(database: DecayDB = defaultDb) {
   // Reads return copies so callers can never mutate stored values or the defaults.
   async function get<K extends SettingKey>(key: K): Promise<Settings[K]> {
+    if (key === 'thresholds' || key === 'preset') return (await getAll())[key];
     const row = await database.settings.get(key);
     return structuredClone(row === undefined ? DEFAULT_SETTINGS[key] : (row.value as Settings[K]));
   }
@@ -119,7 +134,7 @@ export function createSettingsStore(database: DecayDB = defaultDb) {
   async function getAll(): Promise<Settings> {
     const rows = await database.settings.toArray();
     const stored = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-    return structuredClone({ ...DEFAULT_SETTINGS, ...stored }) as Settings;
+    return sanitize(structuredClone({ ...DEFAULT_SETTINGS, ...stored }) as Settings);
   }
 
   /** Validates, then writes all keys in one transaction. */
@@ -156,12 +171,11 @@ export function createSettingsStore(database: DecayDB = defaultDb) {
   return { get, getAll, set, update, setPreset, initFirstRun };
 }
 
+export { THRESHOLD_MAX_H, THRESHOLD_MIN_H } from '../policy/thresholds';
+
 export function assertValidThresholds(t: Thresholds): void {
-  const values = [t?.stale, t?.hidden, t?.archive];
-  const ok = values.every((h) => typeof h === 'number' && Number.isFinite(h) && h > 0);
-  if (!ok || !(t.stale <= t.hidden && t.hidden <= t.archive)) {
-    throw new Error('Thresholds must be positive and ordered stale ≤ hidden ≤ archive');
-  }
+  const problem = thresholdsProblem(t);
+  if (problem) throw new Error(problem);
 }
 
 export const settings = createSettingsStore();

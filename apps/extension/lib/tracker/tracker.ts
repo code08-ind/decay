@@ -1,6 +1,8 @@
 import { type DecayDB, isLive, LIVE_STATES } from '../db/db';
-import type { Item, ItemEvent } from '../db/types';
+import type { Item, ItemEvent, Rule } from '../db/types';
+import { isExcluded, type PolicyContext } from '../policy/policy';
 import { computeCredit, type IdleState } from './clock';
+import { applyLifecycle } from './lifecycle';
 import { applyTick, reconcile } from './reconcile';
 import {
   applyTabFields,
@@ -31,6 +33,9 @@ export interface TrackerDeps {
   api: BrowserApi;
   appId: string;
   getIdleCutoffS: () => Promise<number>;
+  /** Current mode, hold, thresholds and rules (read fresh for every tick and handler). */
+  /** Current mode, hold and thresholds. Rules are read from the DB inside each transaction. */
+  getPolicy: () => Promise<Omit<PolicyContext, 'now' | 'rules'>>;
   now?: () => number;
   /**
    * How long an activation must last to count as use. Browsers briefly activate tabs
@@ -65,6 +70,7 @@ export class Tracker {
   private readonly api: BrowserApi;
   private readonly appId: string;
   private readonly getIdleCutoffS: () => Promise<number>;
+  private readonly getPolicy: () => Promise<Omit<PolicyContext, 'now' | 'rules'>>;
   private readonly now: () => number;
   private tickChain: Promise<unknown> = Promise.resolve();
   /** tab id → last time a handler wrote or removed it. In memory: same worker as ticks. */
@@ -80,6 +86,7 @@ export class Tracker {
     this.api = deps.api;
     this.appId = deps.appId;
     this.getIdleCutoffS = deps.getIdleCutoffS;
+    this.getPolicy = deps.getPolicy;
     this.now = deps.now ?? Date.now;
     this.activationSettleMs = deps.activationSettleMs ?? 500;
   }
@@ -95,7 +102,7 @@ export class Tracker {
   }
 
   private async runTick(): Promise<TickResult> {
-    const cutoff = await this.getIdleCutoffS();
+    const [cutoff, policy] = await Promise.all([this.getIdleCutoffS(), this.getPolicy()]);
     const snapshotAt = this.now();
     const [allTabs, windows, groupList, idleState, lastTickAt] = await Promise.all([
       this.api.queryTabs(),
@@ -104,17 +111,27 @@ export class Tracker {
       this.api.queryIdle(cutoff),
       this.api.getLastTickAt(),
     ]);
-    const tabs = allTabs.filter((t) => !t.incognito);
+    const visible = allTabs.filter((t) => !t.incognito);
     const groups = new Map(groupList.map((g) => [g.id, g]));
     const creditS = computeCredit({
       elapsedMs: lastTickAt === null ? null : snapshotAt - lastTickAt,
       idleState,
-      anyAudible: tabs.some((t) => t.audible),
+      anyAudible: visible.some((t) => t.audible),
     });
-    const inUse = inUseTabIds(tabs, windows);
 
-    const result = await this.db.transaction('rw', this.db.items, this.db.events, async () => {
+    const tables = [this.db.items, this.db.events, this.db.rules];
+    const result = await this.db.transaction('rw', tables, async () => {
+      // Rules are read inside the transaction, so a rule created concurrently (and its
+      // purge) is either fully before or fully after this tick — never half-applied.
+      const rules = await this.db.rules.toArray();
       const live = await this.liveItems();
+      const liveIds = new Set(live.map((i) => i.externalId));
+      // Excluded sites (F9) are never stored: to the tracker they don't exist.
+      const tabs = visible.filter(
+        (t) => !this.excluded(t, rules) && !this.waitForTitle(t, rules, liveIds),
+      );
+      const tabsById = new Map(tabs.map((t) => [String(t.id), t]));
+      const inUse = inUseTabIds(tabs, windows);
       const now = this.now();
       const r = reconcile({
         live,
@@ -127,6 +144,7 @@ export class Tracker {
         missingSince: this.missingSince,
       });
       const tickEvents = applyTick(r.items, inUse, creditS, now, r.dirty);
+      applyLifecycle(r.items, tabsById, { ...policy, rules, now }, r.dirty, tickEvents);
       await this.deleteItems(r.deleteIds);
       if (r.dirty.size) await this.db.items.bulkPut([...r.dirty]);
       await this.addEvents([...r.events, ...tickEvents]);
@@ -157,11 +175,19 @@ export class Tracker {
       this.groupsFor(tab),
       known ? Promise.resolve(undefined) : this.openTabIds(),
     ]);
-    await this.db.transaction('rw', this.db.items, this.db.events, async () => {
+    await this.db.transaction('rw', [this.db.items, this.db.events, this.db.rules], async () => {
       if (this.removed.has(tabId)) return; // closed while this handler was waiting
       const now = this.now();
-      const events: ItemEvent[] = [];
+      const rules = await this.db.rules.toArray();
       let item = await this.db.findLiveByExternalId(this.appId, tabId);
+      if (this.excluded(tab, rules)) {
+        // e.g. navigated to an excluded site: forget the record (F9).
+        if (item && item.state !== 'archiving') await this.deleteItems([item.id]);
+        this.touched.set(tabId, now);
+        return;
+      }
+      if (!item && this.waitForTitle(tab, rules, new Set())) return;
+      const events: ItemEvent[] = [];
       if (!item && openTabIds) item = await this.findOrphan(tabUrl(tab), openTabIds);
       if (item) {
         if (item.state === 'archiving') return; // the sweep executor owns it
@@ -235,13 +261,37 @@ export class Tracker {
    */
   async tabRemoved(tabId: number, isWindowClosing: boolean): Promise<void> {
     if (isWindowClosing) return;
+    await this.forgetTab(String(tabId), { closed: true });
+  }
+
+  private async forgetTab(tabId: string, opts: { closed?: boolean } = {}): Promise<void> {
     await this.db.transaction('rw', this.db.items, this.db.events, async () => {
-      const item = await this.db.findLiveByExternalId(this.appId, String(tabId));
+      const item = await this.db.findLiveByExternalId(this.appId, tabId);
       if (item && item.state !== 'archiving') await this.deleteItems([item.id]);
       const now = this.now();
-      this.touched.set(String(tabId), now);
-      this.removed.set(String(tabId), now);
+      this.touched.set(tabId, now);
+      if (opts.closed) this.removed.set(tabId, now);
     });
+  }
+
+  /**
+   * A new tab that is still loading has no real title yet. If any title-based exclude
+   * rule exists, wait for the title (the next `onUpdated` or tick) before storing it.
+   */
+  private waitForTitle(
+    tab: TabInfo,
+    rules: readonly Rule[],
+    liveIds: ReadonlySet<string | undefined>,
+  ): boolean {
+    return (
+      tab.status === 'loading' &&
+      !liveIds.has(String(tab.id)) &&
+      rules.some((r) => r.enabled && r.action === 'exclude' && r.scope === 'titleRegex')
+    );
+  }
+
+  private excluded(tab: TabInfo, rules: readonly Rule[]): boolean {
+    return isExcluded({ appId: this.appId, url: tabUrl(tab), title: tab.title ?? '' }, rules);
   }
 
   private async liveItems(): Promise<Item[]> {

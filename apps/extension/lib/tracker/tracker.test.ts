@@ -52,6 +52,11 @@ beforeEach(() => {
     api: fake,
     appId: 'com.google.Chrome',
     getIdleCutoffS: async () => 300,
+    getPolicy: async () => ({
+      mode: 'shadow',
+      holdUntil: null,
+      thresholds: { stale: 12, hidden: 36, archive: 60 },
+    }),
     now: () => clock,
     activationSettleMs: 0,
   });
@@ -229,6 +234,129 @@ describe('Tracker', () => {
     await tracker.tabRemoved(8, false);
     await tracker.upsertTab(tab); // late onCreated
     expect(await db.items.count()).toBe(0);
+  });
+
+  it('marks old tabs stale and revives them on use', async () => {
+    fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
+    await tracker.tick();
+    const item = await db.findLiveByExternalId('com.google.Chrome', '2');
+    await db.items.update(item?.id ?? '', { activeAgeS: 12 * 3600 - 10 });
+    await tickAfter(30_000);
+    const stale = await db.findLiveByExternalId('com.google.Chrome', '2');
+    expect(stale?.state).toBe('stale');
+    const event = await db.events.where({ type: 'stale' }).first();
+    expect(event?.reason).toEqual({ type: 'unused', activeHours: 12, threshold: 12 });
+    fake.tabs = [makeTab({ id: 1 }), makeTab({ id: 2, url: 'https://b.com/', active: true })];
+    await tracker.tabUsed(2);
+    expect((await db.findLiveByExternalId('com.google.Chrome', '2'))?.state).toBe('active');
+  });
+
+  it('never marks protected tabs stale', async () => {
+    fake.tabs = [makeTab({ id: 1, pinned: true }), makeTab({ id: 2, url: 'data:,x' })];
+    await tracker.tick();
+    for (const item of await db.items.toArray()) {
+      await db.items.update(item.id, { activeAgeS: 100 * 3600 });
+    }
+    await tickAfter(30_000);
+    expect((await db.items.toArray()).every((i) => i.state === 'active')).toBe(true);
+  });
+
+  it('never stores excluded sites (F9)', async () => {
+    await db.rules.add({
+      id: 'ex',
+      scope: 'domain',
+      match: 'bank.com',
+      action: 'exclude',
+      enabled: true,
+      source: 'user',
+      createdAt: 0,
+      hitCount: 0,
+    });
+    const bank = makeTab({ id: 3, url: 'https://my.bank.com/' });
+    fake.tabs = [makeTab({ id: 1 }), bank];
+    await tracker.upsertTab(bank);
+    await tracker.tick();
+    expect((await db.items.toArray()).map((i) => i.url)).toEqual(['https://example.com/']);
+    // Navigating a tracked tab to an excluded site forgets it, events included.
+    const navigated = makeTab({ id: 1, url: 'https://bank.com/login' });
+    fake.tabs = [navigated, bank];
+    await tracker.upsertTab(navigated);
+    expect(await db.items.count()).toBe(0);
+    expect(await db.events.count()).toBe(0);
+  });
+
+  it('freezes states during a hold instead of flipping them', async () => {
+    let hold: number | null = null;
+    tracker = new Tracker({
+      db,
+      api: fake,
+      appId: 'com.google.Chrome',
+      getIdleCutoffS: async () => 300,
+      getPolicy: async () => ({
+        mode: 'automatic',
+        holdUntil: hold,
+        thresholds: { stale: 12, hidden: 36, archive: 60 },
+      }),
+      now: () => clock,
+      activationSettleMs: 0,
+    });
+    fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
+    await tracker.tick();
+    const item = await db.findLiveByExternalId('com.google.Chrome', '2');
+    await db.items.update(item?.id ?? '', { activeAgeS: 13 * 3600 });
+    await tickAfter(30_000);
+    hold = clock + 3600_000;
+    await tickAfter(30_000);
+    expect((await db.findLiveByExternalId('com.google.Chrome', '2'))?.state).toBe('stale');
+    hold = null;
+    await tickAfter(30_000);
+    expect(await db.events.where({ type: 'stale' }).count()).toBe(1);
+  });
+
+  it('waits for the title before storing a loading tab when title excludes exist', async () => {
+    await db.rules.add({
+      id: 'ex-title',
+      scope: 'titleRegex',
+      match: 'secret',
+      action: 'exclude',
+      enabled: true,
+      source: 'user',
+      createdAt: 0,
+      hitCount: 0,
+    });
+    const loading = makeTab({ id: 4, url: 'https://x.com/', title: 'x.com', status: 'loading' });
+    fake.tabs = [loading];
+    await tracker.upsertTab(loading);
+    await tracker.tick();
+    expect(await db.items.count()).toBe(0);
+    const loaded = { ...loading, title: 'Top Secret', status: 'complete' };
+    fake.tabs = [loaded];
+    await tracker.upsertTab(loaded);
+    await tickAfter(30_000);
+    expect(await db.items.count()).toBe(0);
+    expect(await db.events.count()).toBe(0);
+  });
+
+  it('applies an exclude rule created between the snapshot and the write', async () => {
+    fake.tabs = [makeTab({ id: 1, url: 'https://bank.com/' })];
+    const realQuery = fake.queryTabs.bind(fake);
+    fake.queryTabs = async () => {
+      const snapshot = await realQuery();
+      await db.rules.add({
+        id: 'late',
+        scope: 'domain',
+        match: 'bank.com',
+        action: 'exclude',
+        enabled: true,
+        source: 'user',
+        createdAt: 0,
+        hitCount: 0,
+      });
+      return snapshot;
+    };
+    await tracker.tick();
+    expect(await db.items.count()).toBe(0);
+    expect(await db.events.count()).toBe(0);
   });
 
   it('skips writes when nothing changed', async () => {

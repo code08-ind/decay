@@ -106,4 +106,30 @@ describe('settings', () => {
     await s.update({ theme: 'dark', retentionDays: 30 });
     expect(await s.getAll()).toEqual({ ...DEFAULT_SETTINGS, theme: 'dark', retentionDays: 30 });
   });
+
+  it('falls back to preset thresholds when stored ones are invalid', async () => {
+    const s = freshStore();
+    for (const bad of [
+      { stale: 12, hidden: 12, archive: 60 },
+      { stale: 0.25, hidden: 0.5, archive: 2000 },
+      { stale: 'x' },
+    ]) {
+      await open[open.length - 1]?.settings.put({ key: 'thresholds', value: bad, updatedAt: 0 });
+      await open[open.length - 1]?.settings.put({ key: 'preset', value: 'gentle', updatedAt: 0 });
+      expect(await s.get('thresholds')).toEqual(PRESETS.gentle);
+      expect((await s.getAll()).thresholds).toEqual(PRESETS.gentle);
+    }
+  });
+
+  it('enforces the 1–720 h range and strict order', async () => {
+    const s = freshStore();
+    await s.setPreset('custom', { stale: 1, hidden: 2, archive: 720 });
+    for (const bad of [
+      { stale: 0.5, hidden: 2, archive: 3 },
+      { stale: 1, hidden: 2, archive: 721 },
+      { stale: 5, hidden: 5, archive: 9 },
+    ]) {
+      await expect(s.setPreset('custom', bad)).rejects.toThrow();
+    }
+  });
 });
