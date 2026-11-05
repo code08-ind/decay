@@ -4,7 +4,8 @@ import type { Item, ItemEvent, ItemState, MetricsDay, Rule, SettingRecord, Sweep
 
 /** States in which an item is a currently open tab/window (mirrors SQL idx_items_live_ext). */
 export const LIVE_STATES: readonly ItemState[] = ['active', 'stale', 'hidden', 'archiving'];
-const isLive = (state: ItemState | undefined) => state !== undefined && LIVE_STATES.includes(state);
+export const isLive = (state: ItemState | undefined) =>
+  state !== undefined && LIVE_STATES.includes(state);
 
 export class DecayDB extends Dexie {
   items!: EntityTable<Item, 'id'>;
@@ -33,10 +34,14 @@ export class DecayDB extends Dexie {
     });
 
     this.items.hook('creating', (_key, item) => {
-      if (!isLive(item.state)) delete item.externalId;
+      if (!isLive(item.state)) {
+        delete item.externalId;
+        delete item.windowExternalId;
+      }
     });
     this.items.hook('updating', (mods: Partial<Item>) => {
-      if ('state' in mods && !isLive(mods.state)) return { externalId: undefined };
+      if ('state' in mods && !isLive(mods.state))
+        return { externalId: undefined, windowExternalId: undefined };
       return undefined;
     });
 

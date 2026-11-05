@@ -54,6 +54,7 @@ export interface Item {
   appId: string; // e.g. 'com.google.Chrome'
   sourceId?: string; // browser window record
   externalId?: string; // tabId while live; not stable across restarts
+  windowExternalId?: string; // browser windowId while live (Phase 0 stand-in for sources)
   profile?: string;
   title: string;
   url?: string;
@@ -67,6 +68,8 @@ export interface Item {
   activeAgeS: number;
   firstSeenAt: number;
   lastUsedAt: number;
+  /** Phase 0 only: when the last sampled `used` event was written (≤ 1 per 10 min). */
+  lastUsedEventAt?: number;
   stateChangedAt: number;
   archivedAt?: number;
   archiveReason?: Reason;

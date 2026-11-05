@@ -64,7 +64,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
 | P0.1 | WXT MV3 extension scaffold, Dexie DB, settings | — | ✅ `apps/extension`: Dexie schema v1 + default rules, typed settings + presets, 19 tests; code review + QA passed after fixes |
-| P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ⬜ |
+| P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ✅ `lib/tracker`: 30 s alarm tick reconciles tabs ↔ DB, credits active time only (idle/locked/sleep-safe), restart-safe matching; 57 tests; review + QA passed after fixes |
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ⬜ |
 | P0.4 | Shadow mode + review page | F2 | ⬜ |
 | P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ⬜ |
@@ -167,6 +167,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-05** — P0.2 tab tracker + aging clock. Review/QA fixes before push: tick no longer overwrites handler writes made after its snapshot (navigation rollback, closed-tab ghosts); deleting an item deletes its events; `used` events sampled on their own timestamp; only changed items are written; missing tabs deleted only after 60 s (session restore / reopen window keep ages); new tab ids reclaim orphaned items by URL; activations must last 500 ms to count (window-restore flicker); listeners for move/attach/replace/group changes; `minimum_chrome_version` 120. Open question for P0.3: whether internal pages (`chrome://newtab`, `about:blank`) can be archived.
 
 - **2026-11-05** — P0.1 review + QA fixes: settings writes are all validated (unknown presets/modes, bad numbers, `undefined` values) and keep `preset`/`thresholds` in sync; reads return copies (shared defaults could be mutated); first-run setup runs on every service-worker start; archived items drop their tab id so reused ids find the live tab; domain rules are lowercased; DB Design §6–7 updated to match.
 

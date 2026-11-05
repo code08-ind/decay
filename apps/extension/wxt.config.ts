@@ -11,6 +11,8 @@ export default defineConfig({
     permissions: ['tabs', 'tabGroups', 'storage', 'alarms', 'idle', 'scripting'],
     optional_host_permissions: ['<all_urls>'],
     incognito: 'not_allowed',
+    // 30 s alarm periods (the aging clock tick) need Chrome 120+.
+    minimum_chrome_version: '120',
     commands: {
       _execute_action: {
         suggested_key: { default: 'Alt+Shift+D' },
