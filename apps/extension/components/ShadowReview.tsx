@@ -21,6 +21,7 @@ import { protectTargetFor } from '@/lib/shadow/actions';
 import type { KeptGroup, ReportItem, ShadowReport } from '@/lib/shadow/report';
 import {
   activeHours,
+  avatarClass,
   KEPT_GROUP_LABEL,
   minutesUntil,
   PROTECTED_LABEL,
@@ -63,19 +64,6 @@ const MODE_LABEL: Record<Mode, string> = {
   automatic: 'Automatic',
   paused: 'Paused',
 };
-
-const AVATARS = [
-  'bg-avatar-1 text-avatar-1-ink',
-  'bg-avatar-2 text-avatar-2-ink',
-  'bg-avatar-3 text-avatar-3-ink',
-  'bg-avatar-4 text-avatar-4-ink',
-];
-
-function avatarClass(key: string): string {
-  let hash = 0;
-  for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return AVATARS[hash % AVATARS.length] ?? AVATARS[0] ?? '';
-}
 
 export function ShadowReview(props: ShadowReviewProps) {
   const { report } = props;

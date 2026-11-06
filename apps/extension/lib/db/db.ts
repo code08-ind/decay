@@ -29,6 +29,8 @@ export class DecayDB extends Dexie {
       settings: 'key',
       metrics: 'day',
     });
+    // v2 (P0.5): sweeps indexed by status, so recovery finds `running` sweeps without a scan.
+    this.version(2).stores({ sweeps: 'id, startedAt, isShadow, status' });
     this.on('populate', (tx) => {
       tx.table('rules').bulkAdd(defaultRules(Date.now()));
     });

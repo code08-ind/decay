@@ -1,41 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DecayDB } from '../db/db';
-import type { IdleState } from './clock';
-import type { GroupInfo, TabInfo, WindowInfo } from './tabs';
-import { makeTab } from './test-utils';
-import { type BrowserApi, Tracker } from './tracker';
-
-class FakeBrowser implements BrowserApi {
-  tabs: TabInfo[] = [];
-  windows: WindowInfo[] = [{ id: 1, focused: true, incognito: false, state: 'normal' }];
-  groups: GroupInfo[] = [];
-  idle: IdleState = 'active';
-  lastTickAt: number | null = null;
-  async queryTabs() {
-    return structuredClone(this.tabs);
-  }
-  async getTab(id: number) {
-    return structuredClone(this.tabs.find((t) => t.id === id));
-  }
-  async getActiveTab(windowId: number) {
-    return structuredClone(this.tabs.find((t) => t.windowId === windowId && t.active));
-  }
-  async getWindows() {
-    return this.windows;
-  }
-  async getGroups() {
-    return this.groups;
-  }
-  async queryIdle() {
-    return this.idle;
-  }
-  async getLastTickAt() {
-    return this.lastTickAt;
-  }
-  async setLastTickAt(at: number) {
-    this.lastTickAt = at;
-  }
-}
+import { FakeBrowser, makeTab } from './test-utils';
+import { Tracker } from './tracker';
 
 let n = 0;
 let db: DecayDB;
@@ -255,7 +221,7 @@ describe('Tracker', () => {
     fake.tabs = [makeTab({ id: 1, pinned: true }), makeTab({ id: 2, url: 'data:,x' })];
     await tracker.tick();
     for (const item of await db.items.toArray()) {
-      await db.items.update(item.id, { activeAgeS: 100 * 3600 });
+      await db.items.update(item.id, { activeAgeS: 130 * 3600 });
     }
     await tickAfter(30_000);
     expect((await db.items.toArray()).every((i) => i.state === 'active')).toBe(true);
@@ -363,7 +329,7 @@ describe('Tracker', () => {
     fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
     await tracker.tick();
     const item = await db.findLiveByExternalId('com.google.Chrome', '2');
-    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    await db.items.update(item?.id ?? '', { activeAgeS: 121 * 3600 });
     const first = await tickAfter(30_000);
     expect(first.shadowSweepId).toBeDefined();
     const sweep = await db.sweeps.get(first.shadowSweepId ?? '');
@@ -386,7 +352,7 @@ describe('Tracker', () => {
     fake.tabs = [makeTab({ id: 1, active: true }), makeTab({ id: 2, url: 'https://b.com/' })];
     await tracker.tick();
     const item = await db.findLiveByExternalId('com.google.Chrome', '2');
-    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    await db.items.update(item?.id ?? '', { activeAgeS: 121 * 3600 });
     await tickAfter(30_000); // flagged
     // Tab 1 closed; Chrome activates tab 2; the user is elsewhere. Next tick sees it visible.
     fake.tabs = [makeTab({ id: 2, url: 'https://b.com/', active: true, audible: true })];
@@ -449,7 +415,7 @@ describe('Tracker', () => {
     );
     await tracker.tick();
     for (const it of await db.items.toArray())
-      await db.items.update(it.id, { activeAgeS: 70 * 3600 });
+      await db.items.update(it.id, { activeAgeS: 130 * 3600 });
     const r = await tickAfter(30_000);
     expect((await db.sweeps.get(r.shadowSweepId ?? ''))?.itemCount).toBe(3);
   });
@@ -471,7 +437,7 @@ describe('Tracker', () => {
     fake.tabs = [makeTab({ id: 2 })];
     await tracker.tick();
     const item = await db.findLiveByExternalId('com.google.Chrome', '2');
-    await db.items.update(item?.id ?? '', { activeAgeS: 61 * 3600 });
+    await db.items.update(item?.id ?? '', { activeAgeS: 121 * 3600 });
     expect((await tickAfter(30_000)).shadowSweepId).toBeUndefined();
     expect(await db.sweeps.count()).toBe(0);
   });

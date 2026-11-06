@@ -5,12 +5,8 @@ import type { Decision } from '../policy/policy';
 /** Shadow mode lasts 7 calendar days with ≥ 1 h of active time each (PRD F2). */
 export const SHADOW_DAYS = 7;
 export const ACTIVE_DAY_SECONDS = 3600;
-/**
- * Whether real sweeps exist yet. Until the sweep executor ships (P0.5), turning on
- * automatic mode would silently stop the shadow measurement while archiving nothing,
- * so the review page doesn't offer it.
- */
-export const AUTOMATIC_MODE_AVAILABLE = false;
+/** Whether the review page offers automatic mode (real sweeps exist since P0.5). */
+export const AUTOMATIC_MODE_AVAILABLE = true;
 
 /** Simulated sweeps run at most every 15 min (Software Design §4.3). */
 export const SHADOW_SWEEP_INTERVAL_MS = 15 * 60_000;

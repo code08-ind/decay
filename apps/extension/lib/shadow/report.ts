@@ -1,7 +1,7 @@
 import type { DecayDB } from '../db/db';
 import { LIVE_STATES } from '../db/db';
 import type { Item, MetricsDay, Mode, ProtectedBy, Rule, Thresholds } from '../db/types';
-import { type Decision, evaluate, isBlankPage } from '../policy/policy';
+import { type Decision, evaluate, FORM_INPUT_UNKNOWN, isBlankPage } from '../policy/policy';
 import type { TabInfo } from '../tracker/tabs';
 import {
   ACTIVE_DAY_SECONDS,
@@ -114,7 +114,11 @@ export function buildShadowReport(input: ReportInput): ShadowReport {
     const tab = item.externalId ? tabsById.get(item.externalId) : undefined;
     const decision = evaluate(
       item,
-      { active: tab?.active ?? false, audible: tab?.audible ?? false },
+      {
+        active: tab?.active ?? false,
+        audible: tab?.audible ?? false,
+        formInput: FORM_INPUT_UNKNOWN,
+      },
       ctx,
     );
     if (decision.action === 'archive') {

@@ -115,7 +115,13 @@ export interface SweepItem {
   action: SweepAction;
   prevState: ItemState;
   result: SweepItemResult;
+  /** Phase 0: browser window id at archive time, so Undo can reopen into the same window. */
+  windowExternalId?: string;
+  /** Phase 0: why a planned close didn't happen (`skipped` / `failed`). */
+  skipReason?: SweepSkipReason;
 }
+
+export type SweepSkipReason = 'inUse' | 'changed' | 'modeChanged' | 'error' | 'closedByUser';
 
 export interface Sweep {
   id: string; // UUIDv7
@@ -130,6 +136,13 @@ export interface Sweep {
   items: SweepItem[];
   reason?: Record<string, unknown>;
   undoneAt?: number;
+  /**
+   * Phase 0: browser session the sweep ran in. Window ids are only meaningful within one
+   * browser session, so Undo reuses the original window only in the same session.
+   */
+  browserSession?: string;
+  /** Phase 0: set while an undo is in progress (crash-safe retry without duplicates). */
+  undoStartedAt?: number;
 }
 
 export type RuleScope = 'app' | 'domain' | 'urlGlob' | 'titleRegex' | 'global';

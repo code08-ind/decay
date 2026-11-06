@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Last updated** | 5 Nov 2026 |
+| **Last updated** | 7 Nov 2026 |
 | **Legend (design)** | 🟨 = generated in Stitch, awaiting your approval |
 | **Current phase** | Phase 0 — Extension validation (designs awaiting review) |
 | **Capacity assumption** | ~15 h/week |
@@ -67,7 +67,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | P0.2 | Tab tracker + active-time clock (`chrome.idle`) | F1 | ✅ `lib/tracker`: 30 s alarm tick reconciles tabs ↔ DB, credits active time only (idle/locked/sleep-safe), restart-safe matching; 57 tests; review + QA passed after fixes |
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ✅ `lib/policy`, `lib/rules`, lifecycle in tick; 92 tests; review + QA passed after fixes |
 | P0.4 | Shadow mode + review page | F2 | ✅ `lib/shadow`, `review.html` (Designs/04); 118 tests; review + QA passed after fixes |
-| P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ⬜ |
+| P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ✅ `lib/sweep`, `sweeps.html` (Designs/07), Undo notification; automatic mode enabled; 148 tests; review + QA passed after fixes. Deferred to P0.6: "Restore selected", 30-day filter |
 | P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ⬜ |
 | P0.7 | Form/`beforeunload` probe | §7.3 | ⬜ |
 | P0.8 | Local metrics + "share with beta team" export | F34 | ⬜ |
@@ -152,10 +152,10 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 | 4 | Shadow review | 🟨 | 🟨 | — | ✅ extension (no nav / Would hide) |
 | 5 | Library | 🟨 | 🟨 | 🟨 | ⬜ |
 | 6 | Live now | 🟨 | 🟨 | — | ⬜ |
-| 7 | Sweep history | 🟨 | 🟨 | — | ⬜ |
+| 7 | Sweep history | 🟨 | 🟨 | — | ✅ extension (no nav / filter / Restore selected) |
 | 8 | Rules + add-rule sheet | 🟨 | 🟨 | — | ⬜ |
 | 9 | Settings: Aging, General, Protection, Browsers, Privacy & data, Shortcuts, Notifications, Updates, About | 🟨 | 🟨 | 🟨 Aging | ⬜ |
-| 10 | Undo toast + follow-up | 🟨 | 🟨 | — | ⬜ |
+| 10 | Undo toast + follow-up | 🟨 | 🟨 | — | 🟨 extension: system notification with Undo/View; follow-up "Always protect" in P0.6 |
 | 11 | Daily summary | 🟨 | 🟨 | — | ⬜ |
 | 12 | Health banners / empty states | 🟨 | 🟨 | — | ⬜ |
 | 13 | Pro upgrade + license | 🟨 | 🟨 | — | ⬜ |
@@ -167,6 +167,8 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-07** — P0.5 sweep executor + undo. Automatic mode: at a quiet moment (no tab switch for 30 s), ≤ every 15 min, ≤ 50 oldest archivable tabs are committed as `archiving` with a `running` sweep before any close; each tab is re-checked (active/pinned/audible/URL) and closed with a 5 s timeout; outcome finalized in one transaction; crash recovery at the next tick. Undo (notification button, Sweeps page, popup) reopens tabs into the original window/position in the same browser session or one new window per original window, rebuilds groups, links new live items (`restoredFromId`, 48 h grace), counts `undoCount`/`restored24hCount`; last 20 sweeps that archived something. DB schema v2 (`sweeps.status` index). App icons added. Review/QA fixes before push: web pages archive at **2× threshold until the P0.7 form probe** (PRD §7.3); unknown tab state never closes or archives (timed-out closes stay `archiving` until recovery; `tabs.get` errors ≠ "gone"); tabs closed by the user mid-sweep are dropped, not archived; tab use during a sweep blocks the close and resets age; sweeps from a previous browser session wait 2 min for session restore; crash-safe undo retry (no duplicate tabs); toast cleared by alarm (`requireInteraction`); messages accepted only from Decay's own pages; Decay's own pages never tracked; Sweep now during a hold explains the hold; detail panel close, running-sweep labels, friendly worker-restart errors, Undo button accessible names.
 
 - **2026-11-05** — P0.4 shadow mode + Shadow review page (first UI; tokens in `packages/ui/tokens.css`, Tailwind 4, bundled Latin woff2 fonts, local `_favicon`). Active time per local day → 7 active days (≥ 1 h); simulated sweeps every 15 min (≤ 50, each tab flagged once); regret = flagged tab deliberately used again within 24 h; `autoModeOn` recorded per day. Review/QA fixes before push: automatic mode not offered until the P0.5 executor exists (flag `AUTOMATIC_MODE_AVAILABLE`), confirm step + "Back to shadow mode"; passive use (visible after a close, Chrome's neighbour activation, autoplay) no longer counts as regret; layout overflow < 1024 px; WCAG AA contrast (light feature green #4F8A4B → #3D6F3A); full ARIA tabs pattern; load races/unhandled errors; paused/automatic copy; "Always keep site" protects the host, not the registrable domain; day numbering; letter tiles when no favicon.
 

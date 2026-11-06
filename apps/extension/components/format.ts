@@ -53,3 +53,17 @@ export function minutesUntil(at: number | null, now: number): number | null {
   if (at === null) return null;
   return Math.max(0, Math.ceil((at - now) / 60_000));
 }
+
+const AVATARS = [
+  'bg-avatar-1 text-avatar-1-ink',
+  'bg-avatar-2 text-avatar-2-ink',
+  'bg-avatar-3 text-avatar-3-ink',
+  'bg-avatar-4 text-avatar-4-ink',
+];
+
+/** Letter-tile colours for items without a favicon, stable per site. */
+export function avatarClass(key: string): string {
+  let hash = 0;
+  for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATARS[hash % AVATARS.length] ?? AVATARS[0] ?? '';
+}

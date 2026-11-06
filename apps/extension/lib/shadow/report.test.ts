@@ -17,7 +17,8 @@ const base = (over: Partial<ReportInput> = {}): ReportInput => ({
   now: 10_000_000,
   mode: 'shadow',
   holdUntil: null,
-  thresholds: { stale: 12, hidden: 36, archive: 60 },
+  // Web pages archive at 2× (form state unknown until P0.7): 60 h here.
+  thresholds: { stale: 12, hidden: 20, archive: 30 },
   shadowStartedAt: null,
   rules: [],
   items: [],

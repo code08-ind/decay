@@ -303,6 +303,8 @@ db.version(1).stores({
 ```
 Field names mirror the SQL schema (camelCase). Phase 0 differences:
 - `sweeps` records embed their `items` (no separate `sweep_items` store); `isShadow`/`autoModeOn` are `0|1` because IndexedDB can't index booleans.
+- Schema v2 (P0.5) adds a `status` index on `sweeps` (`'id, startedAt, isShadow, status'`) for crash recovery.
+- Phase 0-only sweep fields: `browserSession` (random id per browser session), `undoStartedAt` (in-progress undo marker); per sweep item: `windowExternalId` (window at archive time) and `skipReason` (`inUse`, `changed`, `modeChanged`, `error`, `closedByUser`).
 - `[appId+externalId]` is not unique or state-aware like `idx_items_live_ext`, so `externalId` is cleared when an item leaves a live state and lookups use `findLiveByExternalId`.
 - Domain rule matches are stored lowercase.
 - Phase 0-only item fields: `windowExternalId` (live browser window id, stand-in for `sources`) and `lastUsedEventAt` (sampling of `used` events). Not imported.

@@ -26,8 +26,18 @@ export interface PolicyContext {
 export interface TabSignals {
   active: boolean;
   audible: boolean;
-  formInput?: boolean;
+  /**
+   * Typed form input. `'unknown'` = it can't be detected (no probe yet, P0.7): web pages
+   * then need twice the archive threshold (PRD §7.3).
+   */
+  formInput?: boolean | 'unknown';
 }
+
+/** Until the form probe (P0.7) exists, every web page's form state is unknown. */
+export const FORM_INPUT_UNKNOWN: TabSignals['formInput'] = 'unknown';
+
+/** Archive-threshold multiplier when form input can't be detected (PRD §7.3). */
+export const UNKNOWN_FORM_FACTOR = 2;
 
 export type PolicyTarget = Pick<
   Item,
@@ -83,7 +93,7 @@ export function evaluate(item: PolicyTarget, signals: TabSignals, ctx: PolicyCon
   if (item.pinned) return protectedBy('pinned');
   if (signals.active) return protectedBy('activeTab');
   if (signals.audible) return protectedBy('audible');
-  if (signals.formInput) return protectedBy('formInput');
+  if (signals.formInput === true) return protectedBy('formInput');
   if (item.graceUntil !== undefined && item.graceUntil > ctx.now) return protectedBy('grace');
   if (item.kind === 'tab' && !isRestorableUrl(item.url)) return protectedBy('unrestorable');
 
@@ -103,12 +113,17 @@ export function evaluate(item: PolicyTarget, signals: TabSignals, ctx: PolicyCon
   const threshold = custom?.thresholdHours ?? ctx.thresholds;
   const activeHours = item.activeAgeS / 3600;
   const shownHours = Math.floor(activeHours);
-  if (activeHours >= threshold.archive) {
+  // A web page might hold typed input we can't see: archive it only at 2× the threshold.
+  const archiveAt =
+    signals.formInput === 'unknown' && /^https?:/i.test(item.url ?? '')
+      ? threshold.archive * UNKNOWN_FORM_FACTOR
+      : threshold.archive;
+  if (activeHours >= archiveAt) {
     return {
       action: 'archive',
       reason: custom
         ? { type: 'customRule', ruleId: custom.id, activeHours: shownHours }
-        : { type: 'unused', activeHours: shownHours, threshold: threshold.archive },
+        : { type: 'unused', activeHours: shownHours, threshold: archiveAt },
     };
   }
   if (activeHours >= threshold.stale) {

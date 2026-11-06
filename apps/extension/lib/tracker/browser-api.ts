@@ -1,9 +1,11 @@
 import { browser } from 'wxt/browser';
+import type { TabCommands } from '../sweep/executor';
 import type { IdleState } from './clock';
 import type { TabInfo } from './tabs';
 import type { BrowserApi } from './tracker';
 
 const LAST_TICK_KEY = 'decay.lastTickAt';
+const SESSION_KEY = 'decay.browserSession';
 
 /** `BrowserApi` backed by the real extension APIs. */
 export const chromeApi: BrowserApi = {
@@ -13,8 +15,11 @@ export const chromeApi: BrowserApi = {
   async getTab(tabId) {
     try {
       return (await browser.tabs.get(tabId)) as TabInfo;
-    } catch {
-      return undefined; // closed in the meantime
+    } catch (e) {
+      // Only "No tab with id" means the tab is gone; anything else is unknown state,
+      // which the sweep executor must not mistake for a closed tab.
+      if (/no tab with id/i.test(e instanceof Error ? e.message : String(e))) return undefined;
+      throw e;
     }
   },
   async getActiveTab(windowId) {
@@ -38,6 +43,54 @@ export const chromeApi: BrowserApi = {
   },
   async setLastTickAt(at) {
     await browser.storage.session.set({ [LAST_TICK_KEY]: at });
+  },
+};
+
+/** `TabCommands` backed by the real extension APIs (sweeps and undo, P0.5). */
+export const chromeCommands: TabCommands = {
+  async removeTab(tabId) {
+    await browser.tabs.remove(tabId);
+  },
+  async createTab({ windowId, url, index, active }) {
+    return (await browser.tabs.create({ windowId, url, index, active })) as TabInfo;
+  },
+  async createWindow(url) {
+    const win = await browser.windows.create({ url, focused: false });
+    const tab = win?.tabs?.[0];
+    if (win?.id === undefined || !tab) throw new Error('Window not created');
+    return { windowId: win.id, tab: tab as TabInfo };
+  },
+  async windowExists(windowId) {
+    try {
+      const win = await browser.windows.get(windowId);
+      return win.type === 'normal' && !win.incognito;
+    } catch {
+      return false;
+    }
+  },
+  async groupTabs(tabIds, windowId) {
+    return browser.tabs.group({
+      tabIds: tabIds as [number, ...number[]],
+      createProperties: { windowId },
+    });
+  },
+  async updateGroup(groupId, { title, color }) {
+    if (!browser.tabGroups) return;
+    await browser.tabGroups.update(groupId, {
+      title,
+      color: color as Browser.tabGroups.Color | undefined,
+    });
+  },
+  async browserSession() {
+    // `storage.session` is cleared when the browser quits, so this changes per session.
+    const got = await browser.storage.session.get(SESSION_KEY);
+    const existing = got[SESSION_KEY] as { id?: unknown; startedAt?: unknown } | undefined;
+    if (typeof existing?.id === 'string' && typeof existing.startedAt === 'number') {
+      return { id: existing.id, startedAt: existing.startedAt };
+    }
+    const session = { id: crypto.randomUUID(), startedAt: Date.now() };
+    await browser.storage.session.set({ [SESSION_KEY]: session });
+    return session;
   },
 };
 

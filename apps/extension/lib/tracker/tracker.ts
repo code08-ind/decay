@@ -7,6 +7,16 @@ import {
   planShadowSweep,
   SHADOW_SWEEP_INTERVAL_MS,
 } from '../shadow/shadow';
+import {
+  closeTabs,
+  finalizeSweep,
+  planSweep,
+  QUIET_MS,
+  recoverInterrupted,
+  SWEEP_INTERVAL_MS,
+  type TabCommands,
+} from '../sweep/executor';
+import { type RestoreResult, undoSweep } from '../sweep/restore';
 import { computeCredit, type IdleState } from './clock';
 import { applyLifecycle } from './lifecycle';
 import { applyTick, reconcile } from './reconcile';
@@ -24,6 +34,7 @@ import {
 /** Everything the tracker needs from the browser, so tests can supply a fake. */
 export interface BrowserApi {
   queryTabs(): Promise<TabInfo[]>;
+  /** `undefined` only when the tab is known to be gone; throws when the state is unknown. */
   getTab(tabId: number): Promise<TabInfo | undefined>;
   getActiveTab(windowId: number): Promise<TabInfo | undefined>;
   getWindows(): Promise<WindowInfo[]>;
@@ -39,7 +50,18 @@ export interface TrackerDeps {
   api: BrowserApi;
   appId: string;
   getIdleCutoffS: () => Promise<number>;
-  /** Current mode, hold, thresholds and rules (read fresh for every tick and handler). */
+  /**
+   * Tab commands for real sweeps and undo (P0.5). Without them the tracker never closes
+   * anything (tests of the clock and shadow mode).
+   */
+  commands?: TabCommands;
+  /**
+   * Decay's own extension origin (`chrome-extension://<id>/`). Its pages (Sweeps, review)
+   * are never tracked, so a sweep can't close the page that started it.
+   */
+  ownOrigin?: string;
+  /** Per-tab close timeout (default 5 s; tests use less). */
+  closeTimeoutMs?: number;
   /** Current mode, hold and thresholds. Rules are read from the DB inside each transaction. */
   getPolicy: () => Promise<TrackerPolicy>;
   now?: () => number;
@@ -61,6 +83,8 @@ export interface TickResult {
   written: number;
   deleted: number;
   shadowSweepId?: string;
+  /** A real sweep ran in this tick (automatic mode). */
+  sweep?: { id: string; archived: number; failed: number; pending: number };
 }
 
 /** An activation this soon after a close in the same window is Chrome's doing. */
@@ -97,6 +121,16 @@ export class Tracker {
   private readonly activationSettleMs: number;
   /** windowId → when a tab in it was last closed (Chrome then activates a neighbour). */
   private readonly lastCloseInWindow = new Map<number, number>();
+  private readonly commands?: TabCommands;
+  private readonly closeTimeoutMs?: number;
+  private readonly ownOrigin?: string;
+  /** Last deliberate tab switch / window focus, for the "quiet moment" check. */
+  private lastActivityAt = Number.NEGATIVE_INFINITY;
+  /**
+   * tab id → last deliberate use. Handlers ignore items that are `archiving`, so a use
+   * during a sweep is only visible here; the executor checks it before closing.
+   */
+  private readonly usedAt = new Map<number, number>();
 
   constructor(deps: TrackerDeps) {
     this.db = deps.db;
@@ -106,6 +140,9 @@ export class Tracker {
     this.getPolicy = deps.getPolicy;
     this.now = deps.now ?? Date.now;
     this.activationSettleMs = deps.activationSettleMs ?? 500;
+    this.commands = deps.commands;
+    this.closeTimeoutMs = deps.closeTimeoutMs;
+    this.ownOrigin = deps.ownOrigin;
   }
 
   /**
@@ -113,13 +150,51 @@ export class Tracker {
    * the same `lastTickAt` and credit the same interval twice.
    */
   tick(): Promise<TickResult> {
-    const next = this.tickChain.then(() => this.runTick());
+    return this.exclusive(() => this.runTick());
+  }
+
+  /**
+   * "Sweep now" (API `run_sweep_now`): a tick that sweeps regardless of the 15-min interval
+   * and the quiet-moment check. Only in automatic mode; protections still apply.
+   */
+  sweepNow(): Promise<TickResult> {
+    return this.exclusive(() => this.runTick({ manual: true }));
+  }
+
+  /** Undo a sweep (default: the newest undoable one), serialized with ticks and sweeps. */
+  undoSweep(sweepId?: string): Promise<RestoreResult> {
+    const commands = this.commands;
+    if (!commands) return Promise.reject(new Error('Tab commands unavailable'));
+    return this.exclusive(async () => {
+      const result = await undoSweep(this.db, commands, {
+        appId: this.appId,
+        now: this.now,
+        sweepId,
+        getTabs: async () => (await this.api.queryTabs()).filter((t) => !t.incognito),
+      });
+      const now = this.now();
+      for (const id of result.tabIds) this.touched.set(String(id), now);
+      return result;
+    });
+  }
+
+  /** Runs `task` after every queued tick/sweep/undo, and before the next one. */
+  private exclusive<T>(task: () => Promise<T>): Promise<T> {
+    const next = this.tickChain.then(task);
     this.tickChain = next.catch(() => undefined);
     return next;
   }
 
-  private async runTick(): Promise<TickResult> {
+  private async runTick(opts: { manual?: boolean } = {}): Promise<TickResult> {
     const [cutoff, policy] = await Promise.all([this.getIdleCutoffS(), this.getPolicy()]);
+    const commands = this.commands;
+    // A sweep left half-done by a killed worker is settled before anything else.
+    if (commands) {
+      const openTabs = async () => (await this.api.queryTabs()).filter((t) => !t.incognito);
+      const session = await commands.browserSession();
+      await recoverInterrupted(this.db, openTabs, this.now(), session);
+    }
+    const browserSession = commands ? (await commands.browserSession()).id : '';
     const snapshotAt = this.now();
     const [allTabs, windows, groupList, idleState, lastTickAt] = await Promise.all([
       this.api.queryTabs(),
@@ -188,6 +263,25 @@ export class Tracker {
         }
       }
 
+      // Automatic mode (F3): plan a real sweep and commit the archive records before
+      // any tab is closed (write-before-close).
+      let planned: ReturnType<typeof planSweep> = null;
+      if (commands && policy.mode === 'automatic' && (opts.manual || this.isQuiet(now))) {
+        const last = await db.sweeps.where('isShadow').equals(0).last();
+        if (opts.manual || !last || now - last.startedAt >= SWEEP_INTERVAL_MS) {
+          planned = planSweep(r.items, decisions, {
+            now,
+            maxItems: policy.maxItemsPerSweep ?? 50,
+            trigger: opts.manual ? 'manual' : 'scheduled',
+            browserSession,
+          });
+          if (planned) {
+            await db.sweeps.add(planned.sweep);
+            for (const item of planned.archiving) r.dirty.add(item);
+          }
+        }
+      }
+
       await this.recordMetrics(now, {
         activeSeconds: creditS,
         flagged,
@@ -197,19 +291,55 @@ export class Tracker {
       await this.deleteItems(r.deleteIds);
       if (r.dirty.size) await db.items.bulkPut([...r.dirty]);
       await this.addEvents([...r.events, ...tickEvents]);
-      return { r, liveCount: r.items.length, written: r.dirty.size, sweepId };
+      return { r, liveCount: r.items.length, written: r.dirty.size, sweepId, planned };
     });
     this.missingSince = result.r.missingSince;
     // Only after a successful write, so a failed tick's time is credited by the next one.
     await this.api.setLastTickAt(snapshotAt);
     this.pruneTouched();
+    const sweep =
+      result.planned && commands ? await this.executeSweep(result.planned, commands) : undefined;
     return {
       creditS,
       liveCount: result.liveCount,
       written: result.written,
       deleted: result.r.deleteIds.length,
       shadowSweepId: result.sweepId,
+      sweep,
     };
+  }
+
+  /** Closes the planned tabs and records the outcome (Software Design §4.4). */
+  private async executeSweep(
+    plan: NonNullable<ReturnType<typeof planSweep>>,
+    commands: TabCommands,
+  ): Promise<{ id: string; archived: number; failed: number; pending: number }> {
+    const id = plan.sweep.id;
+    // Re-check the global switches: a pause or hold set since planning cancels the closes.
+    const policy = await this.getPolicy().catch(() => null);
+    const now = this.now();
+    const allowed =
+      policy !== null &&
+      policy.mode === 'automatic' &&
+      !(policy.holdUntil !== null && policy.holdUntil > now);
+    const outcomes = allowed
+      ? await closeTabs(plan.archiving, (tabId) => this.api.getTab(tabId), commands, {
+          usedAt: (tabId) => this.usedAt.get(tabId),
+          usedSince: plan.sweep.startedAt - QUIET_MS,
+          timeoutMs: this.closeTimeoutMs,
+        })
+      : new Map(
+          plan.archiving.map((i) => [
+            i.id,
+            { result: 'skipped' as const, skipReason: 'modeChanged' as const },
+          ]),
+        );
+    const done = await finalizeSweep(this.db, id, outcomes, this.now());
+    return { id, ...done };
+  }
+
+  private isQuiet(now: number): boolean {
+    return now - this.lastActivityAt >= QUIET_MS;
   }
 
   /** Adds to today's on-device metrics row (PRD §9 metrics, F2 shadow stats). */
@@ -288,6 +418,10 @@ export class Tracker {
     opts: { deliberate?: boolean; activatedInWindow?: number } = {},
   ): Promise<void> {
     const at = this.now();
+    if (opts.deliberate !== false) {
+      this.lastActivityAt = at;
+      this.usedAt.set(tabId, at);
+    }
     // An activation right after a close in the same window is Chrome picking the
     // neighbour, not the user choosing it: it keeps the tab young but isn't regret.
     let deliberate = opts.deliberate ?? true;
@@ -378,6 +512,7 @@ export class Tracker {
   }
 
   private excluded(tab: TabInfo, rules: readonly Rule[]): boolean {
+    if (this.ownOrigin && tabUrl(tab)?.startsWith(this.ownOrigin)) return true;
     return isExcluded({ appId: this.appId, url: tabUrl(tab), title: tab.title ?? '' }, rules);
   }
 
@@ -431,5 +566,6 @@ export class Tracker {
     const cutoff = this.now() - TOUCH_MEMORY_MS;
     for (const [id, when] of this.touched) if (when < cutoff) this.touched.delete(id);
     for (const [id, when] of this.removed) if (when < cutoff) this.removed.delete(id);
+    for (const [id, when] of this.usedAt) if (when < cutoff) this.usedAt.delete(id);
   }
 }

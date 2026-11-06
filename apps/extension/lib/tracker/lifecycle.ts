@@ -1,5 +1,11 @@
 import type { Item, ItemEvent, Reason } from '../db/types';
-import { type Decision, evaluate, type PolicyContext, stateFor } from '../policy/policy';
+import {
+  type Decision,
+  evaluate,
+  FORM_INPUT_UNKNOWN,
+  type PolicyContext,
+  stateFor,
+} from '../policy/policy';
 import type { TabInfo } from './tabs';
 
 /**
@@ -20,7 +26,11 @@ export function applyLifecycle(
     const tab = item.externalId ? tabsByExternalId.get(item.externalId) : undefined;
     const decision = evaluate(
       item,
-      { active: tab?.active ?? false, audible: tab?.audible ?? false },
+      {
+        active: tab?.active ?? false,
+        audible: tab?.audible ?? false,
+        formInput: FORM_INPUT_UNKNOWN,
+      },
       ctx,
     );
     decisions.set(item.id, decision);

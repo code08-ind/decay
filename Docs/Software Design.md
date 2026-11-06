@@ -130,9 +130,19 @@ emit SweepCompleted → UI toast with Undo
 
 Crash recovery at startup: any `archiving` items are reconciled against the adapter's live snapshot (still open → revert; gone → archived).
 
+**Phase 0 extension notes (P0.5):**
+- The sweep is written as `running` directly (planning and the archive records commit in one transaction with the tick).
+- Unknown state never closes and never archives: if the tab can't be read before closing → skipped; if a close times out (or fails) and the tab can't be confirmed gone → the item stays `archiving` and the sweep stays `running` until the next tick's recovery settles it.
+- A tab already gone before the executor closed it was closed by the user → its record is deleted (DB Design §5), not archived.
+- Deliberate tab activations during a sweep are remembered in memory (handlers ignore `archiving` items); such tabs are skipped and their age is reset.
+- Sweeps from an earlier browser session are only settled 2 min after the new session starts, so session restore can bring tabs back first ("not restored yet" ≠ "gone").
+- Real sweeps only at a quiet moment: no deliberate tab switch / window focus for 30 s ("Sweep now" skips this check and the 15-min interval).
+- Until the form probe (P0.7) exists, form state is unknown for every web page, so http(s) tabs archive at **2× the archive threshold** (PRD §7.3).
+
 ### 4.5 Undo and restore
 
-- **Undo sweep:** for every item in the sweep → restore command, `sweeps.undone_at = now`, and an `undo` event per item. Restored items get a **48-hour grace protection** so they aren't re-archived immediately.
+- **Undo sweep:** for every item in the sweep → restore command, `sweeps.undone_at = now`, and an `undo` event per item. Restored items get a **48-hour grace protection** so they aren't re-archived immediately. The undo window is the last 20 sweeps that archived something. If some tabs fail to reopen, the sweep stays `done` and Undo can be retried for the rest; an interrupted undo is marked on the sweep so a retry links already-reopened tabs instead of opening duplicates.
+- **Phase 0 (extension):** the Undo "toast" is a system notification with Undo / View buttons, cleared after 30 s by an alarm; the Sweeps page (`sweeps.html`) lists sweeps and offers Undo for each undoable one. Tabs reopen in the original window only within the same browser session (window ids aren't stable across restarts).
 - **Restore tab:** `tabs.create({url, windowId?, index, pinned:false})`. If the original window is gone, create a new window; rebuild the group via `tabGroups.update`.
 - **Batch restore:** one new window per original source window, ordered by `tab_index`, groups recreated.
 - **Restore window:** Hidden → un-minimize + raise. Archived (closed) → reopen the document/folder via `open -a <app> <path>` (macOS) or `ShellExecuteW` (Windows).

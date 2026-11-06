@@ -62,6 +62,21 @@ describe('evaluate', () => {
     expect(evaluate(old, idle, ctx({ holdUntil: 500 })).action).toBe('archive'); // expired
   });
 
+  it('doubles the archive threshold for web pages whose form state is unknown', () => {
+    const unknown: TabSignals = { active: false, audible: false, formInput: 'unknown' };
+    expect(evaluate(tab({ activeAgeS: 100 * H }), unknown, ctx()).action).toBe('stale');
+    expect(evaluate(tab({ activeAgeS: 120 * H }), unknown, ctx())).toMatchObject({
+      action: 'archive',
+      reason: { type: 'unused', threshold: 120 },
+    });
+    // Browser pages can't hold typed input: normal threshold.
+    const newTab = tab({ activeAgeS: 61 * H, url: 'chrome://newtab/' });
+    expect(evaluate(newTab, unknown, ctx()).action).toBe('archive');
+    expect(
+      evaluate(tab({ activeAgeS: 61 * H }), { ...unknown, formInput: false }, ctx()).action,
+    ).toBe('archive');
+  });
+
   it('applies hard protections in order', () => {
     const old = { activeAgeS: 100 * H };
     const by = (t: PolicyTarget, s: TabSignals = idle) => {
