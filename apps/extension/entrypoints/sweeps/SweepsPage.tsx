@@ -68,11 +68,25 @@ export function SweepsPage() {
   const onSweepNow = () =>
     act('sweepNow', async () => {
       const r = await sendDecay({ type: 'decay.sweepNow' });
+      if (r.simulated !== undefined) {
+        return r.simulated
+          ? `Simulation: Decay would archive ${plural(r.simulated, 'more tab')}. Nothing was closed — see the shadow review.`
+          : 'Simulation: no new tabs would be archived right now. Nothing was closed.';
+      }
       if (!r.archived && r.failed) {
         return `Nothing archived: ${plural(r.failed, 'tab')} stayed open because ${r.failed === 1 ? 'it was' : 'they were'} in use or changed.`;
       }
       if (!r.archived) return 'Nothing to archive right now: no tab is old enough.';
       return `Archived ${plural(r.archived, 'tab')}.`;
+    });
+
+  const onRestore = (ids: string[]) =>
+    act('restore', async () => {
+      const r = await sendDecay({ type: 'decay.restore', ids });
+      const restored = r.restored ?? 0;
+      return r.failed
+        ? `Restored ${restored} of ${restored + r.failed} tabs.`
+        : `Restored ${plural(restored, 'tab')}.`;
     });
 
   if (!history) {
@@ -89,6 +103,7 @@ export function SweepsPage() {
       faviconFor={(url) => faviconFor(url)}
       onUndo={(id) => void onUndo(id)}
       onSweepNow={() => void onSweepNow()}
+      onRestore={(ids) => void onRestore(ids)}
       onOpenReview={() => void browser.tabs.create({ url: browser.runtime.getURL('/review.html') })}
       busy={busy}
       error={error}

@@ -657,3 +657,138 @@ describe('sweep history', () => {
     });
   });
 });
+
+describe('restore (P0.6)', () => {
+  async function archive(tabs: TabInfo[]) {
+    const old = Object.fromEntries(tabs.map((t) => [t.id, 130]));
+    await setup([makeTab({ id: 1, active: true, url: 'https://keep.com/' }), ...tabs], old);
+    const r = await tickAfter(30_000);
+    return r.sweep?.id ?? '';
+  }
+  const archivedByUrl = async (url: string) =>
+    (await db.items.where('state').equals('archived').toArray()).find((i) => i.url === url);
+
+  it('reopens one item as the active tab of the given window, with grace', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/', title: 'A' })]);
+    const record = await archivedByUrl('https://a.com/');
+    fake.windows.push({ id: 9, focused: true, incognito: false, state: 'normal' });
+    clock += 5 * 60_000;
+    const r = await tracker.restore([record?.id ?? ''], { intoWindowId: 9 });
+    expect(r).toMatchObject({ restored: 1, failed: 0 });
+    expect(r.regretted.map((i) => i.id)).toEqual([record?.id]);
+    const tab = fake.tabs.find((t) => t.url === 'https://a.com/');
+    expect(tab).toMatchObject({ windowId: 9, active: true });
+    expect((await db.items.get(record?.id ?? ''))?.state).toBe('restored');
+    expect(await live(tab?.id ?? 0)).toMatchObject({
+      restoredFromId: record?.id,
+      graceUntil: clock + RESTORE_GRACE_MS,
+    });
+    expect(await db.events.where('type').equals('restored').count()).toBe(1);
+    expect((await db.metrics.toArray())[0]).toMatchObject({ restored24hCount: 1, undoCount: 0 });
+  });
+
+  it('ignores items that are not archived', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    const record = await archivedByUrl('https://a.com/');
+    await tracker.restore([record?.id ?? ''], { intoWindowId: 1 });
+    const again = await tracker.restore([record?.id ?? '', 'missing'], { intoWindowId: 1 });
+    expect(again).toMatchObject({ restored: 0, failed: 1, skipped: 1 });
+    expect(fake.tabs.filter((t) => t.url === 'https://a.com/')).toHaveLength(1);
+  });
+
+  it('restores a repeated id once (no duplicate tabs or metrics)', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    const record = await archivedByUrl('https://a.com/');
+    const id = record?.id ?? '';
+    const r = await tracker.restore([id, id, id], { intoWindowId: 1 });
+    expect(r).toMatchObject({ restored: 1, failed: 0 });
+    expect(fake.tabs.filter((t) => t.url === 'https://a.com/')).toHaveLength(1);
+    expect((await db.items.get(id))?.restoreCount).toBe(1);
+    expect((await db.metrics.toArray())[0]?.restored24hCount).toBe(1);
+  });
+
+  it('does not track a tab restored into a private window', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    const record = await archivedByUrl('https://a.com/');
+    const createTab = commands.createTab.bind(commands);
+    commands.createTab = async (o) => ({ ...(await createTab(o)), incognito: true });
+    const r = await tracker.restore([record?.id ?? ''], { intoWindowId: 1 });
+    expect(r.restored).toBe(1);
+    expect((await db.items.get(record?.id ?? ''))?.state).toBe('restored');
+    const liveA = (await db.items.where('state').anyOf(['active', 'stale']).toArray()).filter(
+      (i) => i.url === 'https://a.com/',
+    );
+    expect(liveA).toHaveLength(0);
+  });
+
+  it('links an already-open tab after an interrupted restore instead of opening another', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    const record = await archivedByUrl('https://a.com/');
+    // The worker died after opening the tab, before recording the restore.
+    await db.items.update(record?.id ?? '', { restoreStartedAt: clock });
+    await commands.createTab({ windowId: 1, url: 'https://a.com/' });
+    const r = await tracker.restore([record?.id ?? ''], { intoWindowId: 1 });
+    expect(r.restored).toBe(1);
+    expect(fake.tabs.filter((t) => t.url === 'https://a.com/')).toHaveLength(1);
+    expect((await db.items.get(record?.id ?? ''))?.restoreStartedAt).toBeUndefined();
+  });
+
+  it('clears the in-progress mark when a tab fails to open, so a retry opens it', async () => {
+    await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    const record = await archivedByUrl('https://a.com/');
+    commands.failCreate.add('https://a.com/');
+    expect(await tracker.restore([record?.id ?? ''], { intoWindowId: 1 })).toMatchObject({
+      restored: 0,
+      failed: 1,
+    });
+    expect((await db.items.get(record?.id ?? ''))?.restoreStartedAt).toBeUndefined();
+    commands.failCreate.clear();
+    expect((await tracker.restore([record?.id ?? ''], { intoWindowId: 1 })).restored).toBe(1);
+  });
+
+  it('restores a batch: the items archived together from the same window, in order', async () => {
+    fake.windows.push({ id: 2, focused: false, incognito: false, state: 'normal' });
+    await archive([
+      makeTab({ id: 2, url: 'https://a.com/', windowId: 2, index: 0 }),
+      makeTab({ id: 3, url: 'https://b.com/', windowId: 2, index: 1 }),
+      makeTab({ id: 4, url: 'https://c.com/', windowId: 1, index: 1 }),
+    ]);
+    const b = await archivedByUrl('https://b.com/');
+    fake.windows = fake.windows.filter((w) => w.id !== 2);
+    const r = await tracker.restoreBatch(b?.id ?? '');
+    expect(r.restored).toBe(2);
+    // One new window for the batch (S4), even though window 1 still exists.
+    expect(commands.createdWindows).toEqual(['https://a.com/']);
+    const a2 = fake.tabs.find((t) => t.url === 'https://a.com/');
+    expect(fake.tabs.find((t) => t.url === 'https://b.com/')?.windowId).toBe(a2?.windowId);
+    expect(await archivedByUrl('https://c.com/')).toBeDefined(); // other window: not part of it
+  });
+
+  it('undo skips a sweep whose tabs were all restored by hand', async () => {
+    const first = await archive([makeTab({ id: 2, url: 'https://a.com/' })]);
+    fake.tabs.push(makeTab({ id: 5, url: 'https://z.com/' }));
+    await tickAfter(30_000);
+    await db.items.update((await live(5))?.id ?? '', { activeAgeS: 130 * H });
+    const second = (await tickAfter(SWEEP_INTERVAL_MS)).sweep?.id;
+    expect(second).toBeDefined();
+    const z = await archivedByUrl('https://z.com/');
+    await tracker.restore([z?.id ?? ''], { intoWindowId: 1 });
+    const r = await tracker.undoSweep();
+    expect(r.restored).toBe(1);
+    expect((await db.sweeps.get(first))?.status).toBe('undone');
+    await expect(tracker.undoSweep(second)).rejects.toThrow('already open again');
+  });
+});
+
+describe('Sweep now in shadow mode (dry run)', () => {
+  it('simulates right away, ignoring the 15-min interval, and closes nothing', async () => {
+    mode = 'shadow';
+    await setup([makeTab({ id: 2, url: 'https://a.com/' })], {});
+    await tickAfter(30_000); // a shadow sweep with nothing to flag
+    await db.items.update((await live(2))?.id ?? '', { activeAgeS: 130 * H });
+    const r = await tracker.sweepNow();
+    expect(r.shadowFlagged).toBe(1);
+    expect(commands.removed).toEqual([]);
+    expect(await realSweeps()).toHaveLength(0);
+  });
+});

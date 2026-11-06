@@ -1,4 +1,15 @@
-import { CircleAlert, CircleCheck, Info, Leaf, Lock, Plus, RotateCcw, Wind, X } from 'lucide-react';
+import {
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Info,
+  Leaf,
+  Lock,
+  Plus,
+  RotateCcw,
+  Wind,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { Mode, Reason, SweepSkipReason } from '@/lib/db/types';
 import { localDay } from '@/lib/shadow/shadow';
@@ -11,6 +22,8 @@ export interface SweepHistoryProps {
   faviconFor?: (url: string) => string | undefined;
   onUndo: (sweepId: string) => void;
   onSweepNow: () => void;
+  /** Restore some of a sweep's archived tabs (into their original windows). */
+  onRestore: (itemIds: string[]) => void;
   onOpenReview: () => void;
   /** Sweep id being undone, or 'sweepNow'. */
   busy?: string | null;
@@ -62,8 +75,17 @@ function headline(entry: SweepEntry): string {
   return `Archived ${plural(entry.archived, 'tab')}`;
 }
 
+type Range = '7' | '30' | 'all';
+const RANGE_LABEL: Record<Range, string> = { '7': 'Last 7 days', '30': 'Last 30 days', all: 'All' };
+
 export function SweepHistory(props: SweepHistoryProps) {
-  const { entries, mode } = props.history;
+  const { mode } = props.history;
+  const [range, setRange] = useState<Range>('30');
+  const entries = useMemo(() => {
+    if (range === 'all') return props.history.entries;
+    const since = props.now - Number(range) * 86_400_000;
+    return props.history.entries.filter((e) => e.sweep.startedAt >= since);
+  }, [props.history.entries, range, props.now]);
   const [selectedId, setSelectedId] = useState<string | null>(entries[0]?.sweep.id ?? null);
   // Keep a valid selection when the list refreshes.
   useEffect(() => {
@@ -105,17 +127,44 @@ export function SweepHistory(props: SweepHistoryProps) {
               Every tidy-up Decay has made. The last 20 can be undone.
             </p>
           </div>
-          {mode === 'automatic' && (
-            <button
-              type="button"
-              onClick={props.onSweepNow}
-              disabled={props.busy != null}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-primary px-5 py-3 font-medium text-primary-ink disabled:opacity-60 sm:self-auto"
-            >
-              <Plus size={16} aria-hidden />
-              {props.busy === 'sweepNow' ? 'Sweeping…' : 'Sweep now'}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+            <label className="relative">
+              <span className="sr-only">Show sweeps from</span>
+              <select
+                value={range}
+                onChange={(e) => setRange(e.target.value as Range)}
+                className="appearance-none rounded-full border border-line-strong bg-surface py-3 pr-10 pl-5 text-sm"
+              >
+                {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
+                  <option key={r} value={r}>
+                    {RANGE_LABEL[r]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-muted"
+                aria-hidden
+              />
+            </label>
+            {mode !== 'paused' && (
+              <button
+                type="button"
+                onClick={props.onSweepNow}
+                disabled={props.busy != null}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-medium text-primary-ink disabled:opacity-60"
+              >
+                <Plus size={16} aria-hidden />
+                {mode === 'shadow'
+                  ? props.busy === 'sweepNow'
+                    ? 'Simulating…'
+                    : 'Run a simulation'
+                  : props.busy === 'sweepNow'
+                    ? 'Sweeping…'
+                    : 'Sweep now'}
+              </button>
+            )}
+          </div>
         </div>
 
         {mode !== 'automatic' && (
@@ -198,6 +247,7 @@ export function SweepHistory(props: SweepHistoryProps) {
               now={props.now}
               faviconFor={props.faviconFor}
               onUndo={() => props.onUndo(selected.sweep.id)}
+              onRestore={props.onRestore}
               onClose={() => setSelectedId(null)}
               busy={props.busy === selected.sweep.id}
               disabled={props.busy != null}
@@ -304,11 +354,33 @@ function SweepDetail(props: {
   now: number;
   faviconFor?: (url: string) => string | undefined;
   onUndo: () => void;
+  onRestore: (itemIds: string[]) => void;
   onClose: () => void;
   busy: boolean;
   disabled: boolean;
 }) {
   const { entry } = props;
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  // A different sweep, or items restored meanwhile: drop stale picks.
+  useEffect(() => {
+    setPicked((prev) => {
+      const restorable = new Set(
+        entry.items.filter((r) => isRestorable(r, entry)).map((r) => r.entry.itemId),
+      );
+      const next = new Set([...prev].filter((id) => restorable.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [entry]);
+  const restorableIds = entry.items
+    .filter((r) => isRestorable(r, entry))
+    .map((r) => r.entry.itemId);
+  const toggle = (id: string) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const when = `${dayLabel(entry.sweep.startedAt, props.now)} ${time(entry.sweep.startedAt)}`;
   return (
     <aside
@@ -337,12 +409,32 @@ function SweepDetail(props: {
       </p>
 
       <div className="mt-4 rounded-tile border border-feature-tile-line bg-feature-tile p-4">
-        <h3 className="text-xs font-medium tracking-widest text-feature-sub uppercase">
-          Items in this sweep
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-medium tracking-widest text-feature-sub uppercase">
+            Items in this sweep
+          </h3>
+          {restorableIds.length > 1 && (
+            <button
+              type="button"
+              onClick={() =>
+                setPicked(picked.size === restorableIds.length ? new Set() : new Set(restorableIds))
+              }
+              className="text-xs text-feature-sub underline underline-offset-4"
+            >
+              {picked.size === restorableIds.length ? 'Select none' : 'Select all'}
+            </button>
+          )}
+        </div>
         <ul className="mt-2 max-h-[420px] space-y-1 overflow-y-auto">
           {entry.items.map((row) => (
-            <DetailItem key={row.entry.itemId} row={row} faviconFor={props.faviconFor} />
+            <DetailItem
+              key={row.entry.itemId}
+              row={row}
+              faviconFor={props.faviconFor}
+              selectable={isRestorable(row, entry)}
+              picked={picked.has(row.entry.itemId)}
+              onToggle={() => toggle(row.entry.itemId)}
+            />
           ))}
         </ul>
       </div>
@@ -352,20 +444,30 @@ function SweepDetail(props: {
         background, in their original order.
       </p>
 
-      {entry.undoable && (
-        <div className="mt-4 border-t border-feature-tile-line pt-4">
+      {restorableIds.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-feature-tile-line pt-4">
+          {entry.undoable && (
+            <button
+              type="button"
+              onClick={props.onUndo}
+              disabled={props.disabled}
+              className="inline-flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 font-medium text-ink disabled:opacity-60"
+            >
+              <RotateCcw size={16} aria-hidden />
+              {props.busy
+                ? 'Undoing…'
+                : entry.status === 'partial'
+                  ? `Undo the other ${plural(entry.remaining, 'tab')}`
+                  : 'Undo whole sweep'}
+            </button>
+          )}
           <button
             type="button"
-            onClick={props.onUndo}
-            disabled={props.disabled}
-            className="inline-flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 font-medium text-ink disabled:opacity-60"
+            onClick={() => props.onRestore([...picked])}
+            disabled={props.disabled || picked.size === 0}
+            className="rounded-full border border-feature-tile-line px-5 py-2.5 font-medium disabled:opacity-50"
           >
-            <RotateCcw size={16} aria-hidden />
-            {props.busy
-              ? 'Undoing…'
-              : entry.status === 'partial'
-                ? `Undo the other ${plural(entry.remaining, 'tab')}`
-                : 'Undo whole sweep'}
+            Restore selected{picked.size ? ` (${picked.size})` : ''}
           </button>
         </div>
       )}
@@ -373,12 +475,23 @@ function SweepDetail(props: {
   );
 }
 
+const isRestorable = (row: SweepEntryItem, entry: SweepEntry) =>
+  row.entry.result === 'ok' &&
+  row.item?.state === 'archived' &&
+  row.item.lastSweepId === entry.sweep.id;
+
 function DetailItem({
   row,
   faviconFor,
+  selectable,
+  picked,
+  onToggle,
 }: {
   row: SweepEntryItem;
   faviconFor?: (url: string) => string | undefined;
+  selectable: boolean;
+  picked: boolean;
+  onToggle: () => void;
 }) {
   const { item, entry } = row;
   const title = item?.title || shortUrl(item?.url) || 'Deleted item';
@@ -392,6 +505,17 @@ function DetailItem({
   else note = reasonLabel(item?.archiveReason);
   return (
     <li className="flex items-center gap-3 py-1.5">
+      {selectable ? (
+        <input
+          type="checkbox"
+          checked={picked}
+          onChange={onToggle}
+          aria-label={`Select ${title}`}
+          className="size-4 shrink-0 accent-[var(--lime)]"
+        />
+      ) : (
+        <span className="size-4 shrink-0" aria-hidden />
+      )}
       <span
         className={`grid size-7 shrink-0 place-items-center overflow-hidden rounded-lg text-xs font-medium ${
           favicon ? 'bg-surface' : avatarClass(key)
@@ -409,7 +533,12 @@ function DetailItem({
       >
         {title}
       </span>
-      <span className="shrink-0 font-mono text-xs text-feature-sub">{note}</span>
+      <span
+        className="max-w-[45%] shrink-0 truncate text-right font-mono text-xs text-feature-sub"
+        title={note}
+      >
+        {note}
+      </span>
     </li>
   );
 }

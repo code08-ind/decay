@@ -16,7 +16,13 @@ import {
   SWEEP_INTERVAL_MS,
   type TabCommands,
 } from '../sweep/executor';
-import { type RestoreResult, undoSweep } from '../sweep/restore';
+import {
+  findBatch,
+  type RestoreItemsResult,
+  type RestoreResult,
+  restoreItems,
+  undoSweep,
+} from '../sweep/restore';
 import { computeCredit, type IdleState } from './clock';
 import { applyLifecycle } from './lifecycle';
 import { applyTick, reconcile } from './reconcile';
@@ -83,6 +89,8 @@ export interface TickResult {
   written: number;
   deleted: number;
   shadowSweepId?: string;
+  /** Items a shadow sweep flagged in this tick. */
+  shadowFlagged?: number;
   /** A real sweep ran in this tick (automatic mode). */
   sweep?: { id: string; archived: number; failed: number; pending: number };
 }
@@ -155,7 +163,8 @@ export class Tracker {
 
   /**
    * "Sweep now" (API `run_sweep_now`): a tick that sweeps regardless of the 15-min interval
-   * and the quiet-moment check. Only in automatic mode; protections still apply.
+   * and the quiet-moment check. Automatic mode closes tabs; shadow mode only simulates
+   * (dry run); paused does nothing. Protections always apply.
    */
   sweepNow(): Promise<TickResult> {
     return this.exclusive(() => this.runTick({ manual: true }));
@@ -176,6 +185,40 @@ export class Tracker {
       for (const id of result.tabIds) this.touched.set(String(id), now);
       return result;
     });
+  }
+
+  /**
+   * Restore archived items (F6). With `intoWindowId`, they open in that window (the first
+   * one active); otherwise in their original window or a new one per original window.
+   */
+  restore(
+    ids: readonly string[],
+    opts: { intoWindowId?: number; newWindow?: boolean } = {},
+  ): Promise<RestoreItemsResult> {
+    const commands = this.commands;
+    if (!commands) return Promise.reject(new Error('Tab commands unavailable'));
+    return this.exclusive(async () => {
+      const result = await restoreItems(this.db, commands, {
+        appId: this.appId,
+        now: this.now,
+        ids,
+        ...opts,
+        getTabs: async () => (await this.api.queryTabs()).filter((t) => !t.incognito),
+      });
+      const now = this.now();
+      for (const id of result.tabIds) this.touched.set(String(id), now);
+      return result;
+    });
+  }
+
+  /** Restore the whole batch an item was archived with (same sweep, same window). */
+  async restoreBatch(itemId: string): Promise<RestoreItemsResult> {
+    const batch = await findBatch(this.db, itemId);
+    // S4 / §4.5: a batch reopens in one new window per original window, in order.
+    return this.restore(
+      batch.map((i) => i.id),
+      { newWindow: true },
+    );
   }
 
   /** Runs `task` after every queued tick/sweep/undo, and before the next one. */
@@ -251,8 +294,15 @@ export class Tracker {
       let sweepId: string | undefined;
       if (policy.mode === 'shadow') {
         const last = await db.sweeps.where('isShadow').equals(1).last();
-        if (!last || now - last.startedAt >= SHADOW_SWEEP_INTERVAL_MS) {
-          const plan = planShadowSweep(r.items, decisions, now, policy.maxItemsPerSweep ?? 50);
+        // "Sweep now" in shadow mode runs a simulation right away (API `run_sweep_now` dryRun).
+        if (opts.manual || !last || now - last.startedAt >= SHADOW_SWEEP_INTERVAL_MS) {
+          const plan = planShadowSweep(
+            r.items,
+            decisions,
+            now,
+            policy.maxItemsPerSweep ?? 50,
+            opts.manual ? 'manual' : 'scheduled',
+          );
           if (plan) {
             await db.sweeps.add(plan.sweep);
             for (const item of plan.flagged) r.dirty.add(item);
@@ -291,7 +341,7 @@ export class Tracker {
       await this.deleteItems(r.deleteIds);
       if (r.dirty.size) await db.items.bulkPut([...r.dirty]);
       await this.addEvents([...r.events, ...tickEvents]);
-      return { r, liveCount: r.items.length, written: r.dirty.size, sweepId, planned };
+      return { r, liveCount: r.items.length, written: r.dirty.size, sweepId, flagged, planned };
     });
     this.missingSince = result.r.missingSince;
     // Only after a successful write, so a failed tick's time is credited by the next one.
@@ -305,6 +355,7 @@ export class Tracker {
       written: result.written,
       deleted: result.r.deleteIds.length,
       shadowSweepId: result.sweepId,
+      shadowFlagged: result.flagged,
       sweep,
     };
   }

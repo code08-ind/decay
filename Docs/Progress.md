@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Last updated** | 7 Nov 2026 |
+| **Last updated** | 7 Nov 2026 (paused after P0.6) |
 | **Legend (design)** | 🟨 = generated in Stitch, awaiting your approval |
 | **Current phase** | Phase 0 — Extension validation (designs awaiting review) |
 | **Capacity assumption** | ~15 h/week |
@@ -68,7 +68,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | P0.3 | Policy engine (TS port: protections, rules, thresholds) | F8, F9 | ✅ `lib/policy`, `lib/rules`, lifecycle in tick; 92 tests; review + QA passed after fixes |
 | P0.4 | Shadow mode + review page | F2 | ✅ `lib/shadow`, `review.html` (Designs/04); 118 tests; review + QA passed after fixes |
 | P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ✅ `lib/sweep`, `sweeps.html` (Designs/07), Undo notification; automatic mode enabled; 148 tests; review + QA passed after fixes. Deferred to P0.6: "Restore selected", 30-day filter |
-| P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ⬜ |
+| P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ✅ `lib/search`, popup (Designs/15), restore/batch, "Always keep site" follow-up, Sweeps Restore selected + date filter; shadow "Sweep now" = dry run; 180 tests; review + QA passed after fixes. Batch restore free in Phase 0 |
 | P0.7 | Form/`beforeunload` probe | §7.3 | ⬜ |
 | P0.8 | Local metrics + "share with beta team" export | F34 | ⬜ |
 | P0.9 | Publish unlisted to the Chrome Web Store; recruit 20–30 testers | — | ⬜ |
@@ -152,21 +152,23 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 | 4 | Shadow review | 🟨 | 🟨 | — | ✅ extension (no nav / Would hide) |
 | 5 | Library | 🟨 | 🟨 | 🟨 | ⬜ |
 | 6 | Live now | 🟨 | 🟨 | — | ⬜ |
-| 7 | Sweep history | 🟨 | 🟨 | — | ✅ extension (no nav / filter / Restore selected) |
+| 7 | Sweep history | 🟨 | 🟨 | — | ✅ extension (no top nav) |
 | 8 | Rules + add-rule sheet | 🟨 | 🟨 | — | ⬜ |
 | 9 | Settings: Aging, General, Protection, Browsers, Privacy & data, Shortcuts, Notifications, Updates, About | 🟨 | 🟨 | 🟨 Aging | ⬜ |
-| 10 | Undo toast + follow-up | 🟨 | 🟨 | — | 🟨 extension: system notification with Undo/View; follow-up "Always protect" in P0.6 |
+| 10 | Undo toast + follow-up | 🟨 | 🟨 | — | ✅ extension: system notifications (Undo/View; "Always keep <site>?" after a restore within 24 h) |
 | 11 | Daily summary | 🟨 | 🟨 | — | ⬜ |
 | 12 | Health banners / empty states | 🟨 | 🟨 | — | ⬜ |
 | 13 | Pro upgrade + license | 🟨 | 🟨 | — | ⬜ |
 | 14 | Insights | 🟨 | 🟨 | — | ⬜ |
-| 15 | Extension popup | 🟨 | 🟨 | — | ⬜ |
+| 15 | Extension popup | 🟨 | 🟨 | — | ✅ (history icon instead of settings gear; "Never archive this site"; no desktop-app link yet) |
 | 16 | Update / What's new | 🟨 | 🟨 | — | ⬜ |
 | 17 | Landing page (website, new) | 🟨 | 🟨 | — | ⬜ |
 
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-07** — P0.6 popup search + restore. Popup from Designs/15 (mode chip, stats, mode card with last sweep + Undo or shadow review link, 3 recent archived tabs, "Never archive this site"). MiniSearch over archived items (title/domain/group/URL words; prefix + fuzzy incl. swapped letters; `site:` incl. bare labels, `app:`, `before:`/`after:` with dates, `today`, `yesterday`, `3d`/`2w`; recency boost), built on the first keystroke; results grouped by batch (sweep + original window). ↵ reopens the tab active in the current window; ⌘/Ctrl+↵ restores the batch in one new window, original order + groups (free in Phase 0; Pro in the desktop app). Restores get 48 h grace, `restored` events, regret metric; "Always keep <site>?" notification after a restore within 24 h. Sweeps page: Restore selected (any sweep), Select all, 7/30/All filter. "Sweep now" in shadow mode runs a dry-run simulation (decision: user asked to "make it how it should be"). Review/QA fixes before push: incognito restores never tracked; failed popup restore shows an error; duplicate ids deduped; crash-safe restore retry (`restoreStartedAt`); DST-safe dates; batch = search group exactly; combobox ARIA (expanded/controls/autocomplete, live result count, IME Enter); popup fits Chrome's 600 px limit (567 px measured); distinct labels for one sweep's windows; keycap out of the accessible name; protect offer skipped for already-protected sites and auto-cleared. Next: P0.7 form probe (then web pages return to the normal archive threshold).
 
 - **2026-11-07** — P0.5 sweep executor + undo. Automatic mode: at a quiet moment (no tab switch for 30 s), ≤ every 15 min, ≤ 50 oldest archivable tabs are committed as `archiving` with a `running` sweep before any close; each tab is re-checked (active/pinned/audible/URL) and closed with a 5 s timeout; outcome finalized in one transaction; crash recovery at the next tick. Undo (notification button, Sweeps page, popup) reopens tabs into the original window/position in the same browser session or one new window per original window, rebuilds groups, links new live items (`restoredFromId`, 48 h grace), counts `undoCount`/`restored24hCount`; last 20 sweeps that archived something. DB schema v2 (`sweeps.status` index). App icons added. Review/QA fixes before push: web pages archive at **2× threshold until the P0.7 form probe** (PRD §7.3); unknown tab state never closes or archives (timed-out closes stay `archiving` until recovery; `tabs.get` errors ≠ "gone"); tabs closed by the user mid-sweep are dropped, not archived; tab use during a sweep blocks the close and resets age; sweeps from a previous browser session wait 2 min for session restore; crash-safe undo retry (no duplicate tabs); toast cleared by alarm (`requireInteraction`); messages accepted only from Decay's own pages; Decay's own pages never tracked; Sweep now during a hold explains the hold; detail panel close, running-sweep labels, friendly worker-restart errors, Undo button accessible names.
 

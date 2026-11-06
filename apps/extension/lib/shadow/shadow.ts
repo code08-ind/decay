@@ -58,6 +58,7 @@ export function planShadowSweep(
   decisions: ReadonlyMap<string, Decision>,
   now: number,
   maxItems: number,
+  trigger: Sweep['trigger'] = 'scheduled',
 ): ShadowSweepPlan | null {
   const candidates = items
     .filter((i) => i.shadowFlaggedAt === undefined && decisions.get(i.id)?.action === 'archive')
@@ -68,7 +69,7 @@ export function planShadowSweep(
     id: uuidv7(),
     startedAt: now,
     finishedAt: now,
-    trigger: 'scheduled',
+    trigger,
     isShadow: 1,
     status: 'done',
     itemCount: candidates.length,

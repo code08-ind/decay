@@ -129,19 +129,23 @@ export async function recordRestores(
   db: DecayDB,
   opened: readonly Opened[],
   opts: { appId: string; now: number; sweepId?: string; asUndo: boolean },
-): Promise<void> {
+): Promise<number> {
   const { now } = opts;
-  await db.transaction('rw', [db.items, db.events, db.metrics], async () => {
+  return db.transaction('rw', [db.items, db.events, db.metrics], async () => {
     const events: ItemEvent[] = [];
     let regrets = 0;
+    let recorded = 0;
     for (const { item: snapshot, tab } of opened) {
       const record = await db.items.get(snapshot.id);
-      if (!record) continue;
+      // Re-checked inside the transaction: a concurrent restore already counted it.
+      if (record?.state !== 'archived') continue;
+      recorded++;
       if (record.archivedAt !== undefined && now - record.archivedAt <= REGRET_WINDOW_MS) regrets++;
       await db.items.update(record.id, {
         state: 'restored',
         stateChangedAt: now,
         restoreCount: (record.restoreCount ?? 0) + 1,
+        restoreStartedAt: undefined,
       });
       events.push({
         itemId: record.id,
@@ -149,7 +153,8 @@ export async function recordRestores(
         sweepId: opts.sweepId,
         at: now,
       });
-      if (tab.id === undefined) continue;
+      // Private windows are never tracked (like `upsertTab`).
+      if (tab.id === undefined || tab.incognito) continue;
       const tabId = String(tab.id);
       const existing = await db.findLiveByExternalId(opts.appId, tabId);
       const fields: Partial<Item> = {
@@ -192,20 +197,34 @@ export async function recordRestores(
       }
     }
     if (events.length) await db.events.bulkAdd(events);
-    if (opened.length) {
+    if (recorded) {
       const day = localDay(now);
       const row = (await db.metrics.get(day)) ?? emptyMetrics(day);
       row.restored24hCount = (row.restored24hCount ?? 0) + regrets;
       if (opts.asUndo) row.undoCount = (row.undoCount ?? 0) + 1;
       await db.metrics.put(row);
     }
+    return recorded;
   });
 }
 
 /** The sweep Undo acts on: the given one, or the newest undoable one. */
 export async function findUndoTarget(db: DecayDB, sweepId?: string): Promise<Sweep> {
   const recent = await undoWindow(db);
-  const sweep = sweepId ? await db.sweeps.get(sweepId) : recent.find((s) => canUndo(s, recent));
+  let sweep: Sweep | undefined;
+  if (sweepId) sweep = await db.sweeps.get(sweepId);
+  else {
+    // The newest sweep that still has archived tabs (one may have been restored by hand).
+    for (const s of recent) {
+      if (!canUndo(s, recent)) continue;
+      const ids = s.items.filter((e) => e.result === 'ok').map((e) => e.itemId);
+      const items = await db.items.bulkGet(ids);
+      if (items.some((i) => i?.state === 'archived' && i.lastSweepId === s.id)) {
+        sweep = s;
+        break;
+      }
+    }
+  }
   if (!sweep) throw new UndoError('NOT_FOUND', 'There is no sweep to undo.');
   if (!canUndo(sweep, recent)) {
     throw new UndoError(
@@ -242,6 +261,9 @@ export async function undoSweep(
   const records = (await db.items.bulkGet(okIds)).filter(
     (i): i is Item => i !== undefined && i.state === 'archived' && i.lastSweepId === sweep.id,
   );
+  if (!records.length) {
+    throw new UndoError('NOT_UNDOABLE', 'Everything from this sweep is already open again.');
+  }
   const windowOf = new Map(sweep.items.map((e) => [e.itemId, e.windowExternalId]));
   const session = await commands.browserSession();
   const sameSession = sweep.browserSession !== undefined && sweep.browserSession === session.id;
@@ -274,4 +296,132 @@ export async function undoSweep(
     failed: failed.length,
     tabIds: opened.map((o) => o.tab.id).filter((id): id is number => id !== undefined),
   };
+}
+
+export interface RestoreItemsResult extends RestoreResult {
+  /** Requested items that are already open again (restored earlier). */
+  skipped: number;
+  /** Records restored within 24 h of archiving (regret): candidates for "Always keep site". */
+  regretted: Item[];
+}
+
+/**
+ * Restore single items or a batch (PRD F6, Software Design §4.5).
+ * - `intoWindowId`: items reopen in the window the user is in, the first one active
+ *   (search → Enter);
+ * - `newWindow`: one new window per original window, in the original order (batch, S4);
+ * - otherwise like an undo: the original window within the same browser session.
+ *
+ * Crash-safe like undo: records are marked before tabs open, and a retry after an
+ * interrupted attempt links an already-open tab with the same URL instead of opening a
+ * second one.
+ */
+export async function restoreItems(
+  db: DecayDB,
+  commands: TabCommands,
+  opts: {
+    appId: string;
+    now: () => number;
+    ids: readonly string[];
+    intoWindowId?: number;
+    newWindow?: boolean;
+    getTabs: () => Promise<readonly TabInfo[]>;
+  },
+): Promise<RestoreItemsResult> {
+  const unique = [...new Set(opts.ids)];
+  const found = await db.items.bulkGet(unique);
+  const records = found.filter((i): i is Item => i?.state === 'archived');
+  const skipped = found.filter((i) => i !== undefined && i.state !== 'archived').length;
+  let failed = unique.length - records.length - skipped;
+
+  // A previous attempt was interrupted: adopt tabs it already opened.
+  const adopted: Opened[] = [];
+  let toOpen = records;
+  if (records.some((r) => r.restoreStartedAt !== undefined)) {
+    const open = [...(await opts.getTabs())];
+    toOpen = [];
+    for (const record of records) {
+      const i =
+        record.restoreStartedAt !== undefined
+          ? open.findIndex((t) => tabUrl(t) === record.url)
+          : -1;
+      const tab = i >= 0 ? open.splice(i, 1)[0] : undefined;
+      if (tab) adopted.push({ item: record, tab });
+      else toOpen.push(record);
+    }
+  }
+  const startedAt = opts.now();
+  await db.items.bulkUpdate(
+    toOpen.map((r) => ({ key: r.id, changes: { restoreStartedAt: startedAt } })),
+  );
+
+  const opened: Opened[] = [...adopted];
+  const notOpened: Item[] = [];
+  if (opts.intoWindowId !== undefined) {
+    for (const [i, record] of toOpen.entries()) {
+      try {
+        if (!record.url) throw new Error('no url');
+        const tab = await commands.createTab({
+          windowId: opts.intoWindowId,
+          url: record.url,
+          active: i === 0,
+        });
+        opened.push({ item: record, tab });
+      } catch {
+        notOpened.push(record);
+      }
+    }
+  } else {
+    const session = await commands.browserSession();
+    const bySweep = new Map<string, Item[]>();
+    for (const record of toOpen) {
+      const key = record.lastSweepId ?? '';
+      bySweep.set(key, [...(bySweep.get(key) ?? []), record]);
+    }
+    for (const [sweepId, list] of bySweep) {
+      const sweep = sweepId ? await db.sweeps.get(sweepId) : undefined;
+      const windowOf = new Map(sweep?.items.map((e) => [e.itemId, e.windowExternalId]) ?? []);
+      const sameSession =
+        !opts.newWindow &&
+        sweep?.browserSession !== undefined &&
+        sweep.browserSession === session.id;
+      const r = await reopenTabs(list, windowOf, commands, sameSession);
+      opened.push(...r.opened);
+      notOpened.push(...r.failed);
+    }
+  }
+  const now = opts.now();
+  const recorded = await recordRestores(db, opened, { appId: opts.appId, now, asUndo: false });
+  if (notOpened.length) {
+    await db.items.bulkUpdate(
+      notOpened.map((r) => ({ key: r.id, changes: { restoreStartedAt: undefined } })),
+    );
+  }
+  failed += notOpened.length;
+  return {
+    restored: recorded,
+    failed,
+    skipped: skipped + (opened.length - recorded),
+    tabIds: opened.map((o) => o.tab.id).filter((id): id is number => id !== undefined),
+    regretted: opened
+      .map((o) => o.item)
+      .filter((i) => i.archivedAt !== undefined && now - i.archivedAt <= REGRET_WINDOW_MS),
+  };
+}
+
+/** The batch an archived item belongs to: still-archived items of its sweep from the same window. */
+export async function findBatch(db: DecayDB, itemId: string): Promise<Item[]> {
+  const item = await db.items.get(itemId);
+  if (item?.state !== 'archived') return [];
+  if (!item.lastSweepId) return [item];
+  const sweep = await db.sweeps.get(item.lastSweepId);
+  const window = sweep?.items.find((e) => e.itemId === itemId)?.windowExternalId;
+  const ids = sweep?.items
+    .filter((e) => e.result === 'ok' && e.windowExternalId === window)
+    .map((e) => e.itemId) ?? [itemId];
+  const items = await db.items.bulkGet(ids);
+  return items.filter(
+    (i): i is Item =>
+      i !== undefined && i.state === 'archived' && i.lastSweepId === item.lastSweepId,
+  );
 }

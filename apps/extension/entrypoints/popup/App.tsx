@@ -1,77 +1,157 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { browser } from 'wxt/browser';
+import { Popup } from '@/components/Popup';
 import { db } from '@/lib/db/db';
-import type { Sweep } from '@/lib/db/types';
-import { type Settings, settings } from '@/lib/settings/settings';
-import { recentSweeps } from '@/lib/sweep/executor';
+import type { Item } from '@/lib/db/types';
+import { loadPopupData, type PopupData } from '@/lib/popup/data';
+import { RuleError, rules } from '@/lib/rules/rules';
+import { ArchiveSearch } from '@/lib/search/search';
+import { settings } from '@/lib/settings/settings';
+import { protectRuleFor } from '@/lib/shadow/actions';
 import { sendDecay } from '@/lib/sweep/messages';
+import type { TabInfo } from '@/lib/tracker/tabs';
+import { faviconFor } from '@/lib/ui/favicon';
+import { applyTheme } from '@/lib/ui/theme';
 
-// Placeholder until the search popup (P0.6) is built from Designs/*/15-extension-popup-*.
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const isMac = /Mac/i.test(navigator.platform || navigator.userAgent);
+
+/** Extension popup (Designs/15): status, search across the archive, restore, undo. */
 export function App() {
-  const [current, setCurrent] = useState<Settings | null>(null);
-  const [last, setLast] = useState<Sweep | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const [data, setData] = useState<PopupData | null>(null);
+  const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [all, [sweep]] = await Promise.all([settings.getAll(), recentSweeps(db, 1)]);
-    setCurrent(all);
-    setLast(sweep ?? null);
+    try {
+      const [all, tabs, [current]] = await Promise.all([
+        settings.getAll(),
+        browser.tabs.query({}) as Promise<TabInfo[]>,
+        browser.tabs.query({ active: true, currentWindow: true }) as Promise<TabInfo[]>,
+      ]);
+      applyTheme(all.theme);
+      const t = Date.now();
+      setData(
+        await loadPopupData(
+          db,
+          all,
+          tabs.filter((tab) => !tab.incognito),
+          current,
+          t,
+        ),
+      );
+      setNow(t);
+    } catch (e) {
+      setError(`Couldn't load Decay: ${message(e)}`);
+    }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const open = (path: '/review.html' | '/sweeps.html') =>
-    browser.tabs.create({ url: browser.runtime.getURL(path) });
+  // The index is built on the first keystroke, not on open: most opens never search.
+  const indexCache = useRef<{ source: Item[]; index: ArchiveSearch } | null>(null);
+  const getSearch = useCallback(() => {
+    const source = data?.archived ?? [];
+    if (indexCache.current?.source !== source) {
+      indexCache.current = { source, index: new ArchiveSearch(source, data?.windowOf) };
+    }
+    return indexCache.current.index;
+  }, [data?.archived, data?.windowOf]);
 
-  const undo = async () => {
-    if (!last || busy) return;
+  const act = async (task: () => Promise<string | null>) => {
+    if (busy) return;
     setBusy(true);
+    setError(null);
+    setStatus(null);
     try {
-      const r = await sendDecay({ type: 'decay.undoSweep', sweepId: last.id });
-      setStatus(`Restored ${r.restored ?? 0} tab${r.restored === 1 ? '' : 's'}.`);
+      setStatus(await task());
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
+      setError(message(e));
     } finally {
       setBusy(false);
       await load();
     }
   };
 
-  const undoable = last?.status === 'done' && last.itemCount > 0;
-  return (
-    <main style={{ width: 360, padding: 16, fontFamily: 'system-ui, sans-serif' }}>
-      <h1 style={{ fontSize: 18, margin: 0 }}>Decay</h1>
-      {current && (
-        <p style={{ fontSize: 13 }}>
-          Mode: <strong>{current.mode}</strong> · Preset: <strong>{current.preset}</strong> (
-          {current.thresholds.stale}/{current.thresholds.archive} active h)
-        </p>
-      )}
-      {last && (
-        <p style={{ fontSize: 13 }}>
-          Last sweep: {last.status === 'undone' ? 'undone' : `archived ${last.itemCount}`}{' '}
-          {undoable && (
-            <button type="button" onClick={() => void undo()} disabled={busy}>
-              {busy ? 'Undoing…' : 'Undo'}
-            </button>
-          )}
-        </p>
-      )}
-      {status && (
-        <p role="status" style={{ fontSize: 13 }}>
-          {status}
-        </p>
-      )}
-      <p style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={() => open('/review.html')}>
-          Shadow review
-        </button>
-        <button type="button" onClick={() => open('/sweeps.html')}>
-          Sweeps
-        </button>
+  const open = (path: '/review.html' | '/sweeps.html') => {
+    void browser.tabs.create({ url: browser.runtime.getURL(path) });
+    window.close();
+  };
+
+  // Enter: reopen as the active tab of this window, then close the popup. Private windows
+  // aren't tracked, so from one the tab opens in its original (or a new) normal window.
+  const onRestore = (item: Item) =>
+    act(async () => {
+      const win = await browser.windows.getCurrent();
+      const intoWindowId = win.incognito ? undefined : win.id;
+      const r = await sendDecay({ type: 'decay.restore', ids: [item.id], intoWindowId });
+      if (r.restored) {
+        window.close();
+        return null;
+      }
+      if (r.skipped) return 'That tab is already open again.';
+      throw new Error("Couldn't reopen that tab. Try again, or open it from Sweeps.");
+    });
+
+  const onRestoreBatch = (item: Item) =>
+    act(async () => {
+      const r = await sendDecay({ type: 'decay.restoreBatch', itemId: item.id });
+      const restored = r.restored ?? 0;
+      if (!restored && r.skipped && !r.failed) return 'That batch is already open again.';
+      return r.failed
+        ? `Restored ${restored} of ${restored + r.failed} tabs.`
+        : `Restored ${plural(restored, 'tab')} in a new window, in their original order.`;
+    });
+
+  const onUndoLastSweep = () =>
+    act(async () => {
+      const sweepId = data?.lastSweep?.sweep.id;
+      const r = await sendDecay({ type: 'decay.undoSweep', sweepId });
+      return `Restored ${plural(r.restored ?? 0, 'tab')}.`;
+    });
+
+  const onProtectSite = () =>
+    act(async () => {
+      const site = data?.currentSite;
+      const input = site ? protectRuleFor({ url: site.url }) : null;
+      if (!site || !input) return null;
+      try {
+        await rules.create(input);
+      } catch (e) {
+        if (!(e instanceof RuleError && e.code === 'DUPLICATE_RULE')) throw e;
+      }
+      return `Decay will never archive ${site.host}.`;
+    });
+
+  if (!data) {
+    return (
+      <p className="w-[380px] p-4 text-sm text-muted" aria-busy={!error}>
+        {error ?? 'Loading…'}
       </p>
-    </main>
+    );
+  }
+  return (
+    <Popup
+      data={data}
+      getSearch={getSearch}
+      now={now}
+      isMac={isMac}
+      faviconFor={(url) => faviconFor(url)}
+      onRestore={(item) => void onRestore(item)}
+      onRestoreBatch={(item) => void onRestoreBatch(item)}
+      onUndoLastSweep={() => void onUndoLastSweep()}
+      onOpenReview={() => open('/review.html')}
+      onOpenSweeps={() => open('/sweeps.html')}
+      onProtectSite={() => void onProtectSite()}
+      onClose={() => window.close()}
+      busy={busy}
+      status={status}
+      error={error}
+    />
   );
 }

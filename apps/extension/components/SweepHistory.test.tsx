@@ -52,6 +52,7 @@ function renderHistory(onUndo = vi.fn()) {
       now={NOW}
       onUndo={onUndo}
       onSweepNow={vi.fn()}
+      onRestore={vi.fn()}
       onOpenReview={vi.fn()}
     />,
   );
@@ -88,11 +89,41 @@ describe('SweepHistory', () => {
         now={NOW}
         onUndo={vi.fn()}
         onSweepNow={vi.fn()}
+        onRestore={vi.fn()}
         onOpenReview={vi.fn()}
       />,
     );
     expect(screen.getByText('Closing…')).toBeTruthy();
     expect(screen.queryByText(/kept open/i)).toBeNull();
     expect(screen.getByText('Archiving…')).toBeTruthy();
+  });
+
+  it('restores the selected tabs, and filters sweeps by date', () => {
+    const onRestore = vi.fn();
+    const a = entry('a', 1);
+    const old = entry('old', 60 * 24 * 40); // 40 days ago
+    const items = new Map([a, old].map((x) => [x.item.id, x.item]));
+    const sweeps = [a.sweep, old.sweep];
+    render(
+      <SweepHistory
+        history={{
+          mode: 'automatic',
+          entries: sweeps.map((sw, i) => describeSweep(sw, 2 - i, items, sweeps)),
+        }}
+        now={NOW}
+        onUndo={vi.fn()}
+        onSweepNow={vi.fn()}
+        onOpenReview={vi.fn()}
+        onRestore={onRestore}
+      />,
+    );
+    expect(screen.queryByText('Sweep #1')).toBeNull(); // older than 30 days
+    fireEvent.change(screen.getByLabelText('Show sweeps from'), { target: { value: 'all' } });
+    expect(screen.getByText('Sweep #1')).toBeTruthy();
+    const restoreSelected = screen.getByRole('button', { name: /Restore selected/ });
+    expect((restoreSelected as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Page a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore selected (1)' }));
+    expect(onRestore).toHaveBeenCalledWith(['a-i']);
   });
 });

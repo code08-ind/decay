@@ -1,12 +1,19 @@
 import { db } from '@/lib/db/db';
+import type { Item } from '@/lib/db/types';
+import { ruleMatches } from '@/lib/policy/match';
+import { RuleError, rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
-import { type DecayResponse, isDecayRequest } from '@/lib/sweep/messages';
+import { protectRuleFor, protectTargetFor } from '@/lib/shadow/actions';
+import { type DecayRequest, type DecayResponse, isDecayRequest } from '@/lib/sweep/messages';
 import { chromeApi, chromeCommands, detectAppId } from '@/lib/tracker/browser-api';
 import { TICK_MS } from '@/lib/tracker/clock';
 import { type TickResult, Tracker } from '@/lib/tracker/tracker';
 
 const TICK_ALARM = 'decay-tick';
 const SWEEP_NOTIFICATION = 'decay-sweep:';
+const PROTECT_NOTIFICATION = 'decay-protect:';
+/** The "Always keep site?" offer is removed after a minute. */
+const PROTECT_OFFER_MS = 60_000;
 /** Alarm that removes an Undo toast; named after its notification id. */
 const CLEAR_ALARM = 'decay-clear:';
 /** The Undo toast lives 30 s (PRD F7); Sweeps history keeps undo available after that. */
@@ -78,6 +85,22 @@ export default defineBackground(() => {
   });
 
   browser.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+    if (notificationId.startsWith(PROTECT_NOTIFICATION)) {
+      void browser.notifications.clear(notificationId);
+      if (buttonIndex !== 0) return;
+      const itemId = notificationId.slice(PROTECT_NOTIFICATION.length);
+      run('always keep site', async () => {
+        const item = await db.items.get(itemId);
+        const input = item ? protectRuleFor(item) : null;
+        if (!input) return;
+        try {
+          await rules.create({ ...input, source: 'quick_action' });
+        } catch (e) {
+          if (!(e instanceof RuleError && e.code === 'DUPLICATE_RULE')) throw e;
+        }
+      });
+      return;
+    }
     if (!notificationId.startsWith(SWEEP_NOTIFICATION)) return;
     const sweepId = notificationId.slice(SWEEP_NOTIFICATION.length);
     void browser.notifications.clear(notificationId);
@@ -101,10 +124,86 @@ export default defineBackground(() => {
     }
   });
   browser.notifications.onClicked.addListener((notificationId) => {
+    if (notificationId.startsWith(PROTECT_NOTIFICATION)) {
+      void browser.notifications.clear(notificationId);
+      return;
+    }
     if (!notificationId.startsWith(SWEEP_NOTIFICATION)) return;
     void browser.notifications.clear(notificationId);
     run('open sweeps', () => browser.tabs.create({ url: sweepsPage() }));
   });
+
+  const handle = async (message: DecayRequest): Promise<DecayResponse> => {
+    switch (message.type) {
+      case 'decay.sweepNow':
+        return sweepNow();
+      case 'decay.undoSweep': {
+        const r = await tracker.undoSweep(message.sweepId);
+        if (message.sweepId) {
+          void browser.notifications.clear(`${SWEEP_NOTIFICATION}${message.sweepId}`);
+        }
+        return { ok: true, restored: r.restored, failed: r.failed };
+      }
+      case 'decay.restore': {
+        const r = await tracker.restore(message.ids, { intoWindowId: message.intoWindowId });
+        // Don't hold the reply (the popup is closing) for the follow-up notification.
+        if (message.ids.length === 1) run('offer protect', () => offerProtect(r.regretted[0]));
+        return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
+      }
+      case 'decay.restoreBatch': {
+        const r = await tracker.restoreBatch(message.itemId);
+        return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
+      }
+    }
+  };
+
+  /** "Sweep now": real sweep in automatic mode, a simulation in shadow mode. */
+  const sweepNow = async (): Promise<DecayResponse> => {
+    const all = await settings.getAll();
+    if (all.mode === 'paused') {
+      return { ok: false, error: 'Decay is paused. Resume it to run a sweep.' };
+    }
+    if (all.holdUntil !== null && all.holdUntil > Date.now()) {
+      const until = new Date(all.holdUntil).toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+      return { ok: false, error: `Decay is on hold until ${until}. Nothing is closed.` };
+    }
+    const r = await tickAndAnnounce(() => tracker.sweepNow());
+    if (all.mode === 'shadow') return { ok: true, simulated: r.shadowFlagged ?? 0 };
+    return { ok: true, archived: r.sweep?.archived ?? 0, failed: r.sweep?.failed ?? 0 };
+  };
+
+  /**
+   * Restored within 24 h of archiving (regret): offer "Always keep <site>" in one click
+   * (PRD S5, Designs/10 follow-up).
+   */
+  const offerProtect = async (item: Item | undefined) => {
+    const target = item ? protectTargetFor(item) : undefined;
+    if (!item || target?.kind !== 'site') return;
+    // Already protected (e.g. a rule added since it was archived): nothing to offer.
+    const all = await db.rules.toArray();
+    const match = { appId: item.appId, url: item.url, title: item.title };
+    if (all.some((r) => r.enabled && r.action === 'protect' && ruleMatches(r, match))) return;
+    const id = `${PROTECT_NOTIFICATION}${item.id}`;
+    const minutes = Math.max(
+      1,
+      Math.round((Date.now() - (item.archivedAt ?? Date.now())) / 60_000),
+    );
+    const ago = minutes < 60 ? plural(minutes, 'minute') : plural(Math.round(minutes / 60), 'hour');
+    await browser.notifications
+      .create(id, {
+        type: 'basic',
+        iconUrl: browser.runtime.getURL('/icon/128.png'),
+        title: `Always keep ${target.label} open?`,
+        message: `You brought this back ${ago} after it was archived.`,
+        buttons: [{ title: `Always keep ${target.label}` }, { title: 'Not now' }],
+        priority: 0,
+      })
+      .catch((e) => console.error('[decay] notification failed', e));
+    await browser.alarms.create(`${CLEAR_ALARM}${id}`, { when: Date.now() + PROTECT_OFFER_MS });
+  };
 
   // Requests from our own pages (popup, Sweeps page). Other senders are ignored.
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -114,41 +213,11 @@ export default defineBackground(() => {
       sender.id === browser.runtime.id &&
       (sender.url ?? '').startsWith(browser.runtime.getURL('/'));
     if (!fromOurPage || !isDecayRequest(message)) return false;
-    const reply = (response: DecayResponse) => sendResponse(response);
-    const fail = (e: unknown) =>
-      reply({ ok: false, error: e instanceof Error ? e.message : String(e) });
-    if (message.type === 'decay.sweepNow') {
-      settings
-        .get('mode')
-        .then(async (mode) => {
-          if (mode !== 'automatic') {
-            reply({ ok: false, error: 'Sweeps only close tabs in automatic mode.' });
-            return;
-          }
-          const holdUntil = await settings.get('holdUntil');
-          if (holdUntil !== null && holdUntil > Date.now()) {
-            const until = new Date(holdUntil).toLocaleTimeString(undefined, {
-              hour: 'numeric',
-              minute: '2-digit',
-            });
-            reply({ ok: false, error: `Decay is on hold until ${until}. Nothing is closed.` });
-            return;
-          }
-          const r = await tickAndAnnounce(() => tracker.sweepNow());
-          reply({ ok: true, archived: r.sweep?.archived ?? 0, failed: r.sweep?.failed ?? 0 });
-        })
-        .catch(fail);
-    } else {
-      tracker
-        .undoSweep(message.sweepId)
-        .then((r) => {
-          if (message.sweepId) {
-            void browser.notifications.clear(`${SWEEP_NOTIFICATION}${message.sweepId}`);
-          }
-          reply({ ok: true, restored: r.restored, failed: r.failed });
-        })
-        .catch(fail);
-    }
+    handle(message)
+      .then(sendResponse)
+      .catch((e: unknown) =>
+        sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) }),
+      );
     return true; // async response
   });
   browser.tabs.onCreated.addListener((tab) => run('tab created', () => tracker.upsertTab(tab)));

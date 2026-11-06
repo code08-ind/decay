@@ -72,6 +72,8 @@ export interface Item {
   lastUsedAt: number;
   /** Phase 0 only: when a shadow sweep last flagged this item as "would archive". */
   shadowFlaggedAt?: number;
+  /** Phase 0 only: set while a restore of this archived record is in progress (crash-safe retry). */
+  restoreStartedAt?: number;
   /** Phase 0 only: when the last sampled `used` event was written (≤ 1 per 10 min). */
   lastUsedEventAt?: number;
   stateChangedAt: number;
