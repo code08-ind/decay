@@ -5,6 +5,7 @@ import {
   combineProbe,
   isWebUrl,
   PROBE_TIMEOUT_MS,
+  type ProbeAccess,
   type ProbeRecord,
   type ProbeVerdict,
   parseProbeRecord,
@@ -25,9 +26,41 @@ const SCRIPTS = [
 
 const PROBE_KEY = 'decay.probe';
 
-export async function hasProbeAccess(): Promise<boolean> {
+/**
+ * The web origins Decay may check right now: all http(s) pages, or only the sites the user
+ * picked in Chrome's "Site access → On specific sites".
+ */
+export async function probeOrigins(): Promise<string[]> {
   try {
-    return await browser.permissions.contains({ origins: PROBE_ORIGINS });
+    const { origins = [] } = await browser.permissions.getAll();
+    // Web patterns only, with a `/*` path (what content-script registration accepts here).
+    return origins.filter((o) => /^(https?|\*):\/\/[^/]+\/\*$/i.test(o)).sort();
+  } catch {
+    return [];
+  }
+}
+
+const isAllSites = (origins: readonly string[]) =>
+  origins.includes('*://*/*') ||
+  (origins.includes('http://*/*') && origins.includes('https://*/*'));
+
+/** All web pages, only the sites the user picked, or none. */
+export async function probeAccess(): Promise<ProbeAccess> {
+  const origins = await probeOrigins();
+  if (!origins.length) return 'none';
+  return isAllSites(origins) ? 'all' : 'some';
+}
+
+/** Decay may check at least some web pages. */
+export async function hasProbeAccess(): Promise<boolean> {
+  return (await probeAccess()) !== 'none';
+}
+
+/** Whether pages from this URL's site are ones Decay may check (any port). */
+async function canProbe(url: string): Promise<boolean> {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return await browser.permissions.contains({ origins: [`${protocol}//${hostname}/*`] });
   } catch {
     return false;
   }
@@ -40,10 +73,10 @@ export async function requestProbeAccess(): Promise<boolean> {
 
 let syncChain: Promise<unknown> = Promise.resolve();
 
-const wanted = () =>
+const wanted = (origins: string[]) =>
   SCRIPTS.map((s) => ({
     ...s,
-    matches: PROBE_ORIGINS,
+    matches: origins,
     allFrames: true,
     matchOriginAsFallback: true,
     runAt: 'document_start' as const,
@@ -54,7 +87,7 @@ type Registered = Browser.scripting.RegisteredContentScript;
 
 const sameScript = (have: Registered, want: ReturnType<typeof wanted>[number]) =>
   JSON.stringify(have.js) === JSON.stringify(want.js) &&
-  JSON.stringify(have.matches) === JSON.stringify(want.matches) &&
+  JSON.stringify([...(have.matches ?? [])].sort()) === JSON.stringify(want.matches) &&
   have.allFrames === want.allFrames &&
   have.runAt === want.runAt &&
   (have.world ?? 'ISOLATED') === want.world &&
@@ -70,18 +103,19 @@ const sameScript = (have: Registered, want: ReturnType<typeof wanted>[number]) =
  */
 export function syncProbeScripts(): Promise<void> {
   const run = async () => {
-    const granted = await hasProbeAccess();
+    const origins = await probeOrigins();
     const existing = await browser.scripting.getRegisteredContentScripts({
       ids: SCRIPTS.map((s) => s.id),
     });
-    if (!granted) {
+    if (!origins.length) {
       if (existing.length) {
         await browser.scripting.unregisterContentScripts({ ids: existing.map((s) => s.id) });
       }
       return;
     }
     const byId = new Map(existing.map((s) => [s.id, s]));
-    const want = wanted();
+    // Only on the sites Decay may check (all http(s) pages, or the user's picked sites).
+    const want = wanted(origins);
     const missing = want.filter((s) => !byId.has(s.id));
     const outdated = want.filter((s) => {
       const have = byId.get(s.id);
@@ -107,7 +141,7 @@ const timeout = (ms: number) =>
 export async function probeTab(tab: TabInfo): Promise<ProbeVerdict> {
   if (tab.id === undefined || !isWebUrl(tab.url || tab.pendingUrl)) return 'unknown';
   if (tab.discarded || tab.status === 'unloaded') return 'unknown';
-  if (!(await hasProbeAccess())) return 'unknown';
+  if (!(await canProbe(tab.url || tab.pendingUrl || ''))) return 'unknown';
   const target = { tabId: tab.id, allFrames: true };
   try {
     const both = Promise.all([
@@ -117,7 +151,21 @@ export async function probeTab(tab: TabInfo): Promise<ProbeVerdict> {
     const result = await Promise.race([both, timeout(PROBE_TIMEOUT_MS)]);
     if (result === TIMEOUT) return 'unknown';
     const [forms, unload] = result;
-    return combineProbe(forms, unload);
+    // With site access for some sites only, embedded pages from other sites are skipped
+    // silently: find out which of the embedded origins Decay may check.
+    let canCheckOrigin: ((origin: string) => boolean) | undefined;
+    if (!isAllSites(await probeOrigins())) {
+      const embedded = new Set<string>();
+      for (const f of forms) {
+        const origins = (f.result as { frameOrigins?: unknown } | undefined)?.frameOrigins;
+        if (Array.isArray(origins))
+          for (const o of origins) if (typeof o === 'string') embedded.add(o);
+      }
+      const allowed = new Set<string>();
+      for (const origin of embedded) if (await canProbe(`${origin}/`)) allowed.add(origin);
+      canCheckOrigin = (origin) => allowed.has(origin);
+    }
+    return combineProbe(forms, unload, canCheckOrigin);
   } catch {
     return 'unknown';
   }

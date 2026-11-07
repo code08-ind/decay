@@ -41,7 +41,7 @@ export interface ShadowReviewProps {
   onBackToShadow: () => void;
   onKeepWatching: () => void;
   onProtect: (entry: ReportItem) => void;
-  /** Ask for site access so pages can be checked for unsaved typing (P0.7). */
+  /** Ask for site access so pages can be checked for unsaved work (P0.7). */
   onAllowProbe?: () => void;
   probeBusy?: boolean;
   busyItemId?: string | null;
@@ -132,8 +132,12 @@ export function ShadowReview(props: ShadowReviewProps) {
 
         <Hero {...props} />
 
-        {!report.probeAccess && props.onAllowProbe && (
-          <ProbeBanner onAllow={props.onAllowProbe} busy={props.probeBusy} />
+        {report.probeAccess !== 'all' && props.onAllowProbe && (
+          <ProbeBanner
+            partial={report.probeAccess === 'some'}
+            onAllow={props.onAllowProbe}
+            busy={props.probeBusy}
+          />
         )}
 
         {props.error && (

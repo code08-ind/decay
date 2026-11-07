@@ -123,7 +123,7 @@ describe('form probe in ticks and sweeps (P0.7)', () => {
       tabs: fake.tabs,
       lastShadowSweepAt: null,
       probes: prober.stored,
-      probeAccess: true,
+      probeAccess: 'all',
     });
     expect(report.kept.map((k) => k.item.url)).toEqual(['https://site2.com/']);
     expect(report.keptByGroup.form).toBe(1);

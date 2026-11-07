@@ -217,7 +217,7 @@ interface Envelope<T = unknown> {
 | `tab.used` | `{ tabId, windowId, at, signal: 'activated' \| 'visible' \| 'audible' \| 'typed' }` | Debounced |
 | `tab.created` / `tab.updated` / `tab.removed` / `tab.moved` | `TabInfo` / `{ tabId, changes }` / `{ tabId, byUser: boolean }` / `{ tabId, windowId, index }` | Real-time |
 | `window.focus` | `{ windowId \| -1 }` | — |
-| `probe.result` | `{ tabId, dirtyForm: boolean, beforeUnload: boolean, uploading: boolean }` | Reply to `probe`. Phase 0 (P0.7) computes `dirtyForm` and `beforeUnload` (only counted after user activation); `uploading` isn't detected yet (always `false`). Phase 0 adds `unknown?: boolean` to the payload (`{ tabId, dirtyForm, beforeUnload, uploading, unknown? }`): true when the page couldn't be checked → the 2× threshold applies |
+| `probe.result` | `{ tabId, dirtyForm: boolean, beforeUnload: boolean, uploading: boolean }` | Reply to `probe`. Phase 0 (P0.7) computes `dirtyForm` and `beforeUnload` (only counted after user activation); `uploading` = file/large-body XHR or fetch in progress (needs the watcher); in Phase 0 uploads fold into the `dirty` verdict (protected as `formInput`, shown as "unsaved work"). Phase 0 adds `unknown?: boolean` to the payload (`{ tabId, dirtyForm, beforeUnload, uploading, unknown? }`): true when the page couldn't be checked → the 2× threshold applies |
 | `ack` | `{ ok: boolean; error?: { code; message }; result?: unknown }` | Reply to any command |
 | `heartbeat` | `{ at }` | Every 20 s |
 | `import.archive` | `{ items, rules, settings }` (chunked) | Phase 0 → app migration |

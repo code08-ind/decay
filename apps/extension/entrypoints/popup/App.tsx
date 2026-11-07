@@ -4,7 +4,7 @@ import { Popup } from '@/components/Popup';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { loadPopupData, type PopupData } from '@/lib/popup/data';
-import { hasProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
+import { probeAccess as loadProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { ArchiveSearch } from '@/lib/search/search';
 import { settings } from '@/lib/settings/settings';
@@ -33,7 +33,7 @@ export function App() {
         browser.tabs.query({}) as Promise<TabInfo[]>,
         browser.tabs.query({ active: true, currentWindow: true }) as Promise<TabInfo[]>,
         probeStore.load(),
-        hasProbeAccess(),
+        loadProbeAccess(),
       ]);
       applyTheme(all.theme);
       const t = Date.now();
@@ -140,7 +140,7 @@ export function App() {
     setBusy(true); // one permission request at a time (double clicks)
     requestProbeAccess()
       .then((granted) => {
-        if (granted) setStatus('Thanks. Decay now checks pages for unsaved typing.');
+        if (granted) setStatus('Thanks. Decay now checks pages for unsaved work.');
       })
       .catch((e: unknown) => setError(message(e)))
       .finally(() => {

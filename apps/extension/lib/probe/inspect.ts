@@ -23,6 +23,12 @@ export interface FrameForms {
    * whether the user typed there can't be told.
    */
   unknown: boolean;
+  /**
+   * Origins of the web pages embedded in this frame (iframes, also in shadow DOM). With
+   * site access for some sites only, frames on other sites can't be checked: the probe
+   * then can't call the page clean. Origins only — never full URLs.
+   */
+  frameOrigins?: string[];
 }
 
 /** One frame's `beforeunload` state, from the main world. */
@@ -33,6 +39,8 @@ export interface FrameUnload {
   handlers: number;
   /** Sticky user activation: without it, browsers never show a "Leave site?" prompt. */
   activated: boolean;
+  /** Uploads in progress (files or large bodies via XHR / fetch); needs the watcher. */
+  uploads?: number;
 }
 
 /**
@@ -46,6 +54,9 @@ export interface FrameUnload {
  * Untracked: a field whose value differs from its default → dirty; any other non-empty text
  * field or rich-text editor → unknown (frameworks like React copy the typed value into the
  * default, so "same as default" proves nothing).
+ * Tracked after a reload / Back-Forward / discarded-tab reload: any untyped field whose text
+ * differs from its default → unknown. The browser refills fields from the earlier visit
+ * *after* `load`, without events, so a refill can't be told from a script setting a value.
  */
 export function inspectForms(): FrameForms {
   const NOT_TEXT = new Set([
@@ -123,8 +134,24 @@ export function inspectForms(): FrameForms {
     deepQuery(root, '[contenteditable]').some((e) => editableHost(e) && hasText(e));
 
   const state = (globalThis as Record<string, unknown>).__decayTyping_v1 as
-    | { typed?: () => Element[]; alive?: () => boolean }
+    | {
+        typed?: () => Element[];
+        alive?: () => boolean;
+      }
     | undefined;
+  const frameOrigins = [
+    ...new Set(
+      deepQuery(document, 'iframe, frame').flatMap((f) => {
+        try {
+          const src = (f as HTMLIFrameElement).src;
+          const url = src ? new URL(src, document.baseURI) : null;
+          return url && /^https?:$/.test(url.protocol) ? [url.origin] : [];
+        } catch {
+          return [];
+        }
+      }),
+    ),
+  ];
   // `document.open()` erases the tracker's listeners (classic iframe editors do this): then it
   // may have missed typing, so the frame counts as untracked.
   const alive = typeof state?.alive === 'function' ? state.alive() : false;
@@ -154,7 +181,24 @@ export function inspectForms(): FrameForms {
       }
       if (dirty) break;
     }
-    return { tracked: true, dirty, unknown: !dirty && unknown };
+    // On a reload, Back/Forward, or the reload of a discarded tab, the browser can refill
+    // fields with text typed in an earlier visit, without any input event. Then an untyped
+    // field holding text that differs from the page's default may be restored work.
+    const nav = (
+      performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined
+    )?.type;
+    const restoreLikely =
+      nav === 'reload' ||
+      nav === 'back_forward' ||
+      nav === undefined ||
+      (document as Document & { wasDiscarded?: boolean }).wasDiscarded === true;
+    if (!dirty && !unknown && restoreLikely) {
+      const typed = new Set(state.typed());
+      unknown = deepQuery(document, 'input, textarea').some(
+        (f) => textField(f) && !typed.has(f) && changed(f) && holdsInput(f),
+      );
+    }
+    return { tracked: true, dirty, unknown: !dirty && unknown, frameOrigins };
   }
 
   // Untracked (the page loaded before Decay could watch it).
@@ -174,13 +218,15 @@ export function inspectForms(): FrameForms {
         ? document.body !== null && hasText(document.body)
         : deepQuery(document, '[contenteditable]').some((e) => editableHost(e) && hasText(e));
   }
-  return { tracked: false, dirty, unknown: !dirty && unknown };
+  return { tracked: false, dirty, unknown: !dirty && unknown, frameOrigins };
 }
 
 /** Main world: would closing this frame trigger a "Leave site?" prompt? */
 export function inspectUnload(): FrameUnload {
   const w = window as unknown as Record<string | symbol, unknown>;
-  const watch = w[Symbol.for('decay.unloadWatch.v1')] as { count?: () => number } | undefined;
+  const watch = w[Symbol.for('decay.unloadWatch.v1')] as
+    | { count?: () => number; uploads?: () => number }
+    | undefined;
   const attr = typeof w.onbeforeunload === 'function' ? 1 : 0;
   const listeners = watch && typeof watch.count === 'function' ? Number(watch.count()) || 0 : 0;
   const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
@@ -189,5 +235,6 @@ export function inspectUnload(): FrameUnload {
     tracked: watch !== undefined,
     handlers: attr + listeners,
     activated: activation ? activation.hasBeenActive === true : true,
+    uploads: watch && typeof watch.uploads === 'function' ? Number(watch.uploads()) || 0 : 0,
   };
 }

@@ -2,7 +2,7 @@ import type { DecayDB } from '../db/db';
 import { LIVE_STATES } from '../db/db';
 import type { Item, MetricsDay, Mode, ProtectedBy, Rule, Thresholds } from '../db/types';
 import { type Decision, evaluate, isBlankPage } from '../policy/policy';
-import { cachedVerdict, formSignal, type ProbeRecord } from '../probe/probe';
+import { cachedVerdict, formSignal, type ProbeAccess, type ProbeRecord } from '../probe/probe';
 import type { TabInfo } from '../tracker/tabs';
 import {
   ACTIVE_DAY_SECONDS,
@@ -48,8 +48,8 @@ export interface ShadowReport {
   keptByGroup: Record<KeptGroup, number>;
   /** When the next simulated sweep can run (null outside shadow mode). */
   nextSimulationAt: number | null;
-  /** Decay can check pages for typed input (site access granted, P0.7). */
-  probeAccess: boolean;
+  /** Site access for checking pages for unsaved work (P0.7). */
+  probeAccess: ProbeAccess;
 }
 
 export interface ReportInput {
@@ -66,7 +66,7 @@ export interface ReportInput {
   /** Form-probe verdicts (P0.7); missing = unknown (web pages wait 2×). */
   probes?: Readonly<ProbeRecord>;
   /** Whether Decay may check pages for typed input; false → web pages wait 2×. */
-  probeAccess?: boolean;
+  probeAccess?: ProbeAccess;
 }
 
 export function keptGroup(by: ProtectedBy): KeptGroup {
@@ -179,7 +179,7 @@ export function buildShadowReport(input: ReportInput): ShadowReport {
         : input.lastShadowSweepAt === null
           ? now
           : Math.max(now, input.lastShadowSweepAt + SHADOW_SWEEP_INTERVAL_MS),
-    probeAccess: input.probeAccess ?? false,
+    probeAccess: input.probeAccess ?? 'none',
   };
 }
 
@@ -194,7 +194,7 @@ export async function loadShadowReport(
   },
   tabs: readonly TabInfo[],
   now = Date.now(),
-  probe: { probes?: Readonly<ProbeRecord>; probeAccess?: boolean } = {},
+  probe: { probes?: Readonly<ProbeRecord>; probeAccess?: ProbeAccess } = {},
 ): Promise<ShadowReport> {
   const [items, rules, metrics, lastSweep] = await Promise.all([
     db.items.where('state').anyOf(LIVE_STATES).toArray(),

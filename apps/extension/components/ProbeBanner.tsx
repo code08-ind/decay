@@ -4,6 +4,8 @@ export interface ProbeBannerProps {
   onAllow: () => void;
   /** One-line layout for the 380 px popup (Chrome caps popups at 600 px tall). */
   compact?: boolean;
+  /** Access for some sites only ("On specific sites"): pages elsewhere wait 2×. */
+  partial?: boolean;
   busy?: boolean;
 }
 
@@ -11,7 +13,7 @@ export interface ProbeBannerProps {
  * Health banner (Designs/12) shown while Decay has no site access for the form probe
  * (P0.7): web pages then wait twice as long before they're archived (PRD §7.3).
  */
-export function ProbeBanner({ onAllow, compact, busy }: ProbeBannerProps) {
+export function ProbeBanner({ onAllow, compact, partial, busy }: ProbeBannerProps) {
   const button = (
     <button
       type="button"
@@ -22,19 +24,21 @@ export function ProbeBanner({ onAllow, compact, busy }: ProbeBannerProps) {
         compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
       }`}
     >
-      {busy ? 'Asking…' : 'Allow checks'}
+      {busy ? 'Asking…' : partial ? 'Allow all sites' : 'Allow checks'}
     </button>
   );
   if (compact) {
     return (
       <section
-        aria-label="Check pages for unsaved typing"
+        aria-label="Check pages for unsaved work"
         className="relative mt-2 flex items-center gap-2 overflow-hidden rounded-tile border border-line bg-surface py-1.5 pr-1.5 pl-4"
       >
         <span className="absolute inset-y-0 left-0 w-1.5 bg-warning" aria-hidden />
         <p className="min-w-0 flex-1 text-xs leading-snug text-muted">
-          <span className="font-medium text-ink">Can't check for unsaved typing</span> — web pages
-          wait 2× longer.
+          <span className="font-medium text-ink">
+            {partial ? 'Checking only the sites you picked' : "Can't check for unsaved work"}
+          </span>{' '}
+          — {partial ? 'other' : 'web'} pages wait 2× longer.
         </p>
         {button}
       </section>
@@ -42,7 +46,7 @@ export function ProbeBanner({ onAllow, compact, busy }: ProbeBannerProps) {
   }
   return (
     <section
-      aria-label="Check pages for unsaved typing"
+      aria-label="Check pages for unsaved work"
       className="relative mt-6 flex flex-col gap-3 overflow-hidden rounded-card border border-line bg-surface py-4 pr-5 pl-7 shadow-[var(--shadow-card)] sm:flex-row sm:items-center"
     >
       <span className="absolute inset-y-0 left-0 w-1.5 bg-warning" aria-hidden />
@@ -51,10 +55,15 @@ export function ProbeBanner({ onAllow, compact, busy }: ProbeBannerProps) {
           <SquarePen size={16} aria-hidden />
         </span>
         <div className="min-w-0">
-          <p className="font-medium">Decay can't check pages for unsaved typing yet</p>
+          <p className="font-medium">
+            {partial
+              ? 'Decay checks only the sites you picked for unsaved work'
+              : "Decay can't check pages for unsaved work yet"}
+          </p>
           <p className="text-sm text-muted">
-            Until it can, web pages wait twice as long before they're archived. Decay only checks
-            whether something was typed — never what.
+            {partial ? 'Pages on other sites' : 'Until it can, web pages'} wait twice as long before
+            they're archived. Decay only checks whether something was typed or is uploading — never
+            what.
           </p>
         </div>
       </div>

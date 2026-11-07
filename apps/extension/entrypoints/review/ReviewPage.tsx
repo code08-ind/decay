@@ -3,7 +3,7 @@ import { browser } from 'wxt/browser';
 import { ShadowReview } from '@/components/ShadowReview';
 import { db } from '@/lib/db/db';
 import type { Mode } from '@/lib/db/types';
-import { hasProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
+import { probeAccess as loadProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { protectRuleFor } from '@/lib/shadow/actions';
@@ -33,7 +33,7 @@ export function ReviewPage() {
         settings.getAll(),
         browser.tabs.query({}) as Promise<TabInfo[]>,
         probeStore.load(),
-        hasProbeAccess(),
+        loadProbeAccess(),
       ]);
       const open = tabs.filter((tab) => !tab.incognito);
       const t = Date.now();

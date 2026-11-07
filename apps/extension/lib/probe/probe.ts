@@ -11,6 +11,9 @@ import type { FrameForms, FrameUnload } from './inspect';
  */
 export type ProbeVerdict = 'clean' | 'dirty' | 'unknown';
 
+/** Site access for the probe: all web pages, only the sites the user picked, or none. */
+export type ProbeAccess = 'all' | 'some' | 'none';
+
 export interface ProbeEntry {
   /** URL the verdict is for: a navigation invalidates it. */
   url: string;
@@ -21,9 +24,12 @@ export interface ProbeEntry {
 /** Cached verdicts per tab id (persisted in `storage.session`, so pages can read them). */
 export type ProbeRecord = Record<string, ProbeEntry>;
 
-/** Clean / dirty verdicts are re-checked after this long. */
+/** Clean verdicts are re-checked after this long. */
 export const PROBE_TTL_MS = 30 * 60_000;
-/** "Couldn't check" is retried sooner (site access may have been granted). */
+/**
+ * "Couldn't check" (site access may have been granted) and "dirty" (an upload may have
+ * finished) are re-checked sooner.
+ */
 export const PROBE_UNKNOWN_TTL_MS = 10 * 60_000;
 /** Per-tab probe timeout: a hung page counts as unknown. */
 export const PROBE_TIMEOUT_MS = 3_000;
@@ -47,14 +53,18 @@ const isFrameForms = (r: unknown): r is FrameForms =>
   r !== null &&
   typeof (r as FrameForms).tracked === 'boolean' &&
   typeof (r as FrameForms).dirty === 'boolean' &&
-  typeof (r as FrameForms).unknown === 'boolean';
+  typeof (r as FrameForms).unknown === 'boolean' &&
+  ((r as FrameForms).frameOrigins === undefined ||
+    (Array.isArray((r as FrameForms).frameOrigins) &&
+      ((r as FrameForms).frameOrigins as unknown[]).every((o) => typeof o === 'string')));
 
 const isFrameUnload = (r: unknown): r is FrameUnload =>
   typeof r === 'object' &&
   r !== null &&
   typeof (r as FrameUnload).tracked === 'boolean' &&
   typeof (r as FrameUnload).handlers === 'number' &&
-  typeof (r as FrameUnload).activated === 'boolean';
+  typeof (r as FrameUnload).activated === 'boolean' &&
+  ((r as FrameUnload).uploads === undefined || typeof (r as FrameUnload).uploads === 'number');
 
 /**
  * Combines per-frame results into one verdict. The top frame (id 0) must have answered both
@@ -64,6 +74,8 @@ const isFrameUnload = (r: unknown): r is FrameUnload =>
 export function combineProbe(
   forms: readonly FrameResult[],
   unload: readonly FrameResult[],
+  /** With partial site access: whether Decay may check pages from this origin. */
+  canCheckOrigin?: (origin: string) => boolean,
 ): ProbeVerdict {
   const topForms = forms.some((f) => f.frameId === 0);
   const topUnload = unload.some((f) => f.frameId === 0);
@@ -74,8 +86,14 @@ export function combineProbe(
   // Dirty is trusted even from a partial answer: protecting is always safe.
   if (formResults.some((f) => f.dirty)) return 'dirty';
   if (unloadResults.some((u) => u.handlers > 0 && u.activated)) return 'dirty';
+  if (unloadResults.some((u) => (u.uploads ?? 0) > 0)) return 'dirty'; // closing cancels it
   if (!topForms || !topUnload || !formsOk || !unloadOk) return 'unknown';
   if (formResults.some((f) => f.unknown)) return 'unknown';
+  // Embedded pages from sites Decay may not check are skipped by the browser without an
+  // error: their typing or uploads would be invisible.
+  if (canCheckOrigin && formResults.some((f) => f.frameOrigins?.some((o) => !canCheckOrigin(o)))) {
+    return 'unknown';
+  }
   // Without the watcher (page loaded before it was registered) `addEventListener`
   // beforeunload handlers are invisible; after user activation the page might prompt.
   if (unloadResults.some((u) => !u.tracked && u.activated)) return 'unknown';
@@ -105,7 +123,7 @@ export function cachedVerdict(
   const url = tab.url || tab.pendingUrl;
   if (entry.url !== url) return undefined;
   if (lastUsedAt >= entry.at) return undefined;
-  const ttl = entry.verdict === 'unknown' ? PROBE_UNKNOWN_TTL_MS : PROBE_TTL_MS;
+  const ttl = entry.verdict === 'clean' ? PROBE_TTL_MS : PROBE_UNKNOWN_TTL_MS;
   if (now - entry.at >= ttl || entry.at > now) return undefined;
   return entry.verdict;
 }

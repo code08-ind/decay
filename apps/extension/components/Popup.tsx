@@ -37,7 +37,7 @@ export interface PopupProps {
   onOpenReview: () => void;
   onOpenSweeps: () => void;
   onProtectSite: () => void;
-  /** Ask for site access so pages can be checked for unsaved typing (P0.7). */
+  /** Ask for site access so pages can be checked for unsaved work (P0.7). */
   onAllowProbe?: () => void;
   onClose: () => void;
   busy?: boolean;
@@ -266,7 +266,7 @@ function Key({ children }: { children: ReactNode }) {
 function Home(props: PopupProps) {
   const { data } = props;
   const automatic = data.mode === 'automatic';
-  const showProbeBanner = !data.probeAccess && props.onAllowProbe !== undefined;
+  const showProbeBanner = data.probeAccess !== 'all' && props.onAllowProbe !== undefined;
   // Room for the banner within Chrome's 600 px popup height: one recent tab fewer.
   const recent = showProbeBanner ? data.recent.slice(0, RECENT_COUNT - 1) : data.recent;
   return (
@@ -280,7 +280,12 @@ function Home(props: PopupProps) {
         />
       </div>
       {showProbeBanner && props.onAllowProbe && (
-        <ProbeBanner compact onAllow={props.onAllowProbe} busy={props.busy} />
+        <ProbeBanner
+          compact
+          partial={data.probeAccess === 'some'}
+          onAllow={props.onAllowProbe}
+          busy={props.busy}
+        />
       )}
       <ModeCard {...props} />
       <section aria-label="Recently archived" className="mt-3">

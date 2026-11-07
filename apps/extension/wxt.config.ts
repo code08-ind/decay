@@ -10,7 +10,7 @@ export default defineConfig({
     description: 'Your tabs, gently put away. Archives stale tabs; search and restore anything.',
     // Phase 0 permissions (Software Design §4.7). `nativeMessaging` is added in Phase 1.
     // Web-page access is optional, asked for at runtime for the form probe (P0.7): it lets
-    // Decay check whether a page holds unsaved typing before archiving it.
+    // Decay check whether a page holds unsaved work before archiving it.
     // `favicon` serves cached favicons locally (no network requests from our pages).
     // `notifications` shows the Undo toast after a sweep (F7).
     permissions: [

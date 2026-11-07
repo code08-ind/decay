@@ -38,7 +38,7 @@ function data(over: Partial<PopupData> = {}): PopupData {
   return {
     mode: 'automatic',
     holdUntil: null,
-    probeAccess: true,
+    probeAccess: 'all',
     shadow: { dayNumber: 3, targetDays: 7, ready: false, wouldArchive: 4 },
     openTabs: 41,
     archivedToday: 2,
@@ -76,12 +76,17 @@ function renderPopup(over: Partial<PopupProps> = {}) {
 describe('Popup', () => {
   it('asks for site access only while pages cannot be checked for typing', () => {
     const onAllowProbe = vi.fn();
-    renderPopup({ onAllowProbe, data: data({ probeAccess: false }) });
-    expect(screen.getByText("Can't check for unsaved typing")).toBeTruthy();
+    renderPopup({ onAllowProbe, data: data({ probeAccess: 'none' }) });
+    expect(screen.getByText("Can't check for unsaved work")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Allow checks' }));
     expect(onAllowProbe).toHaveBeenCalledOnce();
     cleanup();
-    renderPopup({ onAllowProbe, data: data({ probeAccess: true }) });
+    cleanup();
+    renderPopup({ onAllowProbe, data: data({ probeAccess: 'some' }) });
+    expect(screen.getByText('Checking only the sites you picked')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Allow all sites' })).toBeTruthy();
+    cleanup();
+    renderPopup({ onAllowProbe, data: data({ probeAccess: 'all' }) });
     expect(screen.queryByRole('button', { name: 'Allow checks' })).toBeNull();
   });
 

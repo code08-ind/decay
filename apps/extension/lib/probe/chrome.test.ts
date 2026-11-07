@@ -4,7 +4,7 @@ import { makeTab } from '../tracker/test-utils';
 type Script = { id: string; world?: string; [k: string]: unknown };
 
 const state = vi.hoisted(() => ({
-  granted: true,
+  origins: [] as string[],
   registered: [] as Script[],
   calls: [] as string[],
   execute: (_opts: { world?: string }): Promise<unknown> => Promise.resolve([]),
@@ -14,11 +14,13 @@ const state = vi.hoisted(() => ({
 vi.mock('wxt/browser', () => ({
   browser: {
     permissions: {
-      contains: async () => state.granted,
-      request: async () => {
-        state.granted = true;
-        return true;
-      },
+      getAll: async () => ({ permissions: [], origins: [...state.origins] }),
+      // Granted if an all-sites pattern for the scheme, or the exact site pattern, is held.
+      contains: async ({ origins }: { origins: string[] }) =>
+        origins.every((o) => {
+          const scheme = o.split('//')[0];
+          return state.origins.includes(o) || state.origins.includes(`${scheme}//*/*`);
+        }),
     },
     scripting: {
       getRegisteredContentScripts: async ({ ids }: { ids: string[] }) =>
@@ -47,6 +49,7 @@ vi.mock('wxt/browser', () => ({
 }));
 
 const { probeTab, probeStore, syncProbeScripts } = await import('./chrome');
+const ALL = ['http://*/*', 'https://*/*'];
 
 const clean = (world?: string) =>
   world === 'MAIN'
@@ -54,7 +57,7 @@ const clean = (world?: string) =>
     : [{ frameId: 0, result: { tracked: true, dirty: false, unknown: false } }];
 
 beforeEach(() => {
-  state.granted = true;
+  state.origins = [...ALL];
   state.registered = [];
   state.calls = [];
   state.session = {};
@@ -84,9 +87,21 @@ describe('syncProbeScripts', () => {
     expect(state.calls).toEqual(['register:decay-typing', 'update:decay-unload-watch']);
   });
 
+  it('runs the trackers only on the sites picked under "On specific sites"', async () => {
+    state.origins = ['https://github.com/*'];
+    await syncProbeScripts();
+    expect(
+      state.registered.every((s) => JSON.stringify(s.matches) === '["https://github.com/*"]'),
+    ).toBe(true);
+    state.origins = [...ALL];
+    state.calls = [];
+    await syncProbeScripts();
+    expect(state.calls).toEqual(['update:decay-typing,decay-unload-watch']);
+  });
+
   it('unregisters the trackers when access is gone', async () => {
     await syncProbeScripts();
-    state.granted = false;
+    state.origins = [];
     state.calls = [];
     await syncProbeScripts();
     expect(state.calls).toEqual(['unregister:decay-typing,decay-unload-watch']);
@@ -114,9 +129,15 @@ describe('probeTab', () => {
       throw new Error('Cannot access contents of the page');
     };
     expect(await probeTab(tab)).toBe('unknown');
-    state.granted = false;
+    state.origins = [];
     state.execute = async ({ world }) => clean(world);
     expect(await probeTab(tab)).toBe('unknown');
+  });
+
+  it('checks pages on picked sites only', async () => {
+    state.origins = ['https://a.test/*'];
+    expect(await probeTab(tab)).toBe('clean');
+    expect(await probeTab(makeTab({ id: 10, url: 'https://b.test/' }))).toBe('unknown');
   });
 
   it('is unknown when the page does not answer in time', async () => {
@@ -140,5 +161,48 @@ describe('probeStore', () => {
     });
     state.session['decay.probe'] = { '4': { url: 1 } };
     expect(await probeStore.load()).toEqual({});
+  });
+});
+
+describe('site access levels', () => {
+  it('reports all / some / none, ignoring non-web patterns', async () => {
+    const { probeAccess, probeOrigins } = await import('./chrome');
+    state.origins = ['https://*/*', 'http://*/*', 'file:///*', 'chrome://favicon/*'];
+    expect(await probeOrigins()).toEqual(['http://*/*', 'https://*/*']);
+    expect(await probeAccess()).toBe('all');
+    state.origins = ['*://*/*'];
+    expect(await probeAccess()).toBe('all');
+    state.origins = ['https://github.com/*'];
+    expect(await probeAccess()).toBe('some');
+    state.origins = ['file:///*'];
+    expect(await probeAccess()).toBe('none');
+  });
+
+  it('checks a page on a non-default port against its site grant', async () => {
+    state.origins = ['https://a.test/*'];
+    expect(await probeTab(makeTab({ id: 9, url: 'https://a.test:8443/x' }))).toBe('clean');
+  });
+
+  it('with some sites only, embedded pages from other sites make the verdict unknown', async () => {
+    state.origins = ['https://a.test/*'];
+    state.execute = async ({ world }) =>
+      world === 'MAIN'
+        ? clean('MAIN')
+        : [
+            {
+              frameId: 0,
+              result: {
+                tracked: true,
+                dirty: false,
+                unknown: false,
+                frameOrigins: ['https://pay.example'],
+              },
+            },
+          ];
+    expect(await probeTab(makeTab({ id: 9, url: 'https://a.test/' }))).toBe('unknown');
+    state.origins = ['https://a.test/*', 'https://pay.example/*'];
+    expect(await probeTab(makeTab({ id: 9, url: 'https://a.test/' }))).toBe('clean');
+    state.origins = ['http://*/*', 'https://*/*'];
+    expect(await probeTab(makeTab({ id: 9, url: 'https://a.test/' }))).toBe('clean');
   });
 });

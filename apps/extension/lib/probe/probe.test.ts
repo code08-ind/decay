@@ -43,6 +43,19 @@ describe('combineProbe', () => {
     expect(combineProbe([top({ dirty: 'yes' })], [top(unload())])).toBe('unknown');
   });
 
+  it('is dirty while an upload is running (closing would cancel it)', () => {
+    expect(combineProbe([top(forms())], [top(unload({ uploads: 1 }))])).toBe('dirty');
+    expect(combineProbe([top(forms())], [top(unload({ uploads: 'x' }))])).toBe('unknown');
+  });
+
+  it('is unknown when an embedded page comes from a site Decay may not check', () => {
+    const page = top(forms({ frameOrigins: ['https://pay.example'] }));
+    expect(combineProbe([page], [top(unload())])).toBe('clean'); // all sites: frames were checked
+    expect(combineProbe([page], [top(unload())], () => false)).toBe('unknown');
+    expect(combineProbe([page], [top(unload())], (o) => o === 'https://pay.example')).toBe('clean');
+    expect(combineProbe([top(forms({ frameOrigins: [7] }))], [top(unload())])).toBe('unknown');
+  });
+
   it('trusts a dirty answer even when other answers are missing', () => {
     expect(combineProbe([sub(forms({ dirty: true }))], [])).toBe('dirty');
   });
@@ -79,6 +92,9 @@ describe('cachedVerdict', () => {
     expect(cachedVerdict(rec(), { id: 4, url: 'https://a.com/y' }, 0, now)).toBeUndefined();
     expect(cachedVerdict(rec(), tab, now - 500, now)).toBeUndefined();
     expect(cachedVerdict(rec({ at: now - PROBE_TTL_MS }), tab, 0, now)).toBeUndefined();
+    expect(
+      cachedVerdict(rec({ at: now - PROBE_UNKNOWN_TTL_MS, verdict: 'dirty' }), tab, 0, now),
+    ).toBeUndefined();
     expect(
       cachedVerdict(rec({ at: now - PROBE_UNKNOWN_TTL_MS, verdict: 'unknown' }), tab, 0, now),
     ).toBeUndefined();

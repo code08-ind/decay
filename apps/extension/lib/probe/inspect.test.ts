@@ -32,7 +32,7 @@ describe('inspectForms without the typing tracker (page loaded before Decay watc
     (document.querySelector('form input') as HTMLInputElement).value = 'query';
     (document.querySelector('input[type=search]') as HTMLInputElement).value = 'query';
     (document.querySelector('input[type=checkbox]') as HTMLInputElement).checked = true;
-    expect(inspectForms()).toEqual({ tracked: false, dirty: false, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: false, dirty: false, unknown: false });
   });
 
   it('is dirty when a text field or textarea differs from its default', () => {
@@ -47,7 +47,7 @@ describe('inspectForms without the typing tracker (page loaded before Decay watc
     const area = document.querySelector('textarea') as HTMLTextAreaElement;
     input.value = 'half-written ticket';
     input.defaultValue = input.value; // what React DOM does on every change
-    expect(inspectForms()).toEqual({ tracked: false, dirty: false, unknown: true });
+    expect(inspectForms()).toMatchObject({ tracked: false, dirty: false, unknown: true });
     input.value = '';
     input.defaultValue = '';
     area.value = 'draft';
@@ -79,10 +79,15 @@ describe('inspectForms without the typing tracker (page loaded before Decay watc
 });
 
 describe('inspectForms with the typing tracker', () => {
+  // jsdom has no navigation timing entry; real pages do. Default: a fresh page load.
+  const perf = performance as unknown as { getEntriesByType: (t: string) => unknown[] };
+  const originalEntries = perf.getEntriesByType;
   beforeEach(() => {
+    perf.getEntriesByType = () => [{ type: 'navigate' }];
     typingScript.main();
   });
   afterEach(() => {
+    perf.getEntriesByType = originalEntries;
     delete g[TYPING_KEY];
   });
 
@@ -90,12 +95,12 @@ describe('inspectForms with the typing tracker', () => {
     document.body.innerHTML = '<input id="pre" value="a"><input id="typed">';
     // Pre-filled by the page's script: not typed.
     (document.getElementById('pre') as HTMLInputElement).value = 'filled by script';
-    expect(inspectForms()).toEqual({ tracked: true, dirty: false, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: true, dirty: false, unknown: false });
     const typed = document.getElementById('typed') as HTMLInputElement;
     type(typed, () => {
       typed.value = 'my text';
     });
-    expect(inspectForms()).toEqual({ tracked: true, dirty: true, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: true, dirty: true, unknown: false });
   });
 
   it('ignores untrusted (script-fired) input events', () => {
@@ -156,7 +161,7 @@ describe('inspectForms with the typing tracker', () => {
     type(select, () => {
       select.selectedIndex = 1;
     });
-    expect(inspectForms()).toEqual({ tracked: true, dirty: false, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: true, dirty: false, unknown: false });
   });
 
   it('flags typed text even when the page copies it into the default (React)', () => {
@@ -166,7 +171,7 @@ describe('inspectForms with the typing tracker', () => {
       input.value = 'my answer';
       input.defaultValue = 'my answer';
     });
-    expect(inspectForms()).toEqual({ tracked: true, dirty: true, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: true, dirty: true, unknown: false });
   });
 
   it('counts typing inside an open shadow root (reported on the real field)', () => {
@@ -194,9 +199,39 @@ describe('inspectForms with the typing tracker', () => {
     expect(inspectForms()).toMatchObject({ tracked: false, dirty: true });
   });
 
+  it('is unknown for untyped changed fields after reload / Back / a discarded tab', () => {
+    // Chrome refills fields from the earlier visit after load, without events.
+    document.body.innerHTML = '<input value="a">';
+    (document.querySelector('input') as HTMLInputElement).value = 'text from an earlier visit';
+    expect(inspectForms()).toMatchObject({ dirty: false, unknown: false }); // fresh load
+    perf.getEntriesByType = () => [{ type: 'back_forward' }];
+    expect(inspectForms()).toMatchObject({ dirty: false, unknown: true });
+    perf.getEntriesByType = () => [{ type: 'reload' }];
+    expect(inspectForms().unknown).toBe(true);
+    perf.getEntriesByType = () => [{ type: 'prerender' }]; // nothing is restored there
+    expect(inspectForms().unknown).toBe(false);
+    perf.getEntriesByType = () => [{ type: 'navigate' }];
+    (document as Document & { wasDiscarded?: boolean }).wasDiscarded = true;
+    expect(inspectForms().unknown).toBe(true);
+    (document.querySelector('input') as HTMLInputElement).value = 'a'; // back to the default
+    expect(inspectForms().unknown).toBe(false);
+    delete (document as Document & { wasDiscarded?: boolean }).wasDiscarded;
+  });
+
+  it('reports the origins of embedded web pages (never full URLs)', () => {
+    document.body.innerHTML =
+      '<iframe src="https://pay.example/form?id=7"></iframe><iframe src="about:blank"></iframe><x-host></x-host>';
+    const root = (document.querySelector('x-host') as HTMLElement).attachShadow({ mode: 'open' });
+    root.innerHTML = '<iframe src="https://chat.example/w"></iframe>';
+    expect(inspectForms().frameOrigins?.sort()).toEqual([
+      'https://chat.example',
+      'https://pay.example',
+    ]);
+  });
+
   it('trusts the tracker over a rich-text editor it never saw typing in', () => {
     document.body.innerHTML = '<div contenteditable>Saved document text</div>';
-    expect(inspectForms()).toEqual({ tracked: true, dirty: false, unknown: false });
+    expect(inspectForms()).toMatchObject({ tracked: true, dirty: false, unknown: false });
   });
 });
 
@@ -238,6 +273,78 @@ describe('inspectUnload and the beforeunload watcher', () => {
     expect(inspectUnload().handlers).toBe(1);
     window.removeEventListener('beforeunload', b);
     expect(inspectUnload().handlers).toBe(0);
+  });
+
+  it('counts uploads in progress (XHR with a file, fetch with a file), not plain requests', async () => {
+    unloadWatchScript.main();
+    const file = new Blob(['x'.repeat(10)]);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://localhost:1/upload');
+    xhr.send(file);
+    expect(inspectUnload().uploads).toBe(1);
+    xhr.abort(); // fires loadend
+    expect(inspectUnload().uploads).toBe(0);
+
+    const plain = new XMLHttpRequest();
+    plain.open('POST', 'http://localhost:1/api');
+    plain.send('{"a":1}');
+    expect(inspectUnload().uploads).toBe(0);
+    plain.abort();
+
+    // send() before open() throws: nothing is running.
+    expect(() => new XMLHttpRequest().send(file)).toThrow();
+    expect(inspectUnload().uploads).toBe(0);
+
+    const form = new FormData();
+    form.append('f', file);
+    const pending = fetch('http://localhost:1/up', { method: 'POST', body: form }).catch(
+      () => null,
+    );
+    expect(inspectUnload().uploads).toBe(1);
+    await pending;
+    await Promise.resolve();
+    expect(inspectUnload().uploads).toBe(0);
+  });
+
+  it('handles Request uploads, re-opened / aborted XHRs, big strings and binary sizes', async () => {
+    unloadWatchScript.main();
+    const file = new Blob(['x'.repeat(10)]);
+    // Re-opening a running upload ends it without loadend.
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://localhost:1/a');
+    xhr.addEventListener('loadend', (e) => e.stopImmediatePropagation());
+    xhr.send(file);
+    expect(inspectUnload().uploads).toBe(1);
+    xhr.open('POST', 'http://localhost:1/b');
+    expect(inspectUnload().uploads).toBe(0);
+    xhr.send('small');
+    expect(inspectUnload().uploads).toBe(0);
+    xhr.abort();
+
+    const big = new XMLHttpRequest();
+    big.open('POST', 'http://localhost:1/c');
+    big.send('x'.repeat(256 * 1024)); // e.g. base64 in JSON
+    expect(inspectUnload().uploads).toBe(1);
+    big.abort();
+    const small = new XMLHttpRequest();
+    small.open('POST', 'http://localhost:1/d');
+    small.send(new ArrayBuffer(256 * 1024 - 1));
+    expect(inspectUnload().uploads).toBe(0);
+    small.abort();
+    const bin = new XMLHttpRequest();
+    bin.open('POST', 'http://localhost:1/e');
+    bin.send(new Uint8Array(256 * 1024));
+    expect(inspectUnload().uploads).toBe(1);
+    bin.abort();
+    expect(inspectUnload().uploads).toBe(0);
+
+    // fetch(Request) with a body.
+    const req = new Request('http://localhost:1/f', { method: 'POST', body: file });
+    const pending = fetch(req).catch(() => null);
+    expect(inspectUnload().uploads).toBe(1);
+    await pending;
+    await Promise.resolve();
+    expect(inspectUnload().uploads).toBe(0);
   });
 
   it('forgets a { once: true } listener after beforeunload fires', () => {
