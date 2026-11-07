@@ -1,5 +1,6 @@
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
+import { recordSearchToRestore } from '@/lib/metrics/metrics';
 import { ruleMatches } from '@/lib/policy/match';
 import { probeStore, probeTab, syncProbeScripts } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
@@ -150,13 +151,20 @@ export default defineBackground(() => {
         const r = await tracker.restore(message.ids, { intoWindowId: message.intoWindowId });
         // Don't hold the reply (the popup is closing) for the follow-up notification.
         if (message.ids.length === 1) run('offer protect', () => offerProtect(r.regretted[0]));
+        if (r.restored) await noteSearch(message.searchMs);
         return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
       }
       case 'decay.restoreBatch': {
         const r = await tracker.restoreBatch(message.itemId);
+        if (r.restored) await noteSearch(message.searchMs);
         return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
       }
     }
+  };
+
+  /** Popup search → restore time (P0.8); a metrics write failure never fails the restore. */
+  const noteSearch = async (ms: number | undefined) => {
+    if (ms !== undefined) await recordSearchToRestore(db, ms).catch(() => undefined);
   };
 
   /** "Sweep now": real sweep in automatic mode, a simulation in shadow mode. */

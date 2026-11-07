@@ -8,10 +8,14 @@ import { browser } from 'wxt/browser';
 export type DecayRequest =
   | { type: 'decay.sweepNow' }
   | { type: 'decay.undoSweep'; sweepId?: string }
-  /** Restore items; with `intoWindowId` they open there (the first one active). */
-  | { type: 'decay.restore'; ids: string[]; intoWindowId?: number }
+  /**
+   * Restore items; with `intoWindowId` they open there (the first one active). `searchMs`:
+   * popup search → restore time (P0.8). The worker records it, because restoring an active
+   * tab closes the popup before it could write anything after the reply.
+   */
+  | { type: 'decay.restore'; ids: string[]; intoWindowId?: number; searchMs?: number }
   /** Restore the whole batch an item was archived with (PRD F6, ⌘/Ctrl+Enter). */
-  | { type: 'decay.restoreBatch'; itemId: string };
+  | { type: 'decay.restoreBatch'; itemId: string; searchMs?: number };
 
 export type DecayResponse =
   | {
@@ -27,6 +31,8 @@ export type DecayResponse =
   | { ok: false; error: string };
 
 const isString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+const isMs = (v: unknown) =>
+  v === undefined || (typeof v === 'number' && Number.isFinite(v) && v >= 0);
 
 export function isDecayRequest(msg: unknown): msg is DecayRequest {
   if (!msg || typeof msg !== 'object') return false;
@@ -42,10 +48,11 @@ export function isDecayRequest(msg: unknown): msg is DecayRequest {
         m.ids.length > 0 &&
         m.ids.length <= 500 &&
         m.ids.every(isString) &&
-        (m.intoWindowId === undefined || Number.isInteger(m.intoWindowId))
+        (m.intoWindowId === undefined || Number.isInteger(m.intoWindowId)) &&
+        isMs(m.searchMs)
       );
     case 'decay.restoreBatch':
-      return isString(m.itemId);
+      return isString(m.itemId) && isMs(m.searchMs);
     default:
       return false;
   }

@@ -191,4 +191,11 @@ export interface MetricsDay {
   shadowFlaggedCount: number;
   /** Phase 0: flagged items used again within 24 h (shadow regret). */
   shadowRegretCount: number;
+  /** Phase 0 (P0.8): local hours already sampled for open tabs / windows. */
+  sampledHours?: number[];
+  /** Phase 0 (P0.8): hourly samples behind `openTabsP50` / `openWindowsP50`. */
+  openTabsSamples?: number[];
+  openWindowsSamples?: number[];
+  /** Phase 0 (P0.8): samples behind `searchToRestoreMsP50`. */
+  searchToRestoreSamples?: number[];
 }

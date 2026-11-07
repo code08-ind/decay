@@ -74,6 +74,18 @@ function renderPopup(over: Partial<PopupProps> = {}) {
 }
 
 describe('Popup', () => {
+  it('reports search activity, marks restores from results, and links to Insights', () => {
+    const onQueryChange = vi.fn();
+    const onOpenInsights = vi.fn();
+    const { props, input } = renderPopup({ onQueryChange, onOpenInsights });
+    fireEvent.click(screen.getByRole('button', { name: 'Insights' }));
+    expect(onOpenInsights).toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: 'stripe' } });
+    expect(onQueryChange).toHaveBeenCalledWith('stripe');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(vi.mocked(props.onRestore).mock.calls[0]?.[1]).toEqual({ fromSearch: true });
+  });
+
   it('asks for site access only while pages cannot be checked for typing', () => {
     const onAllowProbe = vi.fn();
     renderPopup({ onAllowProbe, data: data({ probeAccess: 'none' }) });
@@ -128,11 +140,14 @@ describe('Popup', () => {
   });
 
   it('Esc clears the query first, then closes', () => {
-    const { props, input } = renderPopup();
+    const onQueryChange = vi.fn();
+    const { props, input } = renderPopup({ onQueryChange });
     fireEvent.change(input, { target: { value: 'nothing-matches-this' } });
     expect(screen.getByText(/No archived tabs match/)).toBeTruthy();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect((input as HTMLInputElement).value).toBe('');
+    // QA P0.8: clearing with Esc restarts the search → restore timer, like Backspace.
+    expect(onQueryChange).toHaveBeenLastCalledWith('');
     expect(props.onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(props.onClose).toHaveBeenCalled();

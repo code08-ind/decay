@@ -34,6 +34,8 @@
   --warning: #b7791f;
   --danger: #a54731;
   --focus: #4f8a4b;
+  /* Chart marks (validated: lightness band, ≥ 3:1 vs surface; dataviz skill). */
+  --chart-bar: #4f8a4b;
   --avatar-1: #e8e6f8;
   --avatar-1-text: #4b45a8;
   --avatar-2: #e2edf8;
@@ -78,6 +80,7 @@
     --warning: #e0b252;
     --danger: #e08a72;
     --focus: #8cc66e;
+    --chart-bar: #66a258;
     --avatar-1: #2a2846;
     --avatar-1-text: #b9b4f2;
     --avatar-2: #1f2f40;
@@ -120,6 +123,7 @@
   --warning: #e0b252;
   --danger: #e08a72;
   --focus: #8cc66e;
+  --chart-bar: #66a258;
   --avatar-1: #2a2846;
   --avatar-1-text: #b9b4f2;
   --avatar-2: #1f2f40;

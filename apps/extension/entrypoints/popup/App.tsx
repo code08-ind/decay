@@ -3,6 +3,7 @@ import { browser } from 'wxt/browser';
 import { Popup } from '@/components/Popup';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
+import { recordSearch } from '@/lib/metrics/metrics';
 import { loadPopupData, type PopupData } from '@/lib/popup/data';
 import { probeAccess as loadProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
@@ -67,6 +68,30 @@ export function App() {
     return indexCache.current.index;
   }, [data?.archived, data?.windowOf]);
 
+  // Metrics (P0.8): one search per popup opening; time from the first keystroke to a
+  // restore picked from the results.
+  const firstKeyAt = useRef<number | null>(null);
+  const searchCounted = useRef(false);
+  const onQueryChange = (q: string) => {
+    if (!q)
+      firstKeyAt.current = null; // cleared: the next search starts over
+    else if (firstKeyAt.current === null) firstKeyAt.current = performance.now();
+    if (q.trim().length >= 2 && !searchCounted.current) {
+      searchCounted.current = true;
+      void recordSearch(db).catch(() => undefined);
+    }
+  };
+  /**
+   * Search → restore time for a restore picked from the results, sent with the restore
+   * request (the worker records it if the restore succeeds). One sample per search: the
+   * timer stops here even if the restore fails, so a later retry can't add idle time.
+   */
+  const takeSearchMs = (fromSearch?: boolean) => {
+    const start = firstKeyAt.current;
+    firstKeyAt.current = null;
+    return fromSearch && start !== null ? Math.round(performance.now() - start) : undefined;
+  };
+
   const act = async (task: () => Promise<string | null>) => {
     if (busy) return;
     setBusy(true);
@@ -82,18 +107,19 @@ export function App() {
     }
   };
 
-  const open = (path: '/review.html' | '/sweeps.html') => {
+  const open = (path: '/review.html' | '/sweeps.html' | '/insights.html') => {
     void browser.tabs.create({ url: browser.runtime.getURL(path) });
     window.close();
   };
 
   // Enter: reopen as the active tab of this window, then close the popup. Private windows
   // aren't tracked, so from one the tab opens in its original (or a new) normal window.
-  const onRestore = (item: Item) =>
+  const onRestore = (item: Item, opts?: { fromSearch?: boolean }) =>
     act(async () => {
+      const searchMs = takeSearchMs(opts?.fromSearch);
       const win = await browser.windows.getCurrent();
       const intoWindowId = win.incognito ? undefined : win.id;
-      const r = await sendDecay({ type: 'decay.restore', ids: [item.id], intoWindowId });
+      const r = await sendDecay({ type: 'decay.restore', ids: [item.id], intoWindowId, searchMs });
       if (r.restored) {
         window.close();
         return null;
@@ -102,9 +128,10 @@ export function App() {
       throw new Error("Couldn't reopen that tab. Try again, or open it from Sweeps.");
     });
 
-  const onRestoreBatch = (item: Item) =>
+  const onRestoreBatch = (item: Item, opts?: { fromSearch?: boolean }) =>
     act(async () => {
-      const r = await sendDecay({ type: 'decay.restoreBatch', itemId: item.id });
+      const searchMs = takeSearchMs(opts?.fromSearch);
+      const r = await sendDecay({ type: 'decay.restoreBatch', itemId: item.id, searchMs });
       const restored = r.restored ?? 0;
       if (!restored && r.skipped && !r.failed) return 'That batch is already open again.';
       return r.failed
@@ -163,11 +190,13 @@ export function App() {
       now={now}
       isMac={isMac}
       faviconFor={(url) => faviconFor(url)}
-      onRestore={(item) => void onRestore(item)}
-      onRestoreBatch={(item) => void onRestoreBatch(item)}
+      onRestore={(item, opts) => void onRestore(item, opts)}
+      onRestoreBatch={(item, opts) => void onRestoreBatch(item, opts)}
+      onQueryChange={onQueryChange}
       onUndoLastSweep={() => void onUndoLastSweep()}
       onOpenReview={() => open('/review.html')}
       onOpenSweeps={() => open('/sweeps.html')}
+      onOpenInsights={() => open('/insights.html')}
       onProtectSite={() => void onProtectSite()}
       onAllowProbe={onAllowProbe}
       onClose={() => window.close()}

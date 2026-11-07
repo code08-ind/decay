@@ -3,7 +3,6 @@ import {
   CircleAlert,
   CircleCheck,
   Info,
-  Leaf,
   Lock,
   Plus,
   RotateCcw,
@@ -11,10 +10,11 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import type { Mode, Reason, SweepSkipReason } from '@/lib/db/types';
+import type { Reason, SweepSkipReason } from '@/lib/db/types';
 import { localDay } from '@/lib/shadow/shadow';
 import type { SweepHistory as History, SweepEntry, SweepEntryItem } from '@/lib/sweep/history';
 import { avatarClass, shortUrl } from './format';
+import { PageHeader } from './PageHeader';
 
 export interface SweepHistoryProps {
   history: History;
@@ -30,12 +30,6 @@ export interface SweepHistoryProps {
   error?: string | null;
   notice?: string | null;
 }
-
-const MODE_LABEL: Record<Mode, string> = {
-  shadow: 'Shadow mode',
-  automatic: 'Automatic',
-  paused: 'Paused',
-};
 
 const SKIP_LABEL: Record<SweepSkipReason, string> = {
   inUse: 'Kept open: in use',
@@ -109,16 +103,7 @@ export function SweepHistory(props: SweepHistoryProps) {
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
-      <header className="flex items-center justify-between border-b border-line px-4 py-3 sm:px-10">
-        <div className="flex items-center gap-2">
-          <Leaf size={20} className="text-accent" aria-hidden />
-          <span className="font-serif text-xl">Decay</span>
-        </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm">
-          <span className="size-2 rounded-full bg-accent-dot" aria-hidden />
-          {MODE_LABEL[mode]}
-        </span>
-      </header>
+      <PageHeader current="sweeps" mode={mode} />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

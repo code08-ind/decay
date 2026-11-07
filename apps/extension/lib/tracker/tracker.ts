@@ -1,5 +1,6 @@
 import { type DecayDB, isLive, LIVE_STATES } from '../db/db';
 import type { Item, ItemEvent, Rule } from '../db/types';
+import { sampleOpenCounts } from '../metrics/metrics';
 import { evaluate, isExcluded, type PolicyContext, type TabSignals } from '../policy/policy';
 import {
   cachedVerdict,
@@ -392,6 +393,21 @@ export class Tracker {
         flagged,
         regrets,
         automatic: policy.mode === 'automatic',
+        // Open tabs / windows sampled hourly while the browser is in use (P0.8).
+        open:
+          creditS > 0
+            ? (() => {
+                // Normal windows only (not popups / app windows), and their tabs.
+                const normal = windows.filter(
+                  (w) => !w.incognito && (w.type === undefined || w.type === 'normal'),
+                );
+                const ids = new Set(normal.map((w) => w.id));
+                return {
+                  tabs: visible.filter((t) => ids.has(t.windowId)).length,
+                  windows: normal.length,
+                };
+              })()
+            : undefined,
       });
       await this.deleteItems(r.deleteIds);
       if (r.dirty.size) await db.items.bulkPut([...r.dirty]);
@@ -546,11 +562,18 @@ export class Tracker {
   /** Adds to today's on-device metrics row (PRD §9 metrics, F2 shadow stats). */
   private async recordMetrics(
     now: number,
-    add: { activeSeconds: number; flagged: number; regrets: number; automatic?: boolean },
+    add: {
+      activeSeconds: number;
+      flagged: number;
+      regrets: number;
+      automatic?: boolean;
+      open?: { tabs: number; windows: number };
+    },
   ): Promise<void> {
     if (!add.activeSeconds && !add.flagged && !add.regrets) return;
     const day = localDay(now);
     const row = (await this.db.metrics.get(day)) ?? emptyMetrics(day);
+    if (add.open) sampleOpenCounts(row, now, add.open);
     // Adoption metric (PRD §9 Gate 0): the day counts as "auto mode on" if it was on
     // during any active tick.
     if (add.automatic) row.autoModeOn = 1;

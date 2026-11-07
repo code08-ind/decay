@@ -74,6 +74,7 @@
   --color-cta-ink: var(--cta-text);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
+  --color-chart: var(--chart-bar);
   --color-avatar-1: var(--avatar-1);
   --color-avatar-1-ink: var(--avatar-1-text);
   --color-avatar-2: var(--avatar-2);

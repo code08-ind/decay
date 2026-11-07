@@ -4,7 +4,6 @@ import {
   Eye,
   Hand,
   Info,
-  Leaf,
   Link2Off,
   Lock,
   PauseCircle,
@@ -28,6 +27,7 @@ import {
   percent,
   shortUrl,
 } from './format';
+import { PageHeader } from './PageHeader';
 import { ProbeBanner } from './ProbeBanner';
 
 export interface ShadowReviewProps {
@@ -61,12 +61,6 @@ const GROUP_ICON: Record<KeptGroup, ReactNode> = {
   rules: <ShieldCheck size={16} aria-hidden />,
   hold: <PauseCircle size={16} aria-hidden />,
   other: <Link2Off size={16} aria-hidden />,
-};
-
-const MODE_LABEL: Record<Mode, string> = {
-  shadow: 'Shadow mode',
-  automatic: 'Automatic',
-  paused: 'Paused',
 };
 
 export function ShadowReview(props: ShadowReviewProps) {
@@ -111,16 +105,7 @@ export function ShadowReview(props: ShadowReviewProps) {
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
-      <header className="flex items-center justify-between border-b border-line px-4 py-3 sm:px-10">
-        <div className="flex items-center gap-2">
-          <Leaf size={20} className="text-accent" aria-hidden />
-          <span className="font-serif text-xl">Decay</span>
-        </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm">
-          <span className="size-2 rounded-full bg-accent-dot" aria-hidden />
-          {MODE_LABEL[report.mode]}
-        </span>
-      </header>
+      <PageHeader current="review" mode={report.mode} />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-10">
         <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">Shadow review</h1>

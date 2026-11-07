@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  ChartColumn,
   CircleAlert,
   History,
   Leaf,
@@ -31,11 +32,15 @@ export interface PopupProps {
   /** Mac shows ⌘, others Ctrl (for the batch-restore hint). */
   isMac: boolean;
   faviconFor?: (url: string) => string | undefined;
-  onRestore: (item: Item) => void;
-  onRestoreBatch: (item: Item) => void;
+  /** `fromSearch`: picked from search results (for the search → restore metric, P0.8). */
+  onRestore: (item: Item, opts?: { fromSearch?: boolean }) => void;
+  onRestoreBatch: (item: Item, opts?: { fromSearch?: boolean }) => void;
+  /** Every change of the search text (metrics: searches, time to restore). */
+  onQueryChange?: (query: string) => void;
   onUndoLastSweep: () => void;
   onOpenReview: () => void;
   onOpenSweeps: () => void;
+  onOpenInsights?: () => void;
   onProtectSite: () => void;
   /** Ask for site access so pages can be checked for unsaved work (P0.7). */
   onAllowProbe?: () => void;
@@ -95,8 +100,10 @@ export function Popup(props: PopupProps) {
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (query) setQuery('');
-      else props.onClose();
+      if (query) {
+        setQuery('');
+        props.onQueryChange?.(''); // a new search starts the search → restore timer over
+      } else props.onClose();
       return;
     }
     if (!items.length || e.nativeEvent.isComposing) return;
@@ -108,8 +115,8 @@ export function Popup(props: PopupProps) {
       setSelected((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter' && current) {
       e.preventDefault();
-      if (e.metaKey || e.ctrlKey) props.onRestoreBatch(current);
-      else props.onRestore(current);
+      if (e.metaKey || e.ctrlKey) props.onRestoreBatch(current, { fromSearch: true });
+      else props.onRestore(current, { fromSearch: true });
     }
   };
 
@@ -126,10 +133,22 @@ export function Popup(props: PopupProps) {
           <span className="size-1.5 rounded-full bg-accent-dot" aria-hidden />
           {modeChip(data, props.now)}
         </span>
+        {props.onOpenInsights && (
+          <button
+            type="button"
+            onClick={props.onOpenInsights}
+            title="Insights"
+            className="ml-auto grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2"
+          >
+            <ChartColumn size={16} aria-hidden />
+            <span className="sr-only">Insights</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={props.onOpenSweeps}
-          className="ml-auto grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2"
+          title="Sweep history"
+          className={`${props.onOpenInsights ? '' : 'ml-auto '}grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2`}
         >
           <History size={16} aria-hidden />
           <span className="sr-only">Sweep history</span>
@@ -157,7 +176,10 @@ export function Popup(props: PopupProps) {
           aria-controls={items.length > 0 ? listId : undefined}
           aria-activedescendant={current ? optionId(current) : undefined}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            props.onQueryChange?.(e.target.value);
+          }}
           onKeyDown={onKeyDown}
           placeholder="Search archived tabs"
           className="w-full rounded-full border border-line bg-surface-2 py-2 pr-14 pl-9 text-sm placeholder:text-faint"
@@ -202,8 +224,8 @@ export function Popup(props: PopupProps) {
           optionId={optionId}
           selectedId={current?.id}
           faviconFor={props.faviconFor}
-          onRestore={props.onRestore}
-          onRestoreBatch={props.onRestoreBatch}
+          onRestore={(item) => props.onRestore(item, { fromSearch: true })}
+          onRestoreBatch={(item) => props.onRestoreBatch(item, { fromSearch: true })}
           onHover={(item) => setSelected(Math.max(0, items.indexOf(item)))}
           mod={mod}
           busy={props.busy}

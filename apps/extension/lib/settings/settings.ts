@@ -133,7 +133,10 @@ export function createSettingsStore(database: DecayDB = defaultDb) {
 
   async function getAll(): Promise<Settings> {
     const rows = await database.settings.toArray();
-    const stored = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    // Known keys only: other rows (e.g. the beta export's install id) aren't settings.
+    const stored = Object.fromEntries(
+      rows.filter((r) => r.key in DEFAULT_SETTINGS).map((r) => [r.key, r.value]),
+    );
     return sanitize(structuredClone({ ...DEFAULT_SETTINGS, ...stored }) as Settings);
   }
 

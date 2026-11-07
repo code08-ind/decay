@@ -24,6 +24,7 @@ export interface TabInfo {
 export interface WindowInfo {
   id?: number;
   state?: string; // 'normal' | 'minimized' | 'maximized' | 'fullscreen' | …
+  type?: string; // 'normal' | 'popup' | 'app' | 'devtools'
   focused: boolean;
   incognito: boolean;
 }

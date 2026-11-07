@@ -307,6 +307,7 @@ Field names mirror the SQL schema (camelCase). Phase 0 differences:
 - Phase 0-only sweep fields: `browserSession` (random id per browser session), `undoStartedAt` (in-progress undo marker); per sweep item: `windowExternalId` (window at archive time) and `skipReason` (`inUse`, `changed`, `modeChanged`, `error`, `closedByUser`).
 - `[appId+externalId]` is not unique or state-aware like `idx_items_live_ext`, so `externalId` is cleared when an item leaves a live state and lookups use `findLiveByExternalId`.
 - Domain rule matches are stored lowercase.
+- Phase 0-only metrics fields (P0.8): `sampledHours`, `openTabsSamples`, `openWindowsSamples`, `searchToRestoreSamples` (the samples behind the `_p50` medians: open tabs/windows once per local hour while the browser is in use, so ≤ 24 per day, hours with no open tab skipped; search → restore times ≤ 48 per day, times over 120 s dropped). Setting `betaInstallId`: random UUID used only in the beta export. Not imported.
 - Phase 0-only item fields: `windowExternalId` (live browser window id, stand-in for `sources`) and `lastUsedEventAt` (sampling of `used` events). Not imported.
 - Item domains use eTLD+1 **including private suffixes** (`user.github.io`, `*.vercel.app` are separate domains). Same rule for the Rust core.
 - The `ImportArchive` migration maps camelCase enums and settings keys to the snake_case SQL values, fetches `faviconUrl` into the `favicon` BLOB, and fills `saveState='n/a'`.
