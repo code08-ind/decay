@@ -293,6 +293,13 @@ function asideNote(mode: Mode, days: number): string {
 function Hero(props: ShadowReviewProps) {
   const { report } = props;
   const [confirming, setConfirming] = useState(false);
+  // Any mode change closes the "Turn on" confirmation, so "Back to shadow mode" shows the
+  // plain button again (React's adjust-state-during-render pattern).
+  const [confirmMode, setConfirmMode] = useState(report.mode);
+  if (confirmMode !== report.mode) {
+    setConfirmMode(report.mode);
+    setConfirming(false);
+  }
   const regret = percent(report.regretRate);
   const flagged = report.flaggedTotal;
   const tabs = `${flagged} ${flagged === 1 ? 'tab' : 'tabs'}`;

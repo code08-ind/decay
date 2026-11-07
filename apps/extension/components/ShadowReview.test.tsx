@@ -110,6 +110,18 @@ describe('ShadowReview', () => {
     expect(p.onTurnOnAutomatic).not.toHaveBeenCalled();
   });
 
+  it('closes the confirmation when the mode changes (QA P0.9: Back to shadow mode)', () => {
+    const p = props();
+    const { rerender } = render(<ShadowReview {...p} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on automatic mode early' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
+    rerender(<ShadowReview {...p} report={report({ mode: 'automatic' })} />);
+    fireEvent.click(screen.getByRole('button', { name: /Back to shadow mode/ }));
+    rerender(<ShadowReview {...p} report={report({ mode: 'shadow' })} />);
+    expect(screen.queryByText(/ends shadow mode before day 7/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Turn on automatic mode early' })).toBeTruthy();
+  });
+
   it('does not offer automatic mode before sweeps exist', () => {
     render(
       <ShadowReview {...props({ automaticAvailable: false, report: report({ ready: true }) })} />,
