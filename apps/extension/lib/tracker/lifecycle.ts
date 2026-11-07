@@ -2,9 +2,9 @@ import type { Item, ItemEvent, Reason } from '../db/types';
 import {
   type Decision,
   evaluate,
-  FORM_INPUT_UNKNOWN,
   type PolicyContext,
   stateFor,
+  type TabSignals,
 } from '../policy/policy';
 import type { TabInfo } from './tabs';
 
@@ -19,6 +19,8 @@ export function applyLifecycle(
   ctx: PolicyContext,
   dirty: Set<Item>,
   events: ItemEvent[],
+  /** Form-probe signal per item (P0.7); default: unknown (web pages wait 2×). */
+  formInput: (item: Item, tab: TabInfo | undefined) => TabSignals['formInput'] = () => 'unknown',
 ): Map<string, Decision> {
   const decisions = new Map<string, Decision>();
   for (const item of items) {
@@ -29,7 +31,7 @@ export function applyLifecycle(
       {
         active: tab?.active ?? false,
         audible: tab?.audible ?? false,
-        formInput: FORM_INPUT_UNKNOWN,
+        formInput: formInput(item, tab),
       },
       ctx,
     );

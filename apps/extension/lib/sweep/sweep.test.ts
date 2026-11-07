@@ -2,77 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DecayDB } from '../db/db';
 import type { Item, Mode, Sweep } from '../db/types';
 import type { TabInfo } from '../tracker/tabs';
-import { FakeBrowser, makeTab } from '../tracker/test-utils';
+import { FakeBrowser, FakeCommands, makeTab } from '../tracker/test-utils';
 import { Tracker } from '../tracker/tracker';
-import {
-  closeTabs,
-  QUIET_MS,
-  RESTORE_GRACE_MS,
-  SWEEP_INTERVAL_MS,
-  type TabCommands,
-  UNDO_HISTORY,
-} from './executor';
+import { closeTabs, QUIET_MS, RESTORE_GRACE_MS, SWEEP_INTERVAL_MS, UNDO_HISTORY } from './executor';
 import { describeSweep, loadSweepHistory } from './history';
 import { UndoError } from './restore';
 
 const APP = 'com.google.Chrome';
 const H = 3600;
-
-/** Tab commands acting on the fake browser's tab list. */
-class FakeCommands implements TabCommands {
-  nextTabId = 100;
-  nextWindowId = 50;
-  session = 's1';
-  removed: number[] = [];
-  createdWindows: string[] = [];
-  groups: { id: number; tabIds: number[]; windowId: number; title?: string; color?: string }[] = [];
-  onRemove?: (tabId: number) => Promise<void> | void;
-  failCreate = new Set<string>();
-  constructor(private readonly fake: FakeBrowser) {}
-  async removeTab(tabId: number) {
-    await this.onRemove?.(tabId);
-    this.fake.tabs = this.fake.tabs.filter((t) => t.id !== tabId);
-    this.removed.push(tabId);
-  }
-  async createTab(opts: { windowId: number; url: string; index?: number; active?: boolean }) {
-    if (this.failCreate.has(opts.url)) throw new Error('create failed');
-    const tab = makeTab({
-      id: this.nextTabId++,
-      windowId: opts.windowId,
-      url: opts.url,
-      index: opts.index ?? this.fake.tabs.length,
-      active: opts.active ?? false,
-      title: '',
-      status: 'loading',
-    });
-    this.fake.tabs.push(tab);
-    return structuredClone(tab);
-  }
-  async createWindow(url: string) {
-    if (this.failCreate.has(url)) throw new Error('create failed');
-    const windowId = this.nextWindowId++;
-    this.fake.windows.push({ id: windowId, focused: false, incognito: false, state: 'normal' });
-    this.createdWindows.push(url);
-    const tab = await this.createTab({ windowId, url, index: 0 });
-    return { windowId, tab };
-  }
-  async windowExists(windowId: number) {
-    return this.fake.windows.some((w) => w.id === windowId);
-  }
-  async groupTabs(tabIds: number[], windowId: number) {
-    const id = 900 + this.groups.length;
-    this.groups.push({ id, tabIds, windowId });
-    return id;
-  }
-  async updateGroup(groupId: number, props: { title?: string; color?: string }) {
-    const g = this.groups.find((x) => x.id === groupId);
-    if (g) Object.assign(g, props);
-  }
-  sessionStartedAt = 0;
-  async browserSession() {
-    return { id: this.session, startedAt: this.sessionStartedAt };
-  }
-}
 
 let n = 0;
 let db: DecayDB;
@@ -157,7 +94,8 @@ describe('sweep executor', () => {
     expect(item).toMatchObject({ url: 'https://old.com/a', lastSweepId: r.sweep?.id });
     expect(item?.archivedAt).toBe(clock);
     expect(item?.externalId).toBeUndefined();
-    expect(item?.archiveReason).toMatchObject({ type: 'unused', threshold: 120 }); // 2× until the form probe;
+    // No form probe in this tracker: web pages wait 2× (PRD §7.3).
+    expect(item?.archiveReason).toMatchObject({ type: 'unused', threshold: 120 });
     const [sweep] = await realSweeps();
     expect(sweep).toMatchObject({ status: 'done', itemCount: 1, failedCount: 0 });
     expect(sweep?.items[0]?.result).toBe('ok');

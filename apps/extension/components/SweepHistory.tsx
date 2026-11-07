@@ -43,6 +43,7 @@ const SKIP_LABEL: Record<SweepSkipReason, string> = {
   modeChanged: 'Kept open: Decay was paused',
   error: "Kept open: couldn't close",
   closedByUser: 'You closed it first',
+  formInput: 'Kept open: unsaved typing',
 };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;

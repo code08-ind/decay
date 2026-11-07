@@ -3,6 +3,7 @@ import { browser } from 'wxt/browser';
 import { ShadowReview } from '@/components/ShadowReview';
 import { db } from '@/lib/db/db';
 import type { Mode } from '@/lib/db/types';
+import { hasProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { protectRuleFor } from '@/lib/shadow/actions';
@@ -28,13 +29,15 @@ export function ReviewPage() {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [all, tabs] = await Promise.all([
+      const [all, tabs, probes, probeAccess] = await Promise.all([
         settings.getAll(),
         browser.tabs.query({}) as Promise<TabInfo[]>,
+        probeStore.load(),
+        hasProbeAccess(),
       ]);
       const open = tabs.filter((tab) => !tab.incognito);
       const t = Date.now();
-      const next = await loadShadowReport(db, all, open, t);
+      const next = await loadShadowReport(db, all, open, t, { probes, probeAccess });
       if (seq !== loadSeq.current) return;
       applyTheme(all.theme);
       setReport(next);
@@ -79,6 +82,21 @@ export function ReviewPage() {
     }
   };
 
+  // `permissions.request` needs the click's user gesture: it must be the first await.
+  const [probeBusy, setProbeBusy] = useState(false);
+  const onAllowProbe = async () => {
+    if (probeBusy) return;
+    setProbeBusy(true); // one permission request at a time (double clicks)
+    try {
+      await requestProbeAccess();
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setProbeBusy(false);
+    }
+    await load();
+  };
+
   const onKeepWatching = async () => {
     try {
       const tab = await browser.tabs.getCurrent();
@@ -104,6 +122,8 @@ export function ReviewPage() {
       automaticAvailable={AUTOMATIC_MODE_AVAILABLE}
       faviconFor={(url) => faviconFor(url)}
       onProtect={onProtect}
+      onAllowProbe={() => void onAllowProbe()}
+      probeBusy={probeBusy}
       onTurnOnAutomatic={() => void setMode('automatic')}
       onBackToShadow={() => void setMode('shadow')}
       onKeepWatching={() => void onKeepWatching()}

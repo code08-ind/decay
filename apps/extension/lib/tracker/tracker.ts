@@ -1,6 +1,18 @@
 import { type DecayDB, isLive, LIVE_STATES } from '../db/db';
 import type { Item, ItemEvent, Rule } from '../db/types';
-import { isExcluded, type PolicyContext } from '../policy/policy';
+import { evaluate, isExcluded, type PolicyContext, type TabSignals } from '../policy/policy';
+import {
+  cachedVerdict,
+  createLimiter,
+  formSignal,
+  isWebUrl,
+  MAX_PROBES_PER_TICK,
+  mapLimit,
+  PROBE_CONCURRENCY,
+  PROBE_TICK_BUDGET_MS,
+  type ProbeRecord,
+  type ProbeVerdict,
+} from '../probe/probe';
 import {
   emptyMetrics,
   localDay,
@@ -51,6 +63,14 @@ export interface BrowserApi {
   setLastTickAt(at: number): Promise<void>;
 }
 
+/** The form probe (P0.7) as the tracker sees it; tests supply a fake. */
+export interface TabProber {
+  /** Never throws: anything that can't be checked is `unknown`. */
+  probe(tab: TabInfo): Promise<ProbeVerdict>;
+  load(): Promise<ProbeRecord>;
+  save(record: ProbeRecord): Promise<void>;
+}
+
 export interface TrackerDeps {
   db: DecayDB;
   api: BrowserApi;
@@ -66,6 +86,11 @@ export interface TrackerDeps {
    * are never tracked, so a sweep can't close the page that started it.
    */
   ownOrigin?: string;
+  /**
+   * Form probe (P0.7). Without it every web page's form state is unknown, so web pages
+   * archive at 2× the threshold (PRD §7.3).
+   */
+  prober?: TabProber;
   /** Per-tab close timeout (default 5 s; tests use less). */
   closeTimeoutMs?: number;
   /** Current mode, hold and thresholds. Rules are read from the DB inside each transaction. */
@@ -139,6 +164,11 @@ export class Tracker {
    * during a sweep is only visible here; the executor checks it before closing.
    */
   private readonly usedAt = new Map<number, number>();
+  private readonly prober?: TabProber;
+  /** Probe verdicts per tab id; loaded from `storage.session` at the first tick. */
+  private probes: ProbeRecord | null = null;
+  /** Caps probes in flight, also across a sweep's pre-close checks. */
+  private readonly probeLimit = createLimiter(PROBE_CONCURRENCY);
 
   constructor(deps: TrackerDeps) {
     this.db = deps.db;
@@ -151,6 +181,15 @@ export class Tracker {
     this.commands = deps.commands;
     this.closeTimeoutMs = deps.closeTimeoutMs;
     this.ownOrigin = deps.ownOrigin;
+    this.prober = deps.prober;
+  }
+
+  /** Forget every probe verdict (site access granted or revoked: re-check everything). */
+  resetProbes(): Promise<void> {
+    return this.exclusive(async () => {
+      this.probes = {};
+      await this.prober?.save({});
+    });
   }
 
   /**
@@ -238,6 +277,21 @@ export class Tracker {
       await recoverInterrupted(this.db, openTabs, this.now(), session);
     }
     const browserSession = commands ? (await commands.browserSession()).id : '';
+    // Probe tabs that would be archived if nothing were typed in them (P0.7), before the
+    // snapshot and the transaction (browser calls can't run inside one, and probing takes a
+    // moment, so the snapshot below is fresh). A failure only means "unknown".
+    if (this.prober) {
+      await this.api
+        .queryTabs()
+        .then((tabs) =>
+          this.refreshProbes(
+            tabs.filter((t) => !t.incognito),
+            policy,
+            this.now(),
+          ),
+        )
+        .catch((e) => console.error('[decay] probe failed', e));
+    }
     const snapshotAt = this.now();
     const [allTabs, windows, groupList, idleState, lastTickAt] = await Promise.all([
       this.api.queryTabs(),
@@ -287,6 +341,7 @@ export class Tracker {
         { ...policy, rules, now },
         r.dirty,
         tickEvents,
+        (item, tab) => this.formSignalFor(item, tab, now),
       );
 
       // Shadow mode (F2): simulate a sweep at most every 15 min; nothing is closed.
@@ -373,11 +428,33 @@ export class Tracker {
       policy !== null &&
       policy.mode === 'automatic' &&
       !(policy.holdUntil !== null && policy.holdUntil > now);
+    const rules = allowed ? await this.db.rules.toArray() : [];
+    const prober = this.prober;
+    // Last check (P0.7): probe again right before closing. Decided with the fresh verdict by
+    // the same policy: still `archive` → close; typed input → keep (`formInput`); a page that
+    // can no longer be checked and isn't old enough for the 2× rule → keep (`changed`).
+    const confirm =
+      prober && policy
+        ? async (item: Item, tab: TabInfo) => {
+            if (!isWebUrl(item.url)) return null;
+            const startedAt = this.now();
+            const verdict = await this.probeLimit(() => prober.probe(tab));
+            this.storeProbe(tab, verdict, startedAt);
+            const decision = evaluate(
+              item,
+              { active: tab.active, audible: tab.audible === true, formInput: formSignal(verdict) },
+              { ...policy, rules, now: this.now() },
+            );
+            if (decision.action === 'archive') return null;
+            return verdict === 'dirty' ? ('formInput' as const) : ('changed' as const);
+          }
+        : undefined;
     const outcomes = allowed
       ? await closeTabs(plan.archiving, (tabId) => this.api.getTab(tabId), commands, {
           usedAt: (tabId) => this.usedAt.get(tabId),
           usedSince: plan.sweep.startedAt - QUIET_MS,
           timeoutMs: this.closeTimeoutMs,
+          confirm,
         })
       : new Map(
           plan.archiving.map((i) => [
@@ -386,7 +463,80 @@ export class Tracker {
           ]),
         );
     const done = await finalizeSweep(this.db, id, outcomes, this.now());
+    if (confirm && this.probes) {
+      await prober?.save(this.probes).catch((e) => console.error('[decay] probe save failed', e));
+    }
     return { id, ...done };
+  }
+
+  /** The policy's form signal for an item: the cached probe verdict, or unknown. */
+  private formSignalFor(
+    item: Item,
+    tab: TabInfo | undefined,
+    now: number,
+  ): TabSignals['formInput'] {
+    if (!this.prober || !this.probes) return 'unknown';
+    return formSignal(cachedVerdict(this.probes, tab, item.lastUsedAt, now));
+  }
+
+  /** `at` is when the probe *started*: a use during the probe invalidates the verdict. */
+  private storeProbe(tab: TabInfo, verdict: ProbeVerdict, at: number): void {
+    if (tab.id === undefined) return;
+    this.probes ??= {};
+    this.probes[String(tab.id)] = { url: tabUrl(tab) ?? '', at, verdict };
+  }
+
+  /**
+   * Probes the open web tabs that would be archived now if nothing were typed in them and
+   * that have no valid cached verdict — oldest first, at most `MAX_PROBES_PER_TICK` per tick.
+   * Typing needs the tab in front (which resets its age), so a verdict for a stale tab stays
+   * good until the tab is used, navigates, or the verdict expires.
+   */
+  private async refreshProbes(
+    tabs: readonly TabInfo[],
+    policy: TrackerPolicy,
+    now: number,
+  ): Promise<void> {
+    const prober = this.prober;
+    if (!prober) return;
+    this.probes ??= await prober.load();
+    const record = this.probes;
+    const tabsById = new Map(tabs.map((t) => [String(t.id), t]));
+    let changed = false;
+    for (const id of Object.keys(record)) {
+      if (!tabsById.has(id)) {
+        delete record[id];
+        changed = true;
+      }
+    }
+    const [items, rules] = await Promise.all([this.liveItems(), this.db.rules.toArray()]);
+    const ctx = { ...policy, rules, now };
+    const due = items
+      .filter((item) => item.state === 'active' || item.state === 'stale')
+      .map((item) => ({ item, tab: item.externalId ? tabsById.get(item.externalId) : undefined }))
+      .filter(
+        (c): c is { item: Item; tab: TabInfo } =>
+          c.tab !== undefined &&
+          isWebUrl(c.item.url) &&
+          tabUrl(c.tab) === c.item.url &&
+          cachedVerdict(record, c.tab, c.item.lastUsedAt, now) === undefined &&
+          evaluate(
+            c.item,
+            { active: c.tab.active, audible: c.tab.audible === true, formInput: false },
+            ctx,
+          ).action === 'archive',
+      )
+      .sort((a, b) => b.item.activeAgeS - a.item.activeAgeS)
+      .slice(0, MAX_PROBES_PER_TICK);
+    // A time budget per tick (real time): the rest wait for the next tick, oldest first.
+    const deadline = Date.now() + PROBE_TICK_BUDGET_MS;
+    await mapLimit(due, PROBE_CONCURRENCY, async ({ tab }) => {
+      if (Date.now() >= deadline) return;
+      const startedAt = this.now();
+      this.storeProbe(tab, await this.probeLimit(() => prober.probe(tab)), startedAt);
+      changed = true;
+    });
+    if (changed) await prober.save(record);
   }
 
   private isQuiet(now: number): boolean {

@@ -38,6 +38,7 @@ function data(over: Partial<PopupData> = {}): PopupData {
   return {
     mode: 'automatic',
     holdUntil: null,
+    probeAccess: true,
     shadow: { dayNumber: 3, targetDays: 7, ready: false, wouldArchive: 4 },
     openTabs: 41,
     archivedToday: 2,
@@ -73,6 +74,17 @@ function renderPopup(over: Partial<PopupProps> = {}) {
 }
 
 describe('Popup', () => {
+  it('asks for site access only while pages cannot be checked for typing', () => {
+    const onAllowProbe = vi.fn();
+    renderPopup({ onAllowProbe, data: data({ probeAccess: false }) });
+    expect(screen.getByText("Can't check for unsaved typing")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Allow checks' }));
+    expect(onAllowProbe).toHaveBeenCalledOnce();
+    cleanup();
+    renderPopup({ onAllowProbe, data: data({ probeAccess: true }) });
+    expect(screen.queryByRole('button', { name: 'Allow checks' })).toBeNull();
+  });
+
   it('shows status, the last sweep with Undo, and recent tabs', () => {
     const { props } = renderPopup();
     expect(screen.getByText('41')).toBeTruthy();

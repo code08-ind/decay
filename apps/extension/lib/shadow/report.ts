@@ -1,7 +1,8 @@
 import type { DecayDB } from '../db/db';
 import { LIVE_STATES } from '../db/db';
 import type { Item, MetricsDay, Mode, ProtectedBy, Rule, Thresholds } from '../db/types';
-import { type Decision, evaluate, FORM_INPUT_UNKNOWN, isBlankPage } from '../policy/policy';
+import { type Decision, evaluate, isBlankPage } from '../policy/policy';
+import { cachedVerdict, formSignal, type ProbeRecord } from '../probe/probe';
 import type { TabInfo } from '../tracker/tabs';
 import {
   ACTIVE_DAY_SECONDS,
@@ -47,6 +48,8 @@ export interface ShadowReport {
   keptByGroup: Record<KeptGroup, number>;
   /** When the next simulated sweep can run (null outside shadow mode). */
   nextSimulationAt: number | null;
+  /** Decay can check pages for typed input (site access granted, P0.7). */
+  probeAccess: boolean;
 }
 
 export interface ReportInput {
@@ -60,6 +63,10 @@ export interface ReportInput {
   metrics: readonly MetricsDay[];
   tabs: readonly TabInfo[];
   lastShadowSweepAt: number | null;
+  /** Form-probe verdicts (P0.7); missing = unknown (web pages wait 2×). */
+  probes?: Readonly<ProbeRecord>;
+  /** Whether Decay may check pages for typed input; false → web pages wait 2×. */
+  probeAccess?: boolean;
 }
 
 export function keptGroup(by: ProtectedBy): KeptGroup {
@@ -117,7 +124,7 @@ export function buildShadowReport(input: ReportInput): ShadowReport {
       {
         active: tab?.active ?? false,
         audible: tab?.audible ?? false,
-        formInput: FORM_INPUT_UNKNOWN,
+        formInput: formSignal(cachedVerdict(input.probes ?? {}, tab, item.lastUsedAt, now)),
       },
       ctx,
     );
@@ -172,6 +179,7 @@ export function buildShadowReport(input: ReportInput): ShadowReport {
         : input.lastShadowSweepAt === null
           ? now
           : Math.max(now, input.lastShadowSweepAt + SHADOW_SWEEP_INTERVAL_MS),
+    probeAccess: input.probeAccess ?? false,
   };
 }
 
@@ -186,6 +194,7 @@ export async function loadShadowReport(
   },
   tabs: readonly TabInfo[],
   now = Date.now(),
+  probe: { probes?: Readonly<ProbeRecord>; probeAccess?: boolean } = {},
 ): Promise<ShadowReport> {
   const [items, rules, metrics, lastSweep] = await Promise.all([
     db.items.where('state').anyOf(LIVE_STATES).toArray(),
@@ -201,5 +210,6 @@ export async function loadShadowReport(
     metrics,
     tabs,
     lastShadowSweepAt: lastSweep?.startedAt ?? null,
+    ...probe,
   });
 }

@@ -22,19 +22,17 @@ export interface PolicyContext {
   rules: readonly Rule[];
 }
 
-/** Live signals for a tab, from the browser (and later the form probe, P0.7). */
+/** Live signals for a tab, from the browser and the form probe (P0.7). */
 export interface TabSignals {
   active: boolean;
   audible: boolean;
   /**
-   * Typed form input. `'unknown'` = it can't be detected (no probe yet, P0.7): web pages
-   * then need twice the archive threshold (PRD §7.3).
+   * Typed input or a "Leave site?" prompt, from the form probe (`lib/probe`).
+   * `'unknown'` = the page couldn't be checked: web pages then need twice the archive
+   * threshold (PRD §7.3). Omitted = not a concern (non-web pages, tests).
    */
   formInput?: boolean | 'unknown';
 }
-
-/** Until the form probe (P0.7) exists, every web page's form state is unknown. */
-export const FORM_INPUT_UNKNOWN: TabSignals['formInput'] = 'unknown';
 
 /** Archive-threshold multiplier when form input can't be detected (PRD §7.3). */
 export const UNKNOWN_FORM_FACTOR = 2;

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | 1.0 |
+| **Version** | 1.1 (Sage tokens, 7 Nov 2026) |
 | **Date** | 4 Nov 2026 |
 | **Design tool** | Google Stitch (via Stitch MCP) |
 | **Related** | [PRD](./PRD.md) · [Technical Stack](./Technical%20Stack%20Document.md) |
@@ -13,7 +13,7 @@
 
 **Calm, minimal, native-feeling. Keyboard-first.** Think Raycast, Linear and macOS System Settings: quiet surfaces, dense but readable lists, one warm accent.
 
-**Brand idea: "gentle ageing, never loss."** Items fade gracefully (opacity and warmth shift with age) instead of disappearing. The accent is a warm **ember/amber** — reassuring, not alarming. Avoid anything that reads as destruction (no trash-can imagery for archiving, no red for normal actions).
+**Brand idea: "gentle ageing, never loss."** Items fade gracefully (opacity and warmth shift with age) instead of disappearing. The accent is a calm **sage green** on cream (Sage direction, approved 7 Nov 2026) — reassuring, not alarming. Avoid anything that reads as destruction (no trash-can imagery for archiving, no red for normal actions).
 
 **Principles**
 1. **Trust over cleverness.** Always show *why* (reason chips) and *how to undo*.
@@ -24,26 +24,30 @@
 
 ## 2. Colour tokens
 
-Define as CSS variables in `packages/ui/tokens.css`; Tailwind maps to them. **Never hard-code hex values in components.** Replace Stitch's raw colours with these tokens during conversion.
+> **Updated 7 Nov 2026** when the Stitch designs were approved: the **Sage direction** (cream canvas, sage green accent, one deep-green feature card, black pill CTAs) replaces the original Ember palette. Source of truth: `packages/ui/tokens.css` (light, dark via `prefers-color-scheme`, and forced `data-theme`).
+
+Define as CSS variables in `packages/ui/tokens.css`; Tailwind maps to them (`apps/extension/assets/app.css` `@theme`). **Never hard-code hex values in components.** Replace Stitch's raw colours with these tokens during conversion.
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| `--bg` | `#FAFAF9` | `#161514` | App background |
-| `--surface` | `#FFFFFF` | `#1E1D1B` | Cards, panel |
-| `--surface-2` | `#F4F3F1` | `#262522` | Sidebar, hover rows |
-| `--surface-glass` | `rgba(255,255,255,0.72)` | `rgba(30,29,27,0.72)` | Panel with backdrop blur (vibrancy / Mica) |
-| `--border` | `#E7E5E2` | `#33312D` | Dividers |
-| `--text` | `#1C1917` | `#F5F5F4` | Primary text |
-| `--text-muted` | `#6B6560` | `#A8A29E` | Secondary text |
-| `--text-faint` | `#A29C96` | `#78716C` | Hints, timestamps |
-| `--accent` | `#D9771F` (Ember 600) | `#F59E4B` (Ember 400) | Primary actions, focus, selection |
-| `--accent-soft` | `#FDF1E6` | `#3A2716` | Selected rows, chips |
-| `--accent-contrast` | `#FFFFFF` | `#1C1917` | Text on accent |
-| `--success` | `#2F855A` | `#5FBF8A` | Restored, connected |
-| `--warning` | `#B7791F` | `#E0B252` | Degraded, shadow mode |
-| `--danger` | `#C53030` | `#F07272` | Erase data, errors only |
-| `--info` | `#2B6CB0` | `#6CA6E8` | Info banners |
-| `--focus-ring` | `0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent)` | same | Keyboard focus |
+| `--canvas` | `#F7F3E8` | `#121410` | App background (cream) |
+| `--surface` | `#FFFDF7` | `#191C17` | Cards, panel |
+| `--surface-2` / `--surface-3` | `#F3EEDF` / `#EBE5D2` | `#20241E` / `#282D25` | Inputs, hover rows, segmented controls |
+| `--border` / `--border-strong` | `#E6DFCB` / `#D6CFB8` | `#2B3028` / `#3A4036` | Dividers, pill outlines |
+| `--text` | `#1D2219` | `#EDF0E5` | Primary text |
+| `--text-muted` | `#5D6253` | `#A7AC9D` | Secondary text |
+| `--text-faint` | `#8A8D7C` | `#777C6F` | Hints, timestamps |
+| `--accent` / `--accent-text` | `#4F8A4B` / `#3D6F3A` | `#8CC66E` / `#B8E08E` | Status dots, links, focus, selection |
+| `--feature` / `--feature-text` | `#3D6F3A` / `#FFFFFF` | `#234723` / `#F2F5EA` | The one deep-green feature card per screen |
+| `--chip` / `--chip-text` | `#EEF3DC` / `#3D5A1F` | `#253021` / `#B8E08E` | Reason chips |
+| `--lime` / `--lime-text` | `#DDEB9D` / `#2F4614` | `#DDEB9D` / `#1F2A12` | Success/status toasts, logo tile |
+| `--primary` / `--primary-text` | `#1D2219` / `#FFFFFF` | `#F1EEDF` / `#121410` | Black pill CTAs, selected tab |
+| `--cta` / `--cta-text` | `#FFFFFF` / `#1D2219` | `#F1EEDF` / `#121410` | White pill buttons (banners) |
+| `--warning` | `#B7791F` | `#E0B252` | Degraded, needs-attention banners |
+| `--danger` | `#A54731` | `#E08A72` | Erase data, errors only |
+| `--focus` | `#4F8A4B` | `#8CC66E` | Keyboard focus ring |
+
+Radii: `--radius-card 22px`, `--radius-tile 14px`. Health banners (Designs/12): white card, 6 px coloured stripe on the left, round icon chip, white pill action.
 
 **Age scale** (stale-indicator dots and the timeline): `--age-0` fresh `#A3A3A3` → `--age-1` stale `#E0A458` → `--age-2` hidden `#D9771F` → `--age-3` archived `#8C5A2B`.
 
@@ -62,7 +66,7 @@ All text/background pairs must meet ≥ 4.5:1 (body) and ≥ 3:1 (large text, ic
 | `mono` | 12 / 16 | 400 | URLs in detail view, shortcuts |
 | `panel-input` | 20 / 28 | 400 | Search input in the panel |
 
-**Font stack:** `system-ui, -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, sans-serif`; mono `ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace`. Use the OS font on each platform (SF on macOS, Segoe UI Variable on Windows) — no web fonts are shipped. **In Stitch, design with Inter** as a stand-in.
+**Fonts (Sage direction, approved 7 Nov 2026):** **Newsreader** (serif) for page titles and big numbers, **DM Sans** for UI text, **DM Mono** for URLs and shortcuts. They are bundled (Latin woff2 via `@fontsource`, no network requests). The size scale above still applies to UI text; titles/numbers use Newsreader at display sizes.
 
 Respect the OS text size (Dynamic Type isn't available in WebViews; scale the root `font-size` from the OS setting where it can be read).
 
@@ -193,14 +197,14 @@ Design every screen in **light and dark**, at **macOS** chrome first; then produ
 
 ## 13. Stitch workflow
 
-1. **Create a Stitch project** "Decay Desktop". Set the theme from §2–4 (Ember accent `#D9771F`, Inter, radius 8–12, light + dark).
+1. **Create a Stitch project** "Decay Desktop". Set the theme from §2–4 (originally Ember `#D9771F` + Inter; now the Sage direction — see §2–3).
 2. **Generate screens** with the base prompt below plus each screen's prompt. Keep one screen per Stitch screen and name them `NN-screen-name-light|dark` (e.g. `01-search-panel-dark`).
 3. **Iterate in Stitch** until approved; mark approved screens in [Progress.md](./Progress.md).
 4. **Build:** Claude Code uses the **Stitch MCP** to list projects/screens, pull each screen's HTML/Tailwind and screenshot, convert it to React components in `packages/ui` (tokens replace raw values; Radix/cmdk replace raw markup), and visually diff the running app against the Stitch screenshot.
 5. **Source of truth:** Stitch owns layout and visuals; this document owns tokens, behaviour, accessibility and copy. If they conflict, update one so they agree — never silently diverge.
 
 **Base prompt (prefix every screen prompt):**
-> Desktop app UI for "Decay", a macOS/Windows menu-bar utility that automatically archives stale browser tabs and windows and lets users search and restore them. Calm, minimal, native macOS feel similar to Raycast and Linear. Warm ember accent #D9771F, neutral warm greys, Inter font at 13 px body, 4 px spacing grid, 8–12 px radii, subtle hairline borders, no heavy shadows. Keyboard-first: show shortcut keycaps. Use Lucide-style line icons. Design for desktop at {width}×{height}, {light|dark} mode.
+> *(Original prompt; the approved designs use the Sage direction in §2–3.)* Desktop app UI for "Decay", a macOS/Windows menu-bar utility that automatically archives stale browser tabs and windows and lets users search and restore them. Calm, minimal, native macOS feel similar to Raycast and Linear. Warm ember accent #D9771F, neutral warm greys, Inter font at 13 px body, 4 px spacing grid, 8–12 px radii, subtle hairline borders, no heavy shadows. Keyboard-first: show shortcut keycaps. Use Lucide-style line icons. Design for desktop at {width}×{height}, {light|dark} mode.
 
 **Example screen prompts:**
 - **01 Search panel:** "A floating Spotlight-style search panel 680 px wide with a frosted-glass background. Large search input with the query 'pricing'. Results grouped by day and source window, e.g. 'Last Tuesday · Chrome — Research window'. Each row: favicon, page title, domain in grey, a small reason chip like 'Unused 61 active h', and the relative time on the right. The first row is selected with a soft amber highlight and a left accent bar. Footer hint bar with keycaps: ↵ Restore, ⌘↵ Restore batch, ⌘P Protect, Esc Close."

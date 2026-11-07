@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| **Last updated** | 7 Nov 2026 (paused after P0.6) |
-| **Legend (design)** | 🟨 = generated in Stitch, awaiting your approval |
-| **Current phase** | Phase 0 — Extension validation (designs awaiting review) |
+| **Last updated** | 7 Nov 2026 (P0.7 done) |
+| **Legend (design)** | ✅ = approved (all Stitch designs in `Designs/`, 7 Nov 2026) |
+| **Current phase** | Phase 0 — Extension validation (designs approved) |
 | **Capacity assumption** | ~15 h/week |
 | **Legend** | ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked · ⏭️ Skipped |
 
@@ -53,10 +53,10 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | S1 | Product docs (PRD, Software Design, DB, API, UI, Stack, Progress) | ✅ |
 | S2 | Configure the **Stitch MCP** in Claude Code (`.mcp.json` + `STITCH_API_KEY`) | ✅ |
 | S3 | Create the Stitch project "Decay Desktop" and theme | ✅ project `6384390215445978880`; light + dark design systems |
-| S4 | Design screen 15 (extension popup) — needed for Phase 0 | 🟨 light + dark; awaiting review |
-| S5 | Design screens 1–5, 7–10, 12 (P0) light + dark | 🟨 all done in light + dark; awaiting review |
-| S6 | Design screens 6, 11, 13, 14, 16 (P1) | 🟨 light + dark; awaiting review |
-| S7 | Windows variants for screens 3, 5, 9 | 🟨 light + dark |
+| S4 | Design screen 15 (extension popup) — needed for Phase 0 | ✅ light + dark; approved 7 Nov 2026 |
+| S5 | Design screens 1–5, 7–10, 12 (P0) light + dark | ✅ light + dark; approved 7 Nov 2026 |
+| S6 | Design screens 6, 11, 13, 14, 16 (P1) | ✅ light + dark; approved 7 Nov 2026 |
+| S7 | Windows variants for screens 3, 5, 9 | ✅ light + dark; approved 7 Nov 2026 |
 | S8 | Init git repo, monorepo scaffold (pnpm + Cargo workspaces, Turborepo, Biome, CI) | ✅ JS side: pnpm + Turborepo + Biome + GitHub Actions. Cargo workspace deferred to Phase 1 (Rust not installed yet) |
 
 ## Phase 0 — Extension validation (weeks 1–4) · **GATE**
@@ -69,7 +69,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | P0.4 | Shadow mode + review page | F2 | ✅ `lib/shadow`, `review.html` (Designs/04); 118 tests; review + QA passed after fixes |
 | P0.5 | Sweep executor (write-before-close) + undo | F3, F7 | ✅ `lib/sweep`, `sweeps.html` (Designs/07), Undo notification; automatic mode enabled; 148 tests; review + QA passed after fixes. Deferred to P0.6: "Restore selected", 30-day filter |
 | P0.6 | Popup search (MiniSearch) + restore single/batch | F5, F6 | ✅ `lib/search`, popup (Designs/15), restore/batch, "Always keep site" follow-up, Sweeps Restore selected + date filter; shadow "Sweep now" = dry run; 180 tests; review + QA passed after fixes. Batch restore free in Phase 0 |
-| P0.7 | Form/`beforeunload` probe | §7.3 | ⬜ |
+| P0.7 | Form/`beforeunload` probe | §7.3 | ✅ `lib/probe` (inspect / verdicts / Chrome glue), runtime-registered `typing.js` + `unload-watch.js` with optional http(s) access, pre-close re-probe, "Allow checks" banner; 2× threshold only for pages that can't be checked; 233 tests; review + QA passed after fixes. Deferred: upload detection; partial ("on specific sites") access counts as none |
 | P0.8 | Local metrics + "share with beta team" export | F34 | ⬜ |
 | P0.9 | Publish unlisted to the Chrome Web Store; recruit 20–30 testers | — | ⬜ |
 | P0.10 | 14-day measurement + 10 interviews + pre-order ask | — | ⬜ |
@@ -141,32 +141,34 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 ## Stitch design status
 
 Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch project `6384390215445978880`.
-🟨 = generated, awaiting your approval.
+✅ = approved (7 Nov 2026).
 
 | # | Screen | Light | Dark | Windows (L/D) | Built |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Overview (new) | 🟨 | 🟨 | — | ⬜ |
-| 1 | Search panel | 🟨 | 🟨 | — | ⬜ |
-| 2 | Tray popover (+ Windows right-click menu) | 🟨 | 🟨 | 🟨 | ⬜ |
-| 3 | Onboarding (welcome, pace, connect, window access, shadow + done) | 🟨 | 🟨 | 🟨 connect step | ⬜ |
-| 4 | Shadow review | 🟨 | 🟨 | — | ✅ extension (no nav / Would hide) |
-| 5 | Library | 🟨 | 🟨 | 🟨 | ⬜ |
-| 6 | Live now | 🟨 | 🟨 | — | ⬜ |
-| 7 | Sweep history | 🟨 | 🟨 | — | ✅ extension (no top nav) |
-| 8 | Rules + add-rule sheet | 🟨 | 🟨 | — | ⬜ |
-| 9 | Settings: Aging, General, Protection, Browsers, Privacy & data, Shortcuts, Notifications, Updates, About | 🟨 | 🟨 | 🟨 Aging | ⬜ |
-| 10 | Undo toast + follow-up | 🟨 | 🟨 | — | ✅ extension: system notifications (Undo/View; "Always keep <site>?" after a restore within 24 h) |
-| 11 | Daily summary | 🟨 | 🟨 | — | ⬜ |
-| 12 | Health banners / empty states | 🟨 | 🟨 | — | ⬜ |
-| 13 | Pro upgrade + license | 🟨 | 🟨 | — | ⬜ |
-| 14 | Insights | 🟨 | 🟨 | — | ⬜ |
-| 15 | Extension popup | 🟨 | 🟨 | — | ✅ (history icon instead of settings gear; "Never archive this site"; no desktop-app link yet) |
-| 16 | Update / What's new | 🟨 | 🟨 | — | ⬜ |
-| 17 | Landing page (website, new) | 🟨 | 🟨 | — | ⬜ |
+| 0 | Overview (new) | ✅ | ✅ | — | ⬜ |
+| 1 | Search panel | ✅ | ✅ | — | ⬜ |
+| 2 | Tray popover (+ Windows right-click menu) | ✅ | ✅ | ✅ | ⬜ |
+| 3 | Onboarding (welcome, pace, connect, window access, shadow + done) | ✅ | ✅ | ✅ connect step | ⬜ |
+| 4 | Shadow review | ✅ | ✅ | — | ✅ extension (no nav / Would hide) |
+| 5 | Library | ✅ | ✅ | ✅ | ⬜ |
+| 6 | Live now | ✅ | ✅ | — | ⬜ |
+| 7 | Sweep history | ✅ | ✅ | — | ✅ extension (no top nav) |
+| 8 | Rules + add-rule sheet | ✅ | ✅ | — | ⬜ |
+| 9 | Settings: Aging, General, Protection, Browsers, Privacy & data, Shortcuts, Notifications, Updates, About | ✅ | ✅ | ✅ Aging | ⬜ |
+| 10 | Undo toast + follow-up | ✅ | ✅ | — | ✅ extension: system notifications (Undo/View; "Always keep <site>?" after a restore within 24 h) |
+| 11 | Daily summary | ✅ | ✅ | — | ⬜ |
+| 12 | Health banners / empty states | ✅ | ✅ | — | ⬜ |
+| 13 | Pro upgrade + license | ✅ | ✅ | — | ⬜ |
+| 14 | Insights | ✅ | ✅ | — | ⬜ |
+| 15 | Extension popup | ✅ | ✅ | — | ✅ (history icon instead of settings gear; "Never archive this site"; no desktop-app link yet) |
+| 16 | Update / What's new | ✅ | ✅ | — | ⬜ |
+| 17 | Landing page (website, new) | ✅ | ✅ | — | ⬜ |
 
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-07** — P0.7 form/`beforeunload` probe (PRD §7.3). Designs approved by the user (all ✅; UI Design Guidelines §2–3 synced to the Sage tokens). Each tick probes open web tabs that would be archived if nothing were typed (oldest first, ≤ 40/tick, ≤ 5 s, ≤ 6 in flight, 3 s timeout); verdicts cached in `storage.session` (30 min / 10 min unknown; invalidated by navigation, use, close, access change). `dirty` → protected (`formInput`, "unsaved typing"), `clean` → normal threshold, `unknown` → 2×. Every planned close is re-probed and re-decided by the policy (new skip reason `formInput`). With optional site access (`http://*/*`, `https://*/*`, narrowed from `<all_urls>`), `typing.js` (isolated) records which elements got trusted typing (never the text; liveness ping detects `document.open()`), and `unload-watch.js` (main world) counts `beforeunload` listeners via native-looking Proxies that forward at call time (zone.js-safe), forgetting fired `{once}` listeners. Typed text still present (incl. React-synced defaults, open/closed shadow roots, iframes) → dirty; search boxes, checkboxes, radios, selects don't count; `beforeunload` counts only after user activation. Untracked pages (open before access): value ≠ default → dirty, other non-empty fields/editors or user activation → unknown; discarded/unloaded tabs → unknown. Registration is diffed (no gap on worker restarts). "Allow checks" banner (Designs/12) on the Shadow review page and a one-line version in the popup (≤ 600 px; 2 recent tabs while shown). Review/QA fixes before push: React `defaultValue` sync, invisible untracked listeners, zone.js bypass, re-register gap, discarded tabs, iframe `document.open`, shadow DOM (open + closed), probe concurrency and tick budget, autocomplete comboboxes, once-listeners, popup height, banner hover/dark contrast, double permission requests, narrow layout, sweep message; existing popup `kbd` a11y lint error fixed. Next: P0.8 local metrics + export.
 
 - **2026-11-07** — P0.6 popup search + restore. Popup from Designs/15 (mode chip, stats, mode card with last sweep + Undo or shadow review link, 3 recent archived tabs, "Never archive this site"). MiniSearch over archived items (title/domain/group/URL words; prefix + fuzzy incl. swapped letters; `site:` incl. bare labels, `app:`, `before:`/`after:` with dates, `today`, `yesterday`, `3d`/`2w`; recency boost), built on the first keystroke; results grouped by batch (sweep + original window). ↵ reopens the tab active in the current window; ⌘/Ctrl+↵ restores the batch in one new window, original order + groups (free in Phase 0; Pro in the desktop app). Restores get 48 h grace, `restored` events, regret metric; "Always keep <site>?" notification after a restore within 24 h. Sweeps page: Restore selected (any sweep), Select all, 7/30/All filter. "Sweep now" in shadow mode runs a dry-run simulation (decision: user asked to "make it how it should be"). Review/QA fixes before push: incognito restores never tracked; failed popup restore shows an error; duplicate ids deduped; crash-safe restore retry (`restoreStartedAt`); DST-safe dates; batch = search group exactly; combobox ARIA (expanded/controls/autocomplete, live result count, IME Enter); popup fits Chrome's 600 px limit (567 px measured); distinct labels for one sweep's windows; keycap out of the accessible name; protect offer skipped for already-protected sites and auto-cleared. Next: P0.7 form probe (then web pages return to the normal archive threshold).
 

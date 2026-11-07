@@ -18,9 +18,10 @@ import {
   useState,
 } from 'react';
 import type { Item } from '@/lib/db/types';
-import type { PopupData } from '@/lib/popup/data';
+import { type PopupData, RECENT_COUNT } from '@/lib/popup/data';
 import { type ArchiveSearch, dayLabel, type SearchGroup, timeLabel } from '@/lib/search/search';
 import { avatarClass, shortUrl } from './format';
+import { ProbeBanner } from './ProbeBanner';
 
 export interface PopupProps {
   data: PopupData;
@@ -36,6 +37,8 @@ export interface PopupProps {
   onOpenReview: () => void;
   onOpenSweeps: () => void;
   onProtectSite: () => void;
+  /** Ask for site access so pages can be checked for unsaved typing (P0.7). */
+  onAllowProbe?: () => void;
   onClose: () => void;
   busy?: boolean;
   status?: string | null;
@@ -159,12 +162,13 @@ export function Popup(props: PopupProps) {
           placeholder="Search archived tabs"
           className="w-full rounded-full border border-line bg-surface-2 py-2 pr-14 pl-9 text-sm placeholder:text-faint"
         />
-        <kbd
+        {/* Decorative hint (the shortcut is in the extension's commands), so not a <kbd>. */}
+        <span
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 font-mono text-xs text-muted"
         >
           {props.isMac ? '⌥⇧D' : 'Alt+Shift+D'}
-        </kbd>
+        </span>
       </div>
 
       {/* Live regions stay mounted so screen readers announce changes to them. */}
@@ -262,6 +266,9 @@ function Key({ children }: { children: ReactNode }) {
 function Home(props: PopupProps) {
   const { data } = props;
   const automatic = data.mode === 'automatic';
+  const showProbeBanner = !data.probeAccess && props.onAllowProbe !== undefined;
+  // Room for the banner within Chrome's 600 px popup height: one recent tab fewer.
+  const recent = showProbeBanner ? data.recent.slice(0, RECENT_COUNT - 1) : data.recent;
   return (
     <>
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -272,15 +279,18 @@ function Home(props: PopupProps) {
           dot
         />
       </div>
+      {showProbeBanner && props.onAllowProbe && (
+        <ProbeBanner compact onAllow={props.onAllowProbe} busy={props.busy} />
+      )}
       <ModeCard {...props} />
       <section aria-label="Recently archived" className="mt-3">
         <div className="flex items-baseline justify-between px-1">
           <h2 className="text-xs font-medium tracking-widest text-muted uppercase">
             Recently archived
           </h2>
-          <span className="text-xs text-muted">{plural(data.recent.length, 'tab')}</span>
+          <span className="text-xs text-muted">{plural(recent.length, 'tab')}</span>
         </div>
-        {data.recent.length === 0 ? (
+        {recent.length === 0 ? (
           <p className="mt-2 rounded-tile border border-line bg-surface px-3 py-4 text-center text-sm text-muted">
             {automatic
               ? 'Nothing archived yet. Stale tabs are put away at a quiet moment.'
@@ -288,7 +298,7 @@ function Home(props: PopupProps) {
           </p>
         ) : (
           <ul className="mt-1.5 space-y-1.5">
-            {data.recent.map((item) => (
+            {recent.map((item) => (
               <li
                 key={item.id}
                 className="flex items-center gap-3 rounded-tile border border-line bg-surface px-3 py-1.5"

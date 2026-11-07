@@ -52,6 +52,7 @@ const report = (over: Partial<ShadowReport> = {}): ShadowReport => ({
   kept: [entry('Docs', 80, 'pinned')],
   keptByGroup: { pinned: 1, audio: 0, active: 0, form: 0, rules: 0, hold: 0, other: 0 },
   nextSimulationAt: 1_000_000 + 12 * 60_000,
+  probeAccess: true,
   ...over,
 });
 
@@ -68,6 +69,18 @@ const props = (over = {}) => ({
 });
 
 describe('ShadowReview', () => {
+  it('shows the site-access banner only without access', () => {
+    const onAllowProbe = vi.fn();
+    const p = props({ report: report({ probeAccess: false }), onAllowProbe });
+    const { unmount } = render(<ShadowReview {...p} />);
+    expect(screen.getByText(/web pages wait twice as long/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Allow checks' }));
+    expect(onAllowProbe).toHaveBeenCalledOnce();
+    unmount();
+    render(<ShadowReview {...props({ onAllowProbe: vi.fn() })} />);
+    expect(screen.queryByRole('button', { name: 'Allow checks' })).toBeNull();
+  });
+
   it('summarises the shadow period', () => {
     render(<ShadowReview {...props()} />);
     expect(screen.getByRole('heading', { name: 'Decay is watching quietly' })).toBeTruthy();

@@ -4,6 +4,7 @@ import { Popup } from '@/components/Popup';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { loadPopupData, type PopupData } from '@/lib/popup/data';
+import { hasProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { ArchiveSearch } from '@/lib/search/search';
 import { settings } from '@/lib/settings/settings';
@@ -27,10 +28,12 @@ export function App() {
 
   const load = useCallback(async () => {
     try {
-      const [all, tabs, [current]] = await Promise.all([
+      const [all, tabs, [current], probes, probeAccess] = await Promise.all([
         settings.getAll(),
         browser.tabs.query({}) as Promise<TabInfo[]>,
         browser.tabs.query({ active: true, currentWindow: true }) as Promise<TabInfo[]>,
+        probeStore.load(),
+        hasProbeAccess(),
       ]);
       applyTheme(all.theme);
       const t = Date.now();
@@ -41,6 +44,7 @@ export function App() {
           tabs.filter((tab) => !tab.incognito),
           current,
           t,
+          { probes, probeAccess },
         ),
       );
       setNow(t);
@@ -128,6 +132,23 @@ export function App() {
       return `Decay will never archive ${site.host}.`;
     });
 
+  // `permissions.request` needs the click's user gesture, so it isn't wrapped in `act`
+  // (which awaits state updates first). Chrome may close the popup while asking; the
+  // background picks up the grant either way.
+  const onAllowProbe = () => {
+    if (busy) return;
+    setBusy(true); // one permission request at a time (double clicks)
+    requestProbeAccess()
+      .then((granted) => {
+        if (granted) setStatus('Thanks. Decay now checks pages for unsaved typing.');
+      })
+      .catch((e: unknown) => setError(message(e)))
+      .finally(() => {
+        setBusy(false);
+        void load();
+      });
+  };
+
   if (!data) {
     return (
       <p className="w-[380px] p-4 text-sm text-muted" aria-busy={!error}>
@@ -148,6 +169,7 @@ export function App() {
       onOpenReview={() => open('/review.html')}
       onOpenSweeps={() => open('/sweeps.html')}
       onProtectSite={() => void onProtectSite()}
+      onAllowProbe={onAllowProbe}
       onClose={() => window.close()}
       busy={busy}
       status={status}

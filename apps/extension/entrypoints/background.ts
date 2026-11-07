@@ -1,6 +1,7 @@
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { ruleMatches } from '@/lib/policy/match';
+import { probeStore, probeTab, syncProbeScripts } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { protectRuleFor, protectTargetFor } from '@/lib/shadow/actions';
@@ -26,6 +27,7 @@ export default defineBackground(() => {
     api: chromeApi,
     appId: detectAppId(),
     commands: chromeCommands,
+    prober: { probe: probeTab, load: probeStore.load, save: probeStore.save },
     ownOrigin: browser.runtime.getURL('/'),
     getIdleCutoffS: () => settings.get('idleCutoffS'),
     getPolicy: async () => {
@@ -256,6 +258,19 @@ export default defineBackground(() => {
   browser.windows.onFocusChanged.addListener((windowId) =>
     run('window focus', () => tracker.windowFocused(windowId)),
   );
+
+  // Form probe (P0.7): the typing / beforeunload trackers run only while site access is
+  // granted. Checked on every worker start (cheap: correct registrations are left alone) and
+  // whenever access changes; then old verdicts are dropped so every page is checked again.
+  run('probe scripts', () => syncProbeScripts());
+  const accessChanged = () =>
+    run('probe access changed', async () => {
+      await syncProbeScripts();
+      await tracker.resetProbes();
+      await tickAndAnnounce(() => tracker.tick());
+    });
+  browser.permissions.onAdded.addListener(accessChanged);
+  browser.permissions.onRemoved.addListener(accessChanged);
 
   // Ensure the tick alarm exists (alarms survive worker restarts but not reinstalls),
   // and reconcile right away so the archive reflects the open tabs.

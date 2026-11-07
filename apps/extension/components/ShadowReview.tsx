@@ -28,6 +28,7 @@ import {
   percent,
   shortUrl,
 } from './format';
+import { ProbeBanner } from './ProbeBanner';
 
 export interface ShadowReviewProps {
   report: ShadowReport;
@@ -40,6 +41,9 @@ export interface ShadowReviewProps {
   onBackToShadow: () => void;
   onKeepWatching: () => void;
   onProtect: (entry: ReportItem) => void;
+  /** Ask for site access so pages can be checked for unsaved typing (P0.7). */
+  onAllowProbe?: () => void;
+  probeBusy?: boolean;
   busyItemId?: string | null;
   modeBusy?: boolean;
   error?: string | null;
@@ -127,6 +131,10 @@ export function ShadowReview(props: ShadowReviewProps) {
         </p>
 
         <Hero {...props} />
+
+        {!report.probeAccess && props.onAllowProbe && (
+          <ProbeBanner onAllow={props.onAllowProbe} busy={props.probeBusy} />
+        )}
 
         {props.error && (
           <p

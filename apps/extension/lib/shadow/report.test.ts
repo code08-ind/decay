@@ -17,7 +17,7 @@ const base = (over: Partial<ReportInput> = {}): ReportInput => ({
   now: 10_000_000,
   mode: 'shadow',
   holdUntil: null,
-  // Web pages archive at 2× (form state unknown until P0.7): 60 h here.
+  // Without probe verdicts, web pages archive at 2× (PRD §7.3): 60 h here.
   thresholds: { stale: 12, hidden: 20, archive: 30 },
   shadowStartedAt: null,
   rules: [],

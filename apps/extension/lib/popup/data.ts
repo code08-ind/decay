@@ -1,6 +1,7 @@
 import type { DecayDB } from '../db/db';
 import type { Item, Mode, Sweep } from '../db/types';
 import { hostOf, ruleMatches } from '../policy/match';
+import type { ProbeRecord } from '../probe/probe';
 import type { Settings } from '../settings/settings';
 import { loadShadowReport } from '../shadow/report';
 import { emptyMetrics, localDay } from '../shadow/shadow';
@@ -24,6 +25,8 @@ export interface PopupData {
   windowOf: Map<string, string | undefined>;
   /** The tab the popup was opened on: its site and whether a protect rule covers it. */
   currentSite: { host: string; url: string; protected: boolean } | null;
+  /** Decay can check pages for typed input (site access granted, P0.7). */
+  probeAccess: boolean;
 }
 
 export async function loadPopupData(
@@ -32,9 +35,10 @@ export async function loadPopupData(
   openTabs: readonly TabInfo[],
   currentTab: TabInfo | undefined,
   now: number,
+  probe: { probes?: Readonly<ProbeRecord>; probeAccess?: boolean } = {},
 ): Promise<PopupData> {
   const [report, metrics, [last], archived, rules] = await Promise.all([
-    loadShadowReport(db, all, openTabs, now),
+    loadShadowReport(db, all, openTabs, now, probe),
     db.metrics.get(localDay(now)),
     recentSweeps(db, 1),
     db.items.where('state').equals('archived').toArray(),
@@ -82,5 +86,6 @@ export async function loadPopupData(
     archived,
     windowOf,
     currentSite,
+    probeAccess: report.probeAccess,
   };
 }

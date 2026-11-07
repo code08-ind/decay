@@ -159,6 +159,11 @@ export interface CloseOptions {
   usedAt?: (tabId: number) => number | undefined;
   /** Uses at or after this time block the close (the sweep's planning time minus the quiet period). */
   usedSince?: number;
+  /**
+   * Last check right before closing (P0.7 form probe): a reason to keep the tab open, or null.
+   * Throwing counts as `error` (kept open).
+   */
+  confirm?: (item: Item, tab: TabInfo) => Promise<SweepSkipReason | null>;
 }
 
 /**
@@ -190,12 +195,34 @@ export async function closeTabs(
         return set({ result: 'skipped', skipReason: 'error' });
       }
       if (!tab) return set({ result: 'skipped', skipReason: 'closedByUser' });
-      const usedAt = opts.usedAt?.(tabId);
-      if (usedAt !== undefined && usedAt >= (opts.usedSince ?? Number.POSITIVE_INFINITY)) {
-        return set({ result: 'skipped', skipReason: 'inUse', usedAt });
+      const check = (t: TabInfo): CloseOutcome | null => {
+        const usedAt = opts.usedAt?.(tabId);
+        if (usedAt !== undefined && usedAt >= (opts.usedSince ?? Number.POSITIVE_INFINITY)) {
+          return { result: 'skipped', skipReason: 'inUse', usedAt };
+        }
+        const blocker = closeBlocker(item, t);
+        return blocker ? { result: 'skipped', skipReason: blocker } : null;
+      };
+      const early = check(tab);
+      if (early) return set(early);
+      if (opts.confirm) {
+        let reason: SweepSkipReason | null;
+        try {
+          reason = await opts.confirm(item, tab);
+        } catch {
+          reason = 'error';
+        }
+        if (reason) return set({ result: 'skipped', skipReason: reason });
+        // The check took a moment: look again before closing.
+        try {
+          tab = await getTab(tabId);
+        } catch {
+          return set({ result: 'skipped', skipReason: 'error' });
+        }
+        if (!tab) return set({ result: 'skipped', skipReason: 'closedByUser' });
+        const late = check(tab);
+        if (late) return set(late);
       }
-      const blocker = closeBlocker(item, tab);
-      if (blocker) return set({ result: 'skipped', skipReason: blocker });
       let timedOut = false;
       try {
         timedOut = (await withTimeout(commands.removeTab(tabId), timeoutMs)) === TIMEOUT;

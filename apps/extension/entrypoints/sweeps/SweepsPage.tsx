@@ -74,7 +74,7 @@ export function SweepsPage() {
           : 'Simulation: no new tabs would be archived right now. Nothing was closed.';
       }
       if (!r.archived && r.failed) {
-        return `Nothing archived: ${plural(r.failed, 'tab')} stayed open because ${r.failed === 1 ? 'it was' : 'they were'} in use or changed.`;
+        return `Nothing archived: ${plural(r.failed, 'tab')} stayed open (in use, unsaved typing, or the page changed).`;
       }
       if (!r.archived) return 'Nothing to archive right now: no tab is old enough.';
       return `Archived ${plural(r.archived, 'tab')}.`;

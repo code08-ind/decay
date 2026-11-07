@@ -8,8 +8,9 @@ export default defineConfig({
   manifest: {
     name: 'Decay',
     description: 'Your tabs, gently put away. Archives stale tabs; search and restore anything.',
-    // Phase 0 permissions (Software Design §4.7). `nativeMessaging` is added in Phase 1;
-    // `<all_urls>` is requested at runtime for the form probe (P0.7).
+    // Phase 0 permissions (Software Design §4.7). `nativeMessaging` is added in Phase 1.
+    // Web-page access is optional, asked for at runtime for the form probe (P0.7): it lets
+    // Decay check whether a page holds unsaved typing before archiving it.
     // `favicon` serves cached favicons locally (no network requests from our pages).
     // `notifications` shows the Undo toast after a sweep (F7).
     permissions: [
@@ -22,7 +23,7 @@ export default defineConfig({
       'favicon',
       'notifications',
     ],
-    optional_host_permissions: ['<all_urls>'],
+    optional_host_permissions: ['http://*/*', 'https://*/*'],
     incognito: 'not_allowed',
     // 30 s alarm periods (the aging clock tick) need Chrome 120+.
     minimum_chrome_version: '120',

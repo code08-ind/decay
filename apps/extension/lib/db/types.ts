@@ -123,7 +123,14 @@ export interface SweepItem {
   skipReason?: SweepSkipReason;
 }
 
-export type SweepSkipReason = 'inUse' | 'changed' | 'modeChanged' | 'error' | 'closedByUser';
+export type SweepSkipReason =
+  | 'inUse'
+  | 'changed'
+  | 'modeChanged'
+  | 'error'
+  | 'closedByUser'
+  /** P0.7: the pre-close probe found typed input or a "Leave site?" prompt. */
+  | 'formInput';
 
 export interface Sweep {
   id: string; // UUIDv7

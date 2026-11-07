@@ -17,6 +17,8 @@ export interface TabInfo {
   groupId?: number;
   incognito: boolean;
   status?: string; // 'loading' | 'complete' | 'unloaded'
+  /** Unloaded to save memory: no live page to check (the probe treats it as unknown). */
+  discarded?: boolean;
 }
 
 export interface WindowInfo {
