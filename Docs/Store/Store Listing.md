@@ -53,6 +53,7 @@ Privacy policy: https://www.aryangarg.com/decay/privacy-policy
 | Store icon | 128×128 PNG | `apps/extension/public/icon/128.png` |
 | Screenshots (1–5, in this order) | 1280×800 PNG | `screenshot-1-search.png`, `screenshot-2-popup.png`, `screenshot-3-sweeps.png`, `screenshot-4-insights.png`, `screenshot-5-review.png` (real UI with sample data) |
 | Small promo tile | 440×280 PNG | `promo-small-440x280.png` |
+| Demo video (48 s) | MP4, 1280×712 | `decay-demo.mp4`. Upload to YouTube as **Unlisted** and paste the link into the listing's "Video" field and the reviewer instructions below |
 
 **Additional fields:**
 - Official URL: none (or https://www.aryangarg.com once a Decay page exists)
@@ -108,7 +109,7 @@ No account or login is needed.
 1. Install and open a few tabs. Decay starts in shadow mode, which closes nothing.
 2. Press Alt+Shift+D (or click the toolbar icon) to open the popup.
 3. To skip the 7-day shadow period: in the popup click "Review what Decay would do" → "Turn on automatic mode early" → "Turn on".
-4. Open the Sweeps page (the clock icon labelled "Sweep history" in the popup header). "Sweep now" archives tabs that are already stale. Note: tabs become stale only after 60 hours of active browsing without being used (120 hours for pages Decay can't check), so on a fresh install Sweep now archives nothing. Screenshots 1–3 show the archive, search and Undo flow with sample data.
+4. Open the Sweeps page (the clock icon labelled "Sweep history" in the popup header). "Sweep now" archives tabs that are already stale. Note: tabs become stale only after 60 hours of active browsing without being used (120 hours for pages Decay can't check), so on a fresh install Sweep now archives nothing. This 48-second video shows the full flow in the real extension (Sweep now archives three tabs, search + Enter restores one, Ctrl+Enter restores the rest): <YouTube link>
 5. Search for an archived tab in the popup and press Enter to restore it.
 Optional site access ("Allow checks") is only used to check pages for unsaved typing, uploads and "leave site?" prompts before archiving.
 ```
