@@ -467,8 +467,7 @@ mod tests {
         assert_eq!(backtracking_cost("colou?r|a{1,2}"), 4 + 4);
         assert_eq!(backtracking_cost("jira|confluence|(a|b)c+"), 2 + 4 * 256);
         assert_eq!(backtracking_cost("a+?b*?"), 256 * 256); // lazy `?` isn't a choice
-        // The worst accepted patterns still finish quickly on a hostile title (~10–30 ms
-        // each in release builds; generous here for debug builds on shared CI runners).
+        // The worst accepted patterns still finish quickly on a hostile title.
         let title = format!("{}b", "a".repeat(255));
         for ok in [
             "a{1,30}a{1,30}a{1,30}$",
@@ -480,7 +479,10 @@ mod tests {
             assert!(backtracking_cost(ok) <= MAX_PATTERN_COST, "{ok}");
             let start = Instant::now();
             title_matches(ok, &title);
-            assert!(start.elapsed() < Duration::from_secs(2), "{ok}");
+            // ~10–30 ms in release; debug builds on shared CI runners are far slower (the
+            // cost limit above is the real guarantee, this is a sanity check).
+            let limit = if cfg!(debug_assertions) { 5_000 } else { 500 };
+            assert!(start.elapsed() < Duration::from_millis(limit), "{ok}: {:?}", start.elapsed());
         }
     }
 

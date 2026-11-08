@@ -21,3 +21,8 @@ missing_errors_doc = "allow"
 cast_precision_loss = "allow"
 cast_possible_truncation = "allow"
 cast_sign_loss = "allow"
+
+# Title patterns run on regress: optimise it even in debug/test builds, so the ReDoS timing
+# tests measure the engine, not debug overhead (they flaked on Windows CI runners).
+[profile.dev.package.regress]
+opt-level = 3
