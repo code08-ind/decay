@@ -39,7 +39,7 @@ PRAGMA temp_store = MEMORY;
               │  └──* events
               │
               *──* sweeps (via sweep_items)
- items 1──1 items_fts (external content)
+ items 1──1 items_fts (contentless, rowid = items.seq)
  rules (standalone)   settings (KV)   metrics_daily   schema_migrations   license
 ```
 
@@ -76,7 +76,8 @@ A source window (a browser window or an app window) that items belong to. Used f
 
 | Column | Type | Constraints | Notes |
 | --- | --- | --- | --- |
-| id | TEXT | PK | UUIDv7 |
+| seq | INTEGER | PK | Stable FTS rowid (§6.1) |
+| id | TEXT | NOT NULL UNIQUE | UUIDv7 |
 | kind | TEXT | NOT NULL CHECK IN ('tab','window') | |
 | app_id | TEXT | NOT NULL FK → apps.id | |
 | source_id | TEXT | FK → sources.id ON DELETE SET NULL | Source window |
@@ -122,7 +123,8 @@ CREATE VIRTUAL TABLE items_fts USING fts5(
   tokenize = 'unicode61 remove_diacritics 2 tokenchars ''-_''',
   prefix = '2 3'
 );
--- Triggers on items INSERT/UPDATE/DELETE keep items_fts in sync (rowid = items.rowid).
+-- Triggers on items INSERT/UPDATE/DELETE keep items_fts in sync (rowid = items.seq);
+-- the UPDATE trigger fires only when indexed text changes, and renaming an app re-indexes its items.
 ```
 Ranking: `bm25(items_fts, 10.0, 3.0, 4.0, 2.0, 2.0, 1.0)` combined in Rust with a recency boost `1 / (1 + days_since_archived / 7)`.
 
@@ -135,7 +137,7 @@ The URL is tokenized after splitting on `/ . ? = &` (pre-processed in Rust) so t
 | id | INTEGER | PK AUTOINCREMENT | |
 | item_id | TEXT | NOT NULL FK → items.id ON DELETE CASCADE | |
 | type | TEXT | NOT NULL CHECK IN ('seen','used','stale','hidden','archived','close_failed','restored','undo','protected','purged','shadow_would_archive') | |
-| sweep_id | TEXT | NULL FK → sweeps.id | |
+| sweep_id | TEXT | NULL FK → sweeps.id ON DELETE SET NULL | |
 | reason | TEXT | NULL | JSON |
 | at | INTEGER | NOT NULL | |
 
@@ -240,7 +242,7 @@ Unique: `(scope, match, action)`.
 | activated_at | INTEGER | |
 
 ### 3.12 `schema_migrations`
-Managed by `refinery` (`version`, `name`, `applied_on`, `checksum`).
+Managed by decay-store's built-in runner (`version`, `name`, `applied_on`, `checksum`; §6.1).
 
 ## 4. Key queries
 
@@ -287,6 +289,31 @@ WHERE day >= date('now','-14 days');
 - Embedded SQL files `crates/decay-store/migrations/V{n}__{name}.sql`, applied at startup inside a transaction, after an automatic pre-migration backup.
 - Forward-only; a down-migration is a restore from the pre-migration backup.
 - V1 creates everything above, plus default rules: protect `accounts.google.com`, `zoom.us` (domain rules match the host and its subdomains), `meet.google.com`, `teams.microsoft.com`, and the default app catalog with `close_allowed` for Finder / Explorer folder windows.
+
+### 6.1 As built (P1.2, `crates/decay-store`)
+
+- **Encryption:** SQLCipher 4 (bundled, with a vendored OpenSSL), and a raw 256-bit key (`PRAGMA key = "x'…'"`, so no passphrase derivation). The store receives the key; creating it and keeping it in the Keychain or Credential Manager is the app shell's job.
+- **One owner per file:** `locking_mode = EXCLUSIVE`, and the lock is taken at open. A second instance gets `InUse` instead of writing to (or erasing) data another instance is using. In this mode WAL needs no `-shm` file. `fullfsync` and `checkpoint_fullfsync` are on: plain `fsync` on macOS doesn't flush the drive cache, and durable commits must survive a power loss.
+- **`items.seq INTEGER PRIMARY KEY`** with `id TEXT NOT NULL UNIQUE`. FTS rows are keyed by `seq`. An implicit rowid behind a TEXT primary key can be renumbered by `VACUUM`, which would silently detach items from their search entries. Foreign keys still reference `items(id)`.
+- **`items_fts`** is contentless with `contentless_delete = 1` (SQLite ≥ 3.43; the bundled SQLCipher is 3.53), so the update and delete triggers work. URLs are indexed through `decay_url_words(url)`, a Rust function registered on every connection. It drops the scheme, percent-decodes, and splits on `/ . ? = & # : +`.
+- **Migrations:** a small built-in runner instead of `refinery`. `schema_migrations` has the same columns (`version`, `name`, `applied_on`, `checksum`), and the checksum is FNV-1a with line endings normalised. The store refuses a changed migration or a database from a newer build.
+- **Backups:** there are three kinds:
+  - `backups/decay-YYYYMMDD.db`: daily, by UTC date, 7 kept.
+  - `decay-premigrate-v<NNNN>-<ms>.db`: taken before a migration, 3 kept.
+  - `decay-prerestore-<ms>.db`: the data a restore replaced, 3 kept.
+
+  Each copy is written to a `.tmp` file, synced and renamed into place, with renames retried briefly on Windows. Copies use a rollback journal, so checking or reading one never creates WAL files. A backup's age comes from its file name, not its modification time.
+- **Restore** (`restore_backup`) takes a file name from the backups folder. It checks the backup, refuses one from a newer schema, saves the current data as a pre-restore backup, copies the backup in, then runs any pending migrations, so an older backup is upgraded.
+- **Corruption, or a missing database:** the newest backup that passes is restored at open in these cases:
+  - the key can't read the file;
+  - the file fails `PRAGMA quick_check`;
+  - the file is missing or empty while backups exist. Starting empty would let daily backups rotate the good ones out within a week.
+
+  The backup is first copied next to the database. Only then is the damaged file renamed to `decay.db.damaged-<ms>`, together with a copy of its WAL taken before the check, and the copy moved into place. A crash at any step is recovered at the next open. If no backup passes (a wrong key looks the same), the store returns `Unreadable` and touches no file; the app must not offer "erase" as the only fix for that error. "Erase all data" deletes every file whose name starts with `decay.db`, and the backups folder.
+- **Settings:** only changed values are stored, and missing keys read as the defaults in §3.9. V1 seeds only `shadow_started_at`, at first open. A stored value that can't be parsed, or that has the wrong shape, reads as the default: `mode` falls back to `shadow`, and invalid thresholds fall back to Balanced. Values that wouldn't read back are refused when written.
+- **Hot paths:** `set_active_ages` (once per aging tick) and `set_item_state` write only their own columns. The FTS update trigger has a `WHEN` clause, so routine updates never touch the index. Partial indexes on `items.restored_from_id` and `events.sweep_id` mean foreign-key checks don't scan whole tables when items or sweeps are deleted.
+- **Default rules** also include app-scope `close_allowed` rules for Finder and Explorer, because the policy reads close permission from rules. `apps.close_allowed` mirrors them for display.
+- **Search:** `MATCH` on quoted prefix terms (`"pric"*`, at most 16 terms, with leading and trailing `-` / `_` trimmed), so user text can't inject FTS5 syntax. Text with nothing searchable in it (only emoji or punctuation) returns no results, not the whole archive. The score is `-bm25(…) / (1 + max(0, days)/7)`, the doc's recency boost. An item dated in the future counts as just archived, and a two-month-old title match ranks below yesterday's URL match. Inline operators are `app:` (id, or part of the name), `site:` (the domain and its subdomains), `before:` / `after:` (`YYYY-MM-DD` in the user's current UTC offset, so a date across a DST change can be an hour off; `7d`, `2w`, `today`, `yesterday`. Negative counts and impossible dates stay as search words) and `in:window` / `in:tab`. Grouping by day and source happens in the command layer, and fuzzy matching (typo tolerance) comes with the panel UI. The PRD target holds: under 50 ms at 50k archived items in a release build, including one-letter prefixes and words that match every row (tested). At 200k items the slowest queries take about 150 ms.
 
 ## 7. Extension IndexedDB schema (Phase 0)
 

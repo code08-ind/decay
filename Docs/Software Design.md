@@ -262,7 +262,7 @@ An internal `tokio::broadcast` channel of `CoreEvent` (`ItemChanged`, `SweepStar
 ## 8. Performance plan
 
 - The panel window is pre-created; the search runs in Rust and returns ≤ 50 rows.
-- FTS5 with `prefix='2 3'` index; `items_fts` is an external-content table (no duplicated text).
+- FTS5 with `prefix='2 3'` index; `items_fts` is contentless (`contentless_delete=1`), so no text is duplicated (DB Design §6.1).
 - Live item observations are coalesced (100 ms) before DB writes.
 - The UI uses virtualized lists; images (favicons) are cached as small blobs (≤ 4 KB).
 

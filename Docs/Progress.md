@@ -81,7 +81,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
 | P1.1 | `decay-core`: domain, lifecycle (proptest), policy, aging clock | F1, F8 | ✅ Cargo workspace + `crates/decay-core` (types, matching, exact JS title-pattern engine, policy incl. windows, lifecycle with Archiving, aging clock); 51 Rust tests incl. property tests, and TS↔Rust parity (6,000 policy cases, 18,000 title cases, case-folding sweep); Rust CI (macOS + Windows). Review + QA passed after fixes; pushed (821d355) |
-| P1.2 | `decay-store`: SQLCipher, migrations V1, FTS5, backups | F5, F28 | ⬜ |
+| P1.2 | `decay-store`: SQLCipher, migrations V1, FTS5, backups | F5, F28 | ✅ `crates/decay-store`: SQLCipher 4.19, single-owner lock, V1 schema + defaults, migration runner with pre-migration backup, FTS5 search with operators (< 50 ms at 50k), daily / pre-migration / pre-restore backups, crash-safe auto-recovery of a damaged or missing DB, erase, repositories; 42 tests. Review + QA passed after fixes |
 | P1.3 | `decay-bridge` + `decay-host` + native host manifests (Chrome/Edge/Brave/Arc) | F3 | ⬜ |
 | P1.4 | Extension adapter mode + IndexedDB → app migration | F3 | ⬜ |
 | P1.5 | `decay-engine`: scheduler, executor, crash recovery, undo | F6, F7 | ⬜ |
@@ -169,6 +169,21 @@ All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2
 
 ## Changelog
 
+- **2026-11-08** — P1.2 `decay-store` built, reviewed and fixed. Review + QA findings fixed:
+  - A missing or empty database with good backups is restored, not recreated (this was silent data loss).
+  - Recovery copies the backup in before moving the damaged file aside, and keeps the damaged WAL.
+  - `restore_backup` saves the current data first, refuses newer schemas, and migrates older ones.
+  - Exclusive lock, so a second instance gets `InUse`.
+  - `fullfsync` for durable commits on macOS.
+  - The FTS trigger fires only when indexed text changes, and renaming an app re-indexes its items.
+  - Foreign-key indexes, plus age and state updates that write only their own columns.
+  - Search: no panics on huge offsets or dates, items dated in the future rank safely, emoji-only text returns nothing, terms are capped, and impossible or negative dates stay search words.
+  - Settings always load.
+  - Backups are ordered and pruned by the time in the name (the version is zero-padded).
+  - Erase removes leftovers, and migration errors are short.
+  - Rule hit counts saturate, duplicate rules are detected by SQLite's error code, and renames retry on Windows.
+
+  Deferred: fuzzy (typo-tolerant) search, and grouping by day and source, to the panel UI / command layer.
 - **2026-11-08** — P1.1 review + adversarial QA fixes. Title patterns: decay-core now runs a JS-exact engine. A V8-generated `Canonicalize` table is used, classes become canonical sets, quantified `\b`/`^`/`$` are invalid, and the high-surrogate class ordering works around a `regress` bug. Both engines use a new backtracking-cost limit (bounded repeats and `?` chains could take 8–50 s per title). The extension no longer refuses emoji range endpoints. Lifecycle: `Commit` is guarded by `may_close`, and the proptests drive raw events with random thresholds and second-level ages. Unicode rule domains match punycode hosts, URL checks fold ASCII-only like JS, and rule lists parse leniently. CI uses the pinned toolchain and the `parity` script, and `.nvmrc` is pinned to 22.20.0. Extension: search-field hints match whole words only ("Research topic" counts as typing). Deferred: lone surrogates in titles (JSON/`&str` can't carry them; handle at the P1.3 bridge boundary), and invalid-rule warnings in the desktop rules editor (the extension has no title-rule editor yet).
 
 - **2026-11-07** — P0.9 demo video for store review (`Docs/Store/assets/decay-demo.mp4`, 48 s): the real extension in Chromium; Sweep now archives three stale tabs (age set directly, stated on screen), search + Enter restores one, Ctrl+Enter restores the batch; a recording-only stage page (`Docs/Store/demo/`, not shipped) shows the window's live tab strip. Closes the review gap "a reviewer can't see a restore on a fresh install".
