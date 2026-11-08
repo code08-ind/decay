@@ -83,7 +83,7 @@ Pin exact versions in `Cargo.lock` and `pnpm-lock.yaml` when the project is scaf
 | E2E (extension) | **Playwright** with a persistent Chromium context loading the unpacked extension |
 | Visual regression | Playwright screenshots vs Stitch reference exports |
 | Accessibility | `axe-core` in Vitest/Playwright |
-| CI | **GitHub Actions**: matrix `macos-14` (arm64), `macos-13` (x64), `windows-latest` |
+| CI | **GitHub Actions**: matrix `macos-latest` (arm64), `windows-latest` (macos-14/13 images are retired; x64 macOS builds cross-compile) |
 | Release | `tauri-action` → GitHub Releases; `latest.json` updater manifest |
 | Commit hygiene | Conventional Commits, `lefthook` pre-commit |
 
