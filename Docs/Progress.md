@@ -82,7 +82,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | --- | --- | --- | --- |
 | P1.1 | `decay-core`: domain, lifecycle (proptest), policy, aging clock | F1, F8 | ✅ Cargo workspace + `crates/decay-core` (types, matching, exact JS title-pattern engine, policy incl. windows, lifecycle with Archiving, aging clock); 51 Rust tests incl. property tests, and TS↔Rust parity (6,000 policy cases, 18,000 title cases, case-folding sweep); Rust CI (macOS + Windows). Review + QA passed after fixes; pushed (821d355) |
 | P1.2 | `decay-store`: SQLCipher, migrations V1, FTS5, backups | F5, F28 | ✅ `crates/decay-store`: SQLCipher 4.19, single-owner lock, V1 schema + defaults, migration runner with pre-migration backup, FTS5 search with operators (< 50 ms at 50k), daily / pre-migration / pre-restore backups, crash-safe auto-recovery of a damaged or missing DB, erase, repositories; 42 tests. Review + QA passed after fixes |
-| P1.3 | `decay-bridge` + `decay-host` + native host manifests (Chrome/Edge/Brave/Arc) | F3 | ⬜ |
+| P1.3 | `decay-bridge` + `decay-host` + native host manifests (Chrome/Edge/Brave/Arc) | F3 | ✅ `crates/decay-bridge` (protocol types, frames, bounded chunking, safe text decoding, user-checked IPC socket / random Windows pipe) and `crates/decay-host` (origin check, hello, start the app only on request, relay that drains before reporting the app gone, per-browser manifest install / uninstall); 36 tests incl. the real binary. Review + QA passed after fixes |
 | P1.4 | Extension adapter mode + IndexedDB → app migration | F3 | ⬜ |
 | P1.5 | `decay-engine`: scheduler, executor, crash recovery, undo | F6, F7 | ⬜ |
 | P1.6 | macOS platform: idle, sleep/lock, focus observer, Accessibility permission | F1, F33 | ⬜ |
@@ -169,6 +169,20 @@ All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2
 
 ## Changelog
 
+- **2026-11-08** — P1.3 `decay-bridge` + `decay-host` built, reviewed and fixed. Review + QA findings fixed:
+  - When the app quits, everything it sent is delivered before `APP_UNAVAILABLE`, and the host exits holding the stdout lock, so no frame is torn.
+  - An invalid app frame is skipped instead of ending the session.
+  - Windows pipe squatting: the pipe gets a random name, published in the user's profile.
+  - Unix: the host checks the socket's peer uid; the run folder's owner is checked with `geteuid`, not a probe file (which could be redirected through a link); dangling links at the socket path are handled; shutdown removes only the app's own socket.
+  - The app is started only on `hello.launch` and not after the user quit it; on Windows it is detached from the browser's job.
+  - Extension messages are forwarded as received (no tree rebuild, so no memory blow-up or growth past the frame limit), and `profileId` is capped.
+  - `split` refuses more chunks than receivers accept (now 160); reassembly caps groups, ids and overhead.
+  - Lenient enums (`unknown` / `other`, plus Chromium).
+  - Installer: per-browser results, validated origins, refusal of transient host paths, unique synced temp files.
+  - Environment overrides work in debug builds only; no per-frame flush on the IPC link.
+  - CI: nextest from GitHub releases (pinned SHA) and a 2-minute per-test timeout.
+
+  The extension side (P1.4) must cut chunks at code point boundaries and set `launch` only at start-up or on a user action.
 - **2026-11-08** — P1.2 `decay-store` built, reviewed and fixed. Review + QA findings fixed:
   - A missing or empty database with good backups is restored, not recreated (this was silent data loss).
   - Recovery copies the backup in before moving the damaged file aside, and keeps the damaged WAL.

@@ -206,8 +206,27 @@ trait Adapter: Send + Sync {
 
 - Launched by the browser with the caller origin as an argument; rejects any origin other than the allowed extension IDs.
 - Reads 4-byte little-endian length-prefixed JSON from stdin and writes to stdout (max 1 MB out).
-- Connects to the main app through IPC at `~/Library/Application Support/Decay/decay.sock` or `\\.\pipe\decay-<user-SID>`.
+- Connects to the main app through IPC at `~/Library/Application Support/Decay/run/decay.sock` or the Windows pipe the app published (API Design §5).
 - If the app isn't running: tries to launch it (`open -b com.decay.app` / registered path), waits 3 s, otherwise replies `app_unavailable` and the extension stays in degraded/standalone mode.
+- **As built (P1.3, `crates/decay-host`):**
+  - **Allowed callers:** the built-in store IDs (to be added when the extension is published), plus `allowedOrigins` in `<support>/host/host-config.json`, which the app writes when it installs the host. An origin must be `chrome-extension://` + 32 letters a–p + `/` and be in that list. Anything else exits with status 1 without reading or writing a byte.
+  - **First message:** it must be `hello`, which gives `conn.browser` and `conn.profileId`; otherwise the host sends `error BAD_MESSAGE` and exits.
+  - **Starting the app:** only when `hello.launch` is set (browser start-up or a user action), and not after the user quit Decay (the app writes `run/quit-by-user` on quit and removes it at start). The host then starts the app once (`open -g -b com.decay.app` on macOS, or `appPath --background` on Windows, detached from the browser's job object) and keeps retrying for 3 s. Otherwise the extension gets `APP_UNAVAILABLE` right away.
+  - **Extension → app:** invalid JSON or an oversized message gets `error BAD_MESSAGE` and isn't forwarded. Messages are forwarded as received, not rebuilt.
+  - **App → extension:** messages over 1 MB are chunked. An invalid frame from the app is skipped; it doesn't end the session.
+  - **When the app quits:** everything it already sent is delivered first (up to 3 s), then the extension gets `error APP_UNAVAILABLE` and the host exits.
+  - **Exiting:** the host exits holding the stdout lock, so no frame is cut off. When the browser closes the port, it exits too.
+  - **Manifests:** `install` / `uninstall` write `com.decay.host.json` for every detected browser:
+    - macOS: `~/Library/Application Support/<browser>/NativeMessagingHosts/`, for Chrome (and Beta / Canary), Chromium, Edge, Brave and Arc (`Arc/User Data`, unverified: spike 4).
+    - Windows: `HKCU\Software\<vendor>\NativeMessagingHosts\com.decay.host`, pointing at `<support>\host\com.decay.host.json`.
+
+    A browser counts as detected when its folder or registry key exists. The manifest's `allowed_origins` is the same list the host checks.
+  - **When to install:** the app runs `install` at every start; it's cheap and idempotent, so it picks up browsers installed later and an app that moved.
+  - **What install refuses:**
+    - invalid origins, or an empty origin list;
+    - a host path inside a disk image or an App Translocation copy (the app must be moved to Applications first).
+  - **Failures:** one browser failing is reported and doesn't stop the others; uninstall works the same way.
+  - **Unverified (spike 4):** Brave on Windows may read Chrome's registry key instead of its own.
 
 ### 4.9 UI windows (Tauri)
 
@@ -247,7 +266,8 @@ An internal `tokio::broadcast` channel of `CoreEvent` (`ItemChanged`, `SweepStar
 | --- | --- |
 | Another local process reads browsing history | SQLCipher (AES-256) DB; key in Keychain/Credential Manager scoped to the app's signing identity |
 | A rogue extension talks to the host | `allowed_origins` in the host manifest + origin check in `decay-host` |
-| Another user on the machine connects to IPC | Socket file mode `0600` in the user's Application Support folder; named pipe ACL limited to the current user SID |
+| Another user on the machine connects to IPC | Socket file mode `0600` in a `0700` folder owned by the user, plus a peer-uid check on both ends (macOS); a named pipe ACL limited to the owner (Windows) |
+| Another user creates the IPC endpoint first to receive tabs ("squatting") | macOS: the host checks the socket's peer uid. Windows: a random pipe name per app start, published in the user's own profile folder |
 | XSS in the WebView via a malicious page title | React escaping; strict CSP (`default-src 'self'`); titles never rendered as HTML; Tauri capabilities allow only the needed commands per window |
 | Malicious update | Tauri updater Ed25519 signature + OS code signing |
 | Log leakage | URLs and titles redacted in logs unless "verbose diagnostics" is enabled |

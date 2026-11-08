@@ -205,7 +205,7 @@ interface Envelope<T = unknown> {
 ```
 
 **Handshake:**
-1. Ext → `hello { extVersion, browser: 'chrome'|'edge'|'brave'|'arc', profileId (random UUID stored in chrome.storage), capabilities: ['tabGroups','probe'] }`
+1. Ext → `hello { extVersion, browser: 'chrome'|'edge'|'brave'|'arc'|'chromium', profileId (random UUID stored in chrome.storage, ≤ 128 chars), capabilities: ['tabGroups','probe'], launch?: boolean }`. `launch: true` (only at browser start-up or on a user action) lets the host start the app; reconnects omit it, so an app the user quit isn't reopened. Unknown enum values from a newer side read as `unknown` / `other` instead of failing the message
 2. Core → `welcome { coreVersion, minExtVersion, mode, config: { probeEnabled, heartbeatSec: 20 } }`
 3. If the versions are incompatible → `error { code:'VERSION_MISMATCH' }` and the extension shows an "update" badge.
 
@@ -244,6 +244,12 @@ interface TabInfo { tabId: number; windowId: number; index: number; url: string;
 
 ### 4.3 Chunking
 - Max outgoing message from the host is 1 MB (Chrome limit). Payloads are split at 900 KB into `chunk.seq/total` sharing a `groupId`; the receiver reassembles them within 10 s or discards them.
+- **As built (P1.3, `decay-bridge::chunk`):**
+  - **Chunk shape:** the whole original envelope is serialised to JSON and cut at **code point** boundaries. The extension must cut the same way, never between the two halves of a surrogate pair, because a lone surrogate in a piece is replaced by U+FFFD. Each piece is sent as `{v, id: <new>, type: <original type>, chunk: {seq, total, groupId}, payload: "<piece>"}`. A piece's escaped length is at most 900 KB, so every chunk stays under 1 MB.
+  - **Reassembly:** the receiver joins pieces in `seq` order and parses the original envelope.
+  - **Limits:** at most 160 chunks per group (enough for a 64 MiB message, which can double in size when escaped again), 64 groups pending, group ids ≤ 64 bytes, chunked types ≤ 64 bytes, and 160 MB pending in all, counting about 1 KB of overhead per group. A sender refuses to produce a group the receiver would reject. Duplicate chunks are ignored. A group with a chunk out of range or inconsistent with the rest is dropped, and so is a chunk nested inside a chunk.
+  - **Direction:** the host chunks app → extension messages. Extension → app chunks pass through the host unchanged and are reassembled by the app.
+- **Text:** lone UTF-16 surrogates (`\ud83d` escapes) and invalid UTF-8 from the browser become U+FFFD before parsing, as Chrome itself does when converting to UTF-8.
 
 ### 4.4 Errors
 `VERSION_MISMATCH`, `APP_UNAVAILABLE`, `UNSAFE`, `NOT_FOUND` (tab already gone → treated as success for close), `TIMEOUT`, `BAD_MESSAGE`.
@@ -255,6 +261,17 @@ interface TabInfo { tabId: number; windowId: number; index: number; url: string;
 - Socket: macOS `~/Library/Application Support/Decay/run/decay.sock` (mode `0600`); Windows `\\.\pipe\decay-{userSid}` (ACL: current user only).
 - Framing: `u32 LE length + JSON`, the same envelope as §4, wrapped as `{ conn: { browser, profileId, pid }, msg: Envelope }`.
 - The host is a dumb relay: it adds `conn` metadata and enforces `allowed_origins`.
+- **As built (P1.3, `decay-bridge::ipc`):**
+  - **Frames:** host → app frames are `{ conn: { browser, profileId, pid, origin }, msg }`. App → host frames are plain envelopes.
+  - **macOS socket:** the `run/` folder is `0700` and must be owned by the user. The socket is chmodded to `0600` right after binding (macOS can't set it at creation). The app refuses peers whose effective uid differs. A stale socket left by a crash is replaced; a live one means another app instance (`AddrInUse`).
+  - **Windows pipe:** `\\.\pipe\decay-<random>`, a new name each time the app starts. The app publishes the name in `%APPDATA%\Decay\run\pipe-name`, the user's own profile folder, and the host reads it from there. Reasons:
+    - A fixed name, whether built from the user's SID as specified or from the user name, could be created first by another user to receive this user's tabs ("pipe squatting").
+    - The SID would need raw Win32 calls, which `forbid(unsafe_code)` rules out.
+
+    The protected DACL `D:P(A;;GA;;;OW)(A;;GA;;;SY)` (owner and SYSTEM only) keeps other users from connecting. The app must not run elevated: its pipe's owner would then be Administrators, and the host would be refused.
+  - **Both ends check the user:** on Unix the host checks that the socket it connects to is served by a process of the same user (peer credentials), and the app checks every peer the same way. The socket is replaced only if it's stale, and removed on shutdown only if it's still the app's own.
+  - **Messages are forwarded as received:** the host checks that an extension message is a JSON object, with invalid UTF-8 and lone surrogates replaced, but doesn't rebuild it. A message that would exceed the IPC frame limit gets `BAD_MESSAGE`. Frames are written without per-frame flushes: on Windows a flush waits for the reader.
+  - **Overrides:** `DECAY_IPC_ENDPOINT` and `DECAY_SUPPORT_DIR` override the endpoint and the support folder, in debug builds only (tests, development). Release builds ignore them, so the browser's environment can't redirect the host.
 
 ---
 

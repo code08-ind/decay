@@ -1,0 +1,3 @@
+# A test that hangs (IPC, threads) fails instead of stalling CI.
+[profile.default]
+slow-timeout = { period = "30s", terminate-after = 4 }
