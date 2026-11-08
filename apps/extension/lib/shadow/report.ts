@@ -119,11 +119,14 @@ export function buildShadowReport(input: ReportInput): ShadowReport {
       continue;
     }
     const tab = item.externalId ? tabsById.get(item.externalId) : undefined;
+    // Records whose tab is gone (e.g. right after a browser restart, before the tracker's
+    // 60 s grace removes them) aren't open tabs: nothing to review.
+    if (!tab) continue;
     const decision = evaluate(
       item,
       {
-        active: tab?.active ?? false,
-        audible: tab?.audible ?? false,
+        active: tab.active ?? false,
+        audible: tab.audible ?? false,
         formInput: formSignal(cachedVerdict(input.probes ?? {}, tab, item.lastUsedAt, now)),
       },
       ctx,

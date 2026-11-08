@@ -1,0 +1,22 @@
+[package]
+name = "decay-core"
+version = "0.1.0"
+description = "Decay domain core: types, rules, policy, lifecycle and aging clock (pure, no I/O)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+regex = "1.13.1"
+regress = { version = "0.12.0", features = ["utf16"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+url = "2.5.8"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+proptest = "1.11.0"

@@ -6,7 +6,16 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!Designs", "!Docs", "!**/.output", "!**/.wxt", "!**/*.md"]
+    "includes": [
+      "**",
+      "!Designs",
+      "!Docs",
+      "!**/.output",
+      "!**/.wxt",
+      "!**/*.md",
+      "!**/target",
+      "!crates/**/fixtures"
+    ]
   },
   "formatter": {
     "enabled": true,

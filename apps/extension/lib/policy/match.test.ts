@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Rule } from '../db/types';
-import { domainMatches, globMatches, hostOf, ruleMatches, titleRegexProblem } from './match';
+import {
+  backtrackingCost,
+  domainMatches,
+  globMatches,
+  hostOf,
+  MAX_PATTERN_COST,
+  ruleMatches,
+  titleRegexProblem,
+} from './match';
 
 const rule = (scope: Rule['scope'], match: string, enabled = true): Rule => ({
   id: 'r',
@@ -76,6 +84,45 @@ describe('match', () => {
       false,
     );
     expect(performance.now() - start).toBeLessThan(50);
+  });
+
+  it('refuses inline flags (same as the desktop engine)', () => {
+    for (const bad of ['(?i)abc', '(?i:x)', 'a(?-s)b', '[😀-z]']) {
+      expect(titleRegexProblem(bad), bad).not.toBeNull();
+    }
+    // Emoji range endpoints are code-unit ranges without `u`; decay-core matches them exactly.
+    for (const ok of ['(?:x)', '\\(?i\\)', '[😀]', '😀{2}', '[a-z]😀', '[a-😀]', '[x-\\😀]']) {
+      expect(titleRegexProblem(ok), ok).toBeNull();
+    }
+  });
+
+  it('refuses patterns with too many backtracking paths, bounded or not (QA P1.1)', () => {
+    for (const bad of [
+      'a{1,30}a{1,30}a{1,30}a{1,30}a{1,30}$',
+      '\\w{1,40}\\w{1,40}\\w{1,40}\\w{1,40}\\w{1,40}!',
+      'a?a?a?a?a?a?a?a?a?aaaaaaaaa',
+      '(a|a)'.repeat(9),
+      '.*a.*c?x',
+    ]) {
+      expect(titleRegexProblem(bad), bad).toBe('Pattern is too complex');
+    }
+    expect(backtrackingCost('.*x.*')).toBe(MAX_PATTERN_COST);
+    expect(backtrackingCost('colou?r|a{1,2}')).toBe(8);
+    expect(backtrackingCost('jira|confluence|(a|b)c+')).toBe(2 + 4 * 256);
+    expect(backtrackingCost('a+?b*?')).toBe(256 * 256);
+    const title = `${'a'.repeat(255)}b`;
+    for (const ok of ['a{1,30}a{1,30}a{1,30}$', '.*a.*x', 'a?a?a?a?a?a?a?a?aaaaaaaax']) {
+      expect(titleRegexProblem(ok), ok).toBeNull();
+      const start = performance.now();
+      ruleMatches(rule('titleRegex', ok), { appId: 'x', title });
+      expect(performance.now() - start, ok).toBeLessThan(500);
+    }
+  });
+
+  it('matches Unicode rule domains against punycode hosts', () => {
+    expect(domainMatches('xn--bcher-kva.de', 'bücher.de')).toBe(true);
+    expect(domainMatches('shop.xn--bcher-kva.de', '*.Bücher.de.')).toBe(true);
+    expect(domainMatches('kakao.com', '\u212Aakao.com')).toBe(true);
   });
 
   it('matches IP addresses exactly', () => {

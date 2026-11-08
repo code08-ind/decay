@@ -9,9 +9,10 @@
     "dev:edge": "wxt -b edge",
     "build": "wxt build",
     "zip": "wxt zip",
-    "typecheck": "wxt prepare && tsc --noEmit",
+    "typecheck": "wxt prepare && tsc --noEmit && tsc -p scripts --noEmit",
     "test": "vitest run",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "parity": "tsx scripts/policy-parity.ts"
   },
   "dependencies": {
     "@decay/ui": "workspace:*",
@@ -30,12 +31,14 @@
     "@decay/config": "workspace:*",
     "@tailwindcss/vite": "4.3.4",
     "@testing-library/react": "16.3.3",
+    "@types/node": "22.18.13",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@wxt-dev/module-react": "1.2.2",
     "fake-indexeddb": "6.2.7",
     "jsdom": "31.0.0",
     "tailwindcss": "4.3.4",
+    "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vitest": "5.1.0",
     "wxt": "0.21.5"

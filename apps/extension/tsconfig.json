@@ -1,3 +1,6 @@
 {
-  "extends": ["../../packages/config/tsconfig.base.json", "./.wxt/tsconfig.json"]
+  "extends": ["../../packages/config/tsconfig.base.json", "./.wxt/tsconfig.json"],
+  // Keeps WXT's own excludes (paths are relative to .wxt/) and adds the Node-only tools
+  // in scripts/ (run with tsx, not part of the extension bundle).
+  "exclude": ["**/node_modules", ".output", "scripts"]
 }

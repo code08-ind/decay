@@ -142,6 +142,41 @@ describe('inspectForms with the typing tracker', () => {
     expect(inspectForms().dirty).toBe(true);
   });
 
+  it('ignores plain search-like inputs, but not text areas or other fields (QA P0)', () => {
+    document.body.innerHTML =
+      '<input name="q" placeholder="Search docs"><textarea id="query"></textarea><input name="title">';
+    const [q, title] = [...document.querySelectorAll('input')] as HTMLInputElement[];
+    const area = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!q || !title) throw new Error('fixture');
+    type(q, () => {
+      q.value = 'install';
+    });
+    expect(inspectForms().dirty).toBe(false);
+    type(area, () => {
+      area.value = 'SELECT * FROM orders';
+    });
+    expect(inspectForms().dirty).toBe(true); // a long "query" can be real work
+    area.value = '';
+    type(title, () => {
+      title.value = 'Draft';
+    });
+    expect(inspectForms().dirty).toBe(true);
+  });
+
+  it('only treats whole search words as search hints (review P1.1)', () => {
+    document.body.innerHTML = `
+      <input placeholder="Research topic"> <input id="jquery-title"> <input name="researcher">
+      <input id="searchInput"> <input name="site_query">`;
+    const inputs = [...document.querySelectorAll('input')] as HTMLInputElement[];
+    for (const [i, el] of inputs.entries()) {
+      for (const other of inputs) other.value = '';
+      type(el, () => {
+        el.value = 'typed';
+      });
+      expect(inspectForms().dirty, el.outerHTML).toBe(i < 3);
+    }
+  });
+
   it('stays clean after search typing and checkbox / radio / select changes', () => {
     document.body.innerHTML = `
       <input type="search"> <input type="checkbox"> <input type="radio" name="r">

@@ -20,5 +20,26 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-  # Rust jobs (clippy, nextest on macos-14 / macos-13 / windows-latest) are added
-  # with the Cargo workspace in Phase 1.
+      # The Rust core must decide exactly like the extension's policy: the parity fixtures
+      # and JS case tables have to be regenerated whenever lib/policy changes (with the
+      # Node version in .nvmrc, which setup-node uses).
+      - name: Policy parity fixtures are up to date
+        run: |
+          pnpm --filter @decay/extension parity
+          git diff --exit-code -- crates/decay-core/tests/fixtures crates/decay-core/src/js_case.rs
+
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      # rustup reads rust-toolchain.toml (the pinned version and its components).
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@nextest
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo nextest run --workspace

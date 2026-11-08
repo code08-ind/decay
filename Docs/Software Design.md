@@ -78,18 +78,28 @@ decay/
 
 | From | Event | Guard | To |
 | --- | --- | --- | --- |
-| Active | `tick` | `active_age ≥ T_stale` ∧ ¬protected | Stale |
-| Stale | `tick` | kind=Window ∧ `age ≥ T_hidden` ∧ hideable | Hidden |
-| Stale | `sweep` | kind=Tab ∧ `age ≥ T_archive` ∧ ¬protected | Archived |
-| Hidden | `sweep` | `age ≥ T_archive` ∧ app ∈ close allowlist ∧ state=Saved ∧ Pro | Archived |
+| Active | `tick` | `active_age ≥ T_stale` ∧ ¬protected ∧ ¬held | Stale |
+| Stale | `tick` | ¬held ∧ (protected ∨ `age < T_stale`) | Active |
+| Stale | `tick` | kind=Window ∧ `age ≥ T_hidden` ∧ hideable ∧ ¬protected ∧ ¬held | Hidden |
+| Stale | `begin_archive` | kind=Tab ∧ `may_close` | Archiving |
+| Hidden | `begin_archive` | kind=Window ∧ `may_close` (app ∈ close allowlist ∧ state=Saved ∧ Pro) | Archiving |
+| Archiving | `commit` | `may_close` re-checked right before the close, and the close succeeded | Archived |
+| Archiving | `abort` | — | Stale (tab) / Hidden (window) |
 | any live | `used` | — | Active (age=0) |
-| Archived | `restore` | — | Active (new live item linked via `restored_from`) |
-| Archived | `retention` | `archived_at + retention < now` | Purged |
+| Archived | `restore` | — | Restored (the reopened item is a new Active record linked via `restored_from`) |
+| Archived / Restored | `retention` | `archived_at + retention < now` | Purged |
 
+  `may_close` = `age ≥ T_archive` ∧ ¬protected ∧ ¬held ∧ (tab ∨ closable). Thresholds are the item's effective ones (a custom rule's, if one applies). A Hidden window stays Hidden on `tick` (only `used` brings it back), and a window that can't be minimised is never Hidden, so it is never closed.
   Property tests (`proptest`) assert that **no path reaches Archived while protected** and that Hidden is never skipped for windows.
 
-- **`Policy::evaluate(item, ctx) -> Decision { action, reason }`**. Ordering: global holds → hard protections → user rules (most specific first: URL glob > domain > app) → thresholds. Reasons are enums, e.g. `Reason::Unused { active_hours: 61 }`, `Reason::ProtectedByRule(rule_id)`, `Reason::UnknownSaveState`.
-- **`AgingClock`:** pure accounting. Given `ActivitySample { awake, unlocked, idle_secs, audio_playing }` it returns `credit_secs` (0 or the tick length).
+- **`Policy::evaluate(item, ctx) -> Decision { action, reason }`**. Ordering: global holds → hard protections → user rules (any matching `protect` wins; otherwise the most specific custom threshold: URL glob > title > domain > app > global) → thresholds. Reasons are enums, e.g. `Reason::Unused { active_hours: 61 }`, `Reason::ProtectedByRule(rule_id)`, `Reason::UnknownSaveState`.
+- **`AgingClock`:** pure accounting. Given `ActivitySample { elapsed_ms, awake, unlocked, idle_secs, audio_playing }` it returns `credit_secs`: the elapsed time (rounded to seconds) when awake ∧ unlocked ∧ (idle < cutoff ∨ audio), and 0 for the first tick or a gap longer than 3 ticks (no back-credit), as in the extension's `clock.ts`.
+- **As built (P1.1, `crates/decay-core`):**
+  - Lifecycle adds the write-before-close step: Stale/Hidden `BeginArchive` → **Archiving** → `Commit` → Archived, or `Abort` → back to Stale (tab) / Hidden (window). `Commit` is refused unless `may_close` passes on the pre-close re-check (the property tests feed raw events, so this is checked on the state machine itself). Restoring moves the old record to **Restored**; the reopened tab is a new Active record. Property tests: never archived while protected, windows always Hidden first, archived/restored/purged records never go live again.
+  - Policy for tabs is identical to the extension's `lib/policy/policy.ts`. This is enforced by `tests/policy_parity.rs`: 6,000 seeded policy cases, 18,000 title-pattern cases and a case-folding sweep of every cased BMP character, all generated from the real TypeScript code by `apps/extension/scripts/policy-parity.ts`, and CI fails if the fixtures are stale (generated with the Node version in `.nvmrc`).
+  - Policy for windows: there is no `unrestorable` check. A window gets `Hide` at the hidden threshold and `Archive` (close) only when the context is Pro, a `closeAllowed` rule matches and the document is `saved`. Unsaved or unknown documents are hidden, never closed.
+  - Types serialise to the API's camelCase JSON; `SqlEnum::as_sql()` gives the snake_case `CHECK` values. Title patterns run as JS (non-`u`) regular expressions on `regress`, a backtracking ECMAScript engine. `js_regex.rs` rewrites each pattern so it matches over JS-canonicalised text: the `Canonicalize` table is generated from V8 into `js_case.rs`, and classes become sets of canonical units. Case-insensitive matching is therefore exact, including ranges and characters other engines fold differently (ſ, K, ı, Greek). Both engines refuse the same patterns: too long, inline flags, invalid, back-references, lookarounds, repeated groups, and a `backtrackingCost` over 256² (paths per start position; every choice point counts at least 4). The cost limit bounds ReDoS for bounded repeats too (`a{1,30}` × 5).
+  - Rule lists are read leniently (`rules_from_json`): a rule with an unknown scope or action is skipped and malformed thresholds read as none, like the extension, so one bad rule never drops the rest. Rule domains are lowercased like JS and converted to punycode, so `bücher.de` matches.
 
 ### 4.2 Aging clock (runtime)
 

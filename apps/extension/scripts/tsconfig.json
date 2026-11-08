@@ -1,0 +1,6 @@
+{
+  // Node-only tools (tsx), type-checked separately from the extension bundle.
+  "extends": "../../../packages/config/tsconfig.base.json",
+  "compilerOptions": { "types": ["node"], "noEmit": true, "allowImportingTsExtensions": false },
+  "include": ["./**/*.ts"]
+}

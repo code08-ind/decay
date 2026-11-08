@@ -315,7 +315,8 @@ function Home(props: PopupProps) {
           <h2 className="text-xs font-medium tracking-widest text-muted uppercase">
             Recently archived
           </h2>
-          <span className="text-xs text-muted">{plural(recent.length, 'tab')}</span>
+          {/* The newest few only: a count here read like a total (QA P0). */}
+          {recent.length > 0 && <span className="text-xs text-muted">Latest {recent.length}</span>}
         </div>
         {recent.length === 0 ? (
           <p className="mt-2 rounded-tile border border-line bg-surface px-3 py-4 text-center text-sm text-muted">

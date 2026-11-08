@@ -13,6 +13,9 @@ const item = (ageH: number, over: Partial<Item> = {}): Item => ({
   activeAgeS: ageH * H,
   ...over,
 });
+/** Items' tabs are open unless the test passes `tabs` itself. */
+const openTabs = (items: readonly Item[]) =>
+  items.map((i) => makeTab({ id: Number(i.externalId), url: i.url }));
 const base = (over: Partial<ReportInput> = {}): ReportInput => ({
   now: 10_000_000,
   mode: 'shadow',
@@ -23,12 +26,19 @@ const base = (over: Partial<ReportInput> = {}): ReportInput => ({
   rules: [],
   items: [],
   metrics: [],
-  tabs: [],
   lastShadowSweepAt: null,
   ...over,
+  tabs: over.tabs ?? openTabs(over.items ?? []),
 });
 
 describe('buildShadowReport', () => {
+  it('skips records whose tab is no longer open (QA P0: after a browser restart)', () => {
+    const open = item(70);
+    const gone = item(80);
+    const r = buildShadowReport(base({ items: [open, gone], tabs: openTabs([open]) }));
+    expect(r.wouldArchive.map((x) => x.item.id)).toEqual([open.id]);
+  });
+
   it('splits open tabs into would-archive and kept, with reason groups', () => {
     const old = item(70);
     const older = item(90);

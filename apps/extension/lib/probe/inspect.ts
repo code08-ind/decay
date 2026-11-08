@@ -75,13 +75,24 @@ export function inspectForms(): FrameForms {
     const role = (el.getAttribute('role') ?? '').toLowerCase();
     if (role === 'searchbox') return true;
     if (el.closest('search, [role="search" i]') !== null) return true;
-    if (role !== 'combobox') return false;
-    // Comboboxes are also autocomplete form fields (address, recipients): only search-like
-    // ones are ignored.
+    // Search-like single-line fields without search markup (`<input name="q">` on docs
+    // sites) and search-like comboboxes are ignored. Comboboxes are also autocomplete form
+    // fields (address, recipients), and a textarea "query" (SQL, GraphQL) can be real work,
+    // so those only count as search with a hint, and textareas never do.
+    const singleLine =
+      el instanceof HTMLInputElement &&
+      ['text', ''].includes((el.getAttribute('type') ?? '').toLowerCase());
+    if (role !== 'combobox' && !singleLine) return false;
     const hint = ['name', 'aria-label', 'placeholder', 'id']
       .map((attr) => el.getAttribute(attr) ?? '')
       .join(' ');
-    return /search|query|(^|\s)q(\s|$)/i.test(hint);
+    // Whole words only (`searchInput`, `site-search`, `q`), so "Research topic" or
+    // `jquery-title` stay real fields: when in doubt, a field counts.
+    const words = hint
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/);
+    return words.some((w) => w === 'search' || w === 'query' || w === 'q');
   };
   /** A field the user can type into (not disabled / read-only / search / non-text). */
   const textField = (el: Element): el is HTMLInputElement | HTMLTextAreaElement => {
