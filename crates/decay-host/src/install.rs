@@ -390,9 +390,6 @@ mod tests {
     fn installs_registry_entries_for_detected_browsers_only() {
         use winreg::RegKey;
         use winreg::enums::HKEY_CURRENT_USER;
-        let dir = tempfile::tempdir().unwrap();
-        let opts = options(dir.path());
-        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         /// Removes the scratch registry tree even if the test fails.
         struct Cleanup(String);
         impl Drop for Cleanup {
@@ -400,6 +397,9 @@ mod tests {
                 let _ = RegKey::predef(HKEY_CURRENT_USER).delete_subkey_all(&self.0);
             }
         }
+        let dir = tempfile::tempdir().unwrap();
+        let opts = options(dir.path());
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         let _cleanup = Cleanup(opts.registry_root.clone());
         hkcu.create_subkey(format!(r"{}\Google\Chrome", opts.registry_root)).unwrap();
         let report = install(&opts).unwrap();

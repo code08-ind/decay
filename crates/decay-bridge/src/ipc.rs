@@ -384,15 +384,24 @@ impl IpcServer {
     pub fn accept(&self) -> io::Result<(IpcReader, IpcWriter)> {
         loop {
             let stream = self.listener.accept()?;
-            #[cfg(unix)]
-            {
-                use interprocess::local_socket::traits::StreamCommon;
-                if stream.peer_creds().ok().and_then(|c| c.euid()) != Some(my_uid()) {
-                    continue;
-                }
+            if same_user(&stream) {
+                return Ok(halves(stream));
             }
-            return Ok(halves(stream));
         }
+    }
+}
+
+/// Whether the peer runs as this user (Unix; Windows relies on the pipe's access list).
+fn same_user(stream: &Stream) -> bool {
+    #[cfg(unix)]
+    {
+        use interprocess::local_socket::traits::StreamCommon;
+        stream.peer_creds().ok().and_then(|c| c.euid()) == Some(my_uid())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = stream;
+        true
     }
 }
 
