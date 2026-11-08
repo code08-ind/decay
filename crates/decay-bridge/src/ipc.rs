@@ -445,6 +445,7 @@ mod tests {
             profile_id: "p".into(),
             capabilities: vec![],
             launch: false,
+            session: None,
         };
         HostFrame {
             conn: ConnInfo {

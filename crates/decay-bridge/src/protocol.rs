@@ -167,6 +167,10 @@ pub struct Hello {
     /// starts or the user asks: reconnect attempts must not reopen an app the user quit.
     #[serde(default)]
     pub launch: bool,
+    /// Random id of this browser session: window ids are only meaningful within one, so
+    /// `tabs.restore` window keys are `<session>:<windowId>`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session: Option<String>,
 }
 
 /// Longest `hello.profileId` accepted (it's a UUID; it's repeated in every IPC frame).
@@ -389,6 +393,10 @@ pub struct Probe {
 pub struct TabsClose {
     pub sweep_id: String,
     pub tab_ids: Vec<i64>,
+    /// The URL the app expects each tab (by id, as a string key) to show. A tab that has
+    /// navigated since is skipped (`changed`) instead of closing the new page.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub urls: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -450,6 +458,7 @@ mod tests {
             profile_id: "p1".into(),
             capabilities: vec!["tabGroups".into()],
             launch: false,
+            session: None,
         };
         let env = Envelope::new(kinds::HELLO, &hello).unwrap();
         let json = serde_json::to_value(&env).unwrap();

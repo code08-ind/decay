@@ -24,6 +24,8 @@ pub struct Item {
     /// Folder / document path (windows).
     pub path: Option<String>,
     pub favicon: Option<Vec<u8>>,
+    /// Where the favicon can be fetched from (imported items have no image yet).
+    pub favicon_url: Option<String>,
     pub tab_index: Option<i64>,
     pub group_title: Option<String>,
     pub group_color: Option<String>,
@@ -56,6 +58,7 @@ impl Item {
             domain: None,
             path: None,
             favicon: None,
+            favicon_url: None,
             tab_index: None,
             group_title: None,
             group_color: None,
@@ -82,7 +85,7 @@ impl Item {
 const COLUMNS: &str = "id, kind, app_id, source_id, external_id, title, url, domain, path, favicon,
     tab_index, group_title, group_color, pinned, state, save_state, active_age_s, first_seen_at,
     last_used_at, state_changed_at, archived_at, archive_reason, last_sweep_id, restored_from_id,
-    grace_until, restore_count";
+    grace_until, restore_count, favicon_url";
 
 /// Columns prefixed with `i.` (for joins).
 pub(crate) fn columns_as(alias: &str) -> String {
@@ -128,6 +131,7 @@ pub(crate) fn from_row(row: &Row<'_>) -> Result<Item> {
         restored_from_id: row.get(23)?,
         grace_until: row.get(24)?,
         restore_count: row.get(25)?,
+        favicon_url: row.get(26)?,
     })
 }
 
@@ -153,7 +157,7 @@ fn write(conn: &Connection, item: &Item, insert: bool) -> Result<usize> {
     let sql = if insert {
         format!(
             "INSERT INTO items ({COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
-                 ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)"
+                 ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27)"
         )
     } else {
         "UPDATE items SET kind = ?2, app_id = ?3, source_id = ?4, external_id = ?5, title = ?6,
@@ -161,7 +165,7 @@ fn write(conn: &Connection, item: &Item, insert: bool) -> Result<usize> {
            group_color = ?13, pinned = ?14, state = ?15, save_state = ?16, active_age_s = ?17,
            first_seen_at = ?18, last_used_at = ?19, state_changed_at = ?20, archived_at = ?21,
            archive_reason = ?22, last_sweep_id = ?23, restored_from_id = ?24, grace_until = ?25,
-           restore_count = ?26
+           restore_count = ?26, favicon_url = ?27
          WHERE id = ?1"
             .to_owned()
     };
@@ -192,6 +196,7 @@ fn write(conn: &Connection, item: &Item, insert: bool) -> Result<usize> {
         item.restored_from_id,
         item.grace_until,
         item.restore_count,
+        item.favicon_url,
     ])?)
 }
 

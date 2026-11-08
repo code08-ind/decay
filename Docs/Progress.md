@@ -83,7 +83,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | P1.1 | `decay-core`: domain, lifecycle (proptest), policy, aging clock | F1, F8 | ✅ Cargo workspace + `crates/decay-core` (types, matching, exact JS title-pattern engine, policy incl. windows, lifecycle with Archiving, aging clock); 51 Rust tests incl. property tests, and TS↔Rust parity (6,000 policy cases, 18,000 title cases, case-folding sweep); Rust CI (macOS + Windows). Review + QA passed after fixes; pushed (821d355) |
 | P1.2 | `decay-store`: SQLCipher, migrations V1, FTS5, backups | F5, F28 | ✅ `crates/decay-store`: SQLCipher 4.19, single-owner lock, V1 schema + defaults, migration runner with pre-migration backup, FTS5 search with operators (< 50 ms at 50k), daily / pre-migration / pre-restore backups, crash-safe auto-recovery of a damaged or missing DB, erase, repositories; 42 tests. Review + QA passed after fixes |
 | P1.3 | `decay-bridge` + `decay-host` + native host manifests (Chrome/Edge/Brave/Arc) | F3 | ✅ `crates/decay-bridge` (protocol types, frames, bounded chunking, safe text decoding, user-checked IPC socket / random Windows pipe) and `crates/decay-host` (origin check, hello, start the app only on request, relay that drains before reporting the app gone, per-browser manifest install / uninstall); 36 tests incl. the real binary. Review + QA passed after fixes |
-| P1.4 | Extension adapter mode + IndexedDB → app migration | F3 | ⬜ |
+| P1.4 | Extension adapter mode + IndexedDB → app migration | F3 | ✅ extension `lib/bridge` (protocol, code-point chunking, native connection with handshake / heartbeat / race-free connect and launch policy, adapter mode with re-read safety checks, ownership guard so the app and the local engine never both close tabs, incremental batched archive sync), optional `nativeMessaging` + popup Connect; app side `decay-store::import_archive` (upserts newer states); cross-language fixtures checked in CI. Review + end-to-end QA (real Chromium + host) passed after fixes |
 | P1.5 | `decay-engine`: scheduler, executor, crash recovery, undo | F6, F7 | ⬜ |
 | P1.6 | macOS platform: idle, sleep/lock, focus observer, Accessibility permission | F1, F33 | ⬜ |
 | P1.7 | Tauri shell: tray + badge, global hotkey, single instance, deep links, autostart | F16, F17, F24, F26 | ⬜ |
@@ -169,6 +169,22 @@ All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2
 
 ## Changelog
 
+- **2026-11-08** — P1.4 extension adapter mode + archive migration built, reviewed (code review + end-to-end QA in Chromium with the real host and a fake app) and fixed:
+  - **Who closes tabs (two live findings):**
+    - After a worker restart, the local engine swept while the app was connected (reproduced live). Now an ownership gate keeps the tracker "paused" (counting time) while the app may be in charge, and every local close checks ownership first.
+    - App closes stop when the link drops.
+    - The takeover sweep shows its Undo toast.
+    - The tracker keeps receiving tab events in adapter mode, so ages aren't stale when it takes over.
+  - **Connecting:** a race that opened two ports and lost `launch:true` at browser start-up is fixed (synchronous claim, launch upgrade), and Connect survives the popup closing during the permission prompt.
+  - **`tabs.close`:** it re-reads the tab after the probe, adds `urls` (`changed`), recent use (`inUse`), excluded sites and `disconnected`, probes even when `probeEnabled` is off, and reports `unchecked` tabs.
+  - **Reporting:** nothing is reported before the app's first `config`, transitions to and from excluded sites are reported once, and Decay's own pages are skipped.
+  - **Protocol:**
+    - Probe verdicts come in the ack, and unknown commands are acked.
+    - Restore matches normal windows only, keyed by `session:windowId`, and focuses the new window when an item is active.
+  - **Archive sync:** incremental and batched; the import upserts newer states, keeps `favicon_url` and carries over disabled default rules; only constraint errors count as invalid.
+  - **Smaller fixes:** the `outdated` state stops retrying, posting to a closed port is caught, and the chunk fixture is 217 KB.
+
+  Not yet: the popup's search in adapter mode (local archive, synced) and the app-side command flow (P1.5).
 - **2026-11-08** — P1.3 `decay-bridge` + `decay-host` built, reviewed and fixed. Review + QA findings fixed:
   - When the app quits, everything it sent is delivered before `APP_UNAVAILABLE`, and the host exits holding the stdout lock, so no frame is torn.
   - An invalid app frame is skipped instead of ending the session.

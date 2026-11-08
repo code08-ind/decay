@@ -27,6 +27,11 @@ jobs:
         run: |
           pnpm --filter @decay/extension parity
           git diff --exit-code -- crates/decay-core/tests/fixtures crates/decay-core/src/js_case.rs
+      # The app must read exactly what the extension sends (chunks, the import archive).
+      - name: Bridge fixtures are up to date
+        run: |
+          pnpm --filter @decay/extension bridge-fixtures
+          git diff --exit-code -- crates/decay-bridge/tests/fixtures crates/decay-store/tests/fixtures
 
   rust:
     strategy:

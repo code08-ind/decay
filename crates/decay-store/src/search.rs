@@ -239,7 +239,7 @@ impl Store {
         let mut rows = stmt.query(rusqlite::params_from_iter(args))?;
         let mut hits = Vec::new();
         while let Some(row) = rows.next()? {
-            hits.push(SearchHit { item: from_row(row)?, score: row.get(26)? });
+            hits.push(SearchHit { item: from_row(row)?, score: row.get(27)? });
         }
         let next_offset = (hits.len() > limit).then(|| q.offset.saturating_add(limit));
         hits.truncate(limit);

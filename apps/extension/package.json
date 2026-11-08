@@ -12,7 +12,8 @@
     "typecheck": "wxt prepare && tsc --noEmit && tsc -p scripts --noEmit",
     "test": "vitest run",
     "postinstall": "wxt prepare",
-    "parity": "tsx scripts/policy-parity.ts"
+    "parity": "tsx scripts/policy-parity.ts",
+    "bridge-fixtures": "tsx scripts/bridge-fixtures.ts"
   },
   "dependencies": {
     "@decay/ui": "workspace:*",

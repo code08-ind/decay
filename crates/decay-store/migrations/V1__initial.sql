@@ -51,6 +51,8 @@ CREATE TABLE items (
   domain           TEXT,
   path             TEXT,
   favicon          BLOB CHECK (favicon IS NULL OR length(favicon) <= 4096),
+  -- Where the favicon can be fetched from (imported archives arrive without the image).
+  favicon_url      TEXT,
   tab_index        INTEGER,
   group_title      TEXT,
   group_color      TEXT,

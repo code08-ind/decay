@@ -242,6 +242,22 @@ interface TabInfo { tabId: number; windowId: number; index: number; url: string;
 
 **Extension-side safety re-check:** before `tabs.close`, the extension independently re-checks `active`, `pinned`, `audible`, and the probe result. A disagreement → `ack { ok:false, error:{ code:'UNSAFE' } }`. Defence in depth.
 
+**As built (P1.4):**
+- **Handshake and reporting:**
+  - `hello` may carry `session`, a random id per browser session.
+  - The app sends `config` right after `welcome`. The extension reports nothing before that first `config` (so excluded sites never leak), then sends the `snapshot`.
+  - A tab moving onto an excluded site is reported as `tab.removed` once; one leaving it, as `tab.created`.
+  - Decay's own extension pages are never reported.
+- **`probe`:** the verdicts come back in the ack, `{ ok: true, result: { results: ProbeResult[], missing: number[] } }`, and no separate `probe.result` messages are sent, so the reply is unambiguous.
+- **`tabs.close`:**
+  - It may carry `urls: { [tabId]: expectedUrl }`.
+  - Each tab is re-read after the probe and skipped with a reason: `active`, `pinned`, `audible`, `formInput`, `changed` (navigated since the app decided), `inUse` (`lastAccessed` within the last 60 s), `excluded`, `disconnected` (the link dropped mid-command) or `error`.
+  - The ack is `{ ok, error?: UNSAFE, result: { closed, skipped: [{tabId, reason}], unchecked } }`. `unchecked` lists tabs closed although their page couldn't be checked; the app's 2× rule already applied to them.
+  - The probe runs whatever `probeEnabled` says.
+- **`tabs.restore`:** `windowKey` is `<session>:<windowId>` and matches a normal window only within the same browser session; otherwise the items go into one new window. The new window is focused when an item is `active`. URLs follow Phase 0's restore rule (http(s), browser pages, `about:blank`); `javascript:`, `data:` and `file:` are refused.
+- **Unknown commands:** they get `ack { ok:false, error: BAD_MESSAGE }`.
+- **`import.archive`:** it's sent in batches of ≤ 2,000 items on every connection and every minute while connected, with only what changed since the last confirmed batch (see Software Design §4.7).
+
 ### 4.3 Chunking
 - Max outgoing message from the host is 1 MB (Chrome limit). Payloads are split at 900 KB into `chunk.seq/total` sharing a `groupId`; the receiver reassembles them within 10 s or discards them.
 - **As built (P1.3, `decay-bridge::chunk`):**

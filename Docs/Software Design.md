@@ -202,6 +202,38 @@ trait Adapter: Send + Sync {
 
 **MV3 service-worker lifetime:** a native messaging port keeps the worker alive; `chrome.alarms` (1 min) acts as a watchdog.
 
+**As built (P1.4, `apps/extension/lib/bridge/`):**
+- **Permission:** `nativeMessaging` is an **optional** permission. The popup's "Connect" (a one-line "Decay app" row) requests it, so users without the desktop app never see the prompt, and a store update can't disable the extension for a new permission. Turning the link on is remembered (`decay.appLinkEnabled`); "Disconnect" turns it off.
+- **`connection.ts` (`Bridge`):**
+  - `hello` → `welcome` handshake: 10 s, then `unavailable`; `VERSION_MISMATCH` → `outdated`.
+  - A heartbeat at the app's `heartbeatSec` while connected.
+  - Chunking both ways, cut at code point boundaries (`chunk.ts`, the same format and limits as `decay-bridge`), and request/reply matching by `replyTo`.
+  - `hello.launch` is true only at browser start-up (`runtime.onStartup`) and on the popup's Connect. Worker restarts and the 1-minute watchdog reconnect without it, so an app the user quit stays closed.
+- **Who closes tabs** (`ownership.ts`, background): never both the app and the local tracker.
+  - **While the app is connected:** the tracker keeps following tab events and ticks, so its ages are current if it has to take over. Its policy reads `paused`, though, so it never plans a sweep, and every close it makes goes through a guard that refuses while the app owns the tabs.
+  - **While the link is on:** a fresh worker (after a restart, or at browser start-up) keeps the local engine paused until a connection attempt has actually failed.
+  - **When the app goes away:** the tracker's takeover tick shows the Undo toast like any sweep.
+  - **Sweep now:** the popup's button says the app runs sweeps (or that it's still connecting).
+- **Adapter mode** (`adapter.ts`, while connected): the app owns aging, policy and sweeps. The extension reports tabs and carries out commands; the protocol details are in API Design §4.2 "As built (P1.4)".
+  - **Reporting to the app:** a `snapshot` after connecting, on `resync` and on tab-group changes; `tab.created / updated / removed / moved`, `tab.used` (activated, audible) and `window.focus`.
+  - **Not reported:** incognito tabs, and tabs on the app's excluded domains (`config`). A tab that navigates to an excluded site is reported as removed.
+  - **Commands:** all are acked.
+    - `probe` replies with one `probe.result` per tab.
+    - `tabs.close` re-checks active / pinned / audible / unsaved typing right before closing. Any skip makes the ack `UNSAFE`, with per-tab reasons, and a tab already gone counts as closed. Its `tab.removed` says `byUser: false`.
+    - `tabs.restore` reuses the original window if it's open, else one new window per `windowKey`, regroups tabs, and refuses non-web URLs (`javascript:` etc.).
+    - `tabs.focus`, `resync` and `config` are handled too.
+- **Back to standalone:** when the app goes away, the tracker takes over at once with an announced tick; its view of the tabs is already current.
+- **Archive sync** (`migrate.ts`): the extension keeps working while the app isn't running, so this isn't a one-off migration.
+  - **When:** on every connection, and every minute while connected.
+  - **What:** items archived or restored since the last batch the app confirmed (by `stateChangedAt`), in acked batches of ≤ 2,000, so archives of any size fit. Rules and settings go too when they've changed; the app keeps settings the user changed there.
+  - **Progress:** it's recorded per batch in `decay.archiveSync`, and failures show in the link status.
+  - **Favicons:** `data:` favicons are dropped.
+  - **Local copy:** it's kept as the standalone fallback.
+  - **Not yet:** the popup still searches and restores from the local archive in adapter mode. Its restores reach the app through the next sync and the tab events. Routing search to the app, and showing the app's mode in the popup, come with the app UI.
+- **Connection races:** a second `connect` while one is running is absorbed. A `launch` request during a quiet attempt is remembered: if that attempt finds no app, it retries once, allowed to start it. The profile id is created once. Granting the permission turns the link on from the background (`permissions.onAdded`), so the popup may close while Chrome asks. An `outdated` link stops retrying until the extension version changes.
+- **Cross-language check:** `scripts/bridge-fixtures.ts` builds real chunks and a real archive with this code. `decay-bridge` and `decay-store` tests read them, and CI fails if they're stale.
+- **Waiting on the engine (P1.5):** the app side of the commands (who sends `probe` / `tabs.close`, and how acks drive the lifecycle).
+
 ### 4.8 `decay-host` (native messaging host)
 
 - Launched by the browser with the caller origin as an argument; rejects any origin other than the allowed extension IDs.

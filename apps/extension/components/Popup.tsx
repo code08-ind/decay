@@ -18,9 +18,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { AppLinkStatus } from '@/lib/bridge/chrome';
 import type { Item } from '@/lib/db/types';
 import { type PopupData, RECENT_COUNT } from '@/lib/popup/data';
 import { type ArchiveSearch, dayLabel, type SearchGroup, timeLabel } from '@/lib/search/search';
+import { AppLink } from './AppLink';
 import { avatarClass, shortUrl } from './format';
 import { ProbeBanner } from './ProbeBanner';
 
@@ -44,6 +46,10 @@ export interface PopupProps {
   onProtectSite: () => void;
   /** Ask for site access so pages can be checked for unsaved work (P0.7). */
   onAllowProbe?: () => void;
+  /** The link to the Decay desktop app (P1.4); hidden when not given. */
+  appLink?: { status: AppLinkStatus | null; enabled: boolean };
+  onConnectApp?: () => void;
+  onDisconnectApp?: () => void;
   onClose: () => void;
   busy?: boolean;
   status?: string | null;
@@ -232,6 +238,16 @@ export function Popup(props: PopupProps) {
           empty={props.data.archived.length === 0}
         />
       ) : null}
+
+      {!searching && props.appLink && props.onConnectApp && props.onDisconnectApp && (
+        <AppLink
+          status={props.appLink.status}
+          enabled={props.appLink.enabled}
+          busy={props.busy}
+          onConnect={props.onConnectApp}
+          onDisconnect={props.onDisconnectApp}
+        />
+      )}
 
       <footer className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3 text-sm">
         {searching ? (

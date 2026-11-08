@@ -46,6 +46,7 @@ If you join the beta and send feedback through the beta Google Form or by email,
 | scripting + optional site access | The optional unsaved-work check described above: watchers for typing, “leave site?” prompts and uploads, plus a one-off check of a tab just before it is archived. |
 | favicon | Show site icons from Chrome’s own cache, without downloading anything. |
 | notifications | The “Undo” message after a sweep and the “always keep this site?” follow-up. |
+| nativeMessaging (optional) | Only if you install the Decay desktop app and click “Connect”: the extension then sends your open tabs, its archive, rules and settings to the Decay app on the same computer, which takes over archiving. Nothing leaves your device; the app keeps its data in an encrypted database. |
 
 ## Third parties
 

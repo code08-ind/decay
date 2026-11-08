@@ -1,3 +1,17 @@
+import { Adapter } from '@/lib/bridge/adapter';
+import {
+  adapterDeps,
+  browserKind,
+  browserSession,
+  linkEnabled,
+  profileId,
+  readLinkStatus,
+  setLinkEnabled,
+  writeLinkStatus,
+} from '@/lib/bridge/chrome';
+import { Bridge, type BridgeState } from '@/lib/bridge/connection';
+import { SYNC_KEY, type SyncRecord, syncArchive } from '@/lib/bridge/migrate';
+import { localEngineMayRun } from '@/lib/bridge/ownership';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { recordSearchToRestore } from '@/lib/metrics/metrics';
@@ -12,6 +26,8 @@ import { TICK_MS } from '@/lib/tracker/clock';
 import { type TickResult, Tracker } from '@/lib/tracker/tracker';
 
 const TICK_ALARM = 'decay-tick';
+/** Reconnects to the Decay app while the link is on (Software Design §4.7 watchdog). */
+const APP_WATCHDOG_ALARM = 'decay-app-watchdog';
 const SWEEP_NOTIFICATION = 'decay-sweep:';
 const PROTECT_NOTIFICATION = 'decay-protect:';
 /** The "Always keep site?" offer is removed after a minute. */
@@ -23,18 +39,42 @@ const UNDO_TOAST_MS = 30_000;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export default defineBackground(() => {
+  // --- Who closes tabs: this extension or the Decay app (P1.4) ----------------------
+  // While the app is connected it owns aging, policy and sweeps: the extension reports
+  // tabs and carries out its commands (adapter mode). The local tracker keeps following
+  // the tabs (so its ages are current if it has to take over) but is held in "paused":
+  // it never plans a sweep, and every close it makes checks ownership first, so the two
+  // never both close tabs. While the link is on, a fresh worker waits for the first
+  // connection attempt to fail before the local engine may close anything.
+  let bridge: Bridge;
+  let linkOn = false;
+  let linkSettled = false;
+  const localMayClose = () => localEngineMayRun(linkOn, bridge.state, linkSettled);
+  const linkReady = linkEnabled().then((on) => {
+    linkOn = on;
+  });
+  const guardedCommands = {
+    ...chromeCommands,
+    async removeTab(tabId: number) {
+      // Refused closes count as failed: the item goes back to its earlier state.
+      if (!localMayClose()) throw new Error('The Decay app manages tabs now');
+      await chromeCommands.removeTab(tabId);
+    },
+  };
+
   const tracker = new Tracker({
     db,
     api: chromeApi,
     appId: detectAppId(),
-    commands: chromeCommands,
+    commands: guardedCommands,
     prober: { probe: probeTab, load: probeStore.load, save: probeStore.save },
     ownOrigin: browser.runtime.getURL('/'),
     getIdleCutoffS: () => settings.get('idleCutoffS'),
     getPolicy: async () => {
-      const all = await settings.getAll();
+      const [all] = await Promise.all([settings.getAll(), linkReady]);
       return {
-        mode: all.mode,
+        // "paused" while the app is (or may be) in charge: time is still counted.
+        mode: localMayClose() ? all.mode : 'paused',
         holdUntil: all.holdUntil,
         thresholds: all.thresholds,
         maxItemsPerSweep: all.maxItemsPerSweep,
@@ -46,6 +86,100 @@ export default defineBackground(() => {
   // can't stop the worker from processing the next one.
   const run = (label: string, task: () => Promise<unknown>) => {
     task().catch((error) => console.error(`[decay] ${label} failed`, error));
+  };
+
+  const appId = detectAppId();
+  const version = browser.runtime.getManifest().version;
+  const local = {
+    get: async (key: string) => (await browser.storage.local.get(key))[key],
+    set: async (key: string, value: unknown) => browser.storage.local.set({ [key]: value }),
+  };
+  const adapter = new Adapter(
+    adapterDeps(
+      (env) => bridge.send(env),
+      () => bridge.state === 'connected',
+    ),
+  );
+  const adapterMode = () => bridge.state === 'connected';
+
+  /** Sends what changed in the archive (one sync at a time); failures go to the status. */
+  let syncing: Promise<unknown> | null = null;
+  const syncToApp = () => {
+    syncing ??= (async () => {
+      const result = await syncArchive(bridge, db, local, Date.now);
+      const status = await readLinkStatus();
+      if (status) {
+        await writeLinkStatus(
+          result.ok
+            ? { ...status, migratedAt: result.record.firstAt, detail: undefined }
+            : { ...status, detail: `Couldn't send the archive to the app: ${result.error}` },
+        );
+      }
+    })().finally(() => {
+      syncing = null;
+    });
+    return syncing;
+  };
+
+  let previous: BridgeState = 'off';
+  const linkStateChanged = (state: BridgeState, detail?: string) => {
+    const was = previous;
+    previous = state;
+    if (state !== 'connecting' && state !== 'connected') linkSettled = true;
+    if (state === 'connected') adapter.reset();
+    run('app link status', async () => {
+      const sync = (await local.get(SYNC_KEY)) as SyncRecord | undefined;
+      await writeLinkStatus({
+        state,
+        ...(detail ? { detail } : {}),
+        at: Date.now(),
+        version,
+        ...(sync?.firstAt ? { migratedAt: sync.firstAt } : {}),
+      });
+      if (state === 'connected') {
+        // The snapshot follows the app's first `config` (see Adapter).
+        await syncToApp();
+      } else if (was === 'connected') {
+        // Standalone again: the local tracker takes over, announcing any sweep (Undo).
+        await tickAndAnnounce(() => tracker.tick());
+      }
+    });
+  };
+  bridge = new Bridge({
+    connectNative: (name) => browser.runtime.connectNative(name),
+    hello: async () => ({
+      extVersion: version,
+      browser: browserKind(appId),
+      profileId: await profileId(),
+      capabilities: ['tabGroups', 'probe'],
+      session: await browserSession(),
+    }),
+    onMessage: (env) => run(`app ${env.type}`, () => adapter.handle(env)),
+    onState: linkStateChanged,
+    now: Date.now,
+    setTimer: (fn, ms) => setTimeout(fn, ms),
+    clearTimer: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+    setRepeating: (fn, ms) => setInterval(fn, ms),
+    clearRepeating: (h) => clearInterval(h as ReturnType<typeof setInterval>),
+  });
+  /** `launch`: only at browser start-up or on a user action (never on a reconnect). */
+  const connectApp = (launch: boolean) =>
+    run('connect app', async () => {
+      await linkReady;
+      if (!linkOn) return;
+      // An extension the app called outdated waits for an update instead of retrying.
+      const status = await readLinkStatus();
+      if (!launch && status?.state === 'outdated' && status.version === version) {
+        linkSettled = true;
+        return;
+      }
+      await bridge.connect({ launch });
+    });
+  const turnLinkOn = async () => {
+    linkOn = true;
+    await setLinkEnabled(true);
+    await browser.alarms.create(APP_WATCHDOG_ALARM, { periodInMinutes: 1 });
+    await bridge.connect({ launch: true });
   };
 
   // Runs on every service-worker start, not only on install: it is idempotent, and this
@@ -81,7 +215,13 @@ export default defineBackground(() => {
   };
 
   browser.alarms.onAlarm.addListener((alarm) => {
+    // The tick runs in both modes: in adapter mode the tracker only keeps its view of the
+    // tabs current ("paused": it never sweeps).
     if (alarm.name === TICK_ALARM) run('tick', () => tickAndAnnounce(() => tracker.tick()));
+    if (alarm.name === APP_WATCHDOG_ALARM) {
+      if (bridge.state === 'connected') run('sync archive', syncToApp);
+      else connectApp(false);
+    }
     if (alarm.name.startsWith(CLEAR_ALARM)) {
       run('clear toast', () => browser.notifications.clear(alarm.name.slice(CLEAR_ALARM.length)));
     }
@@ -138,7 +278,27 @@ export default defineBackground(() => {
 
   const handle = async (message: DecayRequest): Promise<DecayResponse> => {
     switch (message.type) {
+      case 'decay.app.connect':
+        await turnLinkOn();
+        return { ok: true };
+      case 'decay.app.disconnect': {
+        linkOn = false;
+        await setLinkEnabled(false);
+        bridge.disconnect();
+        await browser.alarms.clear(APP_WATCHDOG_ALARM);
+        return { ok: true };
+      }
       case 'decay.sweepNow':
+        await linkReady;
+        if (!localMayClose()) {
+          return {
+            ok: false,
+            error:
+              bridge.state === 'connected'
+                ? 'The Decay app runs sweeps now.'
+                : 'Connecting to the Decay app. Try again in a moment.',
+          };
+        }
         return sweepNow();
       case 'decay.undoSweep': {
         const r = await tracker.undoSweep(message.sweepId);
@@ -230,8 +390,18 @@ export default defineBackground(() => {
       );
     return true; // async response
   });
-  browser.tabs.onCreated.addListener((tab) => run('tab created', () => tracker.upsertTab(tab)));
+  // Tab events go to the app in adapter mode, else to the local tracker.
+  // Tab events always reach the local tracker (its view stays current); in adapter mode
+  // they're also reported to the app.
+  browser.tabs.onCreated.addListener((tab) => {
+    if (adapterMode()) adapter.tabCreated(tab);
+    run('tab created', () => tracker.upsertTab(tab));
+  });
   browser.tabs.onUpdated.addListener((tabId, change, tab) => {
+    if (adapterMode()) {
+      if (change.audible === true) adapter.tabUsed(tabId, tab.windowId, 'audible', Date.now());
+      else adapter.tabUpdated(tab, { ...change });
+    }
     if (change.audible === true) {
       // Audio keeps a tab young, but autoplay isn't a deliberate choice (no regret).
       run('tab audible', () => tracker.tabUsed(tabId, { deliberate: false }));
@@ -247,25 +417,58 @@ export default defineBackground(() => {
       run('tab updated', () => tracker.upsertTab(tab));
     }
   });
-  browser.tabs.onActivated.addListener(({ tabId, windowId }) =>
-    run('tab activated', () => tracker.tabUsed(tabId, { activatedInWindow: windowId })),
-  );
-  browser.tabs.onRemoved.addListener((tabId, info) =>
-    run('tab removed', () => tracker.tabRemoved(tabId, info.isWindowClosing, info.windowId)),
-  );
-  browser.tabs.onMoved.addListener((tabId) => run('tab moved', () => tracker.refreshTab(tabId)));
-  browser.tabs.onAttached.addListener((tabId) =>
-    run('tab attached', () => tracker.refreshTab(tabId)),
-  );
-  browser.tabs.onReplaced.addListener((added, removed) =>
-    run('tab replaced', () => tracker.tabReplaced(added, removed)),
-  );
-  browser.tabGroups?.onUpdated.addListener((group) =>
-    run('group updated', () => tracker.groupUpdated(group.id)),
-  );
-  browser.windows.onFocusChanged.addListener((windowId) =>
-    run('window focus', () => tracker.windowFocused(windowId)),
-  );
+  browser.tabs.onActivated.addListener(({ tabId, windowId }) => {
+    if (adapterMode()) adapter.tabUsed(tabId, windowId, 'activated', Date.now());
+    run('tab activated', () => tracker.tabUsed(tabId, { activatedInWindow: windowId }));
+  });
+  browser.tabs.onRemoved.addListener((tabId, info) => {
+    if (adapterMode()) adapter.tabRemoved(tabId);
+    run('tab removed', () => tracker.tabRemoved(tabId, info.isWindowClosing, info.windowId));
+  });
+  browser.tabs.onMoved.addListener((tabId, info) => {
+    if (adapterMode()) adapter.tabMoved(tabId, info.windowId, info.toIndex);
+    run('tab moved', () => tracker.refreshTab(tabId));
+  });
+  browser.tabs.onAttached.addListener((tabId, info) => {
+    if (adapterMode()) adapter.tabMoved(tabId, info.newWindowId, info.newPosition);
+    run('tab attached', () => tracker.refreshTab(tabId));
+  });
+  browser.tabs.onReplaced.addListener((added, removed) => {
+    if (adapterMode()) {
+      adapter.tabRemoved(removed);
+      run('tab replaced (app)', async () => {
+        const tab = await browser.tabs.get(added).catch(() => undefined);
+        if (tab) adapter.tabCreated(tab);
+      });
+    }
+    run('tab replaced', () => tracker.tabReplaced(added, removed));
+  });
+  browser.tabGroups?.onUpdated.addListener((group) => {
+    // Group titles and colours travel in the snapshot.
+    if (adapterMode()) run('group updated (app)', () => adapter.sendSnapshot());
+    run('group updated', () => tracker.groupUpdated(group.id));
+  });
+  browser.windows.onFocusChanged.addListener((windowId) => {
+    if (adapterMode()) adapter.windowFocus(windowId);
+    run('window focus', () => tracker.windowFocused(windowId));
+  });
+
+  // Browser start-up may start the app (the user expects Decay to be running); a worker
+  // restart only reconnects.
+  browser.runtime.onStartup.addListener(() => connectApp(true));
+  connectApp(false);
+  run('app link watchdog', async () => {
+    await linkReady;
+    if (!linkOn) return;
+    if (!(await browser.alarms.get(APP_WATCHDOG_ALARM))) {
+      await browser.alarms.create(APP_WATCHDOG_ALARM, { periodInMinutes: 1 });
+    }
+    // A stale "connected" from a previous worker isn't true any more.
+    const status = await readLinkStatus();
+    if (status?.state === 'connected' && bridge.state !== 'connected') {
+      await writeLinkStatus({ ...status, state: 'connecting', at: Date.now() });
+    }
+  });
 
   // Form probe (P0.7): the typing / beforeunload trackers run only while site access is
   // granted. Checked on every worker start (cheap: correct registrations are left alone) and
@@ -278,6 +481,11 @@ export default defineBackground(() => {
       await tickAndAnnounce(() => tracker.tick());
     });
   browser.permissions.onAdded.addListener(accessChanged);
+  // Granting the app-link permission (the popup may close while Chrome asks) turns the
+  // link on here, so it doesn't depend on the popup staying open.
+  browser.permissions.onAdded.addListener((added) => {
+    if (added.permissions?.includes('nativeMessaging')) run('connect app', turnLinkOn);
+  });
   browser.permissions.onRemoved.addListener(accessChanged);
 
   // Ensure the tick alarm exists (alarms survive worker restarts but not reinstalls),

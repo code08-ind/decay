@@ -15,7 +15,14 @@ export type DecayRequest =
    */
   | { type: 'decay.restore'; ids: string[]; intoWindowId?: number; searchMs?: number }
   /** Restore the whole batch an item was archived with (PRD F6, ⌘/Ctrl+Enter). */
-  | { type: 'decay.restoreBatch'; itemId: string; searchMs?: number };
+  | { type: 'decay.restoreBatch'; itemId: string; searchMs?: number }
+  /**
+   * Link to the Decay desktop app (P1.4). Sent by the popup after the user granted
+   * `nativeMessaging`: a user action, so the host may start the app.
+   */
+  | { type: 'decay.app.connect' }
+  /** The user turned the link off: back to standalone mode. */
+  | { type: 'decay.app.disconnect' };
 
 export type DecayResponse =
   | {
@@ -53,6 +60,9 @@ export function isDecayRequest(msg: unknown): msg is DecayRequest {
       );
     case 'decay.restoreBatch':
       return isString(m.itemId) && isMs(m.searchMs);
+    case 'decay.app.connect':
+    case 'decay.app.disconnect':
+      return true;
     default:
       return false;
   }

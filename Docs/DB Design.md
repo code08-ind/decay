@@ -87,6 +87,7 @@ A source window (a browser window or an app window) that items belong to. Used f
 | domain | TEXT | NULL | eTLD+1, lowercase (for rules/filters) |
 | path | TEXT | NULL | Folder/document path for windows |
 | favicon | BLOB | NULL | ≤ 4 KB |
+| favicon_url | TEXT | NULL | Where to fetch the favicon (imported items; P1.4) |
 | tab_index | INTEGER | NULL | Position in the window |
 | group_title | TEXT | NULL | Tab group name |
 | group_color | TEXT | NULL | Chrome group colour enum |
@@ -338,6 +339,13 @@ Field names mirror the SQL schema (camelCase). Phase 0 differences:
 - Phase 0-only item fields: `windowExternalId` (live browser window id, stand-in for `sources`) and `lastUsedEventAt` (sampling of `used` events). Not imported.
 - Item domains use eTLD+1 **including private suffixes** (`user.github.io`, `*.vercel.app` are separate domains). Same rule for the Rust core.
 - The `ImportArchive` migration maps camelCase enums and settings keys to the snake_case SQL values, fetches `faviconUrl` into the `favicon` BLOB, and fills `saveState='n/a'`.
+- **As built (P1.4, `decay-store::import_archive`):**
+  - **Items:** only archived and restored records are imported; live tabs come from the extension's snapshot, with their current ids. App ids are mapped to the platform's catalog (`com.microsoft.Edge` → `com.microsoft.edgemac` / `msedge.exe`, Chrome / Brave → `chrome.exe` / `brave.exe` on Windows). An unknown browser gets a placeholder `apps` row. `lastSweepId` is dropped (sweeps aren't imported), and `restoredFromId` is kept when the item it points to exists.
+  - **Favicons:** `faviconUrl` is kept in `items.favicon_url`, except `data:` URLs; the image is fetched later, in the app.
+  - **Repeated imports:** an item imported before is updated when the incoming `stateChangedAt` is newer (restored, or archived again, in the extension meanwhile). Older states never overwrite newer ones.
+  - **Rules:** user and quick-action rules are imported. The defaults already exist, but a default the user turned off in the extension is turned off here too.
+  - **Settings:** the 11 known keys are mapped and checked. A key the user already changed in the app is kept; `shadow_started_at` keeps the earlier date.
+  - **Robustness:** one transaction. It's lenient: a record the database refuses (a constraint) is counted and skipped, while database failures (disk full, I/O) abort the import. It's idempotent. The result is an `ImportReport` with counts, sent back in the ack.
 
 ## 8. Export format (JSON, v1)
 

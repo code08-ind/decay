@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { Popup } from '@/components/Popup';
+import { type AppLinkStatus, linkEnabled, readLinkStatus } from '@/lib/bridge/chrome';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { recordSearch } from '@/lib/metrics/metrics';
@@ -26,6 +27,10 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [appLink, setAppLink] = useState<{ status: AppLinkStatus | null; enabled: boolean }>({
+    status: null,
+    enabled: false,
+  });
 
   const load = useCallback(async () => {
     try {
@@ -37,6 +42,8 @@ export function App() {
         loadProbeAccess(),
       ]);
       applyTheme(all.theme);
+      const [linkStatus, enabled] = await Promise.all([readLinkStatus(), linkEnabled()]);
+      setAppLink({ status: linkStatus, enabled });
       const t = Date.now();
       setData(
         await loadPopupData(
@@ -139,6 +146,28 @@ export function App() {
         : `Restored ${plural(restored, 'tab')} in a new window, in their original order.`;
     });
 
+  // The app link (P1.4): the permission must be asked for from this click.
+  const onConnectApp = () =>
+    act(async () => {
+      const granted = await browser.permissions.request({ permissions: ['nativeMessaging'] });
+      if (!granted) return null;
+      await sendDecay({ type: 'decay.app.connect' });
+      return null;
+    });
+  const onDisconnectApp = () =>
+    act(async () => {
+      await sendDecay({ type: 'decay.app.disconnect' });
+      return 'Decay works on its own again.';
+    });
+  // The link's state changes in the background (connecting → connected): follow it.
+  useEffect(() => {
+    const changed = (changes: Record<string, unknown>, area: string) => {
+      if (area === 'session' && 'decay.appLink' in changes) void load();
+    };
+    browser.storage.onChanged.addListener(changed);
+    return () => browser.storage.onChanged.removeListener(changed);
+  }, [load]);
+
   const onUndoLastSweep = () =>
     act(async () => {
       const sweepId = data?.lastSweep?.sweep.id;
@@ -198,6 +227,9 @@ export function App() {
       onOpenSweeps={() => open('/sweeps.html')}
       onOpenInsights={() => open('/insights.html')}
       onProtectSite={() => void onProtectSite()}
+      appLink={appLink}
+      onConnectApp={onConnectApp}
+      onDisconnectApp={onDisconnectApp}
       onAllowProbe={onAllowProbe}
       onClose={() => window.close()}
       busy={busy}
