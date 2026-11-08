@@ -80,7 +80,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
-| P1.1 | `decay-core`: domain, lifecycle (proptest), policy, aging clock | F1, F8 | 🟨 built + reviewed: Cargo workspace + `crates/decay-core` (types, matching, exact JS title-pattern engine, policy incl. windows, lifecycle with Archiving, aging clock); 51 Rust tests incl. property tests, and TS↔Rust parity (6,000 policy cases, 18,000 title cases, case-folding sweep); Rust CI (macOS + Windows). Review + QA fixes done; commit + push next |
+| P1.1 | `decay-core`: domain, lifecycle (proptest), policy, aging clock | F1, F8 | ✅ Cargo workspace + `crates/decay-core` (types, matching, exact JS title-pattern engine, policy incl. windows, lifecycle with Archiving, aging clock); 51 Rust tests incl. property tests, and TS↔Rust parity (6,000 policy cases, 18,000 title cases, case-folding sweep); Rust CI (macOS + Windows). Review + QA passed after fixes; pushed (821d355) |
 | P1.2 | `decay-store`: SQLCipher, migrations V1, FTS5, backups | F5, F28 | ⬜ |
 | P1.3 | `decay-bridge` + `decay-host` + native host manifests (Chrome/Edge/Brave/Arc) | F3 | ⬜ |
 | P1.4 | Extension adapter mode + IndexedDB → app migration | F3 | ⬜ |
