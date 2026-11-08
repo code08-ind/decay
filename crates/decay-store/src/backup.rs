@@ -139,7 +139,8 @@ fn copy_to(src: &Connection, dest: &Path, key: &DbKey) -> Result<()> {
         copy.execute_batch("PRAGMA journal_mode = DELETE;")?;
         copy.close().map_err(|(_, e)| e)?;
     }
-    fs::File::open(&tmp)?.sync_all()?;
+    // Write access: Windows' FlushFileBuffers needs it (a read-only handle is refused).
+    fs::OpenOptions::new().write(true).open(&tmp)?.sync_all()?;
     rename(&tmp, dest)?;
     if let Some(dir) = dest.parent() {
         sync_dir(dir);
