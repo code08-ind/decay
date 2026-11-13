@@ -44,6 +44,21 @@
   --avatar-3-text: #a03a2c;
   --avatar-4: #e6f1dc;
   --avatar-4-text: #3d6f3a;
+  /* P1.8: selected rows, banner tints, the age scale (contrast-checked: text ≥ 4.5:1,
+     dots ≥ 3:1 on surface and canvas). */
+  --accent-soft: #e9f0dc;
+  --warning-soft: #f8ecd3;
+  --warning-chip: #efd9a8;
+  --warning-chip-text: #6e4a0c;
+  --danger-soft: #f7e2dc;
+  --danger-chip: #ebc8c0;
+  --danger-chip-text: #8a2f22;
+  --age-0: #4f8a4b;
+  --age-1: #9a7b1e;
+  --age-2: #b5651d;
+  --age-3: #7d7466;
+  --shadow-popover: 0 4px 16px rgba(29, 34, 25, 0.08);
+  --shadow-panel: 0 24px 64px rgba(29, 34, 25, 0.24);
   --radius-card: 22px;
   --radius-tile: 14px;
   --shadow-card: 0 1px 0 rgba(29, 34, 25, 0.04);
@@ -89,6 +104,19 @@
     --avatar-3-text: #f0a598;
     --avatar-4: #23331f;
     --avatar-4-text: #b8e08e;
+    --accent-soft: #24301f;
+    --warning-soft: #33291a;
+    --warning-chip: #4a3a1c;
+    --warning-chip-text: #f0c674;
+    --danger-soft: #3a221d;
+    --danger-chip: #552c24;
+    --danger-chip-text: #f2a593;
+    --age-0: #8cc66e;
+    --age-1: #d4b04a;
+    --age-2: #e08a4a;
+    --age-3: #9a9283;
+    --shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.55);
     --shadow-card: none;
   }
 }
@@ -132,5 +160,30 @@
   --avatar-3-text: #f0a598;
   --avatar-4: #23331f;
   --avatar-4-text: #b8e08e;
+  --accent-soft: #24301f;
+  --warning-soft: #33291a;
+  --warning-chip: #4a3a1c;
+  --warning-chip-text: #f0c674;
+  --danger-soft: #3a221d;
+  --danger-chip: #552c24;
+  --danger-chip-text: #f2a593;
+  --age-0: #8cc66e;
+  --age-1: #d4b04a;
+  --age-2: #e08a4a;
+  --age-3: #9a9283;
+  --shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.55);
   --shadow-card: none;
+}
+
+/* macOS "Increase contrast" / Windows contrast themes: stronger lines, no faint text. */
+@media (prefers-contrast: more) {
+  /* The same selectors as the theme blocks, so it wins over dark mode too. */
+  :root,
+  :root:not([data-theme="light"]),
+  :root[data-theme="dark"] {
+    --border: var(--text-muted);
+    --border-strong: var(--text);
+    --text-faint: var(--text-muted);
+  }
 }

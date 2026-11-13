@@ -49,7 +49,9 @@ Define as CSS variables in `packages/ui/tokens.css`; Tailwind maps to them (`app
 
 Radii: `--radius-card 22px`, `--radius-tile 14px`. Health banners (Designs/12): white card, 6 px coloured stripe on the left, round icon chip, white pill action.
 
-**Age scale** (stale-indicator dots and the timeline): `--age-0` fresh `#A3A3A3` → `--age-1` stale `#E0A458` → `--age-2` hidden `#D9771F` → `--age-3` archived `#8C5A2B`.
+**Age scale** (stale-indicator dots and the timeline; P1.8, re-picked for the Sage palette, every dot ≥ 3:1 on surface and canvas): `--age-0` fresh `#4F8A4B` / dark `#8CC66E` → `--age-1` stale `#9A7B1E` / `#D4B04A` → `--age-2` hidden `#B5651D` / `#E08A4A` → `--age-3` archived `#7D7466` / `#9A9283`. The original Ember scale (`#A3A3A3` grey failed 3:1 on cream) is retired.
+
+**Also added in P1.8:** `--accent-soft` (selected row, success banner: `#E9F0DC` / `#24301F`), `--warning-soft` / `--warning-chip` / `--warning-chip-text` and `--danger-soft` / `--danger-chip` / `--danger-chip-text` (banner tints and their round icon chips, Designs/12), `--shadow-popover`, `--shadow-panel`. **Increase contrast** (`prefers-contrast: more`): borders take the text colours and faint text becomes muted.
 
 All text/background pairs must meet ≥ 4.5:1 (body) and ≥ 3:1 (large text, icons, focus rings). Support **High Contrast** (Windows) and **Increase Contrast** (macOS) by swapping to `--border: currentColor`-strength borders.
 
@@ -213,7 +215,9 @@ Design every screen in **light and dark**, at **macOS** chrome first; then produ
 
 ## Implementation notes (from the build)
 
-- Tokens live in `packages/ui/tokens.css` (Sage direction) and are mapped to Tailwind 4 utilities in each app; components never use raw hex.
+- Tokens live in `packages/ui/tokens.css` (Sage direction). **P1.8:** `packages/ui/theme.css` is the one stylesheet both apps import after Tailwind (`@import "tailwindcss"; @import "@decay/ui/theme.css";`): tokens, bundled fonts (relative URLs, so Tailwind rebases them to the package), the Tailwind token utilities (`bg-surface`, `text-muted`, `bg-age-2`, …), base styles, focus ring, reduced motion, and `@source` so the shared components' classes are generated. Components never use raw hex.
+- **Shared components (P1.8, `@decay/ui`):** `Button` (primary / secondary / ghost / danger / onFeature / onFeatureOutline; 28/32/40 px; loading; shortcut hint), `IconButton` (label required), `Chip` + `ProBadge`, `Kbd` / `Shortcut` / `formatShortcut` (⌘⌥⇧⌃ glyphs in macOS order, words on Windows, spoken label), `Banner` (info / success / warning / danger; danger is `role="alert"`), `Toast` (30 s, paused on hover or focus, polite live region), `SegmentedControl` (radio group, arrow keys), `Switch`, `Tabs` (top pill tabs, tablist with arrow keys), `StatusDot`, `AgeDot`, `Card`, `FeatureCard`, `EmptyState`, `SearchInput` (Esc clears, then escapes), `applyTheme` (F19: `data-theme` or follow the OS). Keycaps use the system font (DM Mono has no ⌘⌥ glyphs). The desktop app's windows are built from them; the extension shares the theme (its pages keep their own components for now).
+- **Theme setting (F19):** `theme` = `system` / `light` / `dark` via `update_settings`; every window re-themes on `settings:changed`, and the native window chrome follows (`set_theme`).
 - Light-theme feature card green is **#3D6F3A** (design used #4F8A4B) so white/cream text on it meets WCAG AA (≥ 4.5:1).
 - Chrome extension pages default `body` to 75% font size; app CSS resets it to `1rem`.
 - Fonts are bundled (Latin woff2 only); favicons come from Chrome's local `_favicon` cache — pages make no network requests.

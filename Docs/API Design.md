@@ -111,6 +111,7 @@ Each command returns `Promise<T>` and rejects with `AppError`. Access is limited
 | --- | --- | --- |
 | `get_status` | `{}` | `{ mode: Mode; holdUntil?: number; clock: 'running' \| 'paused_idle' \| 'paused_sleep' \| 'paused_meeting' \| 'paused_hold'; staleCount: number; liveTabs: number; liveWindows: number; adapters: AdapterHealth[]; shadowDaysLeft?: number; permissions: Permissions }` |
 | `set_mode` | `{ mode: Mode }` | `{ mode }` |
+| `resume` | `{}` | `{ mode }` — **P1.8:** ends a pause, back to the mode before it (shadow or automatic) |
 | `hold` | `{ duration: '1h' \| 'untilTomorrow' \| 'indefinite' \| { minutes: number } }` | `{ holdUntil?: number }` |
 | `release_hold` | `{}` | `{}` |
 
@@ -138,7 +139,7 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | Command | Input | Output |
 | --- | --- | --- |
 | `get_settings` | `{}` | `Settings` (see DB §3.9) |
-| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) |
+| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.8):** only `theme` (`system` / `light` / `dark`) so far; other keys → `INVALID_INPUT` until their screens exist. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
 | `set_hotkey` | `{ accelerator: string }` | `{ ok: true } \| AppError('CONFLICT')` |
 | `set_launch_at_login` | `{ enabled: boolean }` | `{ enabled }` |
 

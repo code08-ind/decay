@@ -4,6 +4,7 @@
 const COMMANDS: &[&str] = &[
     "get_status",
     "set_mode",
+    "resume",
     "hold",
     "release_hold",
     "run_sweep_now",
@@ -14,6 +15,8 @@ const COMMANDS: &[&str] = &[
     "ui_show_window",
     "ui_hide_panel",
     "ui_take_pending",
+    "get_settings",
+    "update_settings",
 ];
 
 fn main() {

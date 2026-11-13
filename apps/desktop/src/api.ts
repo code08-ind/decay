@@ -37,6 +37,8 @@ export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: nu
 export const api = {
   getStatus: () => invoke<EngineStatus>('get_status'),
   setMode: (mode: Mode) => invoke<{ mode: Mode }>('set_mode', { mode }),
+  /** Ends a pause: back to the mode before it (shadow or automatic). */
+  resume: () => invoke<{ mode: Mode }>('resume'),
   hold: (duration: HoldDuration) => invoke<{ holdUntil: number | null }>('hold', { duration }),
   releaseHold: () => invoke('release_hold'),
   runSweepNow: () => invoke('run_sweep_now'),
@@ -48,6 +50,9 @@ export const api = {
     invoke('ui_show_window', { window, route }),
   hidePanel: () => invoke('ui_hide_panel'),
   takePending: () => invoke<Pending>('ui_take_pending'),
+  getSettings: () => invoke<Record<string, unknown>>('get_settings'),
+  updateSettings: (patch: Record<string, unknown>) =>
+    invoke<Record<string, unknown>>('update_settings', { patch }),
 };
 
 /** The message of a rejected command. */

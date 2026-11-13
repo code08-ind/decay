@@ -7,6 +7,7 @@
     "core:default",
     "allow-get-status",
     "allow-set-mode",
+    "allow-resume",
     "allow-hold",
     "allow-release-hold",
     "allow-run-sweep-now",
@@ -16,6 +17,8 @@
     "allow-request-accessibility",
     "allow-ui-show-window",
     "allow-ui-hide-panel",
-    "allow-ui-take-pending"
+    "allow-ui-take-pending",
+    "allow-get-settings",
+    "allow-update-settings"
   ]
 }

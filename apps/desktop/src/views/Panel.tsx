@@ -1,10 +1,11 @@
+import { SearchInput, Shortcut } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 
-// Placeholder until the search panel (P1.9): opens with the hotkey, Esc hides it.
+// Placeholder until the search panel (P1.9): opens with the hotkey; Esc clears, then hides.
 export function Panel() {
-  const input = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   useEffect(() => {
     // The prefill waits in the app until the page takes it: on load (a cold start from
@@ -14,8 +15,9 @@ export function Panel() {
         .takePending()
         .then((p) => {
           setQuery(p.prefill ?? '');
-          input.current?.focus();
-          input.current?.select();
+          const input = box.current?.querySelector('input');
+          input?.focus();
+          input?.select();
         })
         .catch(() => {});
     take();
@@ -25,18 +27,22 @@ export function Panel() {
     };
   }, []);
   return (
-    <main className="panel">
-      <input
-        ref={input}
-        aria-label="Search your archive"
+    <main
+      ref={box}
+      className="grid h-screen content-start gap-3 rounded-card border border-line bg-surface p-4"
+    >
+      <h1 className="sr-only">Search your archive</h1>
+      <SearchInput
+        large
+        label="Search your archive"
         placeholder="Search your archive…"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') api.hidePanel();
-        }}
+        onValueChange={setQuery}
+        onEscape={() => api.hidePanel()}
       />
-      <p className="muted">Search arrives with the panel UI.</p>
+      <p className="flex items-center gap-2 px-1 text-xs text-muted">
+        Search arrives with the panel UI. <Shortcut accelerator="Escape" /> closes.
+      </p>
     </main>
   );
 }

@@ -9,6 +9,7 @@
     "allow-get-status",
     "allow-ui-hide-panel",
     "allow-ui-show-window",
-    "allow-ui-take-pending"
+    "allow-ui-take-pending",
+    "allow-get-settings"
   ]
 }

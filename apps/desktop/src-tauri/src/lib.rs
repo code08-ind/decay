@@ -75,6 +75,7 @@ fn forward(app: &AppHandle, event: EngineEvent) {
         EngineEvent::AdapterDisconnected { browser, profile_id } => {
             let _ = app.emit("adapter:health", json!({ "kind": "browser", "browser": browser, "profile": profile_id, "status": "down" }));
         }
+        EngineEvent::SettingsChanged(settings) => commands::broadcast_settings(app, &settings),
         EngineEvent::Problem(what) => tracing::warn!("engine: {what}"),
     }
 }
@@ -103,11 +104,21 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {
-            let hotkey = handle
+            let (hotkey, theme) = handle
                 .state::<Core>()
-                .ask(|e, _| (e.store().setting::<String>("hotkey").ok().flatten(), Vec::new()))
-                .ok()
-                .flatten();
+                .ask(|e, _| {
+                    let s = e.store();
+                    let read = (
+                        s.setting::<String>("hotkey").ok().flatten(),
+                        s.setting::<String>("theme").ok().flatten(),
+                    );
+                    (read, Vec::new())
+                })
+                .unwrap_or((None, None));
+            if let Some(theme) = theme {
+                let main = handle.clone();
+                let _ = handle.run_on_main_thread(move || shell::apply_theme(&main, &theme));
+            }
             if let Some(hotkey) = hotkey {
                 let main = handle.clone();
                 let _ = handle.run_on_main_thread(move || {
@@ -303,6 +314,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
             commands::set_mode,
+            commands::resume,
             commands::hold,
             commands::release_hold,
             commands::run_sweep_now,
@@ -313,6 +325,8 @@ pub fn run() {
             commands::ui_show_window,
             commands::ui_hide_panel,
             commands::ui_take_pending,
+            commands::get_settings,
+            commands::update_settings,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {

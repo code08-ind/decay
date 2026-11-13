@@ -834,6 +834,30 @@ fn import_archive_is_acked_with_its_report() {
     let reply = h.reply_to(1, &req);
     assert_eq!(reply.payload["ok"], true);
     assert_eq!(reply.payload["result"]["itemsImported"], 0);
+    // No settings came in: nothing to announce.
+    assert!(!h.events.iter().any(|e| matches!(e, EngineEvent::SettingsChanged(_))));
+}
+
+#[test]
+fn imported_settings_are_announced() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    let req = h.request(
+        1,
+        kinds::IMPORT_ARCHIVE,
+        json!({"items": [], "rules": [], "settings": {"retentionDays": 30}}),
+    );
+    assert_eq!(h.reply_to(1, &req).payload["ok"], true);
+    let settings = h
+        .events
+        .iter()
+        .find_map(|e| match e {
+            EngineEvent::SettingsChanged(s) => Some(s.clone()),
+            _ => None,
+        })
+        .expect("announced");
+    assert_eq!(settings["retention_days"], 30);
+    assert!(settings.contains_key("theme"), "every setting, defaults filled in");
 }
 
 #[test]

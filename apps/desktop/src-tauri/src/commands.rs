@@ -1,5 +1,6 @@
 //! Tauri commands (API Design §2) of the shell: status and control, the hotkey, launch at
-//! login and windows. Search, Library and Settings commands come with their screens.
+//! login, the theme setting and windows. Search, Library and the rest of Settings come
+//! with their screens.
 //!
 //! Commands that wait for the engine run on a blocking thread, never the main thread.
 
@@ -97,6 +98,18 @@ pub async fn set_mode(app: AppHandle, mode: Mode) -> Res<Value> {
     .await
 }
 
+/// Ends a pause: back to the mode before it (`set_mode` would lose it).
+#[tauri::command]
+pub async fn resume(app: AppHandle) -> Res<Value> {
+    blocking(app, |core| {
+        core.ask(|e, now| match e.resume(now) {
+            Ok(out) => (Ok(json!({ "mode": e.status(now).mode })), out),
+            Err(err) => (Err(AppError::db(&err)), Vec::new()),
+        })?
+    })
+    .await
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HoldResult {
@@ -173,16 +186,7 @@ pub async fn set_hotkey(app: AppHandle, accelerator: String) -> Res<Value> {
     // Registered next to the old one, saved, and only then does it replace it: the live
     // hotkey and the saved one never disagree.
     let swap = shell::try_hotkey(&app, &accelerator)?;
-    let saved = accelerator.clone();
-    let stored = blocking(app.clone(), move |core| {
-        core.ask(move |e, now| {
-            (
-                e.store().set_setting("hotkey", &saved, now).map_err(|err| AppError::db(&err)),
-                Vec::new(),
-            )
-        })?
-    })
-    .await;
+    let stored = save_settings(app.clone(), vec![("hotkey".into(), json!(accelerator))]).await;
     if let Err(e) = stored {
         swap.rollback(&app);
         return Err(e);
@@ -199,22 +203,85 @@ pub fn ui_take_pending(window: tauri::Window, shell: State<'_, shell::Shell>) ->
     shell.take_pending(window.label())
 }
 
+/// Settings the shell lets the UI change so far (the Settings screens add the rest).
+/// Each value is checked before it's stored.
+pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(String, Value)>> {
+    if patch.is_empty() {
+        return Err(AppError::new("INVALID_INPUT", "nothing to change"));
+    }
+    patch
+        .iter()
+        .map(|(key, value)| match key.as_str() {
+            "theme" if matches!(value.as_str(), Some("system" | "light" | "dark")) => {
+                Ok((key.clone(), value.clone()))
+            }
+            "theme" => Err(AppError::new("INVALID_INPUT", "theme is system, light or dark")),
+            _ => Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here"))),
+        })
+        .collect()
+}
+
+/// Every setting with defaults filled in (DB Design §3.9).
+#[tauri::command]
+pub async fn get_settings(app: AppHandle) -> Res<serde_json::Map<String, Value>> {
+    blocking(app, |core| {
+        core.ask(|e, _| {
+            (e.store().settings_snapshot().map_err(|err| AppError::db(&err)), Vec::new())
+        })?
+    })
+    .await
+}
+
+/// Tells every window about the settings (`settings:changed`) and applies the theme to
+/// the native chrome. Called on the engine thread right after a change, so broadcasts
+/// keep the order of the writes.
+pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Value>) {
+    if let Some(theme) = settings.get("theme").and_then(Value::as_str) {
+        let handle = app.clone();
+        let theme = theme.to_owned();
+        let _ = app.run_on_main_thread(move || shell::apply_theme(&handle, &theme));
+    }
+    let _ = tauri::Emitter::emit(app, "settings:changed", settings);
+}
+
+/// Saves `changes` on the engine thread and broadcasts the result from there.
+async fn save_settings(
+    app: AppHandle,
+    changes: Vec<(String, Value)>,
+) -> Res<serde_json::Map<String, Value>> {
+    let handle = app.clone();
+    blocking(app, move |core| {
+        core.ask(move |e, now| {
+            let saved = changes
+                .iter()
+                .try_for_each(|(k, v)| e.store().set_setting(k, v, now))
+                .and_then(|()| e.store().settings_snapshot())
+                .map_err(|err| AppError::db(&err));
+            if let Ok(settings) = &saved {
+                broadcast_settings(&handle, settings);
+            }
+            (saved, Vec::new())
+        })?
+    })
+    .await
+}
+
+/// Changes settings (so far: `theme`); every window hears `settings:changed`.
+#[tauri::command]
+pub async fn update_settings(
+    app: AppHandle,
+    patch: serde_json::Map<String, Value>,
+) -> Res<serde_json::Map<String, Value>> {
+    let changes = validate_settings(&patch)?;
+    save_settings(app, changes).await
+}
+
 #[tauri::command]
 pub async fn set_launch_at_login(app: AppHandle, enabled: bool) -> Res<Value> {
     let launcher = app.autolaunch();
     let done = if enabled { launcher.enable() } else { launcher.disable() };
     done.map_err(|e| AppError::new("PERMISSION_DENIED", e.to_string()))?;
-    blocking(app, move |core| {
-        core.ask(move |e, now| {
-            (
-                e.store()
-                    .set_setting("launch_at_login", &enabled, now)
-                    .map_err(|err| AppError::db(&err)),
-                Vec::new(),
-            )
-        })?
-    })
-    .await?;
+    save_settings(app, vec![("launch_at_login".into(), json!(enabled))]).await?;
     Ok(json!({ "enabled": enabled }))
 }
 
@@ -298,6 +365,18 @@ mod tests {
         let now = at("2026-10-24T23:00:00+02:00[Europe/Paris]");
         let end = hold_end(&HoldDuration::Named(NamedHold::UntilTomorrow), &now).unwrap();
         assert_eq!(end, at("2026-10-25T06:00:00+01:00[Europe/Paris]").timestamp().as_millisecond());
+    }
+
+    #[test]
+    fn only_known_settings_with_valid_values_are_accepted() {
+        let patch = |v: Value| v.as_object().unwrap().clone();
+        let ok = validate_settings(&patch(json!({"theme": "dark"}))).unwrap();
+        assert_eq!(ok, vec![("theme".to_owned(), json!("dark"))]);
+        for bad in
+            [json!({"theme": "neon"}), json!({"theme": 1}), json!({"mode": "paused"}), json!({})]
+        {
+            assert_eq!(validate_settings(&patch(bad)).unwrap_err().code, "INVALID_INPUT");
+        }
     }
 
     #[test]

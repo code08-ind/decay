@@ -28,6 +28,8 @@ pub struct Shell {
     pub pending: Mutex<Pending>,
     /// A `decay://` link was handled (a cold start from a link opens only its window).
     pub link_seen: std::sync::atomic::AtomicBool,
+    /// The native window theme (`None`: follow the OS), from the `theme` setting.
+    pub theme: Mutex<Option<tauri::Theme>>,
 }
 
 /// Data waiting for a window.
@@ -48,6 +50,7 @@ impl Shell {
             fatal: Mutex::new(None),
             pending: Mutex::new(Pending::default()),
             link_seen: std::sync::atomic::AtomicBool::new(false),
+            theme: Mutex::new(None),
         }
     }
 
@@ -81,7 +84,12 @@ fn spec(window: Window) -> (&'static str, f64, f64) {
 fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewWindow> {
     let (title, w, h) = spec(window);
     let url = WebviewUrl::App(format!("index.html#{route}").into());
-    let builder = WebviewWindowBuilder::new(app, window.label(), url).title(title).inner_size(w, h);
+    let theme =
+        *app.state::<Shell>().theme.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let builder = WebviewWindowBuilder::new(app, window.label(), url)
+        .title(title)
+        .inner_size(w, h)
+        .theme(theme);
     match window {
         Window::Panel => builder
             .decorations(false)
@@ -93,6 +101,25 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
             .build(),
         Window::Settings => builder.resizable(false).center().build(),
         Window::Library => builder.min_inner_size(800.0, 520.0).center().build(),
+    }
+}
+
+/// The `theme` setting (`system`, `light`, `dark`) as a native window theme.
+pub fn native_theme(setting: &str) -> Option<tauri::Theme> {
+    match setting {
+        "light" => Some(tauri::Theme::Light),
+        "dark" => Some(tauri::Theme::Dark),
+        _ => None,
+    }
+}
+
+/// Applies the `theme` setting to the native chrome of every window (title bars, menus);
+/// the pages theme themselves from `settings:changed`.
+pub fn apply_theme(app: &AppHandle, setting: &str) {
+    let theme = native_theme(setting);
+    *app.state::<Shell>().theme.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = theme;
+    for window in app.webview_windows().values() {
+        let _ = window.set_theme(theme);
     }
 }
 

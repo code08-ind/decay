@@ -154,6 +154,9 @@ pub enum EngineEvent {
     },
     /// The status changed (tray badge and menu, `status:changed`).
     StatusChanged(Box<EngineStatus>),
+    /// Settings changed inside the engine (an archive import): every setting, defaults
+    /// filled in (`settings:changed`).
+    SettingsChanged(serde_json::Map<String, serde_json::Value>),
     /// Something failed (logged); the engine carries on.
     Problem(String),
 }
@@ -1048,6 +1051,12 @@ impl Engine {
         match self.store.import_archive(&env.payload, self.config.platform, now) {
             Ok(report) => {
                 self.reply_ok(id, &env.id, &report);
+                if report.settings_imported > 0 {
+                    match self.store.settings_snapshot() {
+                        Ok(all) => self.out.push(Output::Event(EngineEvent::SettingsChanged(all))),
+                        Err(e) => self.problem("settings", &e),
+                    }
+                }
                 if let Err(e) = self.reload_policy() {
                     self.problem("settings", &e);
                 }
