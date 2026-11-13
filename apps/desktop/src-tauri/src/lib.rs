@@ -22,6 +22,7 @@ mod core;
 mod deeplink;
 mod keys;
 mod menu;
+mod search;
 mod shell;
 mod tray;
 
@@ -74,6 +75,12 @@ fn forward(app: &AppHandle, event: EngineEvent) {
         }
         EngineEvent::AdapterDisconnected { browser, profile_id } => {
             let _ = app.emit("adapter:health", json!({ "kind": "browser", "browser": browser, "profile": profile_id, "status": "down" }));
+        }
+        EngineEvent::Restored { restored, failed, skipped } => {
+            let _ = app.emit(
+                "items:restored",
+                json!({ "restored": restored, "failed": failed, "skipped": skipped }),
+            );
         }
         EngineEvent::SettingsChanged(settings) => commands::broadcast_settings(app, &settings),
         EngineEvent::Problem(what) => tracing::warn!("engine: {what}"),
@@ -299,7 +306,7 @@ pub fn run() {
         std::process::exit(1);
     };
 
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // First, so a second launch never gets further than forwarding its arguments.
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| second_launch(app, &args)))
         .plugin(tauri_plugin_deep_link::init())
@@ -307,7 +314,11 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![BACKGROUND_ARG]),
-        ))
+        ));
+    // The search panel is an NSPanel on macOS.
+    #[cfg(target_os = "macos")]
+    let builder = builder.plugin(tauri_nspanel::init());
+    let app = builder
         .manage(Core::default())
         .manage(Shell::new(support))
         .manage(tray::TrayState::default())
@@ -326,6 +337,11 @@ pub fn run() {
             commands::ui_hide_panel,
             commands::ui_take_pending,
             commands::get_settings,
+            search::search,
+            search::restore_items,
+            search::restore_batch,
+            search::protect_item,
+            search::ui_show_item,
             commands::update_settings,
         ])
         .menu(app_menu)

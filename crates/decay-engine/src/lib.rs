@@ -41,5 +41,5 @@ pub use control::{BrowserStatus, EngineStatus};
 pub use domain::domain_of;
 pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,
-    SweepRefused, UndoRefused, timing,
+    RestoreRefused, SweepRefused, UndoRefused, timing,
 };

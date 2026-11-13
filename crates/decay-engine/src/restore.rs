@@ -24,7 +24,8 @@ use decay_core::{EventType, ItemState, LifecycleEvent, SweepStatus, next_state};
 use decay_store::{Item, SearchFilters, SearchQuery, Store, Sweep};
 
 use crate::engine::{
-    CommandKind, ConnId, Engine, EngineEvent, Output, Pending, Res, UndoRefused, timing,
+    CommandKind, ConnId, Engine, EngineEvent, Output, Pending, Res, RestoreRefused, UndoRefused,
+    timing,
 };
 use crate::sweep::plain_guards;
 use crate::tabs::link_restored;
@@ -48,6 +49,8 @@ enum Placement {
     /// Back where they were: the original window in the same browser session, else one
     /// new window per original window. `focus`: the first tab becomes active.
     Original { focus: bool },
+    /// All together in one new window (the panel's ⌥↵), the first tab active.
+    NewWindow,
 }
 
 fn archived_item(item: &Item, window_key: Option<String>) -> ArchivedItem {
@@ -243,6 +246,60 @@ impl Engine {
         Ok(Ok(()))
     }
 
+    /// Restores archived items from the app: back where they were, or all into one new
+    /// window. Unknown or already restored ids count as skipped.
+    pub(crate) fn restore_from_app(
+        &mut self,
+        ids: &[String],
+        new_window: bool,
+        now: i64,
+    ) -> Res<Result<(), RestoreRefused>> {
+        let mut items = Vec::new();
+        let mut skipped = 0u32;
+        let mut seen = std::collections::HashSet::new();
+        for id in ids.iter().take(500).filter(|id| seen.insert(id.as_str())) {
+            match self.store.item(id)? {
+                Some(item) if item.state == ItemState::Archived => items.push(item),
+                _ => skipped += 1,
+            }
+        }
+        if items.is_empty() {
+            return Ok(Err(RestoreRefused::NothingToRestore));
+        }
+        if !items.iter().any(|i| matches!(self.home_conn(i, now), Ok(Some(_)))) {
+            return Ok(Err(RestoreRefused::NoBrowser));
+        }
+        // Several from one window come back in their original order.
+        items.sort_by(|a, b| {
+            (a.source_id.as_deref(), a.tab_index).cmp(&(b.source_id.as_deref(), b.tab_index))
+        });
+        let placement =
+            if new_window { Placement::NewWindow } else { Placement::Original { focus: true } };
+        self.start_restore(None, &items, placement, None, skipped, now)?;
+        Ok(Ok(()))
+    }
+
+    /// Restores the batch an item was archived with (same sweep, same window), in order.
+    pub(crate) fn restore_batch_from_app(
+        &mut self,
+        item_id: &str,
+        now: i64,
+    ) -> Res<Result<(), RestoreRefused>> {
+        let Some(item) = self.store.item(item_id)? else {
+            return Ok(Err(RestoreRefused::NothingToRestore));
+        };
+        let batch = match &item.last_sweep_id {
+            Some(sweep) => self.store.archived_batch(sweep, item.source_id.as_deref())?,
+            None if item.state == ItemState::Archived => vec![item],
+            None => Vec::new(),
+        };
+        let ids: Vec<String> = batch.into_iter().map(|i| i.id).collect();
+        if ids.is_empty() {
+            return Ok(Err(RestoreRefused::NothingToRestore));
+        }
+        self.restore_from_app(&ids, false, now)
+    }
+
     /// The sweep to undo and its archived items.
     fn find_undo(&self, sweep_id: Option<&str>) -> Res<Result<(String, Vec<Item>), UndoRefused>> {
         if let Some(id) = sweep_id
@@ -290,7 +347,7 @@ impl Engine {
         let mut summary = RestoreSummary { restored: 0, failed: 0, skipped };
         let mut per_conn: BTreeMap<ConnId, Vec<RestoreItem>> = BTreeMap::new();
         let mut window_keys: HashMap<String, Option<String>> = HashMap::new();
-        for (n, item) in items.iter().enumerate() {
+        for item in items {
             if self.restoring.contains(&item.id) {
                 // Already on its way back (a double Enter, a second popup): one tab only.
                 summary.skipped += 1;
@@ -300,9 +357,12 @@ impl Engine {
                 summary.failed += 1;
                 continue;
             };
+            // The browser profile it came from (any session of it); else the requesting
+            // popup's own browser. The app never sends a tab to another browser or profile
+            // (other cookies, other accounts): such items fail and stay archived.
             let conn = match placement {
                 Placement::Window(_) => reply.map(|(c, _)| c),
-                Placement::Original { .. } => {
+                Placement::Original { .. } | Placement::NewWindow => {
                     self.home_conn(item, now)?.or_else(|| reply.map(|(c, _)| c))
                 }
             };
@@ -317,7 +377,7 @@ impl Engine {
                         .get(&conn)
                         .and_then(|c| c.adapter.as_ref())
                         .map(|a| a.window_key(w));
-                    (key, None, n == 0)
+                    (key, None, true)
                 }
                 Placement::Original { focus } => {
                     let key = match &item.source_id {
@@ -332,14 +392,19 @@ impl Engine {
                         }
                         None => None,
                     };
-                    (key, item.tab_index, focus && n == 0)
+                    (key, item.tab_index, focus)
                 }
+                Placement::NewWindow => (None, None, true),
             };
             let group = item.group_title.clone().map(|title| RestoreGroup {
                 title,
                 color: item.group_color.clone().unwrap_or_else(|| "grey".to_owned()),
             });
-            per_conn.entry(conn).or_default().push(RestoreItem {
+            // Focus goes to the first tab actually sent to each browser (an earlier item may
+            // have been skipped).
+            let batch = per_conn.entry(conn).or_default();
+            let active = active && batch.is_empty();
+            batch.push(RestoreItem {
                 item_id: item.id.clone(),
                 url,
                 window_key,
@@ -358,7 +423,8 @@ impl Engine {
         for (conn, items) in per_conn {
             let item_ids = items.iter().map(|i| i.item_id.clone()).collect::<Vec<_>>();
             let count = item_ids.len();
-            let payload = TabsRestore { items, new_window: None };
+            let new_window = (placement == Placement::NewWindow).then_some(true);
+            let payload = TabsRestore { items, new_window };
             let pending = Pending::Restore { op: op_id, item_ids: item_ids.clone() };
             if self
                 .command(conn, kinds::TABS_RESTORE, &payload, pending, CommandKind::Restore, now)
@@ -464,10 +530,21 @@ impl Engine {
                 failed: op.summary.failed,
             }));
         }
-        if let Some((conn, req)) = op.reply
-            && self.conns.contains_key(&conn)
-        {
-            self.reply_ok(conn, &req, &op.summary);
+        match op.reply {
+            Some((conn, req)) => {
+                if self.conns.contains_key(&conn) {
+                    self.reply_ok(conn, &req, &op.summary);
+                }
+            }
+            // The app asked (panel, Library): it hears the result as an event.
+            None if op.undo.is_none() => {
+                self.out.push(Output::Event(EngineEvent::Restored {
+                    restored: op.summary.restored,
+                    failed: op.summary.failed,
+                    skipped: op.summary.skipped,
+                }));
+            }
+            None => {}
         }
         Ok(())
     }

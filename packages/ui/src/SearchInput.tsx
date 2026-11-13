@@ -11,6 +11,7 @@ export function SearchInput({
   onValueChange,
   onEscape,
   large = false,
+  bare = false,
   label,
   className,
   onKeyDown,
@@ -20,6 +21,9 @@ export function SearchInput({
   onValueChange: (value: string) => void;
   onEscape?: () => void;
   large?: boolean;
+  /** No box: the text sits in its container (the panel's header, Designs/01). The
+   * container shows focus; the caret marks the field. */
+  bare?: boolean;
   /** Accessible name. */
   label: string;
 }) {
@@ -52,7 +56,10 @@ export function SearchInput({
         onKeyDown={keyDown}
         className={cx(
           // One focus indicator: the accent border (≥ 3:1) plus a soft ring, not the outline too.
-          'w-full rounded-full border border-line bg-surface-2 text-ink placeholder:text-muted focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft [&::-webkit-search-cancel-button]:hidden',
+          'w-full text-ink caret-accent placeholder:text-muted [&::-webkit-search-cancel-button]:hidden',
+          bare
+            ? 'border-0 bg-transparent focus-visible:outline-none'
+            : 'rounded-full border border-line bg-surface-2 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft',
           large ? 'h-12 pr-11 pl-12 text-xl' : 'h-8 pr-8 pl-8 text-xs',
         )}
         {...rest}

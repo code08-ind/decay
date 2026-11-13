@@ -19,6 +19,11 @@
     "allow-ui-hide-panel",
     "allow-ui-take-pending",
     "allow-get-settings",
-    "allow-update-settings"
+    "allow-update-settings",
+    "allow-search",
+    "allow-restore-items",
+    "allow-restore-batch",
+    "allow-protect-item",
+    "allow-ui-show-item"
   ]
 }

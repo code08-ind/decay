@@ -32,6 +32,27 @@ export interface Pending {
   licenseKey: string | null;
 }
 
+export interface PanelItem {
+  id: string;
+  kind: 'tab' | 'window';
+  title: string;
+  url: string | null;
+  domain: string | null;
+  appName: string;
+  sourceId: string | null;
+  sourceTitle: string | null;
+  archivedAt: number | null;
+  reason: string | null;
+  batch: boolean;
+}
+
+export interface SearchOutput {
+  items: PanelItem[];
+  nextCursor: string | null;
+  totalArchived: number;
+  tookMs: number;
+}
+
 export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: number };
 
 export const api = {
@@ -50,6 +71,13 @@ export const api = {
     invoke('ui_show_window', { window, route }),
   hidePanel: () => invoke('ui_hide_panel'),
   takePending: () => invoke<Pending>('ui_take_pending'),
+  search: (input: { query: string; kind?: 'tab' | 'window'; limit?: number; cursor?: string }) =>
+    invoke<SearchOutput>('search', { input }),
+  restoreItems: (ids: string[], target: 'original' | 'newWindow' = 'original') =>
+    invoke('restore_items', { ids, target }),
+  restoreBatch: (itemId: string) => invoke('restore_batch', { itemId }),
+  protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
+  showItem: (id: string) => invoke('ui_show_item', { id }),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),

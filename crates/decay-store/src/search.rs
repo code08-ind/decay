@@ -59,6 +59,18 @@ pub struct SearchPage {
 
 const DAY_MS: i64 = 86_400_000;
 
+impl Store {
+    /// How many items are archived (the panel's "5 of 318 archived").
+    pub fn archived_count(&self) -> Result<u64> {
+        let n: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM items WHERE state = 'archived'",
+            [],
+            |r| r.get(0),
+        )?;
+        Ok(u64::try_from(n).unwrap_or(0))
+    }
+}
+
 /// Days since 1970-01-01 of a civil date (Howard Hinnant's days-from-civil).
 pub(crate) fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     let y = if month <= 2 { year - 1 } else { year };
@@ -121,6 +133,12 @@ pub fn parse_query(text: &str, now: i64, utc_offset_minutes: i32) -> (String, Se
             words.push(token);
             continue;
         };
+        // An operator still being typed (`site:` alone) filters nothing and isn't a word.
+        let known =
+            matches!(op.to_ascii_lowercase().as_str(), "app" | "site" | "before" | "after" | "in");
+        if known && value.is_empty() {
+            continue;
+        }
         let used = !value.is_empty()
             && match op.to_ascii_lowercase().as_str() {
                 "app" => {
@@ -317,6 +335,9 @@ mod tests {
 
         assert_eq!(titles(&store, "site:github.com"), ["Repo", "Gist"]);
         assert_eq!(titles(&store, "repo site:github.com"), ["Repo"]);
+        // An operator without a value yet is ignored, not searched for.
+        assert_eq!(titles(&store, "repo site:"), titles(&store, "repo"));
+        assert_eq!(parse_query("site: app:", 0, 0), (String::new(), SearchFilters::default()));
         let mut recent = titles(&store, "after:3d");
         recent.sort();
         assert_eq!(recent, ["Repo", "Repo mirror"]);

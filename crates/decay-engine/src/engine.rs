@@ -152,6 +152,12 @@ pub enum EngineEvent {
     AccessibilityChanged {
         trusted: bool,
     },
+    /// A restore the app asked for finished (`items:restored`).
+    Restored {
+        restored: u32,
+        failed: u32,
+        skipped: u32,
+    },
     /// The status changed (tray badge and menu, `status:changed`).
     StatusChanged(Box<EngineStatus>),
     /// Settings changed inside the engine (an archive import): every setting, defaults
@@ -159,6 +165,16 @@ pub enum EngineEvent {
     SettingsChanged(serde_json::Map<String, serde_json::Value>),
     /// Something failed (logged); the engine carries on.
     Problem(String),
+}
+
+/// Why a restore from the app didn't start.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum RestoreRefused {
+    #[error("nothing to restore: it isn't in the archive any more")]
+    NothingToRestore,
+    /// The browser profile it came from isn't connected (it's never sent elsewhere).
+    #[error("the browser it came from isn't open (or the Decay extension isn't connected)")]
+    NoBrowser,
 }
 
 /// Why Undo didn't start.

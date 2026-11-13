@@ -17,6 +17,11 @@ const COMMANDS: &[&str] = &[
     "ui_take_pending",
     "get_settings",
     "update_settings",
+    "search",
+    "restore_items",
+    "restore_batch",
+    "protect_item",
+    "ui_show_item",
 ];
 
 fn main() {

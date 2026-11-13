@@ -18,9 +18,10 @@ use crate::deeplink::Window;
 use crate::menu::HOLD_INDEFINITE_MS;
 use crate::shell;
 
-type Res<T> = Result<T, AppError>;
+pub(crate) type Res<T> = Result<T, AppError>;
 
-async fn blocking<T: Send + 'static>(
+/// Runs `f` (which waits for the engine) on a blocking thread, never the main thread.
+pub(crate) async fn blocking<T: Send + 'static>(
     app: AppHandle,
     f: impl FnOnce(&Core) -> Res<T> + Send + 'static,
 ) -> Res<T> {

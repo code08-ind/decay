@@ -6,10 +6,10 @@
 //! tray's badge and menu follow without asking.
 
 use decay_bridge::protocol::BrowserKind;
-use decay_core::{ItemState, Mode};
+use decay_core::{ItemState, Mode, Rule, RuleAction, RuleScope, RuleSource};
 use serde::Serialize;
 
-use crate::engine::{Engine, EngineEvent, Output, Res, UndoRefused};
+use crate::engine::{Engine, EngineEvent, Output, Res, RestoreRefused, UndoRefused};
 
 /// Setting: the mode "Resume" goes back to.
 const MODE_BEFORE_PAUSE: &str = "mode_before_pause";
@@ -131,6 +131,67 @@ impl Engine {
         }
         self.publish_status(now);
         Ok(Ok(std::mem::take(&mut self.out)))
+    }
+
+    /// Restores archived items (the panel's ↵, or ⌥↵ with `new_window`). The result comes
+    /// later as [`EngineEvent::Restored`].
+    pub fn restore(
+        &mut self,
+        ids: &[String],
+        new_window: bool,
+        now: i64,
+    ) -> Res<Result<Vec<Output>, RestoreRefused>> {
+        if let Err(why) = self.restore_from_app(ids, new_window, now)? {
+            return Ok(Err(why));
+        }
+        Ok(Ok(std::mem::take(&mut self.out)))
+    }
+
+    /// Restores the batch `item_id` was archived with (⌘↵).
+    pub fn restore_batch(
+        &mut self,
+        item_id: &str,
+        now: i64,
+    ) -> Res<Result<Vec<Output>, RestoreRefused>> {
+        if let Err(why) = self.restore_batch_from_app(item_id, now)? {
+            return Ok(Err(why));
+        }
+        Ok(Ok(std::mem::take(&mut self.out)))
+    }
+
+    /// "Always keep" an item's site (the panel's ⌘P): a protect rule for its domain, made
+    /// as a quick action. `None` when the item has no domain; an existing identical rule
+    /// is returned as is.
+    pub fn protect_site(&mut self, item_id: &str, now: i64) -> Res<Option<Rule>> {
+        let Some(domain) = self.store.item(item_id)?.and_then(|i| i.domain) else {
+            return Ok(None);
+        };
+        let existing = self.store.rules()?.into_iter().find(|r| {
+            r.scope == RuleScope::Domain && r.action == RuleAction::Protect && r.pattern == domain
+        });
+        if let Some(mut rule) = existing {
+            // A turned-off rule protects nothing: "Always keep" turns it back on.
+            if !rule.enabled {
+                rule.enabled = true;
+                self.store.update_rule(&rule)?;
+                self.reload_policy()?;
+            }
+            return Ok(Some(rule));
+        }
+        let rule = Rule {
+            id: decay_store::new_id(now),
+            scope: RuleScope::Domain,
+            pattern: domain,
+            action: RuleAction::Protect,
+            threshold_hours: None,
+            enabled: true,
+            source: RuleSource::QuickAction,
+            created_at: now,
+            hit_count: 0,
+        };
+        self.store.insert_rule(&rule)?;
+        self.reload_policy()?;
+        Ok(Some(rule))
     }
 
     fn after_setting_change(&mut self, now: i64) -> Res<Vec<Output>> {

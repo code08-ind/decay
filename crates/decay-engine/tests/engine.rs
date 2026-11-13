@@ -1485,3 +1485,137 @@ fn undo_from_the_app_settles_a_sweep_already_restored_item_by_item() {
     h.poll();
     assert_eq!(h.status().undoable_sweep, None);
 }
+
+// --- Panel actions (P1.9) ---------------------------------------------------------------
+
+fn archived_ids(h: &Harness, sweep: &str) -> Vec<String> {
+    h.store().archived_in_sweep(sweep).unwrap().into_iter().map(|i| i.id).collect()
+}
+
+#[test]
+fn the_app_restores_items_where_they_were_and_hears_the_result() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let first = ids[0].clone();
+    let out = h.engine.restore(&[first.clone(), "nope".into()], false, h.now).unwrap().unwrap();
+    h.collect(out);
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    assert_eq!(restore.payload.get("newWindow"), None);
+    let items = restore.payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0]["windowKey"], "sess:1");
+    assert_eq!(items[0]["active"], true);
+    h.ack_ok(1, &restore, json!({"restored": [{"itemId": first, "tabId": 50}], "failed": []}));
+    assert!(h.events.contains(&EngineEvent::Restored { restored: 1, failed: 0, skipped: 1 }));
+    assert_eq!(h.store().item(&first).unwrap().unwrap().state, ItemState::Restored);
+    // Already restored: nothing to do.
+    assert_eq!(
+        h.engine.restore(&[first], false, h.now).unwrap(),
+        Err(decay_engine::RestoreRefused::NothingToRestore)
+    );
+}
+
+#[test]
+fn the_app_restores_into_a_new_window_or_a_whole_batch() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let out = h.engine.restore(&ids, true, h.now).unwrap().unwrap();
+    h.collect(out);
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    assert_eq!(restore.payload["newWindow"], true);
+    let items = restore.payload["items"].as_array().unwrap().clone();
+    assert!(items.iter().all(|i| i.get("windowKey").is_none()));
+    h.ack_ok(1, &restore, json!({"restored": [], "failed": []}));
+
+    // ⌘↵: the batch of one item = everything archived with it from its window.
+    let out = h.engine.restore_batch(&ids[0], h.now).unwrap().unwrap();
+    h.collect(out);
+    let batch = h.one(1, kinds::TABS_RESTORE);
+    assert_eq!(batch.payload["items"].as_array().unwrap().len(), ids.len());
+}
+
+#[test]
+fn restoring_needs_a_connected_browser() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    assert_eq!(
+        h.engine.restore(&ids, false, h.now).unwrap(),
+        Err(decay_engine::RestoreRefused::NoBrowser)
+    );
+    // Another profile being connected is no reason to open them there (other accounts).
+    h.connect_as(2, "other-profile", "s2", "0.1.0");
+    h.msg(
+        2,
+        kinds::SNAPSHOT,
+        serde_json::to_value(snapshot(vec![tab(9, 7, "https://x.example/")])).unwrap(),
+    );
+    assert_eq!(
+        h.engine.restore(&ids, false, h.now).unwrap(),
+        Err(decay_engine::RestoreRefused::NoBrowser)
+    );
+    assert_eq!(h.take(2, kinds::TABS_RESTORE).len(), 0);
+    // Undo doesn't send them there either: the undo is refused, the sweep stays.
+    assert_eq!(
+        h.engine.undo(Some(&sweep), h.now).unwrap(),
+        Err(decay_engine::UndoRefused::NoBrowser)
+    );
+    assert_eq!(h.take(2, kinds::TABS_RESTORE).len(), 0);
+    // The same profile back in a new browser session: restores go there.
+    h.connect_as(3, "profile1", "s3", "0.1.0");
+    h.msg(
+        3,
+        kinds::SNAPSHOT,
+        serde_json::to_value(snapshot(vec![tab(9, 7, "https://y.example/")])).unwrap(),
+    );
+    let out = h.engine.restore(&ids[..1], false, h.now).unwrap().unwrap();
+    h.collect(out);
+    assert_eq!(h.take(3, kinds::TABS_RESTORE).len(), 1);
+}
+
+#[test]
+fn the_first_tab_sent_gets_the_focus_even_if_an_earlier_one_is_skipped() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    // The first one is already on its way back.
+    let out = h.engine.restore(&ids[..1], false, h.now).unwrap().unwrap();
+    h.collect(out);
+    h.take(1, kinds::TABS_RESTORE);
+    let out = h.engine.restore(&ids, false, h.now).unwrap().unwrap();
+    h.collect(out);
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    let items = restore.payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0]["active"], true);
+}
+
+#[test]
+fn protect_site_adds_one_quick_action_rule() {
+    let (mut h, sweep) = swept();
+    let web = h
+        .store()
+        .archived_in_sweep(&sweep)
+        .unwrap()
+        .into_iter()
+        .find(|i| i.domain.is_some())
+        .expect("a web page");
+    let rule = h.engine.protect_site(&web.id, h.now).unwrap().expect("a rule");
+    assert_eq!(rule.pattern, web.domain.clone().unwrap());
+    assert_eq!(rule.action, decay_core::RuleAction::Protect);
+    assert_eq!(rule.source, decay_core::RuleSource::QuickAction);
+    // Again: the same rule, not a duplicate.
+    let again = h.engine.protect_site(&web.id, h.now).unwrap().unwrap();
+    assert_eq!(again.id, rule.id);
+    let same = h.store().rules().unwrap().into_iter().filter(|r| r.pattern == rule.pattern).count();
+    assert_eq!(same, 1);
+    assert_eq!(h.engine.protect_site("missing", h.now).unwrap(), None);
+    // A rule the user turned off is turned back on by "Always keep".
+    let mut off = rule.clone();
+    off.enabled = false;
+    h.store().update_rule(&off).unwrap();
+    assert!(h.engine.protect_site(&web.id, h.now).unwrap().unwrap().enabled);
+    let stored = h.store().rules().unwrap().into_iter().find(|r| r.id == rule.id).unwrap();
+    assert!(stored.enabled);
+    assert_eq!(h.store().archived_count().unwrap(), 2);
+}

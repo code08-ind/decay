@@ -91,7 +91,10 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
         .inner_size(w, h)
         .theme(theme);
     match window {
+        // Windows (macOS uses `mac_panel`): an undecorated, transparent, always-on-top window.
         Window::Panel => builder
+            .inner_size(PANEL_SIZE.0, PANEL_SIZE.1)
+            .transparent(true)
             .decorations(false)
             .always_on_top(true)
             .skip_taskbar(true)
@@ -123,12 +126,140 @@ pub fn apply_theme(app: &AppHandle, setting: &str) {
     }
 }
 
+/// The panel's size (logical px): 680 wide, up to 480 tall, plus a 16-px margin all
+/// round for the card's shadow (the window itself is transparent).
+pub const PANEL_SIZE: (f64, f64) = (712.0, 512.0);
+
+/// Where the panel goes on a monitor, in logical points (monitor origin and size, panel
+/// size): centred, a third of the way down (UI Design Guidelines §8). Logical units, so
+/// the result is right whichever monitor the panel is on now (mixed 1×/2× setups).
+pub fn panel_origin(monitor: (f64, f64, f64, f64), panel: (f64, f64)) -> (f64, f64) {
+    let (mx, my, mw, mh) = monitor;
+    let x = mx + (mw - panel.0) / 2.0;
+    let y = my + ((mh - panel.1) / 3.0).max(0.0);
+    (x, y)
+}
+
+/// Moves the panel to the screen with the pointer (the active screen).
+fn place_panel(app: &AppHandle, panel: &WebviewWindow) {
+    let cursor = app.cursor_position().ok();
+    let monitors = app.available_monitors().unwrap_or_default();
+    let monitor = cursor
+        .and_then(|c| {
+            monitors.iter().find(|m| {
+                let (p, s) = (m.position(), m.size());
+                c.x >= f64::from(p.x)
+                    && c.y >= f64::from(p.y)
+                    && c.x < f64::from(p.x) + f64::from(s.width)
+                    && c.y < f64::from(p.y) + f64::from(s.height)
+            })
+        })
+        .or_else(|| monitors.first());
+    let Some(m) = monitor else {
+        let _ = panel.center();
+        return;
+    };
+    let scale = m.scale_factor();
+    let pos = m.position().to_logical::<f64>(scale);
+    let size = m.size().to_logical::<f64>(scale);
+    let (x, y) = panel_origin((pos.x, pos.y, size.width, size.height), PANEL_SIZE);
+    let _ = panel.set_position(tauri::LogicalPosition::new(x, y));
+}
+
 /// Creates the hidden panel (at start).
 pub fn prewarm_panel(app: &AppHandle) {
-    if app.get_webview_window(Window::Panel.label()).is_none()
-        && let Err(e) = build(app, Window::Panel, "/panel")
-    {
+    if app.get_webview_window(Window::Panel.label()).is_some() {
+        return;
+    }
+    #[cfg(target_os = "macos")]
+    let built = mac_panel::build(app);
+    #[cfg(not(target_os = "macos"))]
+    let built = build(app, Window::Panel, "/panel").map(|_| ());
+    if let Err(e) = built {
         tracing::warn!("panel: {e}");
+    }
+}
+
+/// The search panel as a macOS `NSPanel` (Software Design §4.9): non-activating (typing in
+/// it doesn't take the browser out of focus), floating above everything on every Space,
+/// incl. full-screen apps, and hidden when it loses key focus.
+#[cfg(target_os = "macos")]
+#[allow(clippy::unused_unit, reason = "panel_event! requires an explicit return type")]
+mod mac_panel {
+    use tauri::{AppHandle, WebviewUrl};
+    use tauri_nspanel::{
+        CollectionBehavior, ManagerExt, PanelBuilder, PanelLevel, StyleMask, tauri_panel,
+    };
+
+    use super::{PANEL_SIZE, Window, hide_panel};
+
+    tauri_panel! {
+        panel!(SearchPanel {
+            config: {
+                can_become_key_window: true,
+                can_become_main_window: false,
+                is_floating_panel: true
+            }
+        })
+
+        panel_event!(SearchPanelEvents {
+            window_did_resign_key(notification: &NSNotification) -> ()
+        })
+    }
+
+    pub fn build(app: &AppHandle) -> tauri::Result<()> {
+        let panel = PanelBuilder::<_, SearchPanel>::new(app, Window::Panel.label())
+            .url(WebviewUrl::App("index.html#/panel".into()))
+            .title("Search")
+            .size(tauri::Size::Logical(tauri::LogicalSize::new(PANEL_SIZE.0, PANEL_SIZE.1)))
+            .level(PanelLevel::ModalPanel)
+            .collection_behavior(
+                CollectionBehavior::new().can_join_all_spaces().full_screen_auxiliary().transient(),
+            )
+            .has_shadow(false)
+            .opaque(false)
+            .hides_on_deactivate(false)
+            .with_window(|w| {
+                w.decorations(false).transparent(true).visible(false).skip_taskbar(true)
+            })
+            .style_mask(StyleMask::empty().nonactivating_panel())
+            .build()?;
+        // The handler replaces the window's delegate (tauri-nspanel doesn't forward), so
+        // Tauri's own window events (focus, move, resize, scale) don't fire for the panel:
+        // anything the panel must react to goes here.
+        let events = SearchPanelEvents::new();
+        let handle = app.clone();
+        events.window_did_resign_key(move |_| hide_panel(&handle));
+        panel.set_event_handler(Some(events.as_ref()));
+        Ok(())
+    }
+
+    /// Shows the panel and gives it the keyboard (the app itself stays in the background).
+    /// `AppKit` calls run on the main thread, whoever asks.
+    pub fn show(app: &AppHandle) -> bool {
+        let exists = app.get_webview_panel(Window::Panel.label()).is_ok();
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if let Ok(p) = handle.get_webview_panel(Window::Panel.label()) {
+                p.show_and_make_key();
+            }
+        });
+        exists
+    }
+
+    pub fn hide(app: &AppHandle) -> bool {
+        let exists = app.get_webview_panel(Window::Panel.label()).is_ok();
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if let Ok(p) = handle.get_webview_panel(Window::Panel.label()) {
+                p.hide();
+            }
+        });
+        exists
+    }
+
+    pub fn is_key(app: &AppHandle) -> bool {
+        app.get_webview_panel(Window::Panel.label()).is_ok_and(|p| p.is_visible())
     }
 }
 
@@ -142,20 +273,31 @@ pub fn show_panel(app: &AppHandle, prefill: Option<&str>) {
         .prefill = prefill.map(str::to_owned);
     prewarm_panel(app);
     let Some(panel) = app.get_webview_window(Window::Panel.label()) else { return };
-    let _ = panel.center();
+    place_panel(app, &panel);
+    let _ = panel.emit("panel:open", json!({}));
+    #[cfg(target_os = "macos")]
+    if mac_panel::show(app) {
+        return;
+    }
     let _ = panel.show();
     let _ = panel.set_focus();
-    let _ = panel.emit("panel:open", json!({}));
 }
 
 pub fn hide_panel(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    if mac_panel::hide(app) {
+        return;
+    }
     if let Some(panel) = app.get_webview_window(Window::Panel.label()) {
         let _ = panel.hide();
     }
 }
 
-/// The hotkey: shows the panel, or hides it if it's in front.
+/// The hotkey: shows the panel, or hides it if it's showing.
 pub fn toggle_panel(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    let visible = mac_panel::is_key(app);
+    #[cfg(not(target_os = "macos"))]
     let visible = app
         .get_webview_window(Window::Panel.label())
         .is_some_and(|p| p.is_visible().unwrap_or(false) && p.is_focused().unwrap_or(false));
@@ -301,4 +443,33 @@ pub fn quit(app: &AppHandle) {
     }
     app.state::<Core>().stop();
     app.exit(0);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_panel_sits_centred_a_third_down() {
+        // A 2560×1440 screen at the origin, a 1424×1024 panel (712×512 at 2×).
+        // A 1440×900-point screen at the origin.
+        assert_eq!(
+            panel_origin((0.0, 0.0, 1440.0, 900.0), PANEL_SIZE),
+            (364.0, 129.333_333_333_333_34)
+        );
+        // A second monitor to the left, above the main one.
+        assert_eq!(
+            panel_origin((-1920.0, -200.0, 1920.0, 1080.0), (712.0, 512.0)),
+            (-1316.0, -200.0 + 568.0 / 3.0)
+        );
+        // A panel taller than the screen stays on it.
+        assert_eq!(panel_origin((0.0, 0.0, 800.0, 400.0), (712.0, 512.0)), (44.0, 0.0));
+    }
+
+    #[test]
+    fn the_theme_setting_maps_to_native_themes() {
+        assert_eq!(native_theme("dark"), Some(tauri::Theme::Dark));
+        assert_eq!(native_theme("light"), Some(tauri::Theme::Light));
+        assert_eq!(native_theme("system"), None);
+    }
 }
