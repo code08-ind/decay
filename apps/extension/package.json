@@ -11,6 +11,7 @@
     "zip": "wxt zip",
     "typecheck": "wxt prepare && tsc --noEmit && tsc -p scripts --noEmit",
     "test": "vitest run",
+    "coverage": "vitest run --coverage --testTimeout=60000",
     "postinstall": "wxt prepare",
     "parity": "tsx scripts/policy-parity.ts",
     "bridge-fixtures": "tsx scripts/bridge-fixtures.ts"
@@ -35,6 +36,7 @@
     "@types/node": "22.18.13",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.1.0",
     "@wxt-dev/module-react": "1.2.2",
     "fake-indexeddb": "6.2.7",
     "jsdom": "31.0.0",
