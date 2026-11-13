@@ -17,6 +17,8 @@ use decay_core::{
     AgingClock, FormInput, Mode, PolicyContext, Rule, RuleAction, RuleScope, Thresholds,
 };
 use decay_store::{App, Item, Platform, RestoreKind, Store, StoreError};
+
+use crate::control::EngineStatus;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -150,8 +152,32 @@ pub enum EngineEvent {
     AccessibilityChanged {
         trusted: bool,
     },
+    /// The status changed (tray badge and menu, `status:changed`).
+    StatusChanged(Box<EngineStatus>),
     /// Something failed (logged); the engine carries on.
     Problem(String),
+}
+
+/// Why Undo didn't start.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum UndoRefused {
+    #[error("this sweep is still closing tabs; try again in a moment")]
+    StillClosing,
+    #[error("there's no sweep to undo")]
+    NothingToUndo,
+    #[error("the browser these tabs came from isn't connected")]
+    NoBrowser,
+}
+
+impl UndoRefused {
+    /// The message for the extension's popup.
+    pub(crate) fn message(&self) -> &'static str {
+        match self {
+            Self::StillClosing => "this sweep is still closing tabs; try again in a moment",
+            Self::NothingToUndo => "this sweep can't be undone",
+            Self::NoBrowser => "the browser these tabs came from isn't connected",
+        }
+    }
 }
 
 /// Fixed engine settings.
@@ -429,6 +455,8 @@ pub struct Engine {
     pub(crate) woke_at: Option<i64>,
     pub(crate) last_sweep_at: Option<i64>,
     pub(crate) next_maintenance_at: i64,
+    /// The status last published (see `control`).
+    pub(crate) last_status: Option<EngineStatus>,
     pub(crate) out: Vec<Output>,
 }
 
@@ -505,6 +533,7 @@ impl Engine {
             woke_at: None,
             last_sweep_at,
             next_maintenance_at: now,
+            last_status: None,
             out: Vec::new(),
         })
     }
@@ -615,6 +644,7 @@ impl Engine {
                 self.problem("maintenance", &e);
             }
         }
+        self.publish_status(now);
         std::mem::take(&mut self.out)
     }
 

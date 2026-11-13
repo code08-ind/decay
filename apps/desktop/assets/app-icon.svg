@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Decay</title>
+  <rect width="1024" height="1024" rx="228" fill="#3d6f3a"/>
+  <g transform="rotate(-45 512 512)">
+    <path d="M512 196 C 700 330 700 694 512 828 C 324 694 324 330 512 196 Z" fill="#f3eedf"/>
+    <path d="M512 270 L512 900" stroke="#3d6f3a" stroke-width="34" stroke-linecap="round"/>
+  </g>
+</svg>

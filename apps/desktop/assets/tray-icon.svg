@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>Decay</title>
+  <!-- A template image: only the alpha counts (macOS tints it for the menu bar). -->
+  <defs>
+    <mask id="rib">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M32 13 L32 64" stroke="#000" stroke-width="3.6" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g transform="rotate(-45 32 32)">
+    <path d="M32 6 C 47 17 47 47 32 58 C 17 47 17 17 32 6 Z" fill="#000" mask="url(#rib)"/>
+    <path d="M32 58 L32 62" stroke="#000" stroke-width="3.6" stroke-linecap="round"/>
+  </g>
+</svg>

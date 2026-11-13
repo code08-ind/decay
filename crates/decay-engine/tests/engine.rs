@@ -1314,3 +1314,150 @@ fn accessibility_changes_are_reported() {
         .collect();
     assert_eq!(changes, vec![true, false]);
 }
+
+// --- App controls (P1.7) ----------------------------------------------------------------
+
+impl Harness {
+    /// The latest published status.
+    fn status(&self) -> decay_engine::EngineStatus {
+        self.events
+            .iter()
+            .rev()
+            .find_map(|e| match e {
+                EngineEvent::StatusChanged(s) => Some((**s).clone()),
+                _ => None,
+            })
+            .expect("a status was published")
+    }
+
+    fn status_events(&self) -> usize {
+        self.events.iter().filter(|e| matches!(e, EngineEvent::StatusChanged(_))).count()
+    }
+}
+
+#[test]
+fn the_status_counts_stale_tabs_of_connected_browsers_and_only_changes_are_published() {
+    let mut h = Harness::new();
+    h.poll();
+    let first = h.status();
+    assert_eq!((first.mode, first.stale_count, first.live_tabs), (Mode::Shadow, 0, 0));
+    assert_eq!(first.browsers, []);
+    h.poll();
+    assert_eq!(h.status_events(), 1, "unchanged status isn't sent again");
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    h.engine.dev_add_age(13 * H, h.now);
+    h.poll();
+    let s = h.status();
+    assert_eq!(s.live_tabs, 3);
+    assert_eq!(s.browsers.len(), 1);
+    assert_eq!((s.browsers[0].profile_id.as_str(), s.browsers[0].tabs), ("profile1", 3));
+    // Only the old tab is stale: the active one is in use, the pinned one protected.
+    assert_eq!(s.stale_count, 1);
+    // A disconnected browser isn't counted.
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    h.poll();
+    assert_eq!((h.status().live_tabs, h.status().stale_count), (0, 0));
+}
+
+#[test]
+fn mode_and_hold_are_set_from_the_app_and_a_hold_runs_out() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    let out = h.engine.set_mode(Mode::Paused, h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.status().mode, Mode::Paused);
+    assert_eq!(h.engine.sweep_now(h.now), Err(decay_engine::SweepRefused::Paused));
+    // Resume goes back to the mode before the pause.
+    let out = h.engine.resume(h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.status().mode, Mode::Automatic);
+    let out = h.engine.set_mode(Mode::Shadow, h.now).unwrap();
+    h.collect(out);
+    for _ in 0..2 {
+        let out = h.engine.set_mode(Mode::Paused, h.now).unwrap();
+        h.collect(out); // pausing twice keeps the mode to go back to
+    }
+    let out = h.engine.resume(h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.status().mode, Mode::Shadow);
+    let out = h.engine.set_mode(Mode::Automatic, h.now).unwrap();
+    h.collect(out);
+    let until = h.now + 3_600_000;
+    let out = h.engine.hold(Some(until), h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.status().hold_until, Some(until));
+    assert!(matches!(h.engine.sweep_now(h.now), Err(decay_engine::SweepRefused::OnHold(_))));
+    // A hold in the past is no hold.
+    let out = h.engine.hold(Some(h.now - 1), h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.status().hold_until, None);
+    let out = h.engine.hold(Some(h.now + 60_000), h.now).unwrap();
+    h.collect(out);
+    // It runs out by itself, and the status says so.
+    h.advance(61_000, &[1]);
+    assert_eq!(h.status().hold_until, None);
+}
+
+#[test]
+fn undo_last_sweep_from_the_app() {
+    let (mut h, sweep_id) = swept();
+    h.poll();
+    assert_eq!(h.status().undoable_sweep.as_deref(), Some(sweep_id.as_str()));
+    let out = h.engine.undo(None, h.now).unwrap().unwrap();
+    h.collect(out);
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    let items = restore.payload["items"].as_array().unwrap().clone();
+    assert_eq!(items.len(), 2);
+    let restored: Vec<Value> = items
+        .iter()
+        .enumerate()
+        .map(|(n, i)| json!({"itemId": i["itemId"], "tabId": 30 + n}))
+        .collect();
+    h.ack_ok(1, &restore, json!({"restored": restored, "failed": []}));
+    assert!(h.events.contains(&EngineEvent::SweepUndone {
+        sweep_id: sweep_id.clone(),
+        restored: 2,
+        failed: 0
+    }));
+    assert_eq!(h.store().sweep(&sweep_id).unwrap().unwrap().status, SweepStatus::Undone);
+    h.poll();
+    assert_eq!(h.status().undoable_sweep, None);
+    assert_eq!(h.engine.undo(None, h.now).unwrap(), Err(decay_engine::UndoRefused::NothingToUndo));
+}
+
+#[test]
+fn undo_from_the_app_needs_the_browser_the_tabs_came_from() {
+    let (mut h, sweep_id) = swept();
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    assert_eq!(
+        h.engine.undo(Some(&sweep_id), h.now).unwrap(),
+        Err(decay_engine::UndoRefused::NoBrowser)
+    );
+    assert_eq!(h.store().sweep(&sweep_id).unwrap().unwrap().status, SweepStatus::Done);
+}
+
+#[test]
+fn undo_from_the_app_settles_a_sweep_already_restored_item_by_item() {
+    let (mut h, sweep_id) = swept();
+    // Every tab of the sweep restored from search, one by one.
+    let ids: Vec<String> =
+        h.store().archived_in_sweep(&sweep_id).unwrap().into_iter().map(|i| i.id).collect();
+    let req = h.request(1, kinds::ARCHIVE_RESTORE, json!({"itemIds": ids}));
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    let restored: Vec<Value> =
+        ids.iter().enumerate().map(|(n, id)| json!({"itemId": id, "tabId": 40 + n})).collect();
+    h.ack_ok(1, &restore, json!({"restored": restored, "failed": []}));
+    h.reply_to(1, &req);
+    // The tray's Undo still offers the sweep; undoing it settles it (and works offline).
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    h.poll();
+    assert_eq!(h.status().undoable_sweep.as_deref(), Some(sweep_id.as_str()));
+    let out = h.engine.undo(None, h.now).unwrap().unwrap();
+    h.collect(out);
+    assert_eq!(h.store().sweep(&sweep_id).unwrap().unwrap().status, SweepStatus::Undone);
+    h.poll();
+    assert_eq!(h.status().undoable_sweep, None);
+}

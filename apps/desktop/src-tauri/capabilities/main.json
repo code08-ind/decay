@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Library and Settings: everything the shell offers",
+  "windows": ["library", "settings"],
+  "permissions": [
+    "core:default",
+    "allow-get-status",
+    "allow-set-mode",
+    "allow-hold",
+    "allow-release-hold",
+    "allow-run-sweep-now",
+    "allow-undo-sweep",
+    "allow-set-hotkey",
+    "allow-set-launch-at-login",
+    "allow-request-accessibility",
+    "allow-ui-show-window",
+    "allow-ui-hide-panel",
+    "allow-ui-take-pending"
+  ]
+}

@@ -23,9 +23,12 @@
 //! - **Crash recovery:** an item left `archiving` (crash, timeout, lost link) is settled
 //!   against the next snapshot: still open → back to stale, gone → archived.
 //! - **Undo, search and restore** for the extension's popup (`archive.*` requests).
+//! - **Controls for the app** (P1.7): [`EngineStatus`] (published on every change), mode,
+//!   hold and Undo of the last sweep.
 //!
 //! [`Store`]: decay_store::Store
 
+mod control;
 mod domain;
 mod engine;
 mod platform;
@@ -34,8 +37,9 @@ pub mod runtime;
 mod sweep;
 mod tabs;
 
+pub use control::{BrowserStatus, EngineStatus};
 pub use domain::domain_of;
 pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,
-    SweepRefused, timing,
+    SweepRefused, UndoRefused, timing,
 };

@@ -43,9 +43,15 @@ fn serves_a_host_connection_end_to_end() {
     let ep = endpoint(dir.path());
     let server = IpcServer::bind(ep.clone()).unwrap();
     let (events_tx, events_rx) = std::sync::mpsc::channel();
+    let (status_tx, status_rx) = std::sync::mpsc::channel();
     let runtime =
         Runtime::start(server, engine, Box::new(decay_platform::NullPlatform), move |e| {
-            let _ = events_tx.send(e);
+            // Status updates are checked on their own.
+            if let EngineEvent::StatusChanged(s) = e {
+                let _ = status_tx.send(*s);
+            } else {
+                let _ = events_tx.send(e);
+            }
         })
         .unwrap();
 
@@ -78,6 +84,14 @@ fn serves_a_host_connection_end_to_end() {
         events_rx.recv_timeout(Duration::from_secs(5)).unwrap(),
         EngineEvent::AdapterConnected { .. }
     ));
+    // The status follows: one browser, one tab.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        let s = status_rx.recv_timeout(deadline - Instant::now()).unwrap();
+        if s.live_tabs == 1 && s.browsers.len() == 1 {
+            break;
+        }
+    }
     drop((reader, writer));
     assert!(matches!(
         events_rx.recv_timeout(Duration::from_secs(5)).unwrap(),

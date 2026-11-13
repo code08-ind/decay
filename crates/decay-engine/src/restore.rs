@@ -23,7 +23,9 @@ use decay_bridge::protocol::{
 use decay_core::{EventType, ItemState, LifecycleEvent, SweepStatus, next_state};
 use decay_store::{Item, SearchFilters, SearchQuery, Store, Sweep};
 
-use crate::engine::{CommandKind, ConnId, Engine, EngineEvent, Output, Pending, Res, timing};
+use crate::engine::{
+    CommandKind, ConnId, Engine, EngineEvent, Output, Pending, Res, UndoRefused, timing,
+};
 use crate::sweep::plain_guards;
 use crate::tabs::link_restored;
 
@@ -167,7 +169,7 @@ impl Engine {
             Some(w) => Placement::Window(w),
             None => Placement::Original { focus: true },
         };
-        self.start_restore(conn, req, &items, placement, None, skipped, now)
+        self.start_restore(Some((conn, req)), &items, placement, None, skipped, now)
     }
 
     pub(crate) fn on_restore_batch(
@@ -186,37 +188,84 @@ impl Engine {
             None if item.state == ItemState::Archived => vec![item],
             None => Vec::new(),
         };
-        self.start_restore(conn, req, &batch, Placement::Original { focus: true }, None, 0, now)
-    }
-
-    pub(crate) fn on_undo(&mut self, conn: ConnId, req: &str, u: &ArchiveUndo, now: i64) -> Res {
-        if let Some(id) = &u.sweep_id
-            && let Some(w) = self.store.sweep(id)?
-            && matches!(w.status, SweepStatus::Pending | SweepStatus::Running)
-        {
-            let msg = "this sweep is still closing tabs; try again in a moment";
-            self.reply_err(conn, req, ErrorCode::NotFound, msg);
-            return Ok(());
-        }
-        let candidates = undoable(&self.store)?;
-        let sweep = match &u.sweep_id {
-            Some(id) => candidates.into_iter().find(|w| &w.id == id),
-            None => candidates.into_iter().find(|w| w.undone_at.is_none()),
-        };
-        let Some(sweep) = sweep.filter(|w| w.undone_at.is_none()) else {
-            self.reply_err(conn, req, ErrorCode::NotFound, "this sweep can't be undone");
-            return Ok(());
-        };
-        let items = self.store.archived_in_sweep(&sweep.id)?;
         self.start_restore(
-            conn,
-            req,
-            &items,
-            Placement::Original { focus: false },
-            Some(sweep.id),
+            Some((conn, req)),
+            &batch,
+            Placement::Original { focus: true },
+            None,
             0,
             now,
         )
+    }
+
+    pub(crate) fn on_undo(&mut self, conn: ConnId, req: &str, u: &ArchiveUndo, now: i64) -> Res {
+        match self.find_undo(u.sweep_id.as_deref())? {
+            Err(why) => {
+                self.reply_err(conn, req, ErrorCode::NotFound, why.message());
+                Ok(())
+            }
+            Ok((sweep_id, items)) => self.start_restore(
+                Some((conn, req)),
+                &items,
+                Placement::Original { focus: false },
+                Some(sweep_id),
+                0,
+                now,
+            ),
+        }
+    }
+
+    /// Undo from the app (tray, toast, deep link): `sweep_id` or the latest undoable sweep.
+    /// The result comes as [`EngineEvent::SweepUndone`].
+    pub(crate) fn undo_from_app(
+        &mut self,
+        sweep_id: Option<&str>,
+        now: i64,
+    ) -> Res<Result<(), UndoRefused>> {
+        let (sweep_id, items) = match self.find_undo(sweep_id)? {
+            Ok(found) => found,
+            Err(why) => return Ok(Err(why)),
+        };
+        // Nothing left archived (restored one by one): the undo just marks the sweep undone.
+        let reachable =
+            items.is_empty() || items.iter().any(|i| matches!(self.home_conn(i, now), Ok(Some(_))));
+        if !reachable {
+            return Ok(Err(UndoRefused::NoBrowser));
+        }
+        self.start_restore(
+            None,
+            &items,
+            Placement::Original { focus: false },
+            Some(sweep_id),
+            0,
+            now,
+        )?;
+        Ok(Ok(()))
+    }
+
+    /// The sweep to undo and its archived items.
+    fn find_undo(&self, sweep_id: Option<&str>) -> Res<Result<(String, Vec<Item>), UndoRefused>> {
+        if let Some(id) = sweep_id
+            && let Some(w) = self.store.sweep(id)?
+            && matches!(w.status, SweepStatus::Pending | SweepStatus::Running)
+        {
+            return Ok(Err(UndoRefused::StillClosing));
+        }
+        let candidates = undoable(&self.store)?;
+        let sweep = match sweep_id {
+            Some(id) => candidates.into_iter().find(|w| w.id == id),
+            None => candidates.into_iter().find(|w| w.undone_at.is_none()),
+        };
+        let Some(sweep) = sweep.filter(|w| w.undone_at.is_none()) else {
+            return Ok(Err(UndoRefused::NothingToUndo));
+        };
+        let items = self.store.archived_in_sweep(&sweep.id)?;
+        Ok(Ok((sweep.id, items)))
+    }
+
+    /// The latest sweep Undo would revert (the tray's "Undo last sweep").
+    pub(crate) fn last_undoable(&self) -> Res<Option<String>> {
+        Ok(undoable(&self.store)?.into_iter().find(|w| w.undone_at.is_none()).map(|w| w.id))
     }
 
     /// The connected adapter an item came from (Undo puts tabs back into their browser).
@@ -229,11 +278,9 @@ impl Engine {
         }))
     }
 
-    #[allow(clippy::too_many_arguments, reason = "one internal entry point for three requests")]
     fn start_restore(
         &mut self,
-        requester: ConnId,
-        req: &str,
+        reply: Option<(ConnId, &str)>,
         items: &[Item],
         placement: Placement,
         undo: Option<String>,
@@ -254,14 +301,20 @@ impl Engine {
                 continue;
             };
             let conn = match placement {
-                Placement::Window(_) => requester,
-                Placement::Original { .. } => self.home_conn(item, now)?.unwrap_or(requester),
+                Placement::Window(_) => reply.map(|(c, _)| c),
+                Placement::Original { .. } => {
+                    self.home_conn(item, now)?.or_else(|| reply.map(|(c, _)| c))
+                }
+            };
+            let Some(conn) = conn else {
+                summary.failed += 1; // the app asked, and its browser isn't connected
+                continue;
             };
             let (window_key, index, active) = match placement {
                 Placement::Window(w) => {
                     let key = self
                         .conns
-                        .get(&requester)
+                        .get(&conn)
                         .and_then(|c| c.adapter.as_ref())
                         .map(|a| a.window_key(w));
                     (key, None, n == 0)
@@ -299,7 +352,7 @@ impl Engine {
         self.next_op += 1;
         self.restore_ops.insert(
             op_id,
-            RestoreOp { reply: Some((requester, req.to_owned())), waiting: 0, summary, undo },
+            RestoreOp { reply: reply.map(|(c, r)| (c, r.to_owned())), waiting: 0, summary, undo },
         );
         let mut waiting = 0;
         for (conn, items) in per_conn {

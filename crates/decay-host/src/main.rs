@@ -18,7 +18,8 @@ fn launch_app(config: &HostConfig, support: &Path) {
     }
     let mut cmd = if cfg!(target_os = "macos") {
         let mut c = Command::new("open");
-        c.args(["-g", "-b", APP_BUNDLE_ID]);
+        // `--args --background`: no window (the app opens one for a plain launch).
+        c.args(["-g", "-b", APP_BUNDLE_ID, "--args", "--background"]);
         c
     } else if let Some(path) = &config.app_path {
         let mut c = Command::new(path);

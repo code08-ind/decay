@@ -101,8 +101,8 @@ Each command returns `Promise<T>` and rejects with `AppError`. Access is limited
 | --- | --- | --- |
 | `list_sweeps` | `{ limit?: number; includeShadow?: boolean }` | `Sweep[]` |
 | `get_sweep` | `{ id }` | `Sweep & { items: Item[] }` |
-| `run_sweep_now` | `{ dryRun?: boolean }` | `Sweep` |
-| `undo_sweep` | `{ id?: string /* default: last */ }` | `{ restored: number; failed: number }` |
+| `run_sweep_now` | `{ dryRun?: boolean }` | `Sweep` — **as built (P1.7):** `{ started: true }`; the result arrives as `sweep:completed` / `sweep:nothing` (a sweep waits for probes and close acks). Refusals: `ADAPTER_UNAVAILABLE` (no browser), `CONFLICT` (already sweeping), `UNSAFE` (paused / on hold) |
+| `undo_sweep` | `{ id?: string /* default: last */ }` | `{ restored: number; failed: number }` — **as built (P1.7):** `{ started: true }`; the counts arrive as `sweep:undone`. Refusals: `NOT_FOUND`, `CONFLICT` (still closing), `ADAPTER_UNAVAILABLE` (its browser isn't connected) |
 | `get_shadow_report` | `{}` | `{ days: number; wouldArchive: Item[]; wouldHide: Item[]; protectedCount: number; topDomains: { domain: string; count: number }[] }` |
 
 ### 2.3 Engine status and control
@@ -113,6 +113,8 @@ Each command returns `Promise<T>` and rejects with `AppError`. Access is limited
 | `set_mode` | `{ mode: Mode }` | `{ mode }` |
 | `hold` | `{ duration: '1h' \| 'untilTomorrow' \| 'indefinite' \| { minutes: number } }` | `{ holdUntil?: number }` |
 | `release_hold` | `{}` | `{}` |
+
+**As built (P1.7):** `get_status` returns `{ mode; holdUntil: number | null; staleCount; liveTabs; browsers: { browser; profileId; tabs }[]; sweeping: boolean; undoableSweep: string | null; accessibility: boolean | null }` (the engine's `EngineStatus`). `clock`, `liveWindows`, `adapters: AdapterHealth[]`, `shadowDaysLeft` and `permissions` are added with the screens that show them (P1.10–P1.11); until then `adapter:health` and `permission:changed` carry that information. `hold`'s `untilTomorrow` ends at the next 06:00 local time at least 2 h away; `indefinite` stores 9999-12-31. `set_mode('paused')` remembers the mode before it, and the tray's Resume returns to it.
 | `list_live_items` | `{ appId?: string }` | `Item[]` (current tabs/windows with age and protection reasons) |
 
 ```ts
@@ -167,6 +169,7 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `install_update` | `{ when: 'now' \| 'onQuit' }` | `{}` |
 | `ui_show_window` | `{ window: 'library' \| 'settings' \| 'onboarding'; route?: string }` | `{}` |
 | `ui_hide_panel` | `{}` | `{}` |
+| `ui_take_pending` | `{}` | `{ prefill: string \| null; licenseKey: string \| null }` — what's waiting for the calling window (`panel`: a `decay://search` prefill; `settings`: a license key to confirm). Each value is handed out once; windows call it on load and on `panel:open` / `pending` (P1.7) |
 
 ---
 
@@ -177,11 +180,13 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `status:changed` | `get_status` result | Tray popover, Library header |
 | `item:changed` | `{ ids: string[]; change: 'state' \| 'updated' \| 'deleted' }` | Invalidate TanStack queries |
 | `sweep:started` | `{ sweepId; isShadow; count }` | — |
-| `sweep:completed` | `Sweep & { preview: Item[] /* ≤5 */ }` | Undo toast (30 s) |
+| `sweep:completed` | `Sweep & { preview: Item[] /* ≤5 */ }` — **as built (P1.7):** `{ id; isShadow; archived; failed }` (the Undo toast, P1.11, adds the preview) | Undo toast (30 s) |
 | `sweep:undone` | `{ sweepId; restored }` | Toast |
 | `adapter:health` | `AdapterHealth` | Health banner |
 | `permission:changed` | `Permissions` | Banner / onboarding |
-| `panel:open` | `{ prefill?: string }` | Panel focuses input |
+| `panel:open` | `{}` (P1.7: the prefill is taken with `ui_take_pending`, so a panel opened cold doesn't miss it) | Panel focuses input |
+| `pending` | `{}` | Settings takes a waiting license key (`ui_take_pending`) |
+| `sweep:nothing` | `{ isShadow }` | "Nothing to sweep" after Sweep now |
 | `shadow:complete` | `{ reportReady: true }` | Shadow Review screen |
 | `update:available` | `{ version; notes }` | Settings → Updates badge |
 | `license:changed` | `{ tier }` | Pro gates |
