@@ -43,6 +43,19 @@ pub mod timing {
     /// An item whose tab is missing is deleted only after this long and a fresh snapshot
     /// (session restore and "reopen closed window" bring tabs back with new ids).
     pub const MISSING_GRACE_MS: i64 = 60_000;
+    /// An OS sample older than this is ignored (the engine falls back to browser activity).
+    pub const PLATFORM_FRESH_MS: i64 = 5_000;
+    /// A gap this long between OS samples means the machine slept (or the app was stopped).
+    pub const WAKE_GAP_MS: i64 = 90_000;
+    /// After a wake or unlock, a sweep may run this long without waiting for a quiet moment
+    /// ("morning cleanup").
+    pub const MORNING_WINDOW_MS: i64 = 2 * 60_000;
+    /// Audio from the OS (any app holding the output device) stops counting as activity
+    /// after this long without input: a call app or a stream idling silently mustn't age
+    /// tabs overnight. Audible browser tabs aren't capped (the browser knows they're audible).
+    pub const OS_AUDIO_MAX_IDLE_S: u64 = 2 * 3_600;
+    /// A quiet moment needs no typing for this long (and no app switch for `QUIET_MS`).
+    pub const NO_TYPING_MS: i64 = 60_000;
     /// The first snapshot is asked for again after this long if it hasn't come.
     pub const FIRST_SNAPSHOT_RETRY_MS: i64 = 60_000;
     /// A fresh snapshot this often corrects state the events don't carry (minimised windows).
@@ -89,6 +102,9 @@ pub enum Input {
     Frame(ConnId, Box<HostFrame>),
     /// The connection closed (or became unreadable).
     Disconnected(ConnId),
+    /// What the OS says (idle, lock, displays, audio, frontmost app, Accessibility), about
+    /// once a second.
+    Platform(Box<decay_platform::PlatformSample>),
 }
 
 /// What the engine wants done.
@@ -129,6 +145,10 @@ pub enum EngineEvent {
         sweep_id: String,
         restored: u32,
         failed: u32,
+    },
+    /// The Accessibility permission was granted or revoked (F33 health; first sample too).
+    AccessibilityChanged {
+        trusted: bool,
     },
     /// Something failed (logged); the engine carries on.
     Problem(String),
@@ -398,6 +418,15 @@ pub struct Engine {
     pub(crate) next_tick_at: i64,
     /// Last deliberate browser activity (tab switch, window focus, new tab).
     pub(crate) last_activity_at: Option<i64>,
+    /// The latest OS sample and when it came (see `platform`).
+    pub(crate) platform: Option<(decay_platform::PlatformSample, i64)>,
+    /// When the frontmost app last changed.
+    pub(crate) last_app_switch_at: Option<i64>,
+    /// Some moment since the last tick was locked, had the displays asleep or wasn't
+    /// sampled (the machine slept or stalled): that tick earns no credit.
+    pub(crate) away_since_tick: bool,
+    /// When the machine last woke or was unlocked (a "morning cleanup" may run then).
+    pub(crate) woke_at: Option<i64>,
     pub(crate) last_sweep_at: Option<i64>,
     pub(crate) next_maintenance_at: i64,
     pub(crate) out: Vec<Output>,
@@ -470,6 +499,10 @@ impl Engine {
             last_tick_at: None,
             next_tick_at: now + timing::TICK_MS,
             last_activity_at: None,
+            platform: None,
+            last_app_switch_at: None,
+            away_since_tick: false,
+            woke_at: None,
             last_sweep_at,
             next_maintenance_at: now,
             out: Vec::new(),
@@ -501,6 +534,7 @@ impl Engine {
             }
             Input::Frame(id, frame) => self.frame(id, *frame, now),
             Input::Disconnected(id) => self.disconnected(id, now),
+            Input::Platform(sample) => self.on_platform(*sample, now),
         }
         std::mem::take(&mut self.out)
     }
@@ -646,11 +680,12 @@ impl Engine {
             })
             .collect();
         format!(
-            "mode {:?}, sweep {:?}, {} pending, browsers [{}]",
+            "mode {:?}, sweep {:?}, {} pending, browsers [{}], os {:?}",
             self.policy.mode,
             self.sweep,
             self.pending.len(),
-            adapters.join(", ")
+            adapters.join(", "),
+            self.platform.as_ref().map(|(p, _)| p)
         )
     }
 

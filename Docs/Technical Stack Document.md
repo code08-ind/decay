@@ -53,6 +53,7 @@ Pin exact versions in `Cargo.lock` and `pnpm-lock.yaml` when the project is scaf
 | Mic/camera in use | CoreAudio `kAudioDevicePropertyDeviceIsRunningSomewhere`, CoreMediaIO | `CapabilityAccessManager\ConsentStore` registry (`LastUsedTimeStop == 0`) |
 | Screen share | Known meeting apps + mic heuristic; `CGSessionCopyCurrentDictionary` sharing flag | Known meeting apps + mic heuristic |
 | Permissions | Accessibility (`AXIsProcessTrustedWithOptions`) | None required (same-integrity windows) |
+| As built (P1.6) | `crates/decay-platform`: direct `extern "C"` declarations for CoreGraphics / ApplicationServices (incl. `GetFrontProcess` for the active app) / CoreAudio / libproc plus `core-foundation` for CF types (instead of `objc2`: no Objective-C calls are needed yet). Focus and sleep/lock are **polled about once a second** instead of the `NSWorkspace` notifications / `AXObserver` above (those need a run loop on the main thread; the window-level observer comes with P2.1); sleep is a gap on `CLOCK_MONOTONIC`. The workspace forbids `unsafe`; this crate denies it and allows it only in `mac.rs`, each call with a `SAFETY` comment | `NullPlatform` until the Windows implementation |
 | Tray | `NSStatusItem` (via Tauri tray) | Notification area (via Tauri tray) |
 
 ## 3. Tauri plugins

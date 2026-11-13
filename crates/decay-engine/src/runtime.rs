@@ -18,6 +18,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use decay_bridge::ipc::{Endpoint, IpcServer, IpcWriter, connect};
+use decay_platform::Platform;
 
 use crate::engine::{ConnId, Engine, EngineEvent, Input, Output};
 
@@ -38,6 +39,8 @@ enum Msg {
     NewConn(ConnId, IpcWriter),
     Input(Input),
     Call(Call),
+    /// Show the system's Accessibility prompt (onboarding, the health banner's fix-it).
+    RequestAccessibility,
     Stop,
 }
 
@@ -58,6 +61,7 @@ impl std::fmt::Debug for Msg {
             Self::Input(_) => "Input",
             Self::Call(_) => "Call",
             Self::Stop => "Stop",
+            Self::RequestAccessibility => "RequestAccessibility",
         })
     }
 }
@@ -86,10 +90,13 @@ fn apply(
 }
 
 impl Runtime {
-    /// Starts serving `server` with `engine`. `events` runs on the engine thread.
+    /// Starts serving `server` with `engine`. `platform` is sampled before every timer run
+    /// (about once a second); `events` runs on the engine thread.
+    #[allow(clippy::too_many_lines, reason = "the three threads are set up side by side")]
     pub fn start(
         server: IpcServer,
         mut engine: Engine,
+        mut platform: Box<dyn Platform>,
         mut events: impl FnMut(EngineEvent) + Send + 'static,
     ) -> io::Result<Self> {
         let (tx, rx) = mpsc::channel::<Msg>();
@@ -120,13 +127,20 @@ impl Runtime {
                             engine.handle(input, now)
                         }
                         Some(Msg::Call(call)) => call(&mut engine, now),
+                        Some(Msg::RequestAccessibility) => {
+                            platform.request_accessibility();
+                            let sample = Box::new(platform.sample());
+                            engine.handle(Input::Platform(sample), now)
+                        }
                         None => Vec::new(),
                     };
                     apply(outputs, &mut writers, &mut events);
                     // Timers run even while messages keep arriving.
                     if now - last_poll >= 1000 || now < last_poll {
                         last_poll = now;
-                        let outputs = engine.poll(now);
+                        let sample = Box::new(platform.sample());
+                        let mut outputs = engine.handle(Input::Platform(sample), now);
+                        outputs.extend(engine.poll(now));
                         apply(outputs, &mut writers, &mut events);
                     }
                 }
@@ -199,6 +213,12 @@ impl Runtime {
     /// Runs `call` on the engine thread (its outputs are applied like any other).
     pub fn call(&self, call: Call) -> bool {
         self.tx.send(Msg::Call(call)).is_ok()
+    }
+
+    /// Shows the system's Accessibility prompt; the result arrives as an
+    /// `AccessibilityChanged` event.
+    pub fn request_accessibility(&self) -> bool {
+        self.tx.send(Msg::RequestAccessibility).is_ok()
     }
 
     /// Stops the threads and returns the engine (its store is still open).

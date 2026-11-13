@@ -5,7 +5,8 @@
 //! - Data: `$DECAY_SUPPORT_DIR` (else the app's support folder) `/dev-engine/`.
 //! - Key: `$DECAY_DEV_KEY` (64 hex digits), else `dev.key` in that folder (created once).
 //! - Commands on stdin: `sweep` (Sweep now), `age <hours>` (adds active hours to every open
-//!   tab, to test sweeps without waiting), `mode shadow|automatic|paused`, `status`, `quit`.
+//!   tab, to test sweeps without waiting), `mode shadow|automatic|paused`, `ax` (shows the
+//!   Accessibility prompt), `status` (also the latest OS sample), `quit`.
 
 #[cfg(not(debug_assertions))]
 fn main() {
@@ -52,7 +53,9 @@ mod dev {
         let mut server = IpcServer::bind(Endpoint::new_for_app()?)?;
         server.publish(&support)?;
         eprintln!("listening on {:?}", server.endpoint());
-        let runtime = Runtime::start(server, engine, |event| eprintln!("event: {event:?}"))?;
+        let runtime = Runtime::start(server, engine, decay_platform::native(), |event| {
+            eprintln!("event: {event:?}");
+        })?;
 
         for line in std::io::stdin().lock().lines() {
             let line = line?;
@@ -85,6 +88,9 @@ mod dev {
                         }
                         Vec::new()
                     }));
+                }
+                (Some("ax"), _) => {
+                    runtime.request_accessibility();
                 }
                 (Some("status"), _) => {
                     runtime.call(Box::new(|engine, _| {

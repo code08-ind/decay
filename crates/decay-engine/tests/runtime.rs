@@ -43,10 +43,11 @@ fn serves_a_host_connection_end_to_end() {
     let ep = endpoint(dir.path());
     let server = IpcServer::bind(ep.clone()).unwrap();
     let (events_tx, events_rx) = std::sync::mpsc::channel();
-    let runtime = Runtime::start(server, engine, move |e| {
-        let _ = events_tx.send(e);
-    })
-    .unwrap();
+    let runtime =
+        Runtime::start(server, engine, Box::new(decay_platform::NullPlatform), move |e| {
+            let _ = events_tx.send(e);
+        })
+        .unwrap();
 
     let (mut reader, mut writer) = connect(&ep).unwrap();
     let hello = Envelope::new(

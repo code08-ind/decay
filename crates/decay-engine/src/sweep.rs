@@ -23,9 +23,9 @@ use decay_bridge::kinds;
 use decay_bridge::protocol::{Ack, CloseResult, Probe, ProbeAck, SkipReason, TabsClose};
 use decay_core::policy::{is_excluded, is_web_url};
 use decay_core::{
-    ActivitySample, Decision, EventType, FormInput, Guards, ItemKind, ItemState, LifecycleEvent,
-    MatchTarget, Mode, PolicyTarget, Reason, Signals, SweepAction, SweepItemResult, SweepStatus,
-    SweepTrigger, Thresholds, evaluate, next_state,
+    Decision, EventType, FormInput, Guards, ItemKind, ItemState, LifecycleEvent, MatchTarget, Mode,
+    PolicyTarget, Reason, Signals, SweepAction, SweepItemResult, SweepStatus, SweepTrigger,
+    Thresholds, evaluate, next_state,
 };
 use decay_store::{Item, Store, Sweep, SweepItem, new_id};
 
@@ -33,6 +33,7 @@ use crate::engine::{
     Adapter, CommandKind, ConnId, Engine, EngineEvent, Output, Pending, PolicySettings, ProbeEntry,
     Res, timing,
 };
+use crate::platform::SweepWindow;
 use crate::tabs::mark_used;
 
 /// Where the sweep executor is.
@@ -312,9 +313,6 @@ impl Engine {
         // Until the platform layer (P1.6) reports keyboard / mouse idle time, deliberate
         // browser activity stands in for it. Without any, nothing ages: items only ever
         // look younger than they are, the safe direction.
-        let idle_secs = self
-            .last_activity_at
-            .map_or(u64::MAX, |t| u64::try_from((now - t) / 1000).unwrap_or(0));
         let live: Vec<ConnId> = self
             .conns
             .iter()
@@ -324,13 +322,10 @@ impl Engine {
         let audio_playing = live.iter().any(|id| {
             self.conns[id].adapter.as_ref().is_some_and(|a| a.tabs.values().any(|t| t.info.audible))
         });
-        let credit = self.clock.credit(&ActivitySample {
-            elapsed_ms: elapsed,
-            awake: true,
-            unlocked: true,
-            idle_secs,
-            audio_playing,
-        });
+        // Real idle, lock, display and audio from the OS when it can tell; otherwise
+        // deliberate browser activity stands in for input (items only look younger).
+        let credit = self.clock.credit(&self.activity(elapsed, audio_playing, now));
+        self.away_since_tick = false;
         let policy = Arc::clone(&self.policy);
         let pro = self.config.pro;
         for id in live {
@@ -361,11 +356,16 @@ impl Engine {
         if self.sweep != SweepState::Idle || self.policy.held(now) {
             return;
         }
+        let mut trigger = trigger;
         if !force {
             let too_soon = self.last_sweep_at.is_some_and(|t| now - t < timing::SWEEP_INTERVAL_MS);
-            let busy = self.last_activity_at.is_some_and(|t| now - t < timing::QUIET_MS);
-            if too_soon || busy {
+            if too_soon {
                 return;
+            }
+            match self.sweep_window(now) {
+                SweepWindow::Away | SweepWindow::Busy => return,
+                SweepWindow::JustWoke => trigger = SweepTrigger::Wake,
+                SweepWindow::Quiet => {}
             }
         }
         let policy = Arc::clone(&self.policy);
@@ -439,6 +439,21 @@ impl Engine {
             .filter(|a| a.ok)
             .and_then(|a| a.result.clone())
             .and_then(|v| serde_json::from_value(v).ok());
+        let adapter = self.conns.get_mut(&conn).and_then(|c| c.adapter.as_mut());
+        if let (None, Some(a)) = (&verdicts, adapter) {
+            // No answer: those pages count as unknown (2×) for a while, like a verdict, so
+            // they aren't probed again at every tick.
+            for tab_id in tab_ids {
+                if let Some(tab) = a.tabs.get(tab_id) {
+                    let entry = ProbeEntry {
+                        verdict: FormInput::Unknown,
+                        url: tab.info.url.clone(),
+                        expires_at: now + timing::PROBE_OTHER_TTL_MS,
+                    };
+                    a.probes.insert(*tab_id, entry);
+                }
+            }
+        }
         if let (Some(verdicts), Some(a)) =
             (verdicts, self.conns.get_mut(&conn).and_then(|c| c.adapter.as_mut()))
         {

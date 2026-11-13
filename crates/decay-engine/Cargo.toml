@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 decay-bridge = { path = "../decay-bridge" }
 decay-core = { path = "../decay-core" }
+decay-platform = { path = "../decay-platform" }
 decay-store = { path = "../decay-store" }
 psl = "2"
 serde = { version = "1.0.229", features = ["derive"] }

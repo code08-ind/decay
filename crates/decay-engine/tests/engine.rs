@@ -1076,3 +1076,241 @@ fn search_reports_the_apps_mode_and_an_empty_sweep_now_says_so() {
     assert!(h.events.contains(&EngineEvent::NothingToSweep { shadow: false }));
     assert!(!h.events.iter().any(|e| matches!(e, EngineEvent::SweepCompleted { .. })));
 }
+
+// --- Platform signals (P1.6) -----------------------------------------------------------
+
+fn os(idle: u64, key: u64) -> decay_platform::PlatformSample {
+    decay_platform::PlatformSample {
+        idle_secs: Some(idle),
+        secs_since_key: Some(key),
+        locked: Some(false),
+        display_asleep: Some(false),
+        audio_playing: Some(false),
+        frontmost: Some(decay_platform::FrontApp { pid: 10, name: "Google Chrome".into() }),
+        accessibility: Some(true),
+        continuous_ms: None,
+    }
+}
+
+impl Harness {
+    fn os(&mut self, sample: decay_platform::PlatformSample) {
+        let out = self.engine.handle(Input::Platform(Box::new(sample)), self.now);
+        self.collect(out);
+    }
+
+    /// Advances in 1-s steps, feeding `sample` (adjusted per step by `f`) before each poll.
+    fn advance_os(
+        &mut self,
+        ms: i64,
+        conns: &[ConnId],
+        f: impl Fn(i64) -> decay_platform::PlatformSample,
+    ) {
+        let end = self.now + ms;
+        while self.now < end {
+            self.now = (self.now + 1_000).min(end);
+            for c in conns {
+                self.msg(*c, kinds::HEARTBEAT, json!({"at": self.now}));
+            }
+            self.os(f(self.now));
+            self.poll();
+            // Stop at a probe, so the test answers it before it times out.
+            if self.sent.iter().any(|(_, e)| e.kind == kinds::PROBE) {
+                break;
+            }
+        }
+    }
+}
+
+#[test]
+fn os_idle_lock_and_display_sleep_drive_the_aging_clock() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    let age = |h: &Harness| h.item_for_url("https://old.example/page").active_age_s;
+    // Active at the keyboard (no browser event needed): it ages.
+    h.advance_os(61_000, &[1], |_| os(5, 5));
+    let first = age(&h);
+    assert!(first >= 30, "aged {first}");
+    // Locked: nothing.
+    h.advance_os(61_000, &[1], |_| decay_platform::PlatformSample {
+        locked: Some(true),
+        ..os(5, 5)
+    });
+    assert_eq!(age(&h), first);
+    // Displays asleep: nothing.
+    h.advance_os(61_000, &[1], |_| decay_platform::PlatformSample {
+        display_asleep: Some(true),
+        ..os(5, 5)
+    });
+    assert_eq!(age(&h), first);
+    // Idle past the cutoff: nothing, unless audio plays (a video).
+    h.advance_os(61_000, &[1], |_| os(900, 900));
+    assert_eq!(age(&h), first);
+    h.advance_os(61_000, &[1], |_| decay_platform::PlatformSample {
+        audio_playing: Some(true),
+        ..os(900, 900)
+    });
+    assert!(age(&h) > first);
+}
+
+#[test]
+fn a_stale_os_sample_falls_back_to_browser_activity() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    h.os(os(5, 5)); // one sample, then silence
+    h.advance(120_000, &[1]);
+    // No browser activity either: idle, nothing aged.
+    assert_eq!(h.item_for_url("https://old.example/page").active_age_s, 0);
+}
+
+#[test]
+fn typing_or_an_app_switch_postpones_a_sweep() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    // Typing (last key 10 s ago): no sweep.
+    h.advance_os(31_000, &[1], |_| os(10, 10));
+    assert_eq!(h.take(1, kinds::PROBE).len(), 0);
+    // An app switch just now: no sweep either.
+    h.advance_os(65_000, &[1], |t| {
+        // Switching apps every 20 s (under the 30-s quiet time).
+        let pid = 10 + i32::from((t - T0) / 20_000 % 2 == 1);
+        decay_platform::PlatformSample {
+            frontmost: Some(decay_platform::FrontApp { pid, name: "x".into() }),
+            ..os(70, 70)
+        }
+    });
+    assert_eq!(h.take(1, kinds::PROBE).len(), 0);
+    // Quiet: no typing for a minute, no switch for 30 s (then the next tick sweeps).
+    h.advance_os(70_000, &[1], |_| decay_platform::PlatformSample {
+        frontmost: Some(decay_platform::FrontApp { pid: 11, name: "x".into() }),
+        ..os(120, 120)
+    });
+    assert_eq!(h.take(1, kinds::PROBE).len(), 1);
+}
+
+#[test]
+fn no_sweep_while_locked_and_a_morning_cleanup_after_unlocking() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    let locked = || decay_platform::PlatformSample { locked: Some(true), ..os(4000, 4000) };
+    h.advance_os(60_000, &[1], |_| locked());
+    assert_eq!(h.take(1, kinds::PROBE).len(), 0);
+    // Unlocked and typing straight away: the morning cleanup doesn't wait.
+    h.advance_os(31_000, &[1], |_| os(1, 1));
+    let probe = h.one(1, kinds::PROBE);
+    h.ack_ok(1, &probe, json!({"results": [{"tabId": 1, "dirtyForm": false, "beforeUnload": false, "uploading": false}], "missing": []}));
+    let close = h.one(1, kinds::TABS_CLOSE);
+    let sweep = h.store().sweep(close.payload["sweepId"].as_str().unwrap()).unwrap().unwrap();
+    assert_eq!(sweep.trigger, decay_core::SweepTrigger::Wake);
+}
+
+#[test]
+fn a_sleep_gap_counts_as_a_wake() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    h.advance_os(5_000, &[1], |_| os(1, 1));
+    h.now += 3 * 3_600_000; // asleep: no samples
+    h.advance_os(31_000, &[1], |_| os(1, 1));
+    assert_eq!(h.take(1, kinds::PROBE).len(), 1);
+}
+
+#[test]
+fn a_tick_earns_nothing_for_time_locked_since_the_last_tick() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    let age = |h: &Harness| h.item_for_url("https://old.example/page").active_age_s;
+    h.advance_os(61_000, &[1], |_| os(5, 5));
+    let before = age(&h);
+    // Locked for 28 of the next 30 s, unlocked (and active) only when the tick comes.
+    let start = h.now;
+    h.advance_os(30_000, &[1], move |t| {
+        if t - start < 28_000 {
+            decay_platform::PlatformSample { locked: Some(true), ..os(5, 5) }
+        } else {
+            os(1, 1)
+        }
+    });
+    assert_eq!(age(&h), before);
+    // The next tick fully active is credited again.
+    h.advance_os(30_000, &[1], |_| os(1, 1));
+    assert!(age(&h) > before);
+}
+
+#[test]
+fn a_gap_in_the_samples_earns_no_credit() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    let age = |h: &Harness| h.item_for_url("https://old.example/page").active_age_s;
+    h.advance_os(61_000, &[1], |_| os(5, 5));
+    let before = age(&h);
+    // A 20-s sleep (shorter than the aging clock's own gap limit), then active.
+    h.now += 20_000;
+    h.advance_os(10_000, &[1], |_| os(1, 1));
+    // Whichever tick spans the gap is void; at most the ticks after it count.
+    h.advance_os(1_000, &[1], |_| os(1, 1));
+    assert!(age(&h) - before <= 1, "credited the gap: {}", age(&h) - before);
+}
+
+#[test]
+fn os_audio_stops_counting_after_hours_without_input() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    let age = |h: &Harness| h.item_for_url("https://old.example/page").active_age_s;
+    let playing =
+        |idle| decay_platform::PlatformSample { audio_playing: Some(true), ..os(idle, idle) };
+    h.advance_os(61_000, &[1], |_| playing(3_600));
+    let watching = age(&h);
+    assert!(watching >= 30, "an hour into a film still ages: {watching}");
+    h.advance_os(61_000, &[1], |_| playing(3 * 3_600));
+    assert_eq!(age(&h), watching, "a silent stream overnight doesn't");
+}
+
+#[test]
+fn a_wall_clock_jump_is_not_a_wake() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    let base = h.now;
+    // The continuous clock follows real time; the wall clock jumps 3 h ahead.
+    let at = |offset: i64| {
+        move |t: i64| decay_platform::PlatformSample {
+            continuous_ms: Some(u64::try_from(t - base - offset).unwrap()),
+            ..os(1, 1)
+        }
+    };
+    h.advance_os(5_000, &[1], at(0));
+    h.now += 3 * 3_600_000;
+    // Still typing: no "morning cleanup", the sweep waits for a quiet moment.
+    h.advance_os(31_000, &[1], at(3 * 3_600_000));
+    assert_eq!(h.take(1, kinds::PROBE).len(), 0);
+}
+
+#[test]
+fn a_sleep_on_the_continuous_clock_is_a_wake() {
+    let mut h = ready_to_sweep(Mode::Automatic);
+    let base = h.now;
+    let sample = move |t: i64| decay_platform::PlatformSample {
+        continuous_ms: Some(u64::try_from(t - base).unwrap()),
+        ..os(1, 1)
+    };
+    h.advance_os(5_000, &[1], sample);
+    h.now += 3 * 3_600_000;
+    h.advance_os(31_000, &[1], sample);
+    assert_eq!(h.take(1, kinds::PROBE).len(), 1);
+}
+
+#[test]
+fn accessibility_changes_are_reported() {
+    let mut h = Harness::new();
+    h.os(os(1, 1));
+    h.os(os(1, 1));
+    h.os(decay_platform::PlatformSample { accessibility: Some(false), ..os(1, 1) });
+    let changes: Vec<bool> = h
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            EngineEvent::AccessibilityChanged { trusted } => Some(*trusted),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(changes, vec![true, false]);
+}
