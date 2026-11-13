@@ -30,7 +30,8 @@ export const chromeApi: BrowserApi = {
     return browser.windows.getAll();
   },
   async getGroups() {
-    return browser.tabGroups ? browser.tabGroups.query({}) : [];
+    // Throws "No current window" while the browser has no window open: no groups then.
+    return browser.tabGroups ? browser.tabGroups.query({}).catch(() => []) : [];
   },
   async queryIdle(cutoffS) {
     // chrome.idle requires at least 15 s.

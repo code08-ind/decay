@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { Popup } from '@/components/Popup';
+import { appSearchResult, withAppArchive } from '@/lib/bridge/archive';
 import { type AppLinkStatus, linkEnabled, readLinkStatus } from '@/lib/bridge/chrome';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
@@ -31,6 +32,8 @@ export function App() {
     status: null,
     enabled: false,
   });
+  /** The app is connected and answered: search, restore and Undo go through it (P1.5). */
+  const [viaApp, setViaApp] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -45,16 +48,29 @@ export function App() {
       const [linkStatus, enabled] = await Promise.all([readLinkStatus(), linkEnabled()]);
       setAppLink({ status: linkStatus, enabled });
       const t = Date.now();
-      setData(
-        await loadPopupData(
-          db,
-          all,
-          tabs.filter((tab) => !tab.incognito),
-          current,
-          t,
-          { probes, probeAccess },
-        ),
+      let popup = await loadPopupData(
+        db,
+        all,
+        tabs.filter((tab) => !tab.incognito),
+        current,
+        t,
+        { probes, probeAccess },
       );
+      // While the app is connected its archive is the real one (it archives tabs itself).
+      let app = false;
+      if (linkStatus?.state === 'connected') {
+        try {
+          const r = await sendDecay({ type: 'decay.search', query: '', limit: 50 });
+          if (r.search) {
+            popup = withAppArchive(popup, r.search);
+            app = true;
+          }
+        } catch {
+          // The link just dropped: the local copy is shown instead.
+        }
+      }
+      setViaApp(app);
+      setData(popup);
       setNow(t);
     } catch (e) {
       setError(`Couldn't load Decay: ${message(e)}`);
@@ -74,6 +90,12 @@ export function App() {
     }
     return indexCache.current.index;
   }, [data?.archived, data?.windowOf]);
+
+  const searchApp = useCallback(async (query: string) => {
+    const r = await sendDecay({ type: 'decay.search', query, limit: 50 });
+    if (!r.search) throw new Error('No answer from the Decay app.');
+    return appSearchResult(r.search, Date.now());
+  }, []);
 
   // Metrics (P0.8): one search per popup opening; time from the first keystroke to a
   // restore picked from the results.
@@ -216,6 +238,7 @@ export function App() {
     <Popup
       data={data}
       getSearch={getSearch}
+      searchApp={viaApp ? searchApp : undefined}
       now={now}
       isMac={isMac}
       faviconFor={(url) => faviconFor(url)}

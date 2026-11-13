@@ -9,6 +9,8 @@ describe('isDecayRequest', () => {
     expect(isDecayRequest({ type: 'decay.restoreBatch', itemId: 'a' })).toBe(true);
     expect(isDecayRequest({ type: 'decay.restore', ids: ['a'], searchMs: 1200 })).toBe(true);
     expect(isDecayRequest({ type: 'decay.restoreBatch', itemId: 'a', searchMs: 0 })).toBe(true);
+    expect(isDecayRequest({ type: 'decay.search', query: '' })).toBe(true);
+    expect(isDecayRequest({ type: 'decay.search', query: 'site:a.com', limit: 50 })).toBe(true);
   });
 
   it('rejects malformed ones', () => {
@@ -25,6 +27,12 @@ describe('isDecayRequest', () => {
       { type: 'decay.restore', ids: ['a'], searchMs: -1 },
       { type: 'decay.restore', ids: ['a'], searchMs: '5' },
       { type: 'decay.restoreBatch', itemId: 'a', searchMs: Number.NaN },
+      { type: 'decay.search' },
+      { type: 'decay.search', query: 5 },
+      { type: 'decay.search', query: 'x'.repeat(501) },
+      { type: 'decay.search', query: 'a', limit: 0 },
+      { type: 'decay.search', query: 'a', limit: 201 },
+      { type: 'decay.search', query: 'a', limit: 1.5 },
     ]) {
       expect(isDecayRequest(bad)).toBe(false);
     }

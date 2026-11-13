@@ -105,6 +105,11 @@ pub mod kinds {
     pub const ACK: &str = "ack";
     pub const HEARTBEAT: &str = "heartbeat";
     pub const IMPORT_ARCHIVE: &str = "import.archive";
+    /// Popup requests in adapter mode (the archive lives in the app), answered with `ack`.
+    pub const ARCHIVE_SEARCH: &str = "archive.search";
+    pub const ARCHIVE_RESTORE: &str = "archive.restore";
+    pub const ARCHIVE_RESTORE_BATCH: &str = "archive.restoreBatch";
+    pub const ARCHIVE_UNDO: &str = "archive.undo";
     // Core → extension.
     pub const WELCOME: &str = "welcome";
     pub const PROBE: &str = "probe";
@@ -397,6 +402,10 @@ pub struct TabsClose {
     /// navigated since is skipped (`changed`) instead of closing the new page.
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub urls: std::collections::BTreeMap<String, String>,
+    /// Tabs planned at the normal threshold on an earlier clean check: if the page can't
+    /// be checked right before closing, the extension skips them (`unchecked`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub require_checked: Vec<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -443,6 +452,190 @@ pub struct Config {
     pub probe_enabled: bool,
     #[serde(default)]
     pub excluded_domains: Vec<String>,
+}
+
+/// `probe` ack result (P1.4): the verdicts, and the tabs that are gone.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ProbeAck {
+    #[serde(default)]
+    pub results: Vec<ProbeResult>,
+    #[serde(default)]
+    pub missing: Vec<i64>,
+}
+
+/// Why the extension didn't close a tab (`tabs.close` ack).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SkipReason {
+    Active,
+    Pinned,
+    Audible,
+    FormInput,
+    /// Navigated since the app decided.
+    Changed,
+    /// Used within the last minute.
+    InUse,
+    Excluded,
+    /// The link dropped mid-command.
+    Disconnected,
+    Error,
+    /// Listed in `requireChecked`, and the page couldn't be checked right before closing.
+    Unchecked,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkippedTab {
+    pub tab_id: i64,
+    pub reason: SkipReason,
+}
+
+/// `tabs.close` ack result.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CloseResult {
+    /// Closed now, or already gone.
+    #[serde(default)]
+    pub closed: Vec<i64>,
+    #[serde(default)]
+    pub skipped: Vec<SkippedTab>,
+    /// Closed although the page couldn't be checked (the 2× rule applied).
+    #[serde(default)]
+    pub unchecked: Vec<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoredTab {
+    pub item_id: String,
+    pub tab_id: i64,
+}
+
+/// `tabs.restore` ack result.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct RestoreResult {
+    #[serde(default)]
+    pub restored: Vec<RestoredTab>,
+    /// Item ids that couldn't be reopened.
+    #[serde(default)]
+    pub failed: Vec<String>,
+}
+
+/// `archive.search`: search the app's archive (empty query = most recent first).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveSearch {
+    #[serde(default)]
+    pub query: String,
+    /// 1–200 (default 50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// The browser's UTC offset in minutes east of UTC (for `before:` / `after:` dates).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub utc_offset_minutes: Option<i32>,
+}
+
+/// An archived item as the popup shows it (the extension's `Item` fields it uses).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchivedItem {
+    pub id: String,
+    pub kind: decay_core::ItemKind,
+    pub app_id: String,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub favicon_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tab_index: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group_title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group_color: Option<String>,
+    pub pinned: bool,
+    pub state: decay_core::ItemState,
+    pub active_age_s: u64,
+    pub first_seen_at: i64,
+    pub last_used_at: i64,
+    pub state_changed_at: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archive_reason: Option<decay_core::Reason>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_sweep_id: Option<String>,
+    /// The original window (`<session>:<windowId>`): search groups batches by it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_key: Option<String>,
+    pub restore_count: u32,
+}
+
+/// The newest sweep that can still be undone (for the popup's "Undo" row).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastSweep {
+    pub id: String,
+    pub started_at: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finished_at: Option<i64>,
+    pub item_count: u32,
+    /// Items of that sweep still archived.
+    pub remaining: u32,
+}
+
+/// `archive.search` ack result.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveSearchResult {
+    pub items: Vec<ArchivedItem>,
+    /// More results exist past `items`.
+    #[serde(default)]
+    pub more: bool,
+    /// Only for an empty query: the sweep the popup's Undo would revert.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_sweep: Option<LastSweep>,
+    /// The app's mode (it decides while connected; the popup shows this one).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<decay_core::Mode>,
+}
+
+/// `archive.restore`: reopen archived items; with `intoWindowId` they open in that window
+/// (the first one active), else in their original window or a new one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveRestore {
+    pub item_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub into_window_id: Option<i64>,
+}
+
+/// `archive.restoreBatch`: reopen the batch an item was archived with (same sweep and
+/// window), in its original window when it's still open.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveRestoreBatch {
+    pub item_id: String,
+}
+
+/// `archive.undo`: undo a sweep (the newest undoable one when `sweepId` is missing).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveUndo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sweep_id: Option<String>,
+}
+
+/// Ack result of `archive.restore` / `archive.restoreBatch` / `archive.undo`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct RestoreSummary {
+    pub restored: u32,
+    pub failed: u32,
+    /// Requested items that weren't archived any more (already reopened).
+    pub skipped: u32,
 }
 
 #[cfg(test)]

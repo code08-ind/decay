@@ -96,7 +96,8 @@ export function adapterDeps(
     now: Date.now,
     queryTabs: async () => (await browser.tabs.query({})) as ChromeTab[],
     getWindows: async () => browser.windows.getAll(),
-    getGroups: async () => (browser.tabGroups ? browser.tabGroups.query({}) : []),
+    // Throws "No current window" while the browser has no window open: no groups then.
+    getGroups: async () => (browser.tabGroups ? browser.tabGroups.query({}).catch(() => []) : []),
     getTab: async (tabId) => {
       try {
         return (await browser.tabs.get(tabId)) as ChromeTab;

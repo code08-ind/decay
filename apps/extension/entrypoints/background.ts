@@ -12,6 +12,13 @@ import {
 import { Bridge, type BridgeState } from '@/lib/bridge/connection';
 import { SYNC_KEY, type SyncRecord, syncArchive } from '@/lib/bridge/migrate';
 import { localEngineMayRun } from '@/lib/bridge/ownership';
+import {
+  type Ack,
+  type ArchiveSearchResult,
+  envelope,
+  kinds,
+  type RestoreSummary,
+} from '@/lib/bridge/protocol';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { recordSearchToRestore } from '@/lib/metrics/metrics';
@@ -36,6 +43,8 @@ const PROTECT_OFFER_MS = 60_000;
 const CLEAR_ALARM = 'decay-clear:';
 /** The Undo toast lives 30 s (PRD F7); Sweeps history keeps undo available after that. */
 const UNDO_TOAST_MS = 30_000;
+/** How long the popup waits for the app (a restore waits for the browser's own ack). */
+const APP_REQUEST_MS = 30_000;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export default defineBackground(() => {
@@ -276,8 +285,33 @@ export default defineBackground(() => {
     run('open sweeps', () => browser.tabs.create({ url: sweepsPage() }));
   });
 
+  /**
+   * A request to the app (adapter mode, P1.5): the archive lives there while it's
+   * connected. Throws with the app's reason when it refuses.
+   */
+  const askApp = async <T>(type: string, payload: unknown): Promise<T> => {
+    const reply = await bridge.request(envelope(type, payload), APP_REQUEST_MS);
+    const ack = reply.payload as Ack | null;
+    if (reply.type !== kinds.ack || ack?.ok !== true) {
+      const reason = ack?.error?.message;
+      throw new Error(
+        reason ? `The Decay app said: ${reason}.` : "The Decay app couldn't do that.",
+      );
+    }
+    return ack.result as T;
+  };
+
   const handle = async (message: DecayRequest): Promise<DecayResponse> => {
     switch (message.type) {
+      case 'decay.search': {
+        if (!adapterMode()) return { ok: false, error: 'The Decay app is not connected.' };
+        const search = await askApp<ArchiveSearchResult>(kinds.archiveSearch, {
+          query: message.query,
+          limit: message.limit ?? 50,
+          utcOffsetMinutes: -new Date().getTimezoneOffset(),
+        });
+        return { ok: true, search };
+      }
       case 'decay.app.connect':
         await turnLinkOn();
         return { ok: true };
@@ -301,6 +335,16 @@ export default defineBackground(() => {
         }
         return sweepNow();
       case 'decay.undoSweep': {
+        // Sweeps the app ran live there; a Phase 0 sweep (still in this browser) is
+        // undone here, as before.
+        const local = message.sweepId ? await db.sweeps.get(message.sweepId) : undefined;
+        if (adapterMode() && !local) {
+          const r = await askApp<RestoreSummary>(
+            kinds.archiveUndo,
+            message.sweepId ? { sweepId: message.sweepId } : {},
+          );
+          return { ok: true, restored: r.restored, failed: r.failed };
+        }
         const r = await tracker.undoSweep(message.sweepId);
         if (message.sweepId) {
           void browser.notifications.clear(`${SWEEP_NOTIFICATION}${message.sweepId}`);
@@ -308,6 +352,14 @@ export default defineBackground(() => {
         return { ok: true, restored: r.restored, failed: r.failed };
       }
       case 'decay.restore': {
+        if (adapterMode()) {
+          const r = await askApp<RestoreSummary>(kinds.archiveRestore, {
+            itemIds: message.ids,
+            ...(message.intoWindowId !== undefined ? { intoWindowId: message.intoWindowId } : {}),
+          });
+          if (r.restored) await noteSearch(message.searchMs);
+          return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
+        }
         const r = await tracker.restore(message.ids, { intoWindowId: message.intoWindowId });
         // Don't hold the reply (the popup is closing) for the follow-up notification.
         if (message.ids.length === 1) run('offer protect', () => offerProtect(r.regretted[0]));
@@ -315,6 +367,13 @@ export default defineBackground(() => {
         return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
       }
       case 'decay.restoreBatch': {
+        if (adapterMode()) {
+          const r = await askApp<RestoreSummary>(kinds.archiveRestoreBatch, {
+            itemId: message.itemId,
+          });
+          if (r.restored) await noteSearch(message.searchMs);
+          return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
+        }
         const r = await tracker.restoreBatch(message.itemId);
         if (r.restored) await noteSearch(message.searchMs);
         return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };

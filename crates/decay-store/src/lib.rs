@@ -14,6 +14,7 @@ mod migrate;
 mod rules;
 mod search;
 mod settings;
+mod sources;
 mod sweeps;
 mod words;
 
@@ -31,6 +32,7 @@ pub use key::DbKey;
 pub use migrate::SCHEMA_VERSION;
 pub use search::{SearchFilters, SearchHit, SearchPage, SearchQuery, parse_query};
 pub use settings::default_setting;
+pub use sources::Source;
 pub use sweeps::{Sweep, SweepItem};
 pub use words::{fts_query, url_words};
 
@@ -275,6 +277,32 @@ impl Store {
         Ok(out)
     }
 
+    /// Runs `f` with this store in one transaction, committed when it returns `Ok` (rolled
+    /// back otherwise), so the repository methods can be used inside. `durable` commits with
+    /// `synchronous = FULL` like [`Store::transaction_durable`].
+    pub fn atomically<T>(
+        &mut self,
+        durable: bool,
+        f: impl FnOnce(&Self) -> Result<T>,
+    ) -> Result<T> {
+        if durable {
+            self.conn.execute_batch("PRAGMA synchronous = FULL;")?;
+        }
+        let out = (|| {
+            let tx = self.conn.unchecked_transaction()?;
+            let out = f(self)?;
+            tx.commit()?;
+            Ok(out)
+        })();
+        if durable {
+            let reset = self.conn.execute_batch("PRAGMA synchronous = NORMAL;");
+            let out = out?;
+            reset?;
+            return Ok(out);
+        }
+        out
+    }
+
     /// Returns freed pages to the file system (monthly, at idle: DB Design §5).
     pub fn incremental_vacuum(&self) -> Result<()> {
         self.conn.execute_batch("PRAGMA incremental_vacuum;")?;
@@ -366,6 +394,19 @@ pub(crate) mod test_util {
 mod tests {
     use super::test_util::*;
     use super::*;
+
+    #[test]
+    fn atomically_commits_or_rolls_back_everything() {
+        let (mut store, _dir) = store();
+        let failed: Result<()> = store.atomically(true, |s| {
+            s.set_setting("idle_cutoff_s", &120, NOW)?;
+            Err(StoreError::NotFound)
+        });
+        assert!(failed.is_err());
+        assert_eq!(store.setting::<u64>("idle_cutoff_s").unwrap(), Some(300));
+        store.atomically(false, |s| s.set_setting("idle_cutoff_s", &120, NOW)).unwrap();
+        assert_eq!(store.setting::<u64>("idle_cutoff_s").unwrap(), Some(120));
+    }
 
     #[test]
     fn creates_an_encrypted_database_with_the_v1_schema() {

@@ -21,7 +21,13 @@ import {
 import type { AppLinkStatus } from '@/lib/bridge/chrome';
 import type { Item } from '@/lib/db/types';
 import { type PopupData, RECENT_COUNT } from '@/lib/popup/data';
-import { type ArchiveSearch, dayLabel, type SearchGroup, timeLabel } from '@/lib/search/search';
+import {
+  type ArchiveSearch,
+  dayLabel,
+  type SearchGroup,
+  type SearchResult,
+  timeLabel,
+} from '@/lib/search/search';
 import { AppLink } from './AppLink';
 import { avatarClass, shortUrl } from './format';
 import { ProbeBanner } from './ProbeBanner';
@@ -30,6 +36,11 @@ export interface PopupProps {
   data: PopupData;
   /** Builds (or returns the cached) search index — called on the first keystroke only. */
   getSearch: () => ArchiveSearch;
+  /**
+   * Searches the Decay app's archive instead (adapter mode, P1.5): asynchronous, so the
+   * results follow the typing after a short pause.
+   */
+  searchApp?: (query: string) => Promise<SearchResult>;
   now: number;
   /** Mac shows ⌘, others Ctrl (for the batch-restore hint). */
   isMac: boolean;
@@ -57,6 +68,8 @@ export interface PopupProps {
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+/** App search waits for a pause in typing. */
+const APP_SEARCH_DELAY_MS = 120;
 
 /** "2:14 PM" today, otherwise "Yesterday" / "Mon, 2 Nov". */
 function whenLabel(ts: number, now: number): string {
@@ -84,15 +97,46 @@ export function Popup(props: PopupProps) {
   // Typing stays responsive: the search runs on the deferred value.
   const deferred = useDeferredValue(query);
   const searching = query.trim().length > 0;
-  const { getSearch, now } = props;
+  const { getSearch, now, searchApp } = props;
+  // App search: the answer for the latest query (older answers are dropped).
+  const [appAnswer, setAppAnswer] = useState<{ q: string; result: SearchResult | null } | null>(
+    null,
+  );
+  useEffect(() => {
+    const q = deferred.trim();
+    if (!searchApp || q.length < 2) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      searchApp(q).then(
+        (r) => {
+          if (current) setAppAnswer({ q, result: r });
+        },
+        () => {
+          // The link dropped or the app failed: say so (not "no results").
+          if (current) setAppAnswer({ q, result: null });
+        },
+      );
+    }, APP_SEARCH_DELAY_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [deferred, searchApp]);
   const result = useMemo(() => {
     const q = deferred.trim();
     if (!q) return null;
     // One letter matches nearly everything: wait for more unless it's a filter.
     if (q.length < 2) return { tooShort: true as const };
+    if (searchApp) {
+      if (appAnswer?.q !== q) return { pending: true as const };
+      return appAnswer.result ?? { failed: true as const };
+    }
     return getSearch().search(q, now);
-  }, [deferred, getSearch, now]);
-  const found = result && !('tooShort' in result) ? result : null;
+  }, [deferred, getSearch, now, searchApp, appAnswer]);
+  const found =
+    result && !('tooShort' in result) && !('pending' in result) && !('failed' in result)
+      ? result
+      : null;
   const items = found?.items ?? [];
   const current = items[Math.min(selected, items.length - 1)];
 
@@ -222,6 +266,14 @@ export function Popup(props: PopupProps) {
         <Home {...props} />
       ) : result && 'tooShort' in result ? (
         <p className="mt-4 px-1 text-sm text-muted">Keep typing to search your archive…</p>
+      ) : result && 'failed' in result ? (
+        <p className="mt-4 px-1 text-sm text-danger">
+          Couldn&rsquo;t search the Decay app. Try again in a moment.
+        </p>
+      ) : result && 'pending' in result ? (
+        <p className="mt-4 px-1 text-sm text-muted" aria-busy="true">
+          Searching…
+        </p>
       ) : found ? (
         <Results
           groups={found.groups}

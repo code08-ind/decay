@@ -4,15 +4,19 @@
 //     `splitEnvelope` (emoji, quotes, control characters), plus the original
 //   crates/decay-store/tests/fixtures/import_archive.json — `buildImportArchive` over a
 //     seeded IndexedDB archive (fake-indexeddb)
+//   crates/decay-engine/tests/fixtures/adapter_acks.json — the acks the real `Adapter`
+//     sends for `probe`, `tabs.close` and `tabs.restore` (the engine settles sweeps and
+//     restores from them)
 // CI regenerates them and fails on any diff. Re-run after changing lib/bridge or the
 // archive types:
 //   pnpm --filter @decay/extension bridge-fixtures
 import 'fake-indexeddb/auto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { Adapter, type AdapterDeps, type ChromeTab } from '../lib/bridge/adapter';
 import { splitEnvelope } from '../lib/bridge/chunk';
 import { buildImportArchive } from '../lib/bridge/migrate';
-import type { Envelope } from '../lib/bridge/protocol';
+import { type Envelope, envelope, kinds } from '../lib/bridge/protocol';
 import { DecayDB } from '../lib/db/db';
 import type { Item, Rule } from '../lib/db/types';
 import { createSettingsStore } from '../lib/settings/settings';
@@ -176,3 +180,78 @@ out('crates/decay-store/tests/fixtures/import_archive.json', archive);
 console.log(
   `wrote ${chunks.length} chunks and an archive of ${archive.items.length} items, ${archive.rules.length} rules`,
 );
+
+// 3. Adapter acks: one of each outcome the engine has to read.
+const ackNow = 1_793_750_400_000;
+const chromeTab = (id: number, over: Partial<ChromeTab> = {}): ChromeTab => ({
+  id,
+  windowId: 1,
+  index: id,
+  url: `https://site${id}.example/`,
+  title: `Tab ${id}`,
+  pinned: false,
+  active: false,
+  incognito: false,
+  lastAccessed: ackNow - 3_600_000,
+  ...over,
+});
+const openTabs = [
+  chromeTab(1),
+  chromeTab(2, { active: true }),
+  chromeTab(3),
+  chromeTab(4),
+  chromeTab(6, { pinned: true }),
+  chromeTab(7, { lastAccessed: ackNow - 1000 }),
+];
+const verdicts: Record<number, 'clean' | 'dirty' | 'unknown'> = { 3: 'dirty', 4: 'unknown' };
+const acks: Envelope[] = [];
+let nextTabId = 100;
+const deps: AdapterDeps = {
+  queryTabs: async () => openTabs,
+  getWindows: async () => [
+    { id: 1, focused: true, state: 'normal', type: 'normal', incognito: false },
+  ],
+  getGroups: async () => [],
+  getTab: async (tabId) => openTabs.find((t) => t.id === tabId),
+  removeTab: async () => undefined,
+  createTab: async ({ windowId, url }) => chromeTab(nextTabId++, { windowId, url }),
+  createWindow: async (url) => chromeTab(nextTabId++, { windowId: 9, url }),
+  groupTabs: async () => undefined,
+  focusTab: async () => undefined,
+  probe: async (t) => verdicts[t.id ?? -1] ?? 'clean',
+  send: (e) => {
+    acks.push(e);
+    return true;
+  },
+  isConnected: () => true,
+  session: () => 'S1',
+  ownOrigin: 'chrome-extension://decay/',
+  now: () => ackNow,
+};
+const adapter = new Adapter(deps);
+const ackFor = async (type: string, payload: unknown) => {
+  acks.length = 0;
+  await adapter.handle(envelope(type, payload));
+  return acks[0]?.payload;
+};
+const adapterAcks = {
+  probe: await ackFor(kinds.probe, { tabIds: [1, 3, 4, 99] }),
+  close: await ackFor(kinds.tabsClose, {
+    sweepId: 'sweep-1',
+    tabIds: [1, 2, 3, 4, 5, 6, 7],
+    urls: { '1': 'https://site1.example/', '3': 'https://site3.example/' },
+  }),
+  closeChanged: await ackFor(kinds.tabsClose, {
+    sweepId: 'sweep-2',
+    tabIds: [1],
+    urls: { '1': 'https://elsewhere.example/' },
+  }),
+  restore: await ackFor(kinds.tabsRestore, {
+    items: [
+      { itemId: 'item-a', url: 'https://a.example/', windowKey: 'S1:1', index: 2, active: true },
+      { itemId: 'item-b', url: 'javascript:alert(1)' },
+    ],
+  }),
+  unknownCommand: await ackFor('tabs.teleport', {}),
+};
+out('crates/decay-engine/tests/fixtures/adapter_acks.json', adapterAcks);

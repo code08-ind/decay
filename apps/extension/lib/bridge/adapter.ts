@@ -93,7 +93,9 @@ type SkipReason =
   | 'inUse'
   | 'excluded'
   | 'disconnected'
-  | 'error';
+  | 'error'
+  /** The app counted on the page being checked, and now it can't be. */
+  | 'unchecked';
 
 /** `tabs.restore` window keys: `<session>:<windowId>`. */
 export const windowKey = (session: string, windowId: number) => `${session}:${windowId}`;
@@ -104,8 +106,14 @@ export class Adapter {
   private ready = false;
   /** Tabs the app knows about (reported, not removed since). */
   private reported = new Set<number>();
-  /** Tabs Decay closed: their `tab.removed` isn't the user's doing. */
+  /**
+   * Tabs Decay closed: their `tab.removed` isn't the user's doing. Kept across reconnects:
+   * a removal can be reported on the next connection, and the app must archive that tab,
+   * not forget it.
+   */
   private closedByDecay = new Set<number>();
+  /** Bumped on every new connection: a close loop stops once its connection is gone. */
+  private generation = 0;
 
   constructor(private readonly deps: AdapterDeps) {}
 
@@ -113,7 +121,7 @@ export class Adapter {
   reset(): void {
     this.ready = false;
     this.reported.clear();
-    this.closedByDecay.clear();
+    this.generation++;
   }
 
   /** Excluded sites (F9), incognito tabs and Decay's own pages are never reported. */
@@ -342,16 +350,27 @@ export class Adapter {
    * again right before closing. A tab that's gone counts as closed (NOT_FOUND is success
    * for a close). Any tab skipped for safety makes the ack `UNSAFE`, with per-tab reasons;
    * tabs whose page couldn't be checked are closed and listed in `unchecked` (the app's
-   * policy already waited for them: the 2× rule). The loop stops if the link drops.
+   * policy already waited for them: the 2× rule), unless the app listed them in
+   * `requireChecked` (it decided on an earlier clean check): those are skipped. The loop
+   * stops if the link drops or a new connection replaces this one.
    */
   private async close(cmd: TabsClose, receivedAt: number): Promise<Ack> {
+    // The loop belongs to this connection: after a reconnect the app has moved on (it may
+    // already have put these tabs back), so nothing more is closed.
+    const generation = this.generation;
+    const linked = () => this.deps.isConnected() && this.generation === generation;
     const closed: number[] = [];
     const unchecked: number[] = [];
     const skipped: { tabId: number; reason: SkipReason }[] = [];
     const urls = (cmd as { urls?: Record<string, string> } | null)?.urls ?? {};
+    const requireChecked = new Set(
+      Array.isArray(cmd?.requireChecked)
+        ? cmd.requireChecked.filter((n) => Number.isInteger(n))
+        : [],
+    );
     const tabIds = Array.isArray(cmd?.tabIds) ? cmd.tabIds.filter((n) => Number.isInteger(n)) : [];
     for (const tabId of tabIds) {
-      if (!this.deps.isConnected()) {
+      if (!linked()) {
         skipped.push({ tabId, reason: 'disconnected' });
         continue;
       }
@@ -371,15 +390,19 @@ export class Adapter {
         skipped.push({ tabId, reason: 'formInput' });
         continue;
       }
+      // The app decided at the normal threshold because the page was checked clean before;
+      // it can't be checked now, so it waits (the 2× rule) rather than closing unchecked.
+      if (verdict === 'unknown' && requireChecked.has(tabId)) {
+        skipped.push({ tabId, reason: 'unchecked' });
+        continue;
+      }
       // The check took a moment: look again before closing.
       tab = await this.deps.getTab(tabId);
       if (!tab) {
         closed.push(tabId);
         continue;
       }
-      const late =
-        this.blocker(tab, expected, receivedAt) ??
-        (this.deps.isConnected() ? null : 'disconnected');
+      const late = this.blocker(tab, expected, receivedAt) ?? (linked() ? null : 'disconnected');
       if (late) {
         skipped.push({ tabId, reason: late });
         continue;

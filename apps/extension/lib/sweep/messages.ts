@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser';
+import type { ArchiveSearchResult } from '../bridge/protocol';
 
 /**
  * Messages from extension pages (popup, Sweeps page) to the background worker, which owns
@@ -14,6 +15,11 @@ export type DecayRequest =
    * tab closes the popup before it could write anything after the reply.
    */
   | { type: 'decay.restore'; ids: string[]; intoWindowId?: number; searchMs?: number }
+  /**
+   * Search the Decay app's archive (adapter mode, P1.5): an empty query lists the most
+   * recent items and the sweep Undo would revert. Refused when the app isn't connected.
+   */
+  | { type: 'decay.search'; query: string; limit?: number }
   /** Restore the whole batch an item was archived with (PRD F6, ⌘/Ctrl+Enter). */
   | { type: 'decay.restoreBatch'; itemId: string; searchMs?: number }
   /**
@@ -34,6 +40,8 @@ export type DecayResponse =
       skipped?: number;
       /** Shadow mode "Sweep now": items the simulation flagged. Nothing was closed. */
       simulated?: number;
+      /** `decay.search`: the app's results. */
+      search?: ArchiveSearchResult;
     }
   | { ok: false; error: string };
 
@@ -60,6 +68,13 @@ export function isDecayRequest(msg: unknown): msg is DecayRequest {
       );
     case 'decay.restoreBatch':
       return isString(m.itemId) && isMs(m.searchMs);
+    case 'decay.search':
+      return (
+        typeof m.query === 'string' &&
+        m.query.length <= 500 &&
+        (m.limit === undefined ||
+          (Number.isInteger(m.limit) && (m.limit as number) >= 1 && (m.limit as number) <= 200))
+      );
     case 'decay.app.connect':
     case 'decay.app.disconnect':
       return true;

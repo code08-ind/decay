@@ -256,6 +256,20 @@ interface TabInfo { tabId: number; windowId: number; index: number; url: string;
   - The probe runs whatever `probeEnabled` says.
 - **`tabs.restore`:** `windowKey` is `<session>:<windowId>` and matches a normal window only within the same browser session; otherwise the items go into one new window. The new window is focused when an item is `active`. URLs follow Phase 0's restore rule (http(s), browser pages, `about:blank`); `javascript:`, `data:` and `file:` are refused.
 - **Unknown commands:** they get `ack { ok:false, error: BAD_MESSAGE }`.
+- **`tabs.close` `requireChecked`** (P1.5): tab ids the app planned at the normal threshold on an earlier clean check; if the page can't be checked right before closing, the tab is skipped with reason `unchecked`. The close loop stops when a new connection replaces the one it came on (`disconnected`), and a tab Decay closed is reported as `byUser: false` even on the next connection.
+- **A replaced connection** (a newer `hello` for the same profile) gets `error { code: APP_UNAVAILABLE }` and is ignored from then on; the extension ends that port.
+- **Acks with results:** `tabs.close` and `tabs.restore` answer `ok:false` *with* a `result` when any tab is skipped or fails; the app settles from the `result`. `tabs.restore`'s result is `{ restored: [{itemId, tabId}], failed: [itemId] }`.
+
+**Popup requests (P1.5, extension → app, answered with `ack`):** while the app is connected its archive is the real one, so the popup asks it.
+
+| Type | Payload | Ack `result` |
+| --- | --- | --- |
+| `archive.search` | `{ query, limit? (1–200, default 50), utcOffsetMinutes? }` | `{ items: ArchivedItem[], more, lastSweep? }`. Empty query: most recent first, plus `lastSweep { id, startedAt, finishedAt?, itemCount, remaining }` (the newest real sweep Undo can revert). Always `mode`: the app's mode, which the popup shows while connected |
+| `archive.restore` | `{ itemIds, intoWindowId? }` | `{ restored, failed, skipped }` (`skipped`: not archived any more). With `intoWindowId` the tabs open in that window, the first active |
+| `archive.restoreBatch` | `{ itemId }` | Same. The item's batch (same sweep and window) reopens in its original window (same browser session) or a new one |
+| `archive.undo` | `{ sweepId? }` | Same; `NOT_FOUND` when the sweep can't be undone (not among the last 20 finished ones, already undone, or still closing tabs). Without `sweepId`: the newest undoable sweep |
+
+`ArchivedItem` has the extension `Item`'s fields the popup uses (`id, kind, appId, title, url, domain, faviconUrl, tabIndex, groupTitle, groupColor, pinned, state, activeAgeS, firstSeenAt, lastUsedAt, stateChangedAt, archivedAt, archiveReason, lastSweepId, restoreCount`) plus `windowKey` (`<session>:<windowId>` of its original window). The background answers the popup's `decay.search` / `decay.restore` / `decay.restoreBatch` / `decay.undoSweep` through these while connected; a Phase 0 sweep (still in the extension's IndexedDB) is undone locally as before.
 - **`import.archive`:** it's sent in batches of ≤ 2,000 items on every connection and every minute while connected, with only what changed since the last confirmed batch (see Software Design §4.7).
 
 ### 4.3 Chunking

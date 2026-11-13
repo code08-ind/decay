@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Item, Sweep } from '@/lib/db/types';
 import type { PopupData } from '@/lib/popup/data';
-import { ArchiveSearch } from '@/lib/search/search';
+import { ArchiveSearch, groupItems, type SearchResult } from '@/lib/search/search';
 import { Popup, type PopupProps } from './Popup';
 
 afterEach(cleanup);
@@ -166,5 +166,48 @@ describe('Popup', () => {
     fireEvent.change(input, { target: { value: 'zzzz' } });
     expect(input.getAttribute('aria-expanded')).toBe('false');
     expect(input.getAttribute('aria-controls')).toBeNull();
+  });
+
+  it('searches the app when connected, showing only the answer to the latest query', async () => {
+    vi.useFakeTimers();
+    try {
+      const answers = new Map<string, (r: SearchResult) => void>();
+      const searchApp = vi.fn(
+        (q: string) => new Promise<SearchResult>((resolve) => answers.set(q, resolve)),
+      );
+      const getSearch = vi.fn(() => new ArchiveSearch(items));
+      const { input } = renderPopup({ searchApp, getSearch });
+      fireEvent.change(input, { target: { value: 'str' } });
+      expect(screen.getByText('Searching…')).toBeTruthy();
+      // Typing on before the pause: only the last query is sent.
+      fireEvent.change(input, { target: { value: 'stri' } });
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(searchApp.mock.calls.map((c) => c[0])).toEqual(['stri']);
+      const one = [items[1] as Item];
+      await act(async () => {
+        answers.get('stri')?.({
+          groups: groupItems(one, NOW, new Map()),
+          items: one,
+          total: 1,
+          tookMs: 0,
+        });
+      });
+      expect(screen.getByText('Stripe docs')).toBeTruthy();
+      expect(screen.queryByText('Stripe pricing')).toBeNull();
+      expect(getSearch).not.toHaveBeenCalled(); // the local index isn't used
+      // A failed search shows no results rather than hanging.
+      searchApp.mockImplementationOnce(() => Promise.reject(new Error('gone')));
+      fireEvent.change(input, { target: { value: 'docs' } });
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(screen.queryByText('Searching…')).toBeNull();
+      expect(screen.queryByText('Stripe docs')).toBeNull();
+      expect(screen.getByText(/search the Decay app/)).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -35,6 +35,11 @@ export const kinds = {
   ack: 'ack',
   heartbeat: 'heartbeat',
   importArchive: 'import.archive',
+  // Popup requests in adapter mode (the archive lives in the app), answered with an ack.
+  archiveSearch: 'archive.search',
+  archiveRestore: 'archive.restore',
+  archiveRestoreBatch: 'archive.restoreBatch',
+  archiveUndo: 'archive.undo',
   // Core → extension.
   welcome: 'welcome',
   probe: 'probe',
@@ -136,6 +141,11 @@ export interface TabsClose {
   tabIds: number[];
   /** The URL the app expects each tab to show (by tab id); a tab that navigated is skipped. */
   urls?: Record<string, string>;
+  /**
+   * Tabs the app planned on an earlier "clean" check: if the page can't be checked right
+   * before closing, they're skipped (`unchecked`) instead of closed at the normal threshold.
+   */
+  requireChecked?: number[];
 }
 
 export interface RestoreItem {
@@ -162,6 +172,66 @@ export interface ImportArchive {
   items: unknown[];
   rules: unknown[];
   settings: Record<string, unknown>;
+}
+
+/** `archive.search`: the app's archive (empty query: most recent first). */
+export interface ArchiveSearch {
+  query: string;
+  limit?: number;
+  /** Minutes east of UTC (for `before:` / `after:` dates). */
+  utcOffsetMinutes?: number;
+}
+
+/** An archived item as the app sends it (the popup's `Item` fields). */
+export interface ArchivedItem {
+  id: string;
+  kind: 'tab' | 'window';
+  appId: string;
+  title: string;
+  url?: string;
+  domain?: string;
+  faviconUrl?: string;
+  tabIndex?: number;
+  groupTitle?: string;
+  groupColor?: string;
+  pinned: boolean;
+  state: string;
+  activeAgeS: number;
+  firstSeenAt: number;
+  lastUsedAt: number;
+  stateChangedAt: number;
+  archivedAt?: number;
+  archiveReason?: unknown;
+  lastSweepId?: string;
+  /** The original window, `<session>:<windowId>` (search groups batches by it). */
+  windowKey?: string;
+  restoreCount: number;
+}
+
+export interface LastSweep {
+  id: string;
+  startedAt: number;
+  finishedAt?: number;
+  itemCount: number;
+  /** Items of that sweep still archived. */
+  remaining: number;
+}
+
+export interface ArchiveSearchResult {
+  items: ArchivedItem[];
+  more: boolean;
+  /** Only for an empty query: the sweep the popup's Undo reverts. */
+  lastSweep?: LastSweep;
+  /** The app's mode: it decides while connected. */
+  mode?: 'shadow' | 'automatic' | 'paused';
+}
+
+/** `archive.restore` / `archive.restoreBatch` / `archive.undo` ack result. */
+export interface RestoreSummary {
+  restored: number;
+  failed: number;
+  /** Requested items that weren't archived any more. */
+  skipped: number;
 }
 
 export function newId(): string {

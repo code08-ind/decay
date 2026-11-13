@@ -32,7 +32,11 @@ const tab = (id: number, over: Partial<ChromeTab> = {}): ChromeTab => ({
   ...over,
 });
 
-function setup(tabs: ChromeTab[], verdicts: Record<number, ProbeVerdict> = {}) {
+function setup(
+  tabs: ChromeTab[],
+  verdicts: Record<number, ProbeVerdict> = {},
+  onProbe: (tabId: number) => void = () => {},
+) {
   const sent: Envelope[] = [];
   const removed: number[] = [];
   const created: { windowId: number; url: string; focused?: boolean }[] = [];
@@ -66,7 +70,10 @@ function setup(tabs: ChromeTab[], verdicts: Record<number, ProbeVerdict> = {}) {
       groups.push({ tabIds, title: g.title });
     },
     focusTab: async () => undefined,
-    probe: async (t) => verdicts[t.id ?? -1] ?? 'clean',
+    probe: async (t) => {
+      onProbe(t.id ?? -1);
+      return verdicts[t.id ?? -1] ?? 'clean';
+    },
     send: (e) => {
       sent.push(e);
       return true;
@@ -186,6 +193,43 @@ describe('Adapter', () => {
     t.disconnect();
     await t.adapter.handle(cmd);
     expect(t.removed).toEqual([]);
+  });
+
+  it('skips a page it can no longer check when the app counted on a check', async () => {
+    const t = setup([tab(1), tab(2)], { 1: 'unknown', 2: 'unknown' });
+    await t.configure();
+    const cmd = envelope(kinds.tabsClose, { sweepId: 's', tabIds: [1, 2], requireChecked: [1] });
+    await t.adapter.handle(cmd);
+    expect(t.removed).toEqual([2]);
+    expect(ackOf(t.sent, cmd).payload).toMatchObject({
+      result: { closed: [2], unchecked: [2], skipped: [{ tabId: 1, reason: 'unchecked' }] },
+    });
+  });
+
+  it('stops a close loop when a new connection replaces its own, and still says Decay closed', async () => {
+    let t: ReturnType<typeof setup> | undefined;
+    t = setup([tab(1), tab(2), tab(3)], {}, (id) => {
+      // The link reconnects while tab 2 is being checked.
+      if (id === 2) t?.adapter.reset();
+    });
+    await t.configure();
+    const cmd = envelope(kinds.tabsClose, { sweepId: 's', tabIds: [1, 2, 3] });
+    await t.adapter.handle(cmd);
+    expect(t.removed).toEqual([1]);
+    expect(ackOf(t.sent, cmd).payload).toMatchObject({
+      result: {
+        closed: [1],
+        skipped: [
+          { tabId: 2, reason: 'disconnected' },
+          { tabId: 3, reason: 'disconnected' },
+        ],
+      },
+    });
+    // The removal arrives on the new connection: still Decay's doing.
+    await t.configure();
+    t.sent.length = 0;
+    t.adapter.tabRemoved(1);
+    expect(t.sent.map((e) => e.payload)).toEqual([{ tabId: 1, byUser: false }]);
   });
 
   it('restores into the original window only within this session, and regroups', async () => {

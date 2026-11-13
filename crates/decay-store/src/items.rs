@@ -305,6 +305,15 @@ impl Store {
         query_items(&self.conn, &sql, params![sweep_id, source_id])
     }
 
+    /// The items a sweep archived that are still archived (Undo), in tab order per window.
+    pub fn archived_in_sweep(&self, sweep_id: &str) -> Result<Vec<Item>> {
+        let sql = format!(
+            "SELECT {COLUMNS} FROM items WHERE last_sweep_id = ?1 AND state = 'archived'
+             ORDER BY source_id, tab_index"
+        );
+        query_items(&self.conn, &sql, [sweep_id])
+    }
+
     /// Deletes an item (and its events). Used for items the user closed themselves: Decay
     /// keeps no history of those (DB Design §5).
     pub fn delete_item(&self, id: &str) -> Result<bool> {

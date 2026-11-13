@@ -138,6 +138,11 @@ fn is_web(url: &str) -> bool {
     lower.starts_with("http:") || lower.starts_with("https:")
 }
 
+/// An http(s) page: the only kind the form probe can check.
+pub fn is_web_url(url: &str) -> bool {
+    is_web(url)
+}
+
 /// URLs that reopen exactly with `tabs.create({ url })`.
 pub fn is_restorable_url(url: Option<&str>) -> bool {
     url.is_some_and(|u| RESTORABLE.is_match(&u.to_ascii_lowercase()))

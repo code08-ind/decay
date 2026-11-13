@@ -1,0 +1,25 @@
+[package]
+name = "decay-engine"
+version = "0.1.0"
+description = "Decay's engine: tab tracking, aging, sweep scheduler and executor, crash recovery, undo and restore"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+decay-bridge = { path = "../decay-bridge" }
+decay-core = { path = "../decay-core" }
+decay-store = { path = "../decay-store" }
+psl = "2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tracing = "0.1.44"
+url = "2.5.8"
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[lints]
+workspace = true
