@@ -536,6 +536,11 @@ pub(crate) fn version_at_least(version: &str, min: &str) -> bool {
     parts(version) >= parts(min)
 }
 
+/// The browser's app id on macOS (its bundle id), for "is it still running?".
+pub fn browser_bundle_id(kind: BrowserKind) -> &'static str {
+    browser_app(kind, Platform::MacOs).0
+}
+
 /// The browser's catalog app id and name on this platform (matches the import mapping).
 pub(crate) fn browser_app(kind: BrowserKind, platform: Platform) -> (&'static str, &'static str) {
     match (kind, platform) {

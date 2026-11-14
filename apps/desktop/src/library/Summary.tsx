@@ -1,0 +1,169 @@
+import { Banner, Button } from '@decay/ui';
+import { AppWindow, History, PanelsTopLeft, RotateCcw, ShieldCheck, Timer } from 'lucide-react';
+import { api, type DailySummary } from '../api';
+import { displayUrl } from '../panel/results';
+import type { PageProps } from './Archive';
+import { yesterday } from './model';
+import { ItemTile, Stat, useLoad } from './parts';
+
+type Hours = { stale: number; hidden: number; archive: number };
+const MAX_H = 720;
+
+/** "Keep longer": twice the current pace, kept in 1–720 h and increasing; `null` when the
+ * pace is already near the limit (nothing longer to offer). */
+export function longerHours(t: Hours): Hours | null {
+  const archive = Math.min(MAX_H, Math.round(t.archive * 2));
+  const hidden = Math.min(archive - 1, Math.round(t.hidden * 2));
+  const stale = Math.min(hidden - 1, Math.round(t.stale * 2));
+  if (archive <= t.archive || stale < 1) return null;
+  return { stale, hidden, archive };
+}
+
+// Yesterday (Designs/11, F10): what moved, what's worth a look, and the archived items
+// with a one-click restore. The morning notification says the same in one line.
+export function Summary(props: PageProps) {
+  const { version, run, notify, refresh } = props;
+  const [from, to] = yesterday(Date.now());
+  const summary = useLoad(() => api.getDailySummary(from, to), [version, from]);
+  const settings = useLoad(() => api.getSettings(), [version]);
+  const s: DailySummary | null = summary.data;
+  const thresholds = (settings.data?.thresholds as Hours | undefined) ?? {
+    stale: 12,
+    hidden: 36,
+    archive: 60,
+  };
+  const longer = longerHours(thresholds);
+  const hints = (s?.hints ?? []).filter((h) => h.kind === 'alwaysKeep' || longer !== null);
+  return (
+    <section aria-labelledby="summary-h" className="grid gap-4">
+      <div>
+        <h1 id="summary-h" className="font-serif text-4xl font-normal">
+          Yesterday
+        </h1>
+        <p className="text-sm text-muted">What Decay tidied while you worked.</p>
+      </div>
+      {summary.error && <Banner tone="danger">{summary.error}</Banner>}
+      {s && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Stat label="Tabs archived" value={s.archivedTabs} icon={<PanelsTopLeft size={16} />} />
+            <Stat label="Windows hidden" value={s.hiddenWindows} icon={<AppWindow size={16} />} />
+            <Stat label="Reopened" value={s.restored} icon={<History size={16} />} />
+          </div>
+          {hints.length > 0 && (
+            <section
+              aria-labelledby="hints-h"
+              className="rounded-card border border-line bg-surface p-5 shadow-sm"
+            >
+              <h2
+                id="hints-h"
+                className="mb-3 text-[11px] font-semibold tracking-wider text-muted uppercase"
+              >
+                Worth a look
+              </h2>
+              <ul className="grid gap-2">
+                {hints.map((h) => (
+                  <li key={`${h.kind}-${h.domain}`} className="flex flex-wrap items-center gap-3">
+                    <span className="min-w-0 flex-1 text-sm">
+                      {h.kind === 'alwaysKeep' ? (
+                        <>
+                          You reopened <strong>{h.domain}</strong> {h.count} times this week
+                        </>
+                      ) : (
+                        <>
+                          <strong>{h.domain}</strong> was archived {h.count} times this week
+                        </>
+                      )}
+                    </span>
+                    {h.kind === 'alwaysKeep' ? (
+                      <Button
+                        size="sm"
+                        icon={<ShieldCheck size={14} aria-hidden />}
+                        aria-label={`Always keep ${h.domain}`}
+                        onClick={() =>
+                          run(async () => {
+                            await api.createRule({
+                              scope: 'domain',
+                              match: h.domain,
+                              action: 'protect',
+                            });
+                            notify(`Decay always keeps ${h.domain}`);
+                            refresh();
+                          })
+                        }
+                      >
+                        Always keep
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        icon={<Timer size={14} aria-hidden />}
+                        aria-label={`Keep ${h.domain} longer`}
+                        onClick={() =>
+                          run(async () => {
+                            if (!longer) return;
+                            await api.createRule({
+                              scope: 'domain',
+                              match: h.domain,
+                              action: 'customThreshold',
+                              thresholdHours: longer,
+                            });
+                            notify(`${h.domain} is kept twice as long`);
+                            refresh();
+                          })
+                        }
+                      >
+                        Keep longer
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section
+            aria-labelledby="archived-h"
+            className="rounded-card border border-line bg-surface shadow-sm"
+          >
+            <h2
+              id="archived-h"
+              className="border-b border-line px-5 py-3 text-[11px] font-semibold tracking-wider text-muted uppercase"
+            >
+              Archived yesterday
+            </h2>
+            {s.items.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-muted">
+                Nothing from yesterday is in the archive.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {s.items.map((i) => (
+                  <li key={i.id} className="flex items-center gap-3 px-5 py-2.5">
+                    <ItemTile item={i} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm">{i.title || displayUrl(i.url)}</span>
+                      <span className="block truncate text-xs text-muted">{displayUrl(i.url)}</span>
+                    </span>
+                    <Button
+                      size="sm"
+                      icon={<RotateCcw size={14} aria-hidden />}
+                      aria-label={`Restore ${i.title || displayUrl(i.url)}`}
+                      onClick={() =>
+                        run(async () => {
+                          await api.restoreItems([i.id]);
+                          notify('Restoring…');
+                        })
+                      }
+                    >
+                      Restore
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
+    </section>
+  );
+}

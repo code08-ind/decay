@@ -21,6 +21,9 @@ vi.mock('../useStatus', async () => {
 });
 
 const api = {
+  getDailySummary: vi.fn(),
+  getSettings: vi.fn(),
+  createRule: vi.fn(),
   libraryStats: vi.fn(),
   search: vi.fn(),
   getItem: vi.fn(),
@@ -252,6 +255,71 @@ describe('Library', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Show shadow sweeps' }));
     await flush();
     expect(api.listSweeps).toHaveBeenLastCalledWith({ limit: 100, includeShadow: false });
+  });
+
+  it('yesterday: what moved, hints that make rules, and a restore', async () => {
+    api.getSettings.mockResolvedValue({ thresholds: { stale: 12, hidden: 36, archive: 60 } });
+    api.createRule.mockResolvedValue({});
+    api.getDailySummary.mockResolvedValue({
+      archivedTabs: 14,
+      hiddenWindows: 3,
+      restored: 1,
+      hints: [
+        { kind: 'alwaysKeep', domain: 'stripe.com', count: 3 },
+        { kind: 'keepLonger', domain: 'github.com', count: 6 },
+      ],
+      items: [
+        {
+          id: 'y1',
+          kind: 'tab',
+          title: 'Stripe pricing',
+          url: 'https://stripe.com/pricing',
+          domain: 'stripe.com',
+        },
+      ],
+    });
+    await show('/summary');
+    expect(screen.getByRole('heading', { name: 'Yesterday' })).toBeTruthy();
+    expect(screen.getByText('14')).toBeTruthy();
+    const [from, to] = api.getDailySummary.mock.calls[0] as [number, number];
+    expect(to - from).toBeGreaterThanOrEqual(23 * 3_600_000);
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep stripe.com' }));
+    await flush();
+    expect(api.createRule).toHaveBeenCalledWith({
+      scope: 'domain',
+      match: 'stripe.com',
+      action: 'protect',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Keep github.com longer' }));
+    await flush();
+    expect(api.createRule).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        match: 'github.com',
+        action: 'customThreshold',
+        thresholdHours: { stale: 24, hidden: 72, archive: 120 },
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Stripe pricing' }));
+    await flush();
+    expect(api.restoreItems).toHaveBeenCalledWith(['y1']);
+  });
+
+  it('yesterday: an empty day, an error, and no "keep longer" at the limit', async () => {
+    api.getSettings.mockResolvedValue({ thresholds: { stale: 200, hidden: 400, archive: 720 } });
+    api.getDailySummary.mockResolvedValue({
+      archivedTabs: 0,
+      hiddenWindows: 0,
+      restored: 0,
+      hints: [{ kind: 'keepLonger', domain: 'github.com', count: 6 }],
+      items: [],
+    });
+    await show('/summary');
+    expect(screen.getByText('Nothing from yesterday is in the archive.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /longer/ })).toBeNull();
+    cleanup();
+    api.getDailySummary.mockRejectedValue({ code: 'DB_ERROR', message: 'database is busy' });
+    await show('/summary');
+    expect(screen.getByText('database is busy')).toBeTruthy();
   });
 
   it('shadow review: protects a site and turns on automatic mode', async () => {

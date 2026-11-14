@@ -9,6 +9,7 @@ export const TABS = [
   { id: 'browsers', label: 'Browsers' },
   { id: 'privacy', label: 'Privacy & data' },
   { id: 'shortcuts', label: 'Shortcuts' },
+  { id: 'notifications', label: 'Notifications' },
   { id: 'updates', label: 'Updates' },
   { id: 'about', label: 'About' },
 ] as const;
@@ -16,7 +17,7 @@ export const TABS = [
 export type TabId = (typeof TABS)[number]['id'];
 
 /** The tab a route opens (`/aging`, deep links `decay://settings/{tab}`). Tabs not built
- * yet (notifications, license) open General. */
+ * yet (license) open General. */
 export function tabFor(route: string): TabId {
   const name = route.replace(/^\//, '').split(/[/?]/)[0] ?? '';
   return (TABS.find((t) => t.id === name)?.id as TabId | undefined) ?? 'general';

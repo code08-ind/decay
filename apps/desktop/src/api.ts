@@ -208,6 +208,15 @@ export interface RuleTestResult {
   sample: PanelItem[];
 }
 
+/** The daily summary (`get_daily_summary`, P2.4, Designs/11). */
+export interface DailySummary {
+  archivedTabs: number;
+  hiddenWindows: number;
+  restored: number;
+  hints: { kind: 'alwaysKeep' | 'keepLonger'; domain: string; count: number }[];
+  items: PanelItem[];
+}
+
 /** The updater (`get_update_state`, `update:state`). */
 export interface UpdateState {
   current: string;
@@ -282,6 +291,8 @@ export const api = {
   testRule: (rule: RuleInput) => invoke<RuleTestResult>('test_rule', { rule }),
   previewExclude: (rule: RuleInput) => invoke<{ count: number }>('preview_exclude', { rule }),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
+  getDailySummary: (dayStart: number, dayEnd: number) =>
+    invoke<DailySummary>('get_daily_summary', { input: { dayStart, dayEnd } }),
   getUpdateState: () => invoke<UpdateState>('get_update_state'),
   checkForUpdates: () => invoke<UpdateState>('check_for_updates'),
   installUpdate: (when: 'now' | 'onQuit') => invoke<UpdateState>('install_update', { when }),

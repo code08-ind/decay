@@ -16,6 +16,7 @@ import { api, describe, type EngineStatus, errorMessage } from '../api';
 import { Archive } from '../library/Archive';
 import { parseRoute, routeFor, type View } from '../library/model';
 import { ShadowReview } from '../library/ShadowReview';
+import { Summary } from '../library/Summary';
 import { Sweeps } from '../library/Sweeps';
 import { useRoute, useStatus } from '../useStatus';
 
@@ -97,6 +98,7 @@ export function Library() {
             { id: 'library', label: 'Library' },
             { id: 'sweeps', label: 'Sweeps' },
             { id: 'shadow', label: 'Shadow review' },
+            { id: 'summary', label: 'Yesterday' },
             { id: 'overview', label: 'Overview' },
           ]}
         />
@@ -141,6 +143,7 @@ export function Library() {
             <Sweeps {...page} sweepId={r.sweepId} confirmUndo={r.confirm === 'undo'} />
           )}
           {r.view === 'shadow' && <ShadowReview {...page} />}
+          {r.view === 'summary' && <Summary {...page} />}
           {r.view === 'overview' && <Overview status={status} run={run} />}
         </div>
       </main>

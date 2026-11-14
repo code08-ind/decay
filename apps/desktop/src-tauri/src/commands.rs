@@ -256,6 +256,26 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
             }
             "update_channel" => return Err(bad("the update channel is stable or beta")),
             "auto_update" if value.is_boolean() => out.push((key.clone(), value.clone())),
+            "daily_summary_time"
+                if value.as_str().and_then(crate::notify::parse_time).is_some() =>
+            {
+                out.push((key.clone(), value.clone()));
+            }
+            "daily_summary_time" => return Err(bad("the summary time is HH:MM")),
+            "notifications" => {
+                // All five switches, every time (a partial object would silently reset
+                // the ones left out).
+                const KEYS: [&str; 5] =
+                    ["summary", "sweep", "sweepBigOnly", "browser", "permission"];
+                let ok = value.as_object().is_some_and(|o| {
+                    o.len() == KEYS.len()
+                        && KEYS.iter().all(|k| o.get(*k).is_some_and(Value::is_boolean))
+                });
+                if !ok {
+                    return Err(bad("notifications are on / off switches"));
+                }
+                out.push((key.clone(), value.clone()));
+            }
             "auto_update" => return Err(bad("auto_update is true or false")),
             _ => {
                 return Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here")));
@@ -280,6 +300,7 @@ pub async fn get_settings(app: AppHandle) -> Res<serde_json::Map<String, Value>>
 /// the native chrome. Called on the engine thread right after a change, so broadcasts
 /// keep the order of the writes.
 pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Value>) {
+    app.state::<crate::notify::Notifier>().set_settings(settings);
     if let Some(theme) = settings.get("theme").and_then(Value::as_str) {
         let handle = app.clone();
         let theme = theme.to_owned();
@@ -457,6 +478,12 @@ mod tests {
         let updates =
             validate_settings(&patch(json!({"update_channel": "beta", "auto_update": false})))
                 .unwrap();
+        let notes = validate_settings(&patch(json!({
+            "daily_summary_time": "07:30",
+            "notifications": {"summary": true, "sweep": false, "sweepBigOnly": false, "browser": true, "permission": false}
+        })))
+        .unwrap();
+        assert_eq!(notes.len(), 2);
         assert_eq!(updates.len(), 2);
         for bad in [
             json!({"theme": "neon"}),
@@ -472,6 +499,12 @@ mod tests {
             json!({"idle_cutoff_s": 10}),
             json!({"window_management": "close"}),
             json!({"update_channel": "nightly"}),
+            json!({"daily_summary_time": "25:00"}),
+            json!({"daily_summary_time": 9}),
+            json!({"notifications": {}}),
+            json!({"notifications": {"sweep": true}}),
+            json!({"notifications": {"summary": true, "sweep": true, "sweepBigOnly": true, "browser": true, "permission": "yes"}}),
+            json!({"notifications": {"summary": true, "sweep": true, "sweepBigOnly": true, "browser": true, "permission": true, "extra": true}}),
             json!({"auto_update": "yes"}),
         ] {
             assert_eq!(validate_settings(&patch(bad)).unwrap_err().code, "INVALID_INPUT");

@@ -23,10 +23,12 @@ mod deeplink;
 mod keys;
 mod library;
 mod menu;
+mod notify;
 mod onboarding;
 mod rules;
 mod search;
 mod shell;
+mod summary;
 mod tray;
 mod update;
 
@@ -48,6 +50,8 @@ const APP_QUIT: &str = "app-quit";
 const LINK_GRACE: std::time::Duration = std::time::Duration::from_millis(700);
 
 fn forward(app: &AppHandle, event: EngineEvent) {
+    let now = jiff::Timestamp::now().as_millisecond();
+    app.state::<notify::Notifier>().on_event(app, &event, now);
     match event {
         EngineEvent::StatusChanged(status) => {
             let _ = app.emit("status:changed", &*status);
@@ -121,21 +125,32 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         fail(app, why);
     } else {
         update::start(app);
+        notify::start(app);
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {
-            let (hotkey, theme, onboarded) = handle
+            let (hotkey, theme, onboarded, settings) = handle
                 .state::<Core>()
                 .ask(|e, _| {
                     let s = e.store();
+                    let mut settings = s.settings_snapshot().ok();
+                    if let (Some(map), Ok(Some(day))) =
+                        (settings.as_mut(), s.setting::<String>("daily_summary_sent_on"))
+                    {
+                        map.insert("daily_summary_sent_on".into(), day.into());
+                    }
                     let read = (
                         s.setting::<String>("hotkey").ok().flatten(),
                         s.setting::<String>("theme").ok().flatten(),
                         e.onboarded().unwrap_or(true),
+                        settings,
                     );
                     (read, Vec::new())
                 })
-                .unwrap_or((None, None, true));
+                .unwrap_or((None, None, true, None));
+            if let Some(settings) = &settings {
+                handle.state::<notify::Notifier>().set_settings(settings);
+            }
             shell::set_onboarded(&handle, onboarded);
             if let Some(theme) = theme {
                 let main = handle.clone();
@@ -333,6 +348,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![BACKGROUND_ARG]),
@@ -345,6 +361,7 @@ pub fn run() {
         .manage(Shell::new(support))
         .manage(tray::TrayState::default())
         .manage(update::Updates::default())
+        .manage(notify::Notifier::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
             commands::set_mode,
@@ -365,6 +382,7 @@ pub fn run() {
             commands::ui_take_pending,
             commands::get_settings,
             update::get_update_state,
+            summary::get_daily_summary,
             update::check_for_updates,
             update::install_update,
             search::search,
@@ -417,7 +435,12 @@ pub fn run() {
         }
         // Opened again from Finder / Spotlight while running (no second process on macOS).
         #[cfg(target_os = "macos")]
-        RunEvent::Reopen { .. } => shell::show_window(app, Window::Library, "/"),
+        RunEvent::Reopen { .. } => {
+            // Opened right after the morning notice (most likely its click): the summary.
+            let now = jiff::Timestamp::now().as_millisecond();
+            let summary = app.state::<notify::Notifier>().take_summary_click(now);
+            shell::show_window(app, Window::Library, if summary { "/summary" } else { "/" });
+        }
         _ => {}
     });
 }

@@ -292,6 +292,36 @@ describe('Settings', () => {
     ).toBe(true);
   });
 
+  it('notifications: switches and the summary time are saved', async () => {
+    await show('/notifications');
+    fireEvent.click(screen.getByRole('switch', { name: 'Notify after each sweep' }));
+    expect(api.updateSettings).toHaveBeenCalledWith({
+      notifications: {
+        summary: true,
+        sweep: true,
+        sweepBigOnly: false,
+        browser: true,
+        permission: true,
+      },
+    });
+    // A second toggle right after keeps the first (no broadcast in between).
+    fireEvent.click(screen.getByRole('switch', { name: 'Tell me if a browser disconnects' }));
+    expect(api.updateSettings).toHaveBeenLastCalledWith({
+      notifications: {
+        summary: true,
+        sweep: true,
+        sweepBigOnly: false,
+        browser: false,
+        permission: true,
+      },
+    });
+    fireEvent.change(screen.getByLabelText('Morning summary time'), { target: { value: '07:30' } });
+    expect(api.updateSettings).toHaveBeenLastCalledWith({ daily_summary_time: '07:30' });
+    // Sweep notices are on now (shown at once): their "only above 10" switch is usable.
+    const big = screen.getByRole('switch', { name: 'Only when more than 10 items are tidied' });
+    expect((big as HTMLInputElement).disabled).toBe(false);
+  });
+
   it('privacy: retention, and a never-store site confirmed with what it deletes', async () => {
     await show('/privacy');
     fireEvent.click(screen.getByRole('radio', { name: '30 days' }));

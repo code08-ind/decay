@@ -3,7 +3,7 @@
 import type { SweepRow } from '../api';
 import { dayLabel } from '../panel/results';
 
-export type View = 'library' | 'sweeps' | 'shadow' | 'overview';
+export type View = 'library' | 'sweeps' | 'shadow' | 'summary' | 'overview';
 
 export interface Route {
   view: View;
@@ -42,6 +42,8 @@ export function parseRoute(route: string): Route {
       return { view: 'shadow' };
     case 'overview':
       return { view: 'overview' };
+    case 'summary':
+      return { view: 'summary' };
     default:
       return { view: 'library' };
   }
@@ -56,9 +58,19 @@ export function routeFor(r: Route): string {
       return '/shadow-report';
     case 'overview':
       return '/overview';
+    case 'summary':
+      return '/summary';
     default:
       return r.itemId ? `/item/${r.itemId}` : '/';
   }
+}
+
+/** Local midnight of yesterday and today: yesterday's `[start, end)`. */
+export function yesterday(now: number): [number, number] {
+  const end = startOfDay(now);
+  const d = new Date(end);
+  d.setDate(d.getDate() - 1);
+  return [d.getTime(), end];
 }
 
 /** Local midnight today. */

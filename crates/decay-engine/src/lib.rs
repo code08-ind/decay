@@ -44,7 +44,7 @@ pub use control::{BrowserStatus, EngineStatus, WindowManagement};
 pub use domain::domain_of;
 pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,
-    RestoreRefused, SweepRefused, UndoRefused, timing,
+    RestoreRefused, SweepRefused, UndoRefused, browser_bundle_id, timing,
 };
 pub use hide::WindowCommand;
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};

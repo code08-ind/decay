@@ -314,6 +314,16 @@ impl Store {
         query_items(&self.conn, &sql, [sweep_id])
     }
 
+    /// Items still archived that were archived in `[from, to)`, newest first, at most
+    /// `limit` (the daily summary's list).
+    pub fn archived_between(&self, from: i64, to: i64, limit: usize) -> Result<Vec<Item>> {
+        let sql = format!(
+            "SELECT {COLUMNS} FROM items WHERE state = 'archived' AND archived_at >= ?1
+             AND archived_at < ?2 ORDER BY archived_at DESC, id LIMIT ?3"
+        );
+        query_items(&self.conn, &sql, rusqlite::params![from, to, limit])
+    }
+
     /// Deletes an item (and its events). Used for items the user closed themselves: Decay
     /// keeps no history of those (DB Design §5).
     pub fn delete_item(&self, id: &str) -> Result<bool> {

@@ -49,6 +49,65 @@ impl Store {
         Ok(n)
     }
 
+    /// Distinct items with an event of `kind` in `[from, to)`, by item kind (tab, window).
+    pub fn items_with_event_between(
+        &self,
+        kind: EventType,
+        from: i64,
+        to: i64,
+    ) -> Result<(u32, u32)> {
+        let count = |item_kind: ItemKind| -> Result<u32> {
+            Ok(self
+                .conn
+                .prepare_cached(
+                    "SELECT COUNT(DISTINCT e.item_id) FROM events e JOIN items i ON i.id = e.item_id
+                     WHERE e.type = ?1 AND e.at >= ?2 AND e.at < ?3 AND i.kind = ?4",
+                )?
+                .query_row(params![kind.as_sql(), from, to, item_kind.as_sql()], |r| r.get(0))?)
+        };
+        Ok((count(ItemKind::Tab)?, count(ItemKind::Window)?))
+    }
+
+    /// Distinct items with an event of any of `kinds` in `[from, to)` (an item restored
+    /// and undone the same day counts once).
+    pub fn items_with_any_event_between(
+        &self,
+        kinds: &[EventType],
+        from: i64,
+        to: i64,
+    ) -> Result<u32> {
+        let mut seen = std::collections::HashSet::new();
+        let mut stmt = self.conn.prepare_cached(
+            "SELECT DISTINCT item_id FROM events WHERE type = ?1 AND at >= ?2 AND at < ?3",
+        )?;
+        for kind in kinds {
+            let mut rows = stmt.query(params![kind.as_sql(), from, to])?;
+            while let Some(r) = rows.next()? {
+                seen.insert(r.get::<_, String>(0)?);
+            }
+        }
+        Ok(u32::try_from(seen.len()).unwrap_or(u32::MAX))
+    }
+
+    /// Sites (item domains) with at least `min` events of `kind` since `since`, most first:
+    /// (domain, count). At most `limit`.
+    pub fn domains_with_events_since(
+        &self,
+        kind: EventType,
+        since: i64,
+        min: u32,
+        limit: usize,
+    ) -> Result<Vec<(String, u32)>> {
+        let mut stmt = self.conn.prepare_cached(
+            "SELECT i.domain, COUNT(*) AS n FROM events e JOIN items i ON i.id = e.item_id
+             WHERE e.type = ?1 AND e.at >= ?2 AND i.domain IS NOT NULL
+             GROUP BY i.domain HAVING n >= ?3 ORDER BY n DESC, i.domain LIMIT ?4",
+        )?;
+        let rows = stmt
+            .query_map(params![kind.as_sql(), since, min, limit], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        Ok(rows.collect::<std::result::Result<_, _>>()?)
+    }
+
     /// When `item_id` last had an event of `kind`.
     pub fn last_event_at(&self, item_id: &str, kind: EventType) -> Result<Option<i64>> {
         Ok(self
@@ -270,5 +329,55 @@ mod tests {
         let real = Sweep { id: "r".into(), is_shadow: false, started_at: NOW + 2, ..first.clone() };
         store.insert_sweep(&real).unwrap();
         assert_eq!(store.sweep_number(&real).unwrap(), 1);
+    }
+
+    #[test]
+    fn daily_summary_queries_keep_to_their_range() {
+        let (store, _dir) = store();
+        let day = NOW;
+        let end = day + 86_400_000;
+        let tab = item(&store, ItemKind::Tab, ItemState::Archived, Some(day));
+        let win = item(&store, ItemKind::Window, ItemState::Hidden, None);
+        let late = item(&store, ItemKind::Tab, ItemState::Archived, Some(end)); // next day
+        let gone = item(&store, ItemKind::Tab, ItemState::Restored, Some(day + 5));
+        store.append_event(&tab.id, EventType::Archived, None, None, day).unwrap(); // first ms: in
+        store.append_event(&late.id, EventType::Archived, None, None, end).unwrap(); // `to`: out
+        store.append_event(&win.id, EventType::Hidden, None, None, day + 1).unwrap();
+        store.append_event(&gone.id, EventType::Restored, None, None, day + 2).unwrap();
+        store.append_event(&gone.id, EventType::Undo, None, None, day + 3).unwrap();
+        assert_eq!(store.items_with_event_between(EventType::Archived, day, end).unwrap(), (1, 0));
+        assert_eq!(store.items_with_event_between(EventType::Hidden, day, end).unwrap(), (0, 1));
+        let reopened = store
+            .items_with_any_event_between(&[EventType::Restored, EventType::Undo], day, end)
+            .unwrap();
+        assert_eq!(reopened, 1, "restored and undone the same day: once");
+        let listed = store.archived_between(day, end, 10).unwrap();
+        assert_eq!(listed.iter().map(|i| i.id.as_str()).collect::<Vec<_>>(), [tab.id.as_str()]);
+        assert_eq!(store.archived_between(day, end, 0).unwrap().len(), 0);
+    }
+
+    #[test]
+    fn sites_with_repeated_events_skip_items_without_a_site() {
+        let (store, _dir) = store();
+        let mut ids = Vec::new();
+        for (domain, n) in [(Some("a.com"), 3), (Some("b.com"), 1), (None, 5)] {
+            let mut i = item(&store, ItemKind::Tab, ItemState::Restored, Some(NOW));
+            i.domain = domain.map(Into::into);
+            store.update_item(&i).unwrap();
+            for k in 0..n {
+                store.append_event(&i.id, EventType::Restored, None, None, NOW + k).unwrap();
+            }
+            ids.push(i.id);
+        }
+        let hits = store.domains_with_events_since(EventType::Restored, NOW, 2, 5).unwrap();
+        assert_eq!(hits, vec![("a.com".to_owned(), 3)]);
+        assert_eq!(
+            store.domains_with_events_since(EventType::Restored, NOW, 1, 1).unwrap().len(),
+            1
+        );
+        assert_eq!(
+            store.domains_with_events_since(EventType::Restored, NOW + 10, 1, 5).unwrap(),
+            vec![]
+        );
     }
 }

@@ -33,6 +33,19 @@ mod mac;
 mod mac_windows;
 pub mod windows;
 
+/// Whether an app (by bundle id) is running; `None` where it can't be told.
+pub fn app_running(bundle_id: &str) -> Option<bool> {
+    #[cfg(target_os = "macos")]
+    {
+        mac_windows::app_running(bundle_id)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = bundle_id;
+        None
+    }
+}
+
 pub use windows::{
     AppWindow, AppWindows, NullWindowActor, NullWindowLister, WindowActor, WindowList,
     WindowLister, WindowOp, window_actor, window_lister,

@@ -71,6 +71,7 @@ unsafe extern "C" {
 
 unsafe extern "C" {
     fn proc_pidpath(pid: i32, buffer: *mut c_void, size: u32) -> i32;
+    fn proc_listallpids(buffer: *mut c_void, size: i32) -> i32;
     fn getpid() -> i32;
 }
 
@@ -296,6 +297,41 @@ impl WindowLister for MacWindowLister {
     }
 }
 
+/// Whether a process of the app with `bundle_id` is running (`None` if processes can't
+/// be listed). No permission needed: process paths and their bundles' Info.plist.
+pub fn app_running(bundle_id: &str) -> Option<bool> {
+    let mut pids = vec![0i32; 4096];
+    let bytes = i32::try_from(pids.len() * std::mem::size_of::<i32>()).ok()?;
+    // SAFETY: the buffer holds `bytes` bytes.
+    let n = unsafe { proc_listallpids(pids.as_mut_ptr().cast(), bytes) };
+    let n = usize::try_from(n).ok().filter(|n| *n > 0)?.min(pids.len());
+    let mut checked: std::collections::HashMap<std::path::PathBuf, bool> =
+        std::collections::HashMap::new();
+    for pid in &pids[..n] {
+        let mut buf = vec![0u8; 4096];
+        // SAFETY: the buffer is valid for its full length.
+        let len = unsafe { proc_pidpath(*pid, buf.as_mut_ptr().cast(), 4096) };
+        let Some(len) = usize::try_from(len).ok().filter(|l| *l > 0) else { continue };
+        let Ok(exe) = std::str::from_utf8(&buf[..len]) else { continue };
+        let Some(bundle) = app_bundle_path(Path::new(exe)) else { continue };
+        let hit = *checked.entry(bundle.clone()).or_insert_with(|| {
+            CFURL::from_path(&bundle, true)
+                .and_then(CFBundle::new)
+                .and_then(|b| {
+                    b.info_dictionary()
+                        .find(CFString::new("CFBundleIdentifier"))
+                        .and_then(|v| v.downcast::<CFString>())
+                        .map(|s| s == bundle_id)
+                })
+                .unwrap_or(false)
+        });
+        if hit {
+            return Some(true);
+        }
+    }
+    Some(false)
+}
+
 /// Hides and restores single windows through Accessibility.
 #[derive(Debug, Default)]
 pub struct MacWindowActor;
@@ -388,6 +424,12 @@ mod tests {
         let me = unsafe { getpid() };
         // A test binary isn't an app bundle.
         assert_eq!(bundle_id(me), None);
+    }
+
+    #[test]
+    fn running_apps_are_found_by_bundle_id() {
+        // Finder always runs on a Mac with a user session (not on every CI runner).
+        assert_eq!(app_running("com.example.not-an-app"), Some(false));
     }
 
     #[test]

@@ -41,6 +41,7 @@ const COMMANDS: &[&str] = &[
     "get_update_state",
     "check_for_updates",
     "install_update",
+    "get_daily_summary",
 ];
 
 fn main() {
