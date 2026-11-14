@@ -37,25 +37,20 @@ jobs:
           git diff --exit-code -- crates/decay-bridge/tests/fixtures crates/decay-store/tests/fixtures crates/decay-engine/tests/fixtures
           test -z "$(git status --porcelain -- crates/decay-engine/tests/fixtures)"
 
+  # Every push and PR: Rust on Windows, with the coverage gate (CI fails below 80 % of
+  # lines). macOS runs nightly and on demand (macos.yml): hosted macOS runners were often
+  # unavailable ("not acquired by Runner … even after multiple attempts"), which blocked
+  # every push.
   rust:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       # rustup reads rust-toolchain.toml (the pinned version and its components).
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      # From GitHub releases (the nexte.st download host returned 504s on macOS runners).
       - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2
         with:
           tool: cargo-nextest,cargo-llvm-cov
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      # macOS also measures coverage: CI fails below 80 % of lines.
-      - if: runner.os == 'macOS'
-        run: cargo llvm-cov nextest --workspace --fail-under-lines 80
-      - if: runner.os != 'macOS'
-        run: cargo nextest run --workspace
+      - run: cargo llvm-cov nextest --workspace --fail-under-lines 80
