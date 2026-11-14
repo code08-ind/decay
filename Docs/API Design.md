@@ -141,7 +141,7 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | Command | Input | Output |
 | --- | --- | --- |
 | `get_settings` | `{}` | `Settings` (see DB §3.9) |
-| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.12):** `theme`; `preset` (gentle / balanced / aggressive: also sets its `thresholds`); `thresholds` (custom: sets `preset` to `custom`; not together with `preset`); `retention_days` 7–3650; `idle_cutoff_s` 60–3600; `window_management` off / hide. Saved in one transaction; the policy reloads at once. The mode goes through `set_mode` / `resume`, the hotkey and launch at login through their commands; other keys → `INVALID_INPUT`. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
+| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.12, P1.13):** `theme`; `update_channel` stable / beta (a change checks the new channel at once); `auto_update` boolean; `preset` (gentle / balanced / aggressive: also sets its `thresholds`); `thresholds` (custom: sets `preset` to `custom`; not together with `preset`); `retention_days` 7–3650; `idle_cutoff_s` 60–3600; `window_management` off / hide. Saved in one transaction; the policy reloads at once. The mode goes through `set_mode` / `resume`, the hotkey and launch at login through their commands; other keys → `INVALID_INPUT`. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
 | `set_hotkey` | `{ accelerator: string }` | `{ ok: true } \| AppError('CONFLICT')` |
 | `set_launch_at_login` | `{ enabled: boolean }` | `{ enabled }` (debug builds only save the setting) |
 
@@ -169,8 +169,9 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `get_license` | `{}` | `{ tier: 'free' \| 'trial' \| 'pro'; trialDaysLeft?: number; email?: string }` |
 | `activate_license` | `{ key: string }` | `{ tier: 'pro'; email }` or `AppError('INVALID_INPUT')` |
 | `deactivate_license` | `{}` | `{ tier }` |
-| `check_for_updates` | `{}` | `{ available: boolean; version?; notes?; date? }` |
-| `install_update` | `{ when: 'now' \| 'onQuit' }` | `{}` |
+| `check_for_updates` | `{}` | `{ available: boolean; version?; notes?; date? }` — **as built (P1.13):** returns `UpdateState` `{ current; phase: 'idle' \| 'checking' \| 'available' \| 'downloading' \| 'ready' \| 'error'; version; notes; date (RFC 3339); downloaded; total; checkedAt; error; failed: 'check' \| 'download' \| 'install' \| null; installOnQuit; installNow }`. Reads the channel's manifest (§7.1); with `auto_update` on, a new version starts downloading (verified against the updater key before it's kept). One check at a time; none during a download. Debug builds: `DECAY_UPDATE_URL` overrides the manifest |
+| `get_update_state` | `{}` | `UpdateState` — P1.13 |
+| `install_update` | `{ when: 'now' \| 'onQuit' }` | `{}` — **as built (P1.13):** returns `UpdateState`. `now`: installs the downloaded update and restarts (downloads first when needed; a request made during a check or download is carried out when it ends, and dropped if a newer version replaces the one it was for); `onQuit`: installs at the next quit (downloads first when needed). `NOT_FOUND` when no update was found. Automatic checks (start-up, then whenever the last check is a day old, and on a channel change) run in release builds only, or with `DECAY_UPDATE_CHECK=1`; "Check now" always checks |
 | `ui_show_window` | `{ window: 'library' \| 'settings' \| 'onboarding'; route?: string }` | `{}` |
 | `ui_hide_panel` | `{}` | `{}` |
 | `ui_take_pending` | `{}` | `{ prefill: string \| null; licenseKey: string \| null }` — what's waiting for the calling window (`panel`: a `decay://search` prefill; `settings`: a license key to confirm). Each value is handed out once; windows call it on load and on `panel:open` / `pending` (P1.7) |
@@ -192,7 +193,8 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `pending` | `{}` | Settings takes a waiting license key (`ui_take_pending`) |
 | `sweep:nothing` | `{ isShadow }` | "Nothing to sweep" after Sweep now |
 | `shadow:complete` | `{ reportReady: true }` | Shadow Review screen |
-| `update:available` | `{ version; notes }` | Settings → Updates badge |
+| `update:available` | `{ version; notes }` | Settings → Updates badge — P1.13: once per new version per run (the badge isn't built yet) |
+| `update:state` | `UpdateState` | Settings → Updates (P1.13): every phase change and download progress (every 256 KB) |
 | `license:changed` | `{ tier }` | Pro gates |
 | `navigate` | `{ window; route }` | Deep links / tray menu |
 
@@ -333,7 +335,7 @@ Deep links never perform a destructive action without UI confirmation.
 ## 7. External endpoints
 
 ### 7.1 Update manifest (GitHub Releases)
-`GET https://github.com/<org>/decay/releases/latest/download/latest.json` (beta: `…/beta/latest.json`)
+`GET https://github.com/code08-ind/decay-releases/releases/latest/download/latest.json` (beta: `…/releases/download/beta/latest.json`). A separate public repo: the source repo is private (P1.13, Docs/Release.md)
 ```json
 { "version": "1.2.0", "notes": "…", "pub_date": "2026-12-01T10:00:00Z",
   "platforms": { "darwin-aarch64": { "signature": "…", "url": "…" },

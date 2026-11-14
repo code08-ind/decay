@@ -8,6 +8,7 @@ import {
   KeyRound,
   LayoutGrid,
   Lock,
+  RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
@@ -21,6 +22,7 @@ import { Privacy } from '../settings/Privacy';
 import { Protection } from '../settings/Protection';
 import { type SettingsMap, useSettings } from '../settings/parts';
 import { Shortcuts } from '../settings/Shortcuts';
+import { Updates } from '../settings/Updates';
 import { useRoute, useStatus } from '../useStatus';
 
 const ICONS: Record<TabId, ReactNode> = {
@@ -30,6 +32,7 @@ const ICONS: Record<TabId, ReactNode> = {
   browsers: <Globe size={16} />,
   privacy: <Lock size={16} />,
   shortcuts: <Keyboard size={16} />,
+  updates: <RefreshCw size={16} />,
   about: <Info size={16} />,
 };
 
@@ -173,6 +176,7 @@ export function Settings() {
               <Privacy {...props} version={version} changed={() => setVersion((v) => v + 1)} />
             )}
             {tab === 'shortcuts' && <Shortcuts {...props} />}
+            {tab === 'updates' && <Updates {...props} />}
             {tab === 'about' && <About />}
           </div>
         </div>

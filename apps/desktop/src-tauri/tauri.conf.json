@@ -7,7 +7,8 @@
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "beforeBundleCommand": "node scripts/sidecar.mjs"
   },
   "app": {
     "windows": [],
@@ -29,14 +30,26 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "14.0"
-    }
+      "minimumSystemVersion": "14.0",
+      "signingIdentity": "-",
+      "hardenedRuntime": true,
+      "files": {
+        "MacOS/decay-host": "sidecar/decay-host"
+      }
+    },
+    "createUpdaterArtifacts": false
   },
   "plugins": {
     "deep-link": {
       "desktop": {
         "schemes": ["decay"]
       }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk4NEU2NkM2QzJDQ0YyODYKUldTRzhzekN4bVpPbUZ1eC9wRi90cG4wWjhwdmtnUlVvSGJVcnRPRnVJaUxlNG0yRnhJSklOeXgK",
+      "endpoints": [
+        "https://github.com/code08-ind/decay-releases/releases/latest/download/latest.json"
+      ]
     }
   }
 }

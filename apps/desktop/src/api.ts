@@ -206,6 +206,24 @@ export interface RuleTestResult {
   sample: PanelItem[];
 }
 
+/** The updater (`get_update_state`, `update:state`). */
+export interface UpdateState {
+  current: string;
+  phase: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error';
+  version: string | null;
+  notes: string | null;
+  date: string | null;
+  downloaded: number;
+  total: number | null;
+  checkedAt: number | null;
+  error: string | null;
+  /** What failed, when `phase` is `error`. */
+  failed: 'check' | 'download' | 'install' | null;
+  installOnQuit: boolean;
+  /** "Restart now" asked: installs as soon as the download is ready. */
+  installNow: boolean;
+}
+
 export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: number };
 
 export const api = {
@@ -262,6 +280,9 @@ export const api = {
   testRule: (rule: RuleInput) => invoke<RuleTestResult>('test_rule', { rule }),
   previewExclude: (rule: RuleInput) => invoke<{ count: number }>('preview_exclude', { rule }),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
+  getUpdateState: () => invoke<UpdateState>('get_update_state'),
+  checkForUpdates: () => invoke<UpdateState>('check_for_updates'),
+  installUpdate: (when: 'now' | 'onQuit') => invoke<UpdateState>('install_update', { when }),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),
 };

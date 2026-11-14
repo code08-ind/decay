@@ -23,6 +23,9 @@
     "allow-resume",
     "allow-detect-browsers",
     "allow-install-native-hosts",
-    "allow-open-extension-store"
+    "allow-open-extension-store",
+    "allow-get-update-state",
+    "allow-check-for-updates",
+    "allow-install-update"
   ]
 }

@@ -250,6 +250,12 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
                 out.push((key.clone(), value.clone()));
             }
             "window_management" => return Err(bad("window handling is off or hide")),
+            "update_channel" if matches!(value.as_str(), Some("stable" | "beta")) => {
+                out.push((key.clone(), value.clone()));
+            }
+            "update_channel" => return Err(bad("the update channel is stable or beta")),
+            "auto_update" if value.is_boolean() => out.push((key.clone(), value.clone())),
+            "auto_update" => return Err(bad("auto_update is true or false")),
             _ => {
                 return Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here")));
             }
@@ -318,7 +324,13 @@ pub async fn update_settings(
     patch: serde_json::Map<String, Value>,
 ) -> Res<serde_json::Map<String, Value>> {
     let changes = validate_settings(&patch)?;
-    save_settings(app, changes).await
+    let channel = patch.contains_key("update_channel");
+    let handle = app.clone();
+    let saved = save_settings(app, changes).await?;
+    if channel {
+        crate::update::channel_changed(&handle);
+    }
+    Ok(saved)
 }
 
 /// Turns launch at login on or off (F17). Debug builds only save the setting: they never
@@ -441,6 +453,10 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(more.len(), 3);
+        let updates =
+            validate_settings(&patch(json!({"update_channel": "beta", "auto_update": false})))
+                .unwrap();
+        assert_eq!(updates.len(), 2);
         for bad in [
             json!({"theme": "neon"}),
             json!({"theme": 1}),
@@ -454,6 +470,8 @@ mod tests {
             json!({"retention_days": 1.5}),
             json!({"idle_cutoff_s": 10}),
             json!({"window_management": "close"}),
+            json!({"update_channel": "nightly"}),
+            json!({"auto_update": "yes"}),
         ] {
             assert_eq!(validate_settings(&patch(bad)).unwrap_err().code, "INVALID_INPUT");
         }

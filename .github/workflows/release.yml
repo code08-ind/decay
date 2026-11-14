@@ -1,0 +1,191 @@
+name: Release
+
+# Builds Decay for macOS and uploads it to a DRAFT release in the public releases repo
+# (code08-ind/decay-releases; this repo stays private). Then "Run workflow" with the tag
+# publishes the draft and refreshes the beta channel's manifest (Docs/Release.md).
+#
+#   git tag v0.2.0 && git push origin v0.2.0      → build + draft release
+#   git tag v0.3.0-beta.1 && git push …           → same, marked as a pre-release
+#   Actions → Release → Run workflow (tag v0.2.0) → publish + beta manifest
+#
+# Secrets: RELEASES_TOKEN (fine-grained token, contents read/write on decay-releases),
+# TAURI_SIGNING_PRIVATE_KEY + TAURI_SIGNING_PRIVATE_KEY_PASSWORD (update signatures:
+# required). Optional, for Developer ID signing + notarization (unsigned without them):
+# APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+# APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID.
+# Windows builds join in Phase 3 (P3.4: installer, signing, the bundled host).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag of the draft release to publish (e.g. v0.2.0)"
+        required: true
+      force_beta:
+        description: "Point the beta manifest at this tag even if it holds a newer version (rollback)"
+        type: boolean
+        default: false
+
+env:
+  RELEASES_REPO: code08-ind/decay-releases
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build-macos:
+    if: github.event_name == 'push'
+    runs-on: macos-latest
+    env:
+      HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE != '' }}
+      HAS_NOTARY: ${{ secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
+      HAS_UPDATER_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+      HAS_RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN != '' }}
+      HAS_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches the app version
+        run: |
+          # The app reports this version to the updater: a beta tag needs a beta version
+          # (e.g. "0.3.0-beta.1") in tauri.conf.json.
+          want="v$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$want" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match tauri.conf.json ($want)"; exit 1
+          fi
+          # `decay --version` and the JS package report their own copies: keep them equal.
+          cargo="v$(sed -n 's/^version = "\(.*\)"/\1/p' apps/desktop/src-tauri/Cargo.toml | head -1)"
+          pkg="v$(node -p "require('./apps/desktop/package.json').version")"
+          if [ "$cargo" != "$want" ] || [ "$pkg" != "$want" ]; then
+            echo "::error::versions differ: tauri.conf.json $want, Cargo.toml $cargo, package.json $pkg"; exit 1
+          fi
+          [ "$HAS_UPDATER_KEY" = true ] || { echo "::error::TAURI_SIGNING_PRIVATE_KEY is not set"; exit 1; }
+          [ "$HAS_RELEASES_TOKEN" = true ] || { echo "::error::RELEASES_TOKEN is not set"; exit 1; }
+          # decay-host and the app must share one identity.
+          if [ "$HAS_APPLE_CERT" = true ] && [ "$HAS_IDENTITY" != true ]; then
+            echo "::error::APPLE_CERTIFICATE is set but APPLE_SIGNING_IDENTITY isn't"; exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: |
+          rustup toolchain install
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+
+      # Developer ID: imported into a keychain before building, so decay-host (signed by
+      # scripts/sidecar.mjs before bundling) and the app share one identity.
+      - name: Import the signing certificate
+        if: env.HAS_APPLE_CERT == 'true'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      # Secrets reach the shell only as environment variables (never pasted into the
+      # script). Notarization only for a Developer ID build: an ad-hoc one can't be.
+      - name: Signing and notarization settings
+        env:
+          IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          NOTARY_ID: ${{ secrets.APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          NOTARY_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ "$HAS_APPLE_CERT" != true ]; then
+            echo "::warning::No Developer ID certificate: the app is signed ad hoc (Gatekeeper will warn on first open)"
+            exit 0
+          fi
+          printf 'APPLE_SIGNING_IDENTITY=%s\n' "$IDENTITY" >> "$GITHUB_ENV"
+          if [ "$HAS_NOTARY" = true ]; then
+            {
+              printf 'APPLE_ID=%s\n' "$NOTARY_ID"
+              printf 'APPLE_PASSWORD=%s\n' "$NOTARY_PASSWORD"
+              printf 'APPLE_TEAM_ID=%s\n' "$NOTARY_TEAM"
+            } >> "$GITHUB_ENV"
+          else
+            echo "::warning::Signed but not notarized (APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID missing)"
+          fi
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          args: --target universal-apple-darwin --config src-tauri/tauri.release.conf.json
+          owner: code08-ind
+          repo: decay-releases
+          tagName: ${{ github.ref_name }}
+          releaseName: Decay __VERSION__
+          # Replace this text in the draft before publishing: Publish refuses it unchanged
+          # and copies the draft's text into latest.json (the notes shown in the app).
+          releaseBody: RELEASE NOTES GO HERE
+          # The releases repo's own branch (this repo's commits don't exist there).
+          releaseCommitish: main
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          includeUpdaterJson: true
+
+  publish:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Release notes into the manifest
+        run: |
+          case "$TAG" in v[0-9]*) ;; *) echo "::error::not a version tag: $TAG"; exit 1;; esac
+          body="$(gh release view "$TAG" --repo "$RELEASES_REPO" --json body -q .body)"
+          case "$body" in *"RELEASE NOTES GO HERE"*|"")
+            echo "::error::write the release notes in the draft first"; exit 1;; esac
+          mkdir m && gh release download "$TAG" --repo "$RELEASES_REPO" -p latest.json -D m
+          jq --arg notes "$body" '.notes = $notes' m/latest.json > m/notes.json
+          mv m/notes.json m/latest.json
+          gh release upload "$TAG" m/latest.json --repo "$RELEASES_REPO" --clobber
+      - name: Publish the draft
+        run: |
+          pre=false; case "$TAG" in *-*) pre=true;; esac
+          gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --prerelease="$pre" \
+            --latest="$([ "$pre" = true ] && echo false || echo true)"
+      # The beta channel reads releases/download/beta/latest.json: every beta and every
+      # stable release lands there, so beta users never fall behind stable, but an older
+      # release (a stable hotfix after a newer beta) never replaces a newer one.
+      - name: Refresh the beta manifest
+        env:
+          FORCE: ${{ inputs.force_beta }}
+        run: |
+          gh release view beta --repo "$RELEASES_REPO" >/dev/null 2>&1 ||
+            gh release create beta --repo "$RELEASES_REPO" --prerelease --latest=false \
+              --target main --title "Beta channel" \
+              --notes "The beta channel's update manifest. Not a release."
+          mkdir old
+          if [ "$FORCE" != true ] &&
+            gh release download beta --repo "$RELEASES_REPO" -p latest.json -D old 2>/dev/null; then
+            newer="$(node -e '
+              const p = (v) => { const [m, pre] = v.replace(/^v/, "").split("-", 2);
+                return [m.split(".").map(Number), pre ? pre.split(".") : null]; };
+              const cmp = (a, b) => { const [am, ap] = p(a), [bm, bp] = p(b);
+                for (let i = 0; i < 3; i++) if (am[i] !== bm[i]) return am[i] - bm[i];
+                if (!ap || !bp) return (ap ? -1 : 0) - (bp ? -1 : 0);
+                for (let i = 0; i < Math.max(ap.length, bp.length); i++) {
+                  if (ap[i] === undefined) return -1; if (bp[i] === undefined) return 1;
+                  const [x, y] = [ap[i], bp[i]]; const nx = /^\d+$/.test(x), ny = /^\d+$/.test(y);
+                  if (x !== y) return nx && ny ? x - y : nx ? -1 : ny ? 1 : x < y ? -1 : 1; }
+                return 0; };
+              const cur = require("./old/latest.json").version;
+              console.log(cmp(cur, process.argv[1]) > 0 ? cur : "");' "$TAG")"
+            if [ -n "$newer" ]; then
+              echo "::notice::beta manifest keeps $newer (newer than $TAG); use force_beta to roll back"
+              exit 0
+            fi
+          fi
+          gh release upload beta m/latest.json --repo "$RELEASES_REPO" --clobber

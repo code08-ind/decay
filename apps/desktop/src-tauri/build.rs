@@ -38,6 +38,9 @@ const COMMANDS: &[&str] = &[
     "delete_rule",
     "test_rule",
     "preview_exclude",
+    "get_update_state",
+    "check_for_updates",
+    "install_update",
 ];
 
 fn main() {

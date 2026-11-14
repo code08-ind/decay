@@ -28,6 +28,7 @@ mod rules;
 mod search;
 mod shell;
 mod tray;
+mod update;
 
 use decay_engine::EngineEvent;
 use serde_json::json;
@@ -113,6 +114,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     {
         fail(app, why);
     } else {
+        update::start(app);
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {
@@ -301,6 +303,7 @@ fn answer_cli(args: &[String]) -> Option<String> {
 }
 
 /// Runs the app.
+#[allow(clippy::too_many_lines, reason = "the builder lists every command")]
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
     if let Some(answer) = answer_cli(&args) {
@@ -323,6 +326,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| second_launch(app, &args)))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![BACKGROUND_ARG]),
@@ -334,6 +338,7 @@ pub fn run() {
         .manage(Core::default())
         .manage(Shell::new(support))
         .manage(tray::TrayState::default())
+        .manage(update::Updates::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
             commands::set_mode,
@@ -353,6 +358,9 @@ pub fn run() {
             commands::ui_hide_panel,
             commands::ui_take_pending,
             commands::get_settings,
+            update::get_update_state,
+            update::check_for_updates,
+            update::install_update,
             search::search,
             search::restore_items,
             search::restore_batch,
@@ -397,7 +405,10 @@ pub fn run() {
     app.run(|app, event| match event {
         // Closing the last window keeps the menu bar agent running.
         RunEvent::ExitRequested { code: None, api, .. } => api.prevent_exit(),
-        RunEvent::Exit => app.state::<Core>().stop(),
+        RunEvent::Exit => {
+            app.state::<Core>().stop();
+            update::install_on_quit(app);
+        }
         // Opened again from Finder / Spotlight while running (no second process on macOS).
         #[cfg(target_os = "macos")]
         RunEvent::Reopen { .. } => shell::show_window(app, Window::Library, "/"),

@@ -211,7 +211,8 @@ Unique: `(scope, match, action)`.
 | `hotkey` | `"Alt+Super+D"` (macOS) / `"Ctrl+Alt+D"` (Windows) |
 | `theme` | `"system"` |
 | `launch_at_login` | `true` |
-| `update_channel` | `"stable"` |
+| `update_channel` | `"stable"` (`stable` \| `beta`) |
+| `auto_update` | `true` (download updates in the background; P1.13) |
 | `daily_summary_time` | `"09:00"` |
 | `notifications` | `{"summary":true,"sweep":false,"health":true}` |
 | `window_management` | `"hide"` (`off` \| `hide` \| `hide_and_close`) |

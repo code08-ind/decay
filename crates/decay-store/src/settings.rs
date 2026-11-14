@@ -21,8 +21,8 @@ pub fn default_setting(key: &str) -> Option<Value> {
         "retention_days" => json!(90),
         "hotkey" => json!(if cfg!(target_os = "windows") { "Ctrl+Alt+D" } else { "Alt+Super+D" }),
         "theme" | "locale" => json!("system"),
-        "launch_at_login" => json!(true),
         "update_channel" => json!("stable"),
+        "launch_at_login" | "auto_update" => json!(true),
         "daily_summary_time" => json!("09:00"),
         "notifications" => json!({"summary": true, "sweep": false, "health": true}),
         "window_management" => json!("hide"),
@@ -32,7 +32,7 @@ pub fn default_setting(key: &str) -> Option<Value> {
 }
 
 /// Every known key (for snapshots).
-const KEYS: [&str; 18] = [
+const KEYS: [&str; 19] = [
     "mode",
     "onboarded_at",
     "shadow_started_at",
@@ -46,6 +46,7 @@ const KEYS: [&str; 18] = [
     "theme",
     "launch_at_login",
     "update_channel",
+    "auto_update",
     "daily_summary_time",
     "notifications",
     "window_management",

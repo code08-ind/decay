@@ -3,7 +3,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Rule } from '../api';
+import type { Rule, UpdateState } from '../api';
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => {}) }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(async () => '0.1.0') }));
@@ -33,6 +33,9 @@ const api = {
   detectBrowsers: vi.fn(),
   openExtensionStore: vi.fn(),
   showWindow: vi.fn(),
+  getUpdateState: vi.fn(),
+  checkForUpdates: vi.fn(),
+  installUpdate: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 const { Settings } = await import('./Settings');
@@ -89,7 +92,28 @@ beforeEach(() => {
   api.updateRule.mockResolvedValue({ rule: rule({}), purged: 0 });
   api.previewExclude.mockResolvedValue({ count: 3 });
   api.detectBrowsers.mockResolvedValue([]);
+  api.getUpdateState.mockResolvedValue(update({}));
+  api.checkForUpdates.mockResolvedValue(update({ checkedAt: Date.now() }));
+  api.installUpdate.mockResolvedValue(update({ phase: 'ready', installOnQuit: true }));
 });
+
+function update(over: Partial<UpdateState>): UpdateState {
+  return {
+    current: '0.1.0',
+    phase: 'idle',
+    version: null,
+    notes: null,
+    date: null,
+    downloaded: 0,
+    total: null,
+    checkedAt: null,
+    error: null,
+    failed: null,
+    installOnQuit: false,
+    installNow: false,
+    ...over,
+  };
+}
 afterEach(cleanup);
 
 describe('Settings', () => {
@@ -200,6 +224,72 @@ describe('Settings', () => {
     fireEvent.change(screen.getByLabelText(/Mark as stale after/), { target: { value: '40' } });
     fireEvent.click(screen.getByRole('radio', { name: 'Custom' }));
     expect(api.updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('updates: checks now, and a ready release restarts or installs on quit', async () => {
+    await show('/updates');
+    expect(screen.getByText('Decay 0.1.0')).toBeTruthy();
+    expect(screen.getByText('Not checked yet')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }));
+    await flush();
+    expect(api.checkForUpdates).toHaveBeenCalled();
+    expect(screen.getByText(/Up to date · Last checked today/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: 'Beta' }));
+    expect(api.updateSettings).toHaveBeenCalledWith({ update_channel: 'beta' });
+    fireEvent.click(screen.getByRole('switch', { name: 'Download updates automatically' }));
+    expect(api.updateSettings).toHaveBeenCalledWith({ auto_update: false });
+    cleanup();
+
+    api.getUpdateState.mockResolvedValue(
+      update({ phase: 'ready', version: '0.2.0', notes: 'Faster search', total: 9, downloaded: 9 }),
+    );
+    await show('/updates');
+    expect(screen.getByRole('heading', { name: 'Decay 0.2.0 is ready' })).toBeTruthy();
+    expect(screen.getByText('Faster search')).toBeTruthy();
+    api.installUpdate.mockResolvedValue(
+      update({ phase: 'ready', version: '0.2.0', total: 9, downloaded: 9, installOnQuit: true }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Install on quit' }));
+    await flush();
+    expect(api.installUpdate).toHaveBeenCalledWith('onQuit');
+    expect(screen.getByText('Installs when you quit Decay')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart to update' }));
+    expect(api.installUpdate).toHaveBeenLastCalledWith('now');
+  });
+
+  it('updates: download progress and a failed check', async () => {
+    api.getUpdateState.mockResolvedValue(
+      update({ phase: 'downloading', version: '0.2.0', downloaded: 5, total: 10 }),
+    );
+    await show('/updates');
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('50');
+    expect((screen.getByRole('button', { name: 'Check now' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    cleanup();
+    api.getUpdateState.mockResolvedValue(
+      update({ phase: 'error', error: 'offline', failed: 'check' }),
+    );
+    await show('/updates');
+    expect(screen.getByText('Couldn’t check: offline')).toBeTruthy();
+    cleanup();
+    // A failed download keeps the release, says what failed, and offers a retry.
+    api.getUpdateState.mockResolvedValue(
+      update({ phase: 'error', version: '0.2.0', error: 'bad signature', failed: 'download' }),
+    );
+    await show('/updates');
+    expect(screen.getByRole('alert').textContent).toBe('Couldn’t download: bad signature');
+    fireEvent.click(screen.getByRole('button', { name: 'Try again and restart' }));
+    expect(api.installUpdate).toHaveBeenLastCalledWith('now');
+    cleanup();
+    // While a "Restart now" waits for its download, the button can't be pressed again.
+    api.getUpdateState.mockResolvedValue(
+      update({ phase: 'downloading', version: '0.2.0', installNow: true }),
+    );
+    await show('/updates');
+    expect(
+      (screen.getByRole('button', { name: /Restarting when ready/ }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it('privacy: retention, and a never-store site confirmed with what it deletes', async () => {

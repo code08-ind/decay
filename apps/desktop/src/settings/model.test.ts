@@ -15,6 +15,7 @@ import {
   thresholdsProblem,
   workTime,
 } from './model';
+import { checkedText, percent } from './Updates';
 
 const key = (
   k: string,
@@ -116,5 +117,17 @@ describe('sliderFactor', () => {
     expect(sliderFactor({ thresholdHours: { stale: 1, hidden: 2, archive: 3 } }, g)).toBe(5);
     expect(sliderFactor({ thresholdHours: { stale: 1, hidden: 2, archive: 60 } }, g)).toBe(1.25);
     expect(sliderFactor({ thresholdHours: { stale: 1, hidden: 2, archive: 720 } }, g)).toBe(5);
+  });
+});
+
+describe('updates helpers', () => {
+  it('words the last check and the progress', () => {
+    const now = new Date(2026, 10, 14, 12).getTime();
+    expect(checkedText(null, now)).toBe('Not checked yet');
+    expect(checkedText(now - 60_000, now)).toMatch(/^Last checked today at /);
+    expect(checkedText(now - 3 * 86_400_000, now)).toMatch(/^Last checked 11 Nov at /);
+    expect(percent({ downloaded: 5, total: 10 })).toBe(50);
+    expect(percent({ downloaded: 5, total: null })).toBeNull();
+    expect(percent({ downloaded: 20, total: 10 })).toBe(100);
   });
 });
