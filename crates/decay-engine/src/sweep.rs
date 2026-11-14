@@ -216,7 +216,7 @@ pub(crate) fn excluded(item: &Item, policy: &PolicySettings) -> bool {
 }
 
 /// The reason stored with a `stale` event (the extension's `staleReason`).
-fn stale_reason(decision: &Decision) -> Option<Reason> {
+pub(crate) fn stale_reason(decision: &Decision) -> Option<Reason> {
     match decision {
         Decision::Archive { reason } => Some(reason.clone()),
         Decision::Stale { active_hours, threshold, rule_id } => {
@@ -334,6 +334,7 @@ impl Engine {
             };
             self.store.atomically(false, |s| age_adapter(s, a, &policy, pro, credit, now))?;
         }
+        self.age_windows(credit, now)?;
         Ok(())
     }
 

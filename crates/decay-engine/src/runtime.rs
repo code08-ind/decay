@@ -18,7 +18,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use decay_bridge::ipc::{Endpoint, IpcServer, IpcWriter, connect};
-use decay_platform::Platform;
+use decay_platform::{Platform, WindowLister};
 
 use crate::engine::{ConnId, Engine, EngineEvent, Input, Output};
 
@@ -31,6 +31,8 @@ pub fn now_ms() -> i64 {
 
 /// How often the engine thread runs the timers.
 const POLL_EVERY: Duration = Duration::from_secs(1);
+/// App windows are listed this often (each list asks every app through Accessibility).
+const LIST_WINDOWS_EVERY: Duration = Duration::from_secs(3);
 
 /// Work for the engine thread from outside (the UI later; the dev tool now).
 pub type Call = Box<dyn FnOnce(&mut Engine, i64) -> Vec<Output> + Send>;
@@ -52,6 +54,9 @@ pub struct Runtime {
     accept: Option<JoinHandle<()>>,
     stopping: Arc<AtomicBool>,
     endpoint: Endpoint,
+    /// Window handling is on (the engine says after every step): the window lister
+    /// doesn't ask any app while it's off.
+    wants_windows: Arc<AtomicBool>,
 }
 
 impl std::fmt::Debug for Msg {
@@ -102,6 +107,8 @@ impl Runtime {
         let (tx, rx) = mpsc::channel::<Msg>();
         let stopping = Arc::new(AtomicBool::new(false));
         let endpoint = server.endpoint().clone();
+        let wants_windows = Arc::new(AtomicBool::new(engine.wants_windows()));
+        let wants = Arc::clone(&wants_windows);
 
         let engine_thread =
             std::thread::Builder::new().name("decay-engine".into()).spawn(move || {
@@ -143,6 +150,7 @@ impl Runtime {
                         outputs.extend(engine.poll(now));
                         apply(outputs, &mut writers, &mut events);
                     }
+                    wants.store(engine.wants_windows(), Ordering::SeqCst);
                 }
                 engine
             })?;
@@ -207,6 +215,7 @@ impl Runtime {
             accept: Some(accept_thread),
             stopping,
             endpoint,
+            wants_windows,
         })
     }
 
@@ -219,6 +228,29 @@ impl Runtime {
     /// `AccessibilityChanged` event.
     pub fn request_accessibility(&self) -> bool {
         self.tx.send(Msg::RequestAccessibility).is_ok()
+    }
+
+    /// Lists app windows on a thread of its own (P2.1): a slow or hung app delays only
+    /// the next list, never the engine. The thread ends with the runtime; it isn't
+    /// joined, since a list in progress may wait on an app for a moment.
+    pub fn list_windows_with(&self, mut lister: Box<dyn WindowLister>) -> io::Result<()> {
+        let tx = self.tx.clone();
+        let stopping = Arc::clone(&self.stopping);
+        let wanted = Arc::clone(&self.wants_windows);
+        std::thread::Builder::new().name("decay-windows".into()).spawn(move || {
+            while !stopping.load(Ordering::SeqCst) {
+                // Off: no app is asked anything (titles aren't even read).
+                let list = if wanted.load(Ordering::SeqCst) { lister.list() } else { None };
+                if let Some(list) = list {
+                    let input = Input::Windows(Box::new(list));
+                    if stopping.load(Ordering::SeqCst) || tx.send(Msg::Input(input)).is_err() {
+                        break;
+                    }
+                }
+                std::thread::sleep(LIST_WINDOWS_EVERY);
+            }
+        })?;
+        Ok(())
     }
 
     /// Stops the threads and returns the engine (its store is still open).

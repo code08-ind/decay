@@ -26,6 +26,13 @@
 
 #[cfg(target_os = "macos")]
 mod mac;
+#[cfg(target_os = "macos")]
+mod mac_windows;
+pub mod windows;
+
+pub use windows::{
+    AppWindow, AppWindows, NullWindowLister, WindowList, WindowLister, window_lister,
+};
 
 #[cfg(target_os = "macos")]
 pub use mac::MacPlatform;

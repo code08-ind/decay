@@ -37,6 +37,7 @@ mod rules;
 pub mod runtime;
 mod sweep;
 mod tabs;
+mod windows;
 
 pub use control::{BrowserStatus, EngineStatus, WindowManagement};
 pub use domain::domain_of;

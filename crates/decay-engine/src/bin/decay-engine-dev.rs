@@ -56,6 +56,7 @@ mod dev {
         let runtime = Runtime::start(server, engine, decay_platform::native(), |event| {
             eprintln!("event: {event:?}");
         })?;
+        runtime.list_windows_with(decay_platform::window_lister())?;
 
         for line in std::io::stdin().lock().lines() {
             let line = line?;

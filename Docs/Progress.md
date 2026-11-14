@@ -67,6 +67,7 @@ Everything a review or QA pass left for later, with where it comes from and when
 - [ ] **Safety property test, more events**: tabs used / navigated / made audible between probe and close, duplicate URLs, late acks on the old link, mode changes mid-sweep. *From P1.14 review.*
 - [ ] **Meetings / screen sharing** in the safety suite once P2.3 detects them. *From P1.14 · with P2.3.*
 - [ ] **Manual checks from the P2.0 spikes**: run `tools/spikes/ax-other-apps.swift` with Accessibility granted (TextEdit, Preview, Pages, Xcode; VS Code / Slack / Figma), minimise / restore real windows incl. another Space once P2.2 exists, the search panel over full-screen apps. *From P2.0 · user, when convenient.*
+- [ ] **Window tracking, small gaps** *(from P2.1 review)*: two running instances of one app can swap untitled records' ages; windows without a number on another Space are forgotten after a minute; ~10 Accessibility round-trips per window every 3 s (`AXUIElementCopyMultipleAttributeValues` would batch them); every settings change while window handling is off reloads the live items once.
 - [ ] **Window items**: hide/close windows (F4) and Accessibility window enumeration have no Progress row yet. *From P1.6 · Phase 2.*
 
 ---
@@ -136,7 +137,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
 | P2.0 | **Spikes:** minimize UX; unsaved-state detection; NSPanel across Spaces | — | ✅ Docs/Spikes.md: hidden = minimised via `AXMinimized` (only standard windows with an enabled minimise button, not full screen); unsaved = the close button's `AXEdited`, document = `AXDocument`, anything missing = unknown (never closed); titles from Accessibility, `CGWindowList` for change detection and other Spaces (no Screen Recording, ever). Probes in `tools/spikes/`. Cross-app reads and the panel over full-screen apps stay on the manual checklist (no Accessibility / screen access here) |
-| P2.1 | macOS window tracking via AX + CGWindowList | F1, F4 | ⬜ |
+| P2.1 | macOS window tracking via AX + CGWindowList | F1, F4 | ✅ `decay_platform::WindowLister` (macOS: CGWindowList for apps and window numbers on every Space + Accessibility for titles, documents, edited state, focus; own thread every 3 s, 0.3-s process-wide timeout, 1.5-s per-app budget; nothing asked while window handling is off); engine `windows.rs`: window items (document path, save state, number), stored records rejoin at start-up, matching across app / Decay restarts and reboots, focus in the front app = use, aging + stale (no hiding yet), windows on other Spaces kept, forgotten a minute after closing, frozen without lists, every write ordered and atomic with memory. 328 Rust tests. Code review (twice) + QA passed after fixes. Real Accessibility listing still to try on a Mac with the permission |
 | P2.2 | Hide stale windows | F4 | ⬜ |
 | P2.3 | Meeting/screen-share detection + manual hold | F12 | ⬜ |
 | P2.4 | Daily summary + notifications | F10, F25 | ⬜ |
@@ -203,6 +204,10 @@ Exports: `Designs/light`, `Designs/dark`, `Designs/windows` (PNG + HTML). Stitch
 All planned screens designed (68 total). Landing page numbers (78 → 34 tabs, 2.1% regret) are samples — replace with real beta data before launch.
 
 ## Changelog
+
+- **2026-11-14** — P2.0 spikes (Docs/Spikes.md) and P2.1 window tracking built, QA'd and reviewed twice, then fixed:
+  - QA: windows on other Spaces / of a busy app looked closed after a minute → the window server's numbers keep them; untitled windows without a number got a new record every list; records survived window handling being turned off (restart, no Accessibility) → every live window record goes; a reused number inherited another window's age; quadratic cost (212 ms per list at 10,000 windows) → indexes; missing windows aged.
+  - Review: after a Decay restart, a retitled window collided with its stored record and every later write failed (memory and database out of step) → stored records join the tracker on the first list, each list is applied to a copy that replaces it only after the commit; the write order between updates was random (a moved number failed half the time) → numbers freed first, then deletes, updates, inserts; stored records nobody matched lived forever → expire like the rest; the 0.3-s timeout only covered the app element → process-wide, plus a per-app budget; nested apps (Simulator in Xcode) got the outer bundle id; exclusion rules now apply at the tick too; a start-up cleanup error no longer stops Decay.
 
 - **2026-11-14** — P1.14 "never lose work" safety suite built, reviewed and mutation-tested, then strengthened:
   - Review: the locked-screen test passed even unlocked (the sample meant "typing") → idle sample + unlocked control, display asleep too; `requireChecked` (the last check before a close) wasn't asserted → checked on every close; the property test's "unsaved input" check could be skipped by cached verdicts → it tracks what the engine heard, including timeouts; "nothing lost" accepted any record → archived / archiving / restored with reason and sweep; two disconnect tests couldn't fail → a quiet browser and a stale probe answer, each with a control; Undo and 2× tests gained controls; Undo for the last 20 sweeps tested.

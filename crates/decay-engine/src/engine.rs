@@ -107,6 +107,8 @@ pub enum Input {
     /// What the OS says (idle, lock, displays, audio, frontmost app, Accessibility), about
     /// once a second.
     Platform(Box<decay_platform::PlatformSample>),
+    /// Every app's standard windows (P2.1), every few seconds when they can be listed.
+    Windows(Box<decay_platform::WindowList>),
 }
 
 /// What the engine wants done.
@@ -239,6 +241,7 @@ pub(crate) struct PolicySettings {
     pub max_items: usize,
     pub idle_cutoff_s: u64,
     pub retention_days: u64,
+    pub window_management: crate::control::WindowManagement,
 }
 
 impl PolicySettings {
@@ -251,6 +254,12 @@ impl PolicySettings {
             max_items: store.setting::<usize>("max_items_per_sweep")?.unwrap_or(50).clamp(1, 500),
             idle_cutoff_s: store.setting::<u64>("idle_cutoff_s")?.unwrap_or(300).max(30),
             retention_days: store.setting::<u64>("retention_days")?.unwrap_or(90).max(1),
+            // An unreadable value means "off": tracking windows needs a clear yes.
+            window_management: store
+                .setting::<crate::control::WindowManagement>("window_management")
+                .ok()
+                .flatten()
+                .unwrap_or(crate::control::WindowManagement::Off),
         })
     }
 
@@ -459,6 +468,8 @@ pub struct Engine {
     /// Items an exclude rule matched while a sweep was closing them: deleted as soon as
     /// the close settles (whichever way), so an excluded site never stays archived.
     pub(crate) exclude_pending: HashSet<String>,
+    /// App windows (P2.1).
+    pub(crate) app_windows: crate::windows::AppWindowsState,
     pub(crate) next_op: u64,
     pub(crate) sweep: SweepState,
     pub(crate) clock: AgingClock,
@@ -535,7 +546,7 @@ impl Engine {
         }
         let clock =
             AgingClock { tick_ms: timing::TICK_MS as u64, idle_cutoff_secs: policy.idle_cutoff_s };
-        Ok(Self {
+        let mut engine = Self {
             store,
             config,
             policy,
@@ -544,6 +555,7 @@ impl Engine {
             restore_ops: HashMap::new(),
             restoring: HashSet::new(),
             exclude_pending: HashSet::new(),
+            app_windows: crate::windows::AppWindowsState::default(),
             next_op: 0,
             sweep: SweepState::Idle,
             clock,
@@ -558,7 +570,14 @@ impl Engine {
             next_maintenance_at: now,
             last_status: None,
             out: Vec::new(),
-        })
+        };
+        // Window handling turned off while Decay wasn't running: no window records stay.
+        if !engine.wants_windows()
+            && let Err(e) = engine.forget_windows()
+        {
+            engine.problem("forgetting window records", &e);
+        }
+        Ok(engine)
     }
 
     pub fn store(&self) -> &Store {
@@ -593,6 +612,7 @@ impl Engine {
             Input::Frame(id, frame) => self.frame(id, *frame, now),
             Input::Disconnected(id) => self.disconnected(id, now),
             Input::Platform(sample) => self.on_platform(*sample, now),
+            Input::Windows(list) => self.on_windows(*list, now),
         }
         self.purge_settled_excludes();
         std::mem::take(&mut self.out)
@@ -713,6 +733,12 @@ impl Engine {
                     item.active_age_s = item.active_age_s.saturating_add(secs);
                     ages.push((item.id.clone(), item.active_age_s));
                 }
+            }
+        }
+        for item in self.app_windows.tracked.values_mut().map(|t| &mut t.item) {
+            if matches!(item.state, decay_core::ItemState::Active | decay_core::ItemState::Stale) {
+                item.active_age_s = item.active_age_s.saturating_add(secs);
+                ages.push((item.id.clone(), item.active_age_s));
             }
         }
         let refs: Vec<(&str, u64)> = ages.iter().map(|(id, a)| (id.as_str(), *a)).collect();
