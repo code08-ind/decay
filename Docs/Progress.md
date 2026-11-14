@@ -66,6 +66,7 @@ Everything a review or QA pass left for later, with where it comes from and when
 - [ ] **Decide**: should a page whose check failed be closed at 2× *without* `requireChecked`? Today the extension still checks it right before closing and skips unsaved input; requiring a successful check would be stricter ("if unsure, do nothing") but such pages might never close. *From P1.14 review · user decision.*
 - [ ] **Safety property test, more events**: tabs used / navigated / made audible between probe and close, duplicate URLs, late acks on the old link, mode changes mid-sweep. *From P1.14 review.*
 - [ ] **Meetings / screen sharing** in the safety suite once P2.3 detects them. *From P1.14 · with P2.3.*
+- [ ] **Manual checks from the P2.0 spikes**: run `tools/spikes/ax-other-apps.swift` with Accessibility granted (TextEdit, Preview, Pages, Xcode; VS Code / Slack / Figma), minimise / restore real windows incl. another Space once P2.2 exists, the search panel over full-screen apps. *From P2.0 · user, when convenient.*
 - [ ] **Window items**: hide/close windows (F4) and Accessibility window enumeration have no Progress row yet. *From P1.6 · Phase 2.*
 
 ---
@@ -134,7 +135,7 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 
 | # | Task | Req | Status |
 | --- | --- | --- | --- |
-| P2.0 | **Spikes:** minimize UX; unsaved-state detection; NSPanel across Spaces | — | ⬜ |
+| P2.0 | **Spikes:** minimize UX; unsaved-state detection; NSPanel across Spaces | — | ✅ Docs/Spikes.md: hidden = minimised via `AXMinimized` (only standard windows with an enabled minimise button, not full screen); unsaved = the close button's `AXEdited`, document = `AXDocument`, anything missing = unknown (never closed); titles from Accessibility, `CGWindowList` for change detection and other Spaces (no Screen Recording, ever). Probes in `tools/spikes/`. Cross-app reads and the panel over full-screen apps stay on the manual checklist (no Accessibility / screen access here) |
 | P2.1 | macOS window tracking via AX + CGWindowList | F1, F4 | ⬜ |
 | P2.2 | Hide stale windows | F4 | ⬜ |
 | P2.3 | Meeting/screen-share detection + manual hold | F12 | ⬜ |
