@@ -22,3 +22,14 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo llvm-cov nextest --workspace --fail-under-lines 80
+      # The "never lose work" suite with many more random sessions than on every push.
+      - run: cargo nextest run -p decay-engine --test safety
+        env:
+          PROPTEST_CASES: "1000"
+      # A failing seed, to replay it locally (proptest writes it next to the test).
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proptest-regressions
+          path: crates/decay-engine/tests/*.proptest-regressions
+          if-no-files-found: ignore

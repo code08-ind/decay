@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 8d6bec01c5b0c0a15523380056e709fe807a2b1512b9871c780c6ce8c4105889 # shrinks to automatic = true, specs = [Spec { url: 0, pinned: false, audible: false, active: false, private: false, page: Clean }], steps = [Age(23), Age(37), Wait { minutes: 20, answer_after: 0 }, Wait { minutes: 11, answer_after: 20 }]

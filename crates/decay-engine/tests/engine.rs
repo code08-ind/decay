@@ -5,246 +5,17 @@
 // The harness takes JSON by value so calls read like the messages they send.
 #![allow(clippy::needless_pass_by_value)]
 
-use decay_bridge::ipc::{ConnInfo, HostFrame};
-use decay_bridge::protocol::{
-    BrowserKind, Config, Hello, Snapshot, TabInfo, TabStatus, WindowInfo, WindowState,
-};
+mod support;
+
+#[allow(clippy::wildcard_imports)]
+use support::*;
+
+use decay_bridge::protocol::{BrowserKind, Config, TabInfo, TabStatus};
 use decay_bridge::{Envelope, ErrorCode, kinds};
 use decay_core::{EventType, ItemState, Mode, Preset, ProtectedBy, SweepStatus, Thresholds};
-use decay_engine::{
-    ConnId, Engine, EngineConfig, EngineEvent, Input, Output, WindowManagement, timing,
-};
-use decay_store::{DbKey, Platform, Store, StorePaths};
+use decay_engine::{Engine, EngineConfig, EngineEvent, Input, WindowManagement, timing};
+use decay_store::Platform;
 use serde_json::{Value, json};
-
-const T0: i64 = 1_793_750_400_000;
-const H: u64 = 3600;
-
-struct Harness {
-    engine: Engine,
-    now: i64,
-    sent: Vec<(ConnId, Envelope)>,
-    closed: Vec<ConnId>,
-    events: Vec<EngineEvent>,
-    dir: tempfile::TempDir,
-}
-
-fn open_store(dir: &std::path::Path, now: i64) -> Store {
-    Store::open(StorePaths::in_dir(dir), DbKey::from_bytes([9; 32]), now).unwrap().0
-}
-
-fn tab(id: i64, window: i64, url: &str) -> TabInfo {
-    TabInfo {
-        tab_id: id,
-        window_id: window,
-        index: id,
-        url: url.into(),
-        title: format!("Tab {id}"),
-        fav_icon_url: None,
-        pinned: false,
-        audible: false,
-        muted_info: None,
-        discarded: false,
-        group_id: -1,
-        active: false,
-        status: TabStatus::Complete,
-        last_accessed: None,
-    }
-}
-
-fn snapshot(tabs: Vec<TabInfo>) -> Snapshot {
-    let mut windows: Vec<WindowInfo> = Vec::new();
-    for t in tabs {
-        match windows.iter_mut().find(|w| w.id == t.window_id) {
-            Some(w) => w.tabs.push(t),
-            None => windows.push(WindowInfo {
-                id: t.window_id,
-                focused: windows.is_empty(),
-                state: WindowState::Normal,
-                incognito: false,
-                tabs: vec![t],
-            }),
-        }
-    }
-    Snapshot { windows, groups: Vec::new() }
-}
-
-impl Harness {
-    fn new() -> Self {
-        let dir = tempfile::tempdir().unwrap();
-        let store = open_store(dir.path(), T0);
-        let config = EngineConfig { platform: Platform::MacOs, pro: false };
-        let engine = Engine::new(store, config, T0).unwrap();
-        Self { engine, now: T0, sent: Vec::new(), closed: Vec::new(), events: Vec::new(), dir }
-    }
-
-    fn collect(&mut self, out: Vec<Output>) {
-        for o in out {
-            match o {
-                Output::Send(c, env) => self.sent.push((c, env)),
-                Output::Close(c) => self.closed.push(c),
-                Output::Event(e) => self.events.push(e),
-            }
-        }
-    }
-
-    fn store(&self) -> &Store {
-        self.engine.store()
-    }
-
-    fn set_mode(&mut self, mode: Mode) {
-        self.store().set_setting("mode", &mode, self.now).unwrap();
-    }
-
-    fn frame(&mut self, conn: ConnId, profile: &str, env: Envelope) {
-        let info = ConnInfo {
-            browser: BrowserKind::Chrome,
-            profile_id: profile.into(),
-            pid: 1,
-            origin: "chrome-extension://x/".into(),
-        };
-        let out = self
-            .engine
-            .handle(Input::Frame(conn, Box::new(HostFrame { conn: info, msg: env })), self.now);
-        self.collect(out);
-    }
-
-    fn msg(&mut self, conn: ConnId, kind: &str, payload: Value) {
-        let profile = format!("profile{conn}");
-        self.frame(conn, &profile, Envelope::new(kind, &payload).unwrap());
-    }
-
-    fn request(&mut self, conn: ConnId, kind: &str, payload: Value) -> String {
-        let env = Envelope::new(kind, &payload).unwrap();
-        let id = env.id.clone();
-        let profile = format!("profile{conn}");
-        self.frame(conn, &profile, env);
-        id
-    }
-
-    /// Connects `conn` as profile `profile{conn}` and answers the `config`.
-    fn connect(&mut self, conn: ConnId, session: &str) {
-        self.connect_as(conn, &format!("profile{conn}"), session, "0.1.0");
-    }
-
-    fn connect_as(&mut self, conn: ConnId, profile: &str, session: &str, version: &str) {
-        let out = self.engine.handle(Input::Connected(conn), self.now);
-        self.collect(out);
-        let hello = Hello {
-            ext_version: version.into(),
-            browser: BrowserKind::Chrome,
-            profile_id: profile.into(),
-            capabilities: vec![],
-            launch: false,
-            session: Some(session.into()),
-        };
-        self.frame(conn, profile, Envelope::new(kinds::HELLO, &hello).unwrap());
-        if let Some(config) = self.take(conn, kinds::CONFIG).pop() {
-            self.ack(conn, &config, json!({"ok": true}), profile);
-        }
-    }
-
-    fn ack(&mut self, conn: ConnId, cmd: &Envelope, ack: Value, profile: &str) {
-        let mut env = Envelope::new(kinds::ACK, &ack).unwrap();
-        env.reply_to = Some(cmd.id.clone());
-        self.frame(conn, profile, env);
-    }
-
-    fn ack_ok(&mut self, conn: ConnId, cmd: &Envelope, result: Value) {
-        let profile = format!("profile{conn}");
-        self.ack(conn, cmd, json!({"ok": true, "result": result}), &profile);
-    }
-
-    fn take(&mut self, conn: ConnId, kind: &str) -> Vec<Envelope> {
-        let (hit, rest): (Vec<_>, Vec<_>) =
-            self.sent.drain(..).partition(|(c, e)| *c == conn && e.kind == kind);
-        self.sent = rest;
-        hit.into_iter().map(|(_, e)| e).collect()
-    }
-
-    fn one(&mut self, conn: ConnId, kind: &str) -> Envelope {
-        let mut all = self.take(conn, kind);
-        assert_eq!(
-            all.len(),
-            1,
-            "expected one {kind}, got {all:?} (others: {:?}) events {:?} status {}",
-            self.sent,
-            self.events,
-            self.engine.status_line()
-        );
-        all.remove(0)
-    }
-
-    fn reply_to(&mut self, conn: ConnId, request: &str) -> Envelope {
-        let pos = self
-            .sent
-            .iter()
-            .position(|(c, e)| *c == conn && e.reply_to.as_deref() == Some(request))
-            .expect("a reply");
-        self.sent.remove(pos).1
-    }
-
-    fn poll(&mut self) {
-        let out = self.engine.poll(self.now);
-        self.collect(out);
-    }
-
-    /// Moves time forward in steps, polling (and answering heartbeats) on the way.
-    fn advance(&mut self, ms: i64, conns: &[ConnId]) {
-        let end = self.now + ms;
-        while self.now < end {
-            self.now = (self.now + 10_000).min(end);
-            for c in conns {
-                self.msg(*c, kinds::HEARTBEAT, json!({"at": self.now}));
-            }
-            self.poll();
-        }
-    }
-
-    fn item_for_url(&self, url: &str) -> decay_store::Item {
-        let page = self
-            .store()
-            .live_items()
-            .unwrap()
-            .into_iter()
-            .chain(archived(self.store()))
-            .find(|i| i.url.as_deref() == Some(url));
-        page.unwrap_or_else(|| panic!("no item for {url}"))
-    }
-}
-
-fn archived(store: &Store) -> Vec<decay_store::Item> {
-    store
-        .search(&decay_store::SearchQuery {
-            text: String::new(),
-            filters: decay_store::SearchFilters::default(),
-            limit: 200,
-            offset: 0,
-            now: T0 + 1_000_000_000,
-            utc_offset_minutes: 0,
-        })
-        .unwrap()
-        .hits
-        .into_iter()
-        .map(|h| h.item)
-        .collect()
-}
-
-fn events_of(store: &Store, item: &str) -> Vec<EventType> {
-    let mut e: Vec<EventType> =
-        store.events_for_item(item, 100).unwrap().into_iter().map(|e| e.kind).collect();
-    e.reverse();
-    e
-}
-
-/// Three tabs in window 1: an old page, the active tab, and a pinned one.
-fn three_tabs() -> Vec<TabInfo> {
-    let mut active = tab(2, 1, "https://active.example/");
-    active.active = true;
-    let mut pinned = tab(3, 1, "https://pinned.example/");
-    pinned.pinned = true;
-    vec![tab(1, 1, "https://old.example/page"), active, pinned]
-}
 
 #[test]
 fn handshake_sends_welcome_then_config() {
@@ -361,16 +132,6 @@ fn tabs_age_only_while_the_user_is_active_and_not_when_in_use() {
     h.collect(out);
     h.advance(120_000, &[]);
     assert_eq!(h.item_for_url("https://old.example/page").active_age_s, later);
-}
-
-/// Connected, automatic mode, one old web tab past the threshold, quiet.
-fn ready_to_sweep(mode: Mode) -> Harness {
-    let mut h = Harness::new();
-    h.set_mode(mode);
-    h.connect(1, "s");
-    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
-    h.engine.dev_add_age(61 * H, h.now);
-    h
 }
 
 #[test]
@@ -556,6 +317,7 @@ fn after_a_crash_archiving_items_settle_when_the_browser_reconnects() {
         closed: Vec::new(),
         events: Vec::new(),
         dir,
+        profile: None,
     };
     assert_eq!(h.store().unfinished_sweeps().unwrap().len(), 1);
     h.connect(1, "s");
@@ -1121,48 +883,6 @@ fn search_reports_the_apps_mode_and_an_empty_sweep_now_says_so() {
 
 // --- Platform signals (P1.6) -----------------------------------------------------------
 
-fn os(idle: u64, key: u64) -> decay_platform::PlatformSample {
-    decay_platform::PlatformSample {
-        idle_secs: Some(idle),
-        secs_since_key: Some(key),
-        locked: Some(false),
-        display_asleep: Some(false),
-        audio_playing: Some(false),
-        frontmost: Some(decay_platform::FrontApp { pid: 10, name: "Google Chrome".into() }),
-        accessibility: Some(true),
-        continuous_ms: None,
-    }
-}
-
-impl Harness {
-    fn os(&mut self, sample: decay_platform::PlatformSample) {
-        let out = self.engine.handle(Input::Platform(Box::new(sample)), self.now);
-        self.collect(out);
-    }
-
-    /// Advances in 1-s steps, feeding `sample` (adjusted per step by `f`) before each poll.
-    fn advance_os(
-        &mut self,
-        ms: i64,
-        conns: &[ConnId],
-        f: impl Fn(i64) -> decay_platform::PlatformSample,
-    ) {
-        let end = self.now + ms;
-        while self.now < end {
-            self.now = (self.now + 1_000).min(end);
-            for c in conns {
-                self.msg(*c, kinds::HEARTBEAT, json!({"at": self.now}));
-            }
-            self.os(f(self.now));
-            self.poll();
-            // Stop at a probe, so the test answers it before it times out.
-            if self.sent.iter().any(|(_, e)| e.kind == kinds::PROBE) {
-                break;
-            }
-        }
-    }
-}
-
 #[test]
 fn os_idle_lock_and_display_sleep_drive_the_aging_clock() {
     let mut h = Harness::new();
@@ -1358,24 +1078,6 @@ fn accessibility_changes_are_reported() {
 }
 
 // --- App controls (P1.7) ----------------------------------------------------------------
-
-impl Harness {
-    /// The latest published status.
-    fn status(&self) -> decay_engine::EngineStatus {
-        self.events
-            .iter()
-            .rev()
-            .find_map(|e| match e {
-                EngineEvent::StatusChanged(s) => Some((**s).clone()),
-                _ => None,
-            })
-            .expect("a status was published")
-    }
-
-    fn status_events(&self) -> usize {
-        self.events.iter().filter(|e| matches!(e, EngineEvent::StatusChanged(_))).count()
-    }
-}
 
 #[test]
 fn the_status_counts_stale_tabs_of_connected_browsers_and_only_changes_are_published() {

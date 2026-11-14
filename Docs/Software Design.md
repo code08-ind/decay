@@ -347,7 +347,7 @@ An internal `tokio::broadcast` channel of `CoreEvent` (`ItemChanged`, `SweepStar
 | Extension | Vitest for logic; Playwright with a real Chromium + mock host |
 | Platform | Manual + scripted matrix per macOS/Windows version; AX permission flows |
 | UI | Vitest + Testing Library; Playwright visual diffs against Stitch references; axe a11y |
-| Safety suite | "Never lose work" scenarios: audible tab, form input, pinned, incognito, unsaved doc, meeting, adapter disconnect — all must result in **no action** |
+| Safety suite | "Never lose work" scenarios: audible tab, form input, pinned, incognito, unsaved doc, meeting, adapter disconnect — all must result in **no action** — **as built (P1.14):** `crates/decay-engine/tests/safety.rs` (scenario table at its top, plus a property test of random sessions; mutation-tested); meetings wait for P2.3 |
 
 ## 10. Spikes required before committing (from the spec's riskiest unknowns)
 
