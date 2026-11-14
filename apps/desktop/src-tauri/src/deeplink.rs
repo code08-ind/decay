@@ -47,6 +47,8 @@ pub enum Window {
     Panel,
     Library,
     Settings,
+    /// First run (F21).
+    Onboarding,
 }
 
 impl Window {
@@ -56,6 +58,7 @@ impl Window {
             Self::Panel => "panel",
             Self::Library => "library",
             Self::Settings => "settings",
+            Self::Onboarding => "onboarding",
         }
     }
 }
@@ -223,5 +226,6 @@ mod tests {
         assert_eq!(window, Window::Settings);
         assert!(!route.contains("SECRET"));
         assert_eq!(Window::Panel.label(), "panel");
+        assert_eq!(Window::Onboarding.label(), "onboarding");
     }
 }

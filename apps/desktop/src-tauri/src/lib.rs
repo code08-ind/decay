@@ -22,6 +22,7 @@ mod core;
 mod deeplink;
 mod keys;
 mod menu;
+mod onboarding;
 mod search;
 mod shell;
 mod tray;
@@ -89,6 +90,8 @@ fn forward(app: &AppHandle, event: EngineEvent) {
 
 fn fail(app: &AppHandle, why: String) {
     tracing::error!("Decay can't start: {why}");
+    // Onboarding can't work without the engine: the Library shows the error.
+    shell::set_onboarded(app, true);
     *app.state::<Shell>().fatal.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
         Some(why);
     tray::refresh(app);
@@ -111,17 +114,19 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {
-            let (hotkey, theme) = handle
+            let (hotkey, theme, onboarded) = handle
                 .state::<Core>()
                 .ask(|e, _| {
                     let s = e.store();
                     let read = (
                         s.setting::<String>("hotkey").ok().flatten(),
                         s.setting::<String>("theme").ok().flatten(),
+                        e.onboarded().unwrap_or(true),
                     );
                     (read, Vec::new())
                 })
-                .unwrap_or((None, None));
+                .unwrap_or((None, None, true));
+            shell::set_onboarded(&handle, onboarded);
             if let Some(theme) = theme {
                 let main = handle.clone();
                 let _ = handle.run_on_main_thread(move || shell::apply_theme(&main, &theme));
@@ -139,7 +144,9 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             apply_launch_at_login(&handle);
         });
     }
-    std::thread::spawn(move || install_host(&support));
+    std::thread::spawn(move || {
+        let _ = install_host(&support);
+    });
     shell::prewarm_panel(app);
 
     let links = app.clone();
@@ -244,12 +251,15 @@ fn app_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     Menu::with_items(app, &[&decay, &edit, &window])
 }
 
-/// Release builds follow the `launch_at_login` setting (on by default, F17); debug builds
+/// Release builds follow the `launch_at_login` setting (on by default, F17) once
+/// onboarding is done (no login item before the user has seen the choice); debug builds
 /// never register a login item for a binary in `target/`.
-fn apply_launch_at_login(app: &AppHandle) {
-    if cfg!(debug_assertions) {
+pub(crate) fn apply_launch_at_login(app: &AppHandle) {
+    if cfg!(debug_assertions) || !app.state::<Shell>().onboarded() {
         return;
     }
+    let shell = app.state::<Shell>();
+    let _one_at_a_time = shell.autolaunch.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let wanted = app
         .state::<Core>()
         .ask(|e, _| (e.store().setting::<bool>("launch_at_login").ok().flatten(), Vec::new()))
@@ -332,7 +342,11 @@ pub fn run() {
             commands::undo_sweep,
             commands::set_hotkey,
             commands::set_launch_at_login,
-            commands::request_accessibility,
+            onboarding::request_accessibility,
+            onboarding::detect_browsers,
+            onboarding::install_native_hosts,
+            onboarding::open_extension_store,
+            onboarding::complete_onboarding,
             commands::ui_show_window,
             commands::ui_hide_panel,
             commands::ui_take_pending,

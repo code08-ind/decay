@@ -159,10 +159,11 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 
 | Command | Input | Output |
 | --- | --- | --- |
-| `detect_browsers` | `{}` | `{ id; name; installed: boolean; hostInstalled: boolean; extensionConnected: boolean; storeUrl: string }[]` |
-| `install_native_hosts` | `{ browsers?: string[] }` | `{ installed: string[] }` |
-| `request_accessibility` | `{}` | `{ status }` (opens System Settings pane) |
-| `complete_onboarding` | `{ preset; windowManagement: 'off' \| 'hide'; launchAtLogin: boolean }` | `{}` |
+| `detect_browsers` | `{}` | `{ id; name; installed: boolean; hostInstalled: boolean; extensionConnected: boolean; profiles: number; storeUrl: string }[]` — **as built (P1.10):** `id` is the extension's `browser` value (`chrome`, `arc`, `brave`, `edge`, `chromium`); a browser this platform doesn't know is left out unless it's connected; a connected browser counts as installed |
+| `install_native_hosts` | `{ browsers?: string[] }` | `{ installed: string[] }` — **as built:** always every detected browser (`browsers` isn't taken); `NOT_FOUND` when the build has no `decay-host` next to it (dev builds), `PERMISSION_DENIED` when it failed for every browser tried. One install at a time (start-up and onboarding) |
+| `open_extension_store` | `{ browser: string }` (an `id` from `detect_browsers`) | `{}` — opens the extension's store page **in that browser** (macOS `open -b <bundle id>`; Windows: the browser's own exe from its App Paths entry, no shell or console), off the main thread; `INVALID_INPUT` for another id, `NOT_FOUND` ("open the Chrome Web Store in it yourself") when it can't be opened — never another browser. P1.10; the URL is a store search until the listing is public |
+| `request_accessibility` | `{}` | `{ requested: true; opened: 'prompt' \| 'settings' }` — **as built (P1.10):** the first request of a run shows the system prompt (which also lists Decay in System Settings); later ones open System Settings → Accessibility (macOS shows the prompt once). `ADAPTER_UNAVAILABLE` when the engine isn't running. The result arrives as `permission:changed` |
+| `complete_onboarding` | `{ input: { preset; windowManagement: 'off' \| 'hide'; launchAtLogin: boolean } }` | `{}` — **as built (P1.10):** sets `preset` + its `thresholds`, `window_management`, `launch_at_login`, clears a hold, `mode = shadow`, `shadow_started_at = onboarded_at = now` (one durable transaction), then broadcasts `settings:changed` and applies launch at login (release builds) before returning. `set_launch_at_login` only saves the setting in debug builds; login-item changes are serialised |
 | `get_license` | `{}` | `{ tier: 'free' \| 'trial' \| 'pro'; trialDaysLeft?: number; email?: string }` |
 | `activate_license` | `{ key: string }` | `{ tier: 'pro'; email }` or `AppError('INVALID_INPUT')` |
 | `deactivate_license` | `{}` | `{ tier }` |

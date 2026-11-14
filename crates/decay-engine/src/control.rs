@@ -6,13 +6,22 @@
 //! tray's badge and menu follow without asking.
 
 use decay_bridge::protocol::BrowserKind;
-use decay_core::{ItemState, Mode, Rule, RuleAction, RuleScope, RuleSource};
-use serde::Serialize;
+use decay_core::{ItemState, Mode, Preset, Rule, RuleAction, RuleScope, RuleSource};
+use serde::{Deserialize, Serialize};
 
 use crate::engine::{Engine, EngineEvent, Output, Res, RestoreRefused, UndoRefused};
 
 /// Setting: the mode "Resume" goes back to.
 const MODE_BEFORE_PAUSE: &str = "mode_before_pause";
+
+/// What Decay does with app windows (setting `window_management`; onboarding "Window
+/// access"): hide stale ones (needs Accessibility on macOS), or tabs only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WindowManagement {
+    Off,
+    Hide,
+}
 
 /// A connected browser profile.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -192,6 +201,36 @@ impl Engine {
         self.store.insert_rule(&rule)?;
         self.reload_policy()?;
         Ok(Some(rule))
+    }
+
+    /// Finishes onboarding (F21, Software Design §5.2 step 5), in one transaction: the
+    /// chosen pace, window handling and launch at login, and a fresh week of shadow mode starting now, whatever happened before
+    /// (nothing is closed until the user turns automatic mode on). Running it again (a
+    /// second onboarding after an erase) starts the week over.
+    pub fn complete_onboarding(
+        &mut self,
+        preset: Preset,
+        window_management: WindowManagement,
+        launch_at_login: bool,
+        now: i64,
+    ) -> Res<Vec<Output>> {
+        // Durable: finishing onboarding must survive a power loss right after it.
+        self.store.atomically(true, |s| {
+            s.set_setting("launch_at_login", &launch_at_login, now)?;
+            s.set_setting("preset", &preset, now)?;
+            s.set_setting("thresholds", &preset.thresholds(), now)?;
+            s.set_setting("window_management", &window_management, now)?;
+            s.set_setting("mode", &Mode::Shadow, now)?;
+            s.set_setting("shadow_started_at", &now, now)?;
+            s.set_setting("hold_until", &Option::<i64>::None, now)?;
+            s.set_setting("onboarded_at", &now, now)
+        })?;
+        self.after_setting_change(now)
+    }
+
+    /// Whether onboarding has been completed.
+    pub fn onboarded(&self) -> Res<bool> {
+        Ok(self.store.setting::<i64>("onboarded_at")?.is_some())
     }
 
     fn after_setting_change(&mut self, now: i64) -> Res<Vec<Output>> {

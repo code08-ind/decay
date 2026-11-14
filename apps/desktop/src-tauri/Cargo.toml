@@ -46,6 +46,10 @@ url = "2.5.8"
 # The search panel as a non-activating NSPanel (Software Design §4.9).
 tauri-nspanel = "2.1.1"
 
+[target.'cfg(windows)'.dependencies]
+# Opening the extension's store page in a given browser (its App Paths entry).
+winreg = "0.56.0"
+
 [target.'cfg(unix)'.dependencies]
 # Tauri's async runtime; `signal` for a clean stop on SIGTERM / SIGINT.
 tokio = { version = "1.54.1", features = ["signal", "macros"] }

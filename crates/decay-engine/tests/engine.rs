@@ -10,8 +10,10 @@ use decay_bridge::protocol::{
     BrowserKind, Config, Hello, Snapshot, TabInfo, TabStatus, WindowInfo, WindowState,
 };
 use decay_bridge::{Envelope, ErrorCode, kinds};
-use decay_core::{EventType, ItemState, Mode, SweepStatus};
-use decay_engine::{ConnId, Engine, EngineConfig, EngineEvent, Input, Output, timing};
+use decay_core::{EventType, ItemState, Mode, Preset, SweepStatus, Thresholds};
+use decay_engine::{
+    ConnId, Engine, EngineConfig, EngineEvent, Input, Output, WindowManagement, timing,
+};
 use decay_store::{DbKey, Platform, Store, StorePaths};
 use serde_json::{Value, json};
 
@@ -1618,4 +1620,33 @@ fn protect_site_adds_one_quick_action_rule() {
     let stored = h.store().rules().unwrap().into_iter().find(|r| r.id == rule.id).unwrap();
     assert!(stored.enabled);
     assert_eq!(h.store().archived_count().unwrap(), 2);
+}
+
+#[test]
+fn completing_onboarding_sets_the_pace_and_starts_a_fresh_shadow_week() {
+    let mut h = Harness::new();
+    assert!(!h.engine.onboarded().unwrap());
+    // Whatever happened before onboarding (an import, a mode set elsewhere, a hold) is reset.
+    h.set_mode(Mode::Automatic);
+    h.store().set_setting("hold_until", &Some(T0 + 3_600_000), h.now).unwrap();
+    h.now += 60_000;
+    let now = h.now;
+    let out = h
+        .engine
+        .complete_onboarding(Preset::Aggressive, WindowManagement::Off, false, now)
+        .unwrap();
+    h.collect(out);
+    let s = h.store();
+    assert_eq!(s.mode().unwrap(), Mode::Shadow);
+    assert_eq!(s.thresholds().unwrap(), Thresholds::AGGRESSIVE);
+    assert_eq!(s.setting::<Preset>("preset").unwrap(), Some(Preset::Aggressive));
+    assert_eq!(
+        s.setting::<WindowManagement>("window_management").unwrap(),
+        Some(WindowManagement::Off)
+    );
+    assert_eq!(s.setting::<i64>("shadow_started_at").unwrap(), Some(now));
+    assert_eq!(s.hold_until().unwrap(), None);
+    assert_eq!(s.setting::<bool>("launch_at_login").unwrap(), Some(false));
+    assert!(h.engine.onboarded().unwrap());
+    assert_eq!(h.engine.status(now).mode, Mode::Shadow);
 }

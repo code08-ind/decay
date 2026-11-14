@@ -37,7 +37,7 @@ pub mod runtime;
 mod sweep;
 mod tabs;
 
-pub use control::{BrowserStatus, EngineStatus};
+pub use control::{BrowserStatus, EngineStatus, WindowManagement};
 pub use domain::domain_of;
 pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,

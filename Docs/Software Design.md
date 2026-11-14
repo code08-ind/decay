@@ -283,7 +283,7 @@ trait Adapter: Send + Sync {
 | `panel` | Frameless, transparent, always-on-top, non-activating (`NSPanel` on macOS), centered on the active screen | Pre-created hidden at launch so it appears instantly; hides on blur/Esc |
 | `library` | Standard window, unified titlebar (macOS overlay titlebar / Windows Mica) | Main archive browser |
 | `settings` | Standard window, fixed width 720 | Sidebar tabs |
-| `onboarding` | Standard window, 640×560 | First run only |
+| `onboarding` | Standard window, 840×600, fixed size | First run only (`onboarded_at` unset): a plain launch, the tray's Library, the Dock, a second launch and Library links open it instead of the Library (a Library request made before start-up has read the setting waits for it; an item route asked for before onboarding is dropped). Browsers count as installed when their user data folder has a `Local State` file (macOS) / their registry key exists (Windows); Chrome Beta / Canary count as Chrome |
 | `tray-popover` | Small frameless window anchored to the tray icon | Quick status, hold, search |
 
 The app runs as a **menu bar agent** (`LSUIElement = true`, no Dock icon) on macOS; while the Library or Settings window is open the activation policy switches to `Regular` so a Dock icon appears and `⌘Tab` works. Windows: tray only, and the taskbar button shows while a window is open.

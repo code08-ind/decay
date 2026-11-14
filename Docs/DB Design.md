@@ -200,7 +200,8 @@ Unique: `(scope, match, action)`.
 | Key | Default |
 | --- | --- |
 | `mode` | `"shadow"` (`shadow` \| `automatic` \| `paused`) |
-| `shadow_started_at` | first-run time |
+| `shadow_started_at` | first-run time; onboarding resets it to when it finishes |
+| `onboarded_at` | `null` until onboarding finishes (then the time); until then a plain launch shows onboarding and no login item is registered (P1.10). Migration V2 sets it for databases already in use (items or sweeps), so updating users skip onboarding |
 | `preset` | `"balanced"` |
 | `thresholds` | `{"stale":12,"hidden":36,"archive":60}` |
 | `idle_cutoff_s` | `300` |

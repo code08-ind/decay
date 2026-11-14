@@ -271,6 +271,62 @@ pub fn uninstall(opts: &InstallOptions) -> Report {
     report
 }
 
+/// A browser as onboarding sees it (API Design `detect_browsers`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Detected {
+    pub target: &'static BrowserTarget,
+    /// macOS / Linux: its user data folder has a `Local State` file (a browser that has
+    /// run; a folder left behind by an uninstall or another installer doesn't count).
+    /// Windows: its registry key exists.
+    pub installed: bool,
+    /// The host manifest is in place for it.
+    pub host_installed: bool,
+}
+
+/// Which browsers are on this machine and which have the host, for every target this
+/// platform knows, installed or not. Stricter than [`install`] on macOS / Linux, which
+/// writes the manifest for any existing folder (harmless; the list shown to the user
+/// must not offer a browser that isn't there).
+pub fn detect(home: &Path, support_dir: &Path, registry_root: &str) -> Vec<Detected> {
+    let file = format!("{HOST_NAME}.json");
+    #[cfg(not(windows))]
+    {
+        let _ = (support_dir, registry_root);
+        TARGETS
+            .iter()
+            .filter_map(|target| {
+                let dir = browser_dir(home, target)?;
+                let installed = dir.join("Local State").is_file();
+                let host_installed =
+                    installed && dir.join("NativeMessagingHosts").join(&file).is_file();
+                Some(Detected { target, installed, host_installed })
+            })
+            .collect()
+    }
+    #[cfg(windows)]
+    {
+        use winreg::RegKey;
+        use winreg::enums::HKEY_CURRENT_USER;
+        let _ = home;
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let manifest = host_dir(support_dir).join(&file);
+        TARGETS
+            .iter()
+            .filter_map(|target| {
+                let key = target.win_key?;
+                let browser = format!(r"{registry_root}\{key}");
+                let installed = hkcu.open_subkey(&browser).is_ok();
+                let host_installed = installed
+                    && manifest.is_file()
+                    && hkcu
+                        .open_subkey(format!(r"{browser}\NativeMessagingHosts\{HOST_NAME}"))
+                        .is_ok();
+                Some(Detected { target, installed, host_installed })
+            })
+            .collect()
+    }
+}
+
 fn remove_if_present(path: &Path) -> io::Result<()> {
     match std::fs::remove_file(path) {
         Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
@@ -364,13 +420,28 @@ mod tests {
         let detected: Vec<&BrowserTarget> =
             TARGETS.iter().filter(|t| ["Google Chrome", "Brave"].contains(&t.name)).collect();
         for t in &detected {
-            std::fs::create_dir_all(browser_dir(&opts.home, t).unwrap()).unwrap();
+            let dir = browser_dir(&opts.home, t).unwrap();
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("Local State"), "{}").unwrap();
         }
+        // A folder left behind (no `Local State`) gets the host but isn't shown as installed.
+        let chromium = TARGETS.iter().find(|t| t.name == "Chromium").unwrap();
+        std::fs::create_dir_all(browser_dir(&opts.home, chromium).unwrap()).unwrap();
+        let state = |opts: &InstallOptions| -> Vec<(&str, bool, bool)> {
+            detect(&opts.home, &opts.support_dir, &opts.registry_root)
+                .iter()
+                .filter(|d| d.installed)
+                .map(|d| (d.target.name, d.installed, d.host_installed))
+                .collect()
+        };
+        assert_eq!(state(&opts), [("Google Chrome", true, false), ("Brave", true, false)]);
         let report = install(&opts).unwrap();
         assert_eq!(report.failed.len(), 0);
+        assert_eq!(state(&opts), [("Google Chrome", true, true), ("Brave", true, true)]);
+        assert!(detect(&opts.home, &opts.support_dir, &opts.registry_root).len() > 2);
         let done = report.done;
         let names: Vec<&str> = done.iter().map(|i| i.browser).collect();
-        assert_eq!(names, ["Google Chrome", "Brave"]);
+        assert_eq!(names, ["Google Chrome", "Chromium", "Brave"]);
         let written: serde_json::Value =
             serde_json::from_slice(&std::fs::read(&done[0].location).unwrap()).unwrap();
         assert_eq!(written["path"], opts.host_path.display().to_string());
@@ -405,6 +476,12 @@ mod tests {
         let report = install(&opts).unwrap();
         let names: Vec<&str> = report.done.iter().map(|i| i.browser).collect();
         assert_eq!(names, ["Google Chrome"]);
+        let found: Vec<(&str, bool)> = detect(&opts.home, &opts.support_dir, &opts.registry_root)
+            .iter()
+            .filter(|d| d.installed)
+            .map(|d| (d.target.name, d.host_installed))
+            .collect();
+        assert_eq!(found, [("Google Chrome", true)]);
         let key = hkcu
             .open_subkey(format!(
                 r"{}\Google\Chrome\NativeMessagingHosts\{HOST_NAME}",

@@ -22,6 +22,10 @@ const COMMANDS: &[&str] = &[
     "restore_batch",
     "protect_item",
     "ui_show_item",
+    "detect_browsers",
+    "install_native_hosts",
+    "open_extension_store",
+    "complete_onboarding",
 ];
 
 fn main() {

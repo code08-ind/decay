@@ -162,12 +162,11 @@ impl Core {
         }
     }
 
-    /// Asks the system for the Accessibility permission.
-    pub fn request_accessibility(&self) {
+    /// Asks the system for the Accessibility permission; `false` if the engine isn't
+    /// running (nothing was asked).
+    pub fn request_accessibility(&self) -> bool {
         let guard = self.runtime.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        if let Some(rt) = guard.as_ref() {
-            rt.request_accessibility();
-        }
+        guard.as_ref().is_some_and(Runtime::request_accessibility)
     }
 }
 
@@ -176,38 +175,80 @@ pub fn quit_marker(support: &Path) -> PathBuf {
     support.join("run").join(decay_host::QUIT_MARKER)
 }
 
+/// The user's home folder.
+pub fn home_dir() -> Option<PathBuf> {
+    std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" }).map(PathBuf::from)
+}
+
+/// Why the native host couldn't be installed.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum HostInstallError {
+    /// This build has no `decay-host` next to it (development builds).
+    #[error("this build of Decay doesn't include its browser connector")]
+    NotBundled,
+    /// Installing failed for every detected browser, or for all of them at once.
+    #[error("{0}")]
+    Failed(String),
+}
+
+impl From<HostInstallError> for AppError {
+    fn from(e: HostInstallError) -> Self {
+        let code = match e {
+            HostInstallError::NotBundled => "NOT_FOUND",
+            HostInstallError::Failed(_) => "PERMISSION_DENIED",
+        };
+        Self::new(code, e.to_string())
+    }
+}
+
+/// One install at a time (start-up and onboarding can ask together).
+static HOST_INSTALL: Mutex<()> = Mutex::new(());
+
 /// Installs the native messaging host for every detected browser, when the host binary
 /// sits next to the app (bundled builds; Software Design §4.8 "install at every start").
-pub fn install_host(support: &Path) {
-    let Ok(exe) = std::env::current_exe() else { return };
+/// Returns the browsers it's installed for; fails when it couldn't be installed for any
+/// detected browser.
+pub fn install_host(support: &Path) -> Result<Vec<&'static str>, HostInstallError> {
+    let _one_at_a_time = HOST_INSTALL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let failed = |why: String| HostInstallError::Failed(why);
+    let exe = std::env::current_exe().map_err(|e| failed(e.to_string()))?;
     let name = if cfg!(windows) { "decay-host.exe" } else { "decay-host" };
     let Some(host) = exe.parent().map(|d| d.join(name)).filter(|p| p.is_file()) else {
         tracing::info!("no bundled decay-host next to the app; host install skipped");
-        return;
+        return Err(HostInstallError::NotBundled);
     };
-    let Some(home) = std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" }) else {
-        return;
-    };
+    let home = home_dir().ok_or_else(|| failed("no home folder".into()))?;
     let config = decay_host::config::HostConfig::load(support);
     let opts = decay_host::install::InstallOptions {
-        home: PathBuf::from(home),
+        home,
         support_dir: support.to_owned(),
         host_path: host,
         origins: config.allowed_origins,
         app_path: Some(exe),
         registry_root: "Software".into(),
     };
-    match decay_host::install::install(&opts) {
-        Ok(report) => {
-            for done in &report.done {
-                tracing::info!(browser = done.browser, "native host installed");
-            }
-            for (browser, e) in &report.failed {
-                tracing::warn!(browser, "native host install failed: {e}");
-            }
-        }
-        Err(e) => tracing::warn!("native host not installed: {e}"),
+    let report = decay_host::install::install(&opts).map_err(|e| {
+        tracing::warn!("native host not installed: {e}");
+        failed(e.to_string())
+    })?;
+    for done in &report.done {
+        tracing::info!(browser = done.browser, "native host installed");
     }
+    for (browser, e) in &report.failed {
+        tracing::warn!(browser, "native host install failed: {e}");
+    }
+    install_outcome(&report)
+}
+
+/// Success unless every browser that was tried failed.
+fn install_outcome(
+    report: &decay_host::install::Report,
+) -> Result<Vec<&'static str>, HostInstallError> {
+    if report.done.is_empty() && !report.failed.is_empty() {
+        let list: Vec<String> = report.failed.iter().map(|(b, e)| format!("{b}: {e}")).collect();
+        return Err(HostInstallError::Failed(list.join("; ")));
+    }
+    Ok(report.done.iter().map(|d| d.browser).collect())
 }
 
 #[cfg(test)]
@@ -223,6 +264,23 @@ mod tests {
             assert_eq!(dir.key, KeySource::File(PathBuf::from("/support/dev-app/dev.key")));
         }
         assert_eq!(quit_marker(&dir.support), PathBuf::from("/support/run/quit-by-user"));
+    }
+
+    #[test]
+    fn host_install_fails_only_when_every_browser_failed() {
+        use decay_host::install::{Installed, Report};
+        let ok = Installed { browser: "Brave", location: "x".into() };
+        let err = || std::io::Error::other("denied");
+        assert_eq!(install_outcome(&Report::default()).unwrap(), Vec::<&str>::new());
+        let mixed = Report { done: vec![ok], failed: vec![("Arc", err())] };
+        assert_eq!(install_outcome(&mixed).unwrap(), ["Brave"]);
+        let none = Report { done: vec![], failed: vec![("Arc", err())] };
+        assert_eq!(
+            install_outcome(&none).unwrap_err(),
+            HostInstallError::Failed("Arc: denied".into())
+        );
+        assert_eq!(AppError::from(HostInstallError::NotBundled).code, "NOT_FOUND");
+        assert_eq!(AppError::from(HostInstallError::Failed("x".into())).code, "PERMISSION_DENIED");
     }
 
     #[test]

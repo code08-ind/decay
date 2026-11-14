@@ -277,19 +277,25 @@ pub async fn update_settings(
     save_settings(app, changes).await
 }
 
+/// Turns launch at login on or off (F17). Debug builds only save the setting: they never
+/// register a login item for a binary in `target/`.
 #[tauri::command]
 pub async fn set_launch_at_login(app: AppHandle, enabled: bool) -> Res<Value> {
-    let launcher = app.autolaunch();
-    let done = if enabled { launcher.enable() } else { launcher.disable() };
-    done.map_err(|e| AppError::new("PERMISSION_DENIED", e.to_string()))?;
+    if !cfg!(debug_assertions) {
+        let handle = app.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            let shell = handle.state::<shell::Shell>();
+            let _one_at_a_time =
+                shell.autolaunch.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let launcher = handle.autolaunch();
+            if enabled { launcher.enable() } else { launcher.disable() }
+        })
+        .await
+        .map_err(|e| AppError::new("INTERNAL", e.to_string()))?
+        .map_err(|e| AppError::new("PERMISSION_DENIED", e.to_string()))?;
+    }
     save_settings(app, vec![("launch_at_login".into(), json!(enabled))]).await?;
     Ok(json!({ "enabled": enabled }))
-}
-
-#[tauri::command]
-pub fn request_accessibility(core: State<'_, Core>) -> Value {
-    core.request_accessibility();
-    json!({ "requested": true })
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -297,6 +303,7 @@ pub fn request_accessibility(core: State<'_, Core>) -> Value {
 pub enum ShowWindow {
     Library,
     Settings,
+    Onboarding,
 }
 
 #[tauri::command]
@@ -304,6 +311,7 @@ pub fn ui_show_window(app: AppHandle, window: ShowWindow, route: Option<String>)
     let (window, default) = match window {
         ShowWindow::Library => (Window::Library, "/"),
         ShowWindow::Settings => (Window::Settings, "/general"),
+        ShowWindow::Onboarding => (Window::Onboarding, "/"),
     };
     // Routes are in-app paths only.
     let route = route.filter(|r| r.starts_with('/') && r.len() <= 200 && !r.contains("//"));

@@ -13,7 +13,7 @@ use crate::{Result, Store, StoreError};
 pub fn default_setting(key: &str) -> Option<Value> {
     Some(match key {
         "mode" => json!("shadow"),
-        "shadow_started_at" | "hold_until" => Value::Null,
+        "shadow_started_at" | "hold_until" | "onboarded_at" => Value::Null,
         "preset" => json!("balanced"),
         "thresholds" => json!({"stale": 12, "hidden": 36, "archive": 60}),
         "idle_cutoff_s" => json!(300),
@@ -32,8 +32,9 @@ pub fn default_setting(key: &str) -> Option<Value> {
 }
 
 /// Every known key (for snapshots).
-const KEYS: [&str; 17] = [
+const KEYS: [&str; 18] = [
     "mode",
+    "onboarded_at",
     "shadow_started_at",
     "preset",
     "thresholds",

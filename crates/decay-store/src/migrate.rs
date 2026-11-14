@@ -12,14 +12,17 @@ pub(crate) struct Migration {
     pub sql: &'static str,
 }
 
-pub(crate) const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    name: "initial",
-    sql: include_str!("../migrations/V1__initial.sql"),
-}];
+pub(crate) const MIGRATIONS: &[Migration] = &[
+    Migration { version: 1, name: "initial", sql: include_str!("../migrations/V1__initial.sql") },
+    Migration {
+        version: 2,
+        name: "onboarded",
+        sql: include_str!("../migrations/V2__onboarded.sql"),
+    },
+];
 
 /// The newest schema version this build knows.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// FNV-1a over the SQL with line endings normalised (a Windows checkout has CRLF).
 fn checksum(sql: &str) -> String {
@@ -121,6 +124,33 @@ mod tests {
     fn checksums_ignore_line_endings() {
         assert_eq!(checksum("a\r\nb"), checksum("a\nb"));
         assert_ne!(checksum("a\nb"), checksum("a\nc"));
+    }
+
+    /// V2 marks databases already in use as onboarded, and only those.
+    #[test]
+    fn databases_in_use_before_onboarding_count_as_onboarded() {
+        let onboarded = |seed: &str| {
+            let mut conn = Connection::open_in_memory().unwrap();
+            let v1 =
+                pending(&conn).unwrap().into_iter().filter(|m| m.version == 1).collect::<Vec<_>>();
+            apply(&mut conn, &v1, 5).unwrap();
+            conn.execute_batch(seed).unwrap();
+            let rest = pending(&conn).unwrap();
+            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2]);
+            apply(&mut conn, &rest, 5).unwrap();
+            let at: Option<String> = conn
+                .query_row("SELECT value FROM settings WHERE key = 'onboarded_at'", [], |r| {
+                    r.get(0)
+                })
+                .optional()
+                .unwrap();
+            at.map(|v| v.parse::<i64>().unwrap())
+        };
+        assert_eq!(onboarded(""), None, "a new database isn't onboarded");
+        let at = onboarded(
+            "INSERT INTO sweeps (id, started_at, trigger, is_shadow, status) VALUES ('s', 1, 'manual', 1, 'done');",
+        );
+        assert!(at.is_some_and(|t| t > 1_700_000_000_000), "{at:?}");
     }
 
     #[test]

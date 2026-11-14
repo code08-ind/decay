@@ -53,6 +53,20 @@ export interface SearchOutput {
   tookMs: number;
 }
 
+export type Preset = 'gentle' | 'balanced' | 'aggressive';
+export type WindowManagement = 'hide' | 'off';
+
+/** A browser as onboarding sees it (`detect_browsers`). */
+export interface DetectedBrowser {
+  id: string;
+  name: string;
+  installed: boolean;
+  hostInstalled: boolean;
+  extensionConnected: boolean;
+  profiles: number;
+  storeUrl: string;
+}
+
 export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: number };
 
 export const api = {
@@ -66,8 +80,18 @@ export const api = {
   undoSweep: (id?: string) => invoke('undo_sweep', { id }),
   setHotkey: (accelerator: string) => invoke('set_hotkey', { accelerator }),
   setLaunchAtLogin: (enabled: boolean) => invoke('set_launch_at_login', { enabled }),
-  requestAccessibility: () => invoke('request_accessibility'),
-  showWindow: (window: 'library' | 'settings', route?: string) =>
+  /** The system prompt the first time in a run, then System Settings → Accessibility. */
+  requestAccessibility: () =>
+    invoke<{ requested: boolean; opened: 'prompt' | 'settings' }>('request_accessibility'),
+  detectBrowsers: () => invoke<DetectedBrowser[]>('detect_browsers'),
+  installNativeHosts: () => invoke<{ installed: string[] }>('install_native_hosts'),
+  openExtensionStore: (browser: string) => invoke('open_extension_store', { browser }),
+  completeOnboarding: (input: {
+    preset: Preset;
+    windowManagement: WindowManagement;
+    launchAtLogin: boolean;
+  }) => invoke('complete_onboarding', { input }),
+  showWindow: (window: 'library' | 'settings' | 'onboarding', route?: string) =>
     invoke('ui_show_window', { window, route }),
   hidePanel: () => invoke('ui_hide_panel'),
   takePending: () => invoke<Pending>('ui_take_pending'),

@@ -30,6 +30,67 @@ pub struct Shell {
     pub link_seen: std::sync::atomic::AtomicBool,
     /// The native window theme (`None`: follow the OS), from the `theme` setting.
     pub theme: Mutex<Option<tauri::Theme>>,
+    /// Whether onboarding is done (`onboarded_at`), and a Library request waiting to know.
+    pub onboarding: Mutex<OnboardGate>,
+    /// Serialises login-item changes (onboarding, Settings, start-up).
+    pub autolaunch: Mutex<()>,
+    /// The system's Accessibility prompt was shown in this run (macOS shows it once; later
+    /// requests open System Settings instead).
+    pub ax_prompted: std::sync::atomic::AtomicBool,
+}
+
+/// Whether onboarding is done, as far as the shell knows yet.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Onboarded {
+    /// Start-up hasn't read the setting yet.
+    #[default]
+    Unknown,
+    No,
+    Yes,
+}
+
+/// Until onboarding is done the Library opens onboarding instead. Before start-up has read
+/// the setting, a Library request (a launch link, the tray, the Dock) waits for it rather
+/// than guessing.
+#[derive(Debug, Default)]
+pub struct OnboardGate {
+    pub state: Onboarded,
+    /// The route of a Library request made while the state was unknown (the latest wins).
+    waiting: Option<String>,
+}
+
+impl OnboardGate {
+    /// Where a Library request for `route` goes now; `None`: it waits for [`Self::resolve`].
+    pub fn request(&mut self, route: &str) -> Option<(Window, String)> {
+        match self.state {
+            Onboarded::Yes => Some((Window::Library, route.to_owned())),
+            Onboarded::No => Some((Window::Onboarding, "/".to_owned())),
+            Onboarded::Unknown => {
+                self.waiting = Some(route.to_owned());
+                None
+            }
+        }
+    }
+
+    /// The setting is known; returns the waiting Library request's route, to open now.
+    pub fn resolve(&mut self, onboarded: bool) -> Option<String> {
+        self.state = if onboarded { Onboarded::Yes } else { Onboarded::No };
+        self.waiting.take()
+    }
+}
+
+/// Records whether onboarding is done and opens a Library request that waited for it.
+pub fn set_onboarded(app: &AppHandle, onboarded: bool) {
+    let waiting = app
+        .state::<Shell>()
+        .onboarding
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .resolve(onboarded);
+    if let Some(route) = waiting {
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || show_window(&handle, Window::Library, &route));
+    }
 }
 
 /// Data waiting for a window.
@@ -51,6 +112,9 @@ impl Shell {
             pending: Mutex::new(Pending::default()),
             link_seen: std::sync::atomic::AtomicBool::new(false),
             theme: Mutex::new(None),
+            onboarding: Mutex::new(OnboardGate::default()),
+            autolaunch: Mutex::new(()),
+            ax_prompted: std::sync::atomic::AtomicBool::new(false),
         }
     }
 
@@ -68,6 +132,12 @@ impl Shell {
         self.hotkey.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
+    /// Onboarding is known to be done.
+    pub fn onboarded(&self) -> bool {
+        self.onboarding.lock().unwrap_or_else(std::sync::PoisonError::into_inner).state
+            == Onboarded::Yes
+    }
+
     pub fn fatal(&self) -> Option<String> {
         self.fatal.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
@@ -78,6 +148,7 @@ fn spec(window: Window) -> (&'static str, f64, f64) {
         Window::Panel => ("Search", 680.0, 440.0),
         Window::Library => ("Decay", 1100.0, 720.0),
         Window::Settings => ("Settings", 720.0, 560.0),
+        Window::Onboarding => ("Decay Setup Assistant", ONBOARDING_SIZE.0, ONBOARDING_SIZE.1),
     }
 }
 
@@ -103,6 +174,9 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
             .center()
             .build(),
         Window::Settings => builder.resizable(false).center().build(),
+        Window::Onboarding => {
+            builder.resizable(false).maximizable(false).minimizable(false).center().build()
+        }
         Window::Library => builder.min_inner_size(800.0, 520.0).center().build(),
     }
 }
@@ -125,6 +199,9 @@ pub fn apply_theme(app: &AppHandle, setting: &str) {
         let _ = window.set_theme(theme);
     }
 }
+
+/// The onboarding window (logical px): the step list beside the step (Designs/03).
+pub const ONBOARDING_SIZE: (f64, f64) = (840.0, 600.0);
 
 /// The panel's size (logical px): 680 wide, up to 480 tall, plus a 16-px margin all
 /// round for the card's shadow (the window itself is transparent).
@@ -304,12 +381,28 @@ pub fn toggle_panel(app: &AppHandle) {
     if visible { hide_panel(app) } else { show_panel(app, None) }
 }
 
-/// Opens (or focuses) the Library or Settings at `route`.
+/// Opens (or focuses) the Library, Settings or onboarding at `route`. Until onboarding is
+/// done, the Library opens the onboarding instead (first run, tray, Dock, a second launch).
 pub fn show_window(app: &AppHandle, window: Window, route: &str) {
     if window == Window::Panel {
         show_panel(app, None);
         return;
     }
+    let (window, route) = if window == Window::Library {
+        let gate = app
+            .state::<Shell>()
+            .onboarding
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .request(route);
+        match gate {
+            Some(target) => target,
+            None => return, // opened once start-up knows (set_onboarded)
+        }
+    } else {
+        (window, route.to_owned())
+    };
+    let route = route.as_str();
     if let Some(existing) = app.get_webview_window(window.label()) {
         set_dock_visible(app, true);
         let _ = existing.unminimize();
@@ -348,7 +441,7 @@ pub fn window_closed(app: &AppHandle, label: &str) {
     if label == Window::Panel.label() {
         return;
     }
-    let regular_left = [Window::Library, Window::Settings]
+    let regular_left = [Window::Library, Window::Settings, Window::Onboarding]
         .iter()
         .any(|w| w.label() != label && app.get_webview_window(w.label()).is_some());
     if !regular_left {
@@ -464,6 +557,20 @@ mod tests {
         );
         // A panel taller than the screen stays on it.
         assert_eq!(panel_origin((0.0, 0.0, 800.0, 400.0), (712.0, 512.0)), (44.0, 0.0));
+    }
+
+    #[test]
+    fn library_requests_wait_for_the_onboarding_state() {
+        let mut gate = OnboardGate::default();
+        // Unknown: requests wait; the latest is opened once known.
+        assert_eq!(gate.request("/item/a"), None);
+        assert_eq!(gate.request("/"), None);
+        assert_eq!(gate.resolve(false), Some("/".to_owned()));
+        assert_eq!(gate.resolve(false), None, "handed out once");
+        // Not onboarded: onboarding instead.
+        assert_eq!(gate.request("/item/a"), Some((Window::Onboarding, "/".to_owned())));
+        assert_eq!(gate.resolve(true), None);
+        assert_eq!(gate.request("/item/a"), Some((Window::Library, "/item/a".to_owned())));
     }
 
     #[test]

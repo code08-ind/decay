@@ -136,6 +136,25 @@ pub struct Thresholds {
     pub archive: f64,
 }
 
+/// A named set of thresholds (PRD §1.1; onboarding "Choose pace", Settings).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Preset {
+    Gentle,
+    Balanced,
+    Aggressive,
+}
+
+impl Preset {
+    pub const fn thresholds(self) -> Thresholds {
+        match self {
+            Self::Gentle => Thresholds::GENTLE,
+            Self::Balanced => Thresholds::BALANCED,
+            Self::Aggressive => Thresholds::AGGRESSIVE,
+        }
+    }
+}
+
 /// Invalid thresholds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 #[error("thresholds must be 1–720 h and ordered stale < hidden < archive")]
@@ -368,6 +387,15 @@ mod tests {
             assert_eq!(ItemState::from_sql(s.as_sql()), Some(*s));
         }
         assert_eq!(ItemState::from_sql("nope"), None);
+    }
+
+    #[test]
+    fn presets_have_their_thresholds() {
+        assert_eq!(Preset::Gentle.thresholds(), Thresholds::GENTLE);
+        assert_eq!(Preset::Balanced.thresholds(), Thresholds::BALANCED);
+        assert_eq!(Preset::Aggressive.thresholds(), Thresholds::AGGRESSIVE);
+        assert_eq!(serde_json::to_value(Preset::Aggressive).unwrap(), "aggressive");
+        assert!(serde_json::from_str::<Preset>("\"turbo\"").is_err());
     }
 
     #[test]

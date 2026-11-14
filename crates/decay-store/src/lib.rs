@@ -414,7 +414,7 @@ mod tests {
         let paths = StorePaths::in_dir(dir.path());
         let (store, report) = Store::open(paths.clone(), key(), NOW).unwrap();
         assert!(report.created);
-        assert_eq!(report.applied_migrations, vec![1]);
+        assert_eq!(report.applied_migrations, vec![1, 2]);
         assert_eq!(report.pre_migration_backup, None);
         let journal: String =
             store.conn.query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();
@@ -456,7 +456,7 @@ mod tests {
             .unwrap();
         drop(store);
         let err = Store::open(StorePaths::in_dir(dir.path()), key(), NOW).unwrap_err();
-        assert!(matches!(err, StoreError::TooNew { found: 99, known: 1 }));
+        assert!(matches!(err, StoreError::TooNew { found: 99, known: SCHEMA_VERSION }));
     }
 
     #[test]
