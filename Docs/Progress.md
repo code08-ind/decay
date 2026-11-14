@@ -34,6 +34,22 @@
 - [ ] Apple Developer account ($99/yr) and Windows signing (Azure Trusted Signing)
 - [ ] Chrome Web Store developer account ($5)
 
+## Deferred items (to look at later)
+
+Everything a review or QA pass left for later, with where it comes from and when it's due. Tick an item off when it's done.
+
+- [ ] **Store link in onboarding**: "Install extension" opens a Chrome Web Store search until the listing is public; put the real listing URL in `STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the extension ID in decay-host `BUILTIN_EXTENSION_IDS`. *From P1.10 · due with P0.9.*
+- [ ] **"Customise thresholds" link and version badge** in onboarding (Designs/03b, 03a). *From P1.10 · due with P1.12 Settings.*
+- [ ] **Tests for the Tauri command wrappers** in onboarding.rs / shell.rs (need a running app, e.g. `tauri::test` mock runtime); keeps Rust coverage comfortably above 80 % (81.9 % now). *From P1.10.*
+- [ ] **Item route lost before onboarding**: the panel's "open in Library" (`/item/{id}`) asked for before onboarding opens onboarding and drops the route. *From P1.10 · low.*
+- [ ] **App sweeps on the extension's Sweeps page**, and the **regret metric / "Always keep" offer** in adapter mode. *From P1.5 · due with P1.11.*
+- [ ] **Blank new-tab pages** in the popup's recent list (Phase 0 behaviour too). *From P1.5.*
+- [ ] **`sources.closed_at`** for windows of past sessions. *From P1.5.*
+- [ ] **Interrupted-undo marker**. *From P1.5.*
+- [ ] **Fuzzy (typo-tolerant) search** in the panel. *From P1.2 / P1.9.*
+- [ ] **Invalid-rule warnings** in the desktop rules editor. *From P1.1 · due with P1.12 Rules.*
+- [ ] **Window items**: hide/close windows (F4) and Accessibility window enumeration have no Progress row yet. *From P1.6 · Phase 2.*
+
 ---
 
 ## Workflow per sub-phase
