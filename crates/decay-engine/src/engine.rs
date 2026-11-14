@@ -456,6 +456,9 @@ pub struct Engine {
     pub(crate) restore_ops: HashMap<u64, RestoreOp>,
     /// Archived items with a `tabs.restore` waiting for its ack (never sent twice).
     pub(crate) restoring: HashSet<String>,
+    /// Items an exclude rule matched while a sweep was closing them: deleted as soon as
+    /// the close settles (whichever way), so an excluded site never stays archived.
+    pub(crate) exclude_pending: HashSet<String>,
     pub(crate) next_op: u64,
     pub(crate) sweep: SweepState,
     pub(crate) clock: AgingClock,
@@ -540,6 +543,7 @@ impl Engine {
             pending: HashMap::new(),
             restore_ops: HashMap::new(),
             restoring: HashSet::new(),
+            exclude_pending: HashSet::new(),
             next_op: 0,
             sweep: SweepState::Idle,
             clock,
@@ -590,6 +594,7 @@ impl Engine {
             Input::Disconnected(id) => self.disconnected(id, now),
             Input::Platform(sample) => self.on_platform(*sample, now),
         }
+        self.purge_settled_excludes();
         std::mem::take(&mut self.out)
     }
 
@@ -669,6 +674,7 @@ impl Engine {
                 self.problem("maintenance", &e);
             }
         }
+        self.purge_settled_excludes();
         self.publish_status(now);
         std::mem::take(&mut self.out)
     }

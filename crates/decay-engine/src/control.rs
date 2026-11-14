@@ -233,6 +233,12 @@ impl Engine {
         Ok(self.store.setting::<i64>("onboarded_at")?.is_some())
     }
 
+    /// Settings were written to the store directly (`update_settings`): the policy and
+    /// the status follow at once.
+    pub fn settings_changed(&mut self, now: i64) -> Res<Vec<Output>> {
+        self.after_setting_change(now)
+    }
+
     fn after_setting_change(&mut self, now: i64) -> Res<Vec<Output>> {
         self.reload_policy()?;
         self.publish_status(now);

@@ -33,6 +33,7 @@ mod domain;
 mod engine;
 mod platform;
 mod restore;
+mod rules;
 pub mod runtime;
 mod sweep;
 mod tabs;
@@ -43,3 +44,4 @@ pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,
     RestoreRefused, SweepRefused, UndoRefused, timing,
 };
+pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};

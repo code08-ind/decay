@@ -1690,3 +1690,171 @@ fn kept_live_lists_aged_tabs_a_protection_keeps() {
     let fresh = Harness::new();
     assert_eq!(fresh.engine.kept_live(fresh.now), Vec::new());
 }
+
+#[test]
+fn rules_from_the_app_apply_at_once_and_excludes_purge() {
+    use decay_core::{RuleAction, RuleScope};
+    use decay_engine::{RuleInput, RuleRefused};
+    let input = |scope: RuleScope, pattern: &str, action: RuleAction| RuleInput {
+        scope,
+        pattern: pattern.into(),
+        action,
+        threshold_hours: None,
+        enabled: None,
+    };
+    let mut h = ready_to_sweep(Mode::Shadow);
+    let old = h.item_for_url("https://old.example/page");
+
+    // A rule test sees the open tab; nothing archived matches.
+    let probe = input(RuleScope::Domain, "old.example", RuleAction::Protect);
+    let test = h.engine.test_rule(&probe, h.now).unwrap();
+    assert_eq!((test.matches_live, test.matches_archived), (1, 0));
+    assert_eq!(test.sample[0].id, old.id);
+
+    // Protect: saved, and the policy keeps the tab (it's listed as kept now).
+    let (rule, purged, out) = h.engine.create_rule(&probe, h.now).unwrap();
+    h.collect(out);
+    assert_eq!((rule.pattern.as_str(), purged), ("old.example", 0));
+    assert!(h.engine.kept_live(h.now).iter().any(|(i, _)| i.id == old.id));
+    assert!(matches!(h.engine.create_rule(&probe, h.now), Err(RuleRefused::Duplicate)));
+    assert!(matches!(
+        h.engine.create_rule(&input(RuleScope::Domain, "com", RuleAction::Protect), h.now),
+        Err(RuleRefused::Invalid(_))
+    ));
+
+    // Exclude: confirmed by a preview count, then everything stored for it goes, and the
+    // extension is told at once.
+    h.take(1, kinds::CONFIG);
+    let exclude = input(RuleScope::Domain, "old.example", RuleAction::Exclude);
+    assert_eq!(h.engine.preview_exclude(&exclude).unwrap(), 1);
+    let (x, purged, out) = h.engine.create_rule(&exclude, h.now).unwrap();
+    h.collect(out);
+    assert_eq!(purged, 1);
+    assert!(h.store().item(&old.id).unwrap().is_none());
+    let config: Config = h.one(1, kinds::CONFIG).payload_as().unwrap();
+    assert_eq!(config.excluded_domains, vec!["old.example".to_owned()]);
+    // The open tab's record is gone too: the next change doesn't bring it back.
+    h.advance(timing::TICK_MS, &[1]);
+    assert!(
+        h.store()
+            .live_items()
+            .unwrap()
+            .iter()
+            .all(|i| i.url.as_deref() != Some("https://old.example/page"))
+    );
+
+    // Turn the exclude off and delete the protect rule.
+    let mut off = exclude.clone();
+    off.enabled = Some(false);
+    let (x2, _, out) = h.engine.update_rule(&x.id, &off, h.now).unwrap();
+    h.collect(out);
+    assert!(!x2.enabled);
+    let out = h.engine.delete_rule(&rule.id, h.now).unwrap();
+    h.collect(out);
+    let ids: Vec<String> = h.engine.rules().unwrap().into_iter().map(|r| r.id).collect();
+    assert!(ids.contains(&x.id) && !ids.contains(&rule.id));
+    assert!(matches!(h.engine.delete_rule(&rule.id, h.now), Err(RuleRefused::NotFound)));
+    assert!(matches!(h.engine.update_rule("nope", &off, h.now), Err(RuleRefused::NotFound)));
+}
+
+fn rule_input(
+    scope: decay_core::RuleScope,
+    pattern: &str,
+    action: decay_core::RuleAction,
+) -> decay_engine::RuleInput {
+    decay_engine::RuleInput {
+        scope,
+        pattern: pattern.into(),
+        action,
+        threshold_hours: None,
+        enabled: None,
+    }
+}
+
+#[test]
+fn an_exclude_added_mid_archive_deletes_the_item_once_the_close_settles() {
+    use decay_core::{RuleAction, RuleScope};
+    for closed in [true, false] {
+        let mut h = ready_to_sweep(Mode::Automatic);
+        h.poll();
+        let probe = h.one(1, kinds::PROBE);
+        h.ack_ok(1, &probe, json!({"results": [{"tabId": 1, "dirtyForm": false, "beforeUnload": false, "uploading": false}], "missing": []}));
+        let close = h.one(1, kinds::TABS_CLOSE);
+        let item = h.item_for_url("https://old.example/page");
+        assert_eq!(item.state, ItemState::Archiving);
+
+        let exclude = rule_input(RuleScope::Domain, "old.example", RuleAction::Exclude);
+        // The confirm count includes the item being closed.
+        assert_eq!(h.engine.preview_exclude(&exclude).unwrap(), 1);
+        let (_, purged, out) = h.engine.create_rule(&exclude, h.now).unwrap();
+        h.collect(out);
+        assert_eq!(purged, 0, "the sweep owns it until the close settles");
+        assert!(h.store().item(&item.id).unwrap().is_some());
+
+        let result = if closed {
+            json!({"closed": [1], "skipped": [], "unchecked": []})
+        } else {
+            json!({"closed": [], "skipped": [{"tabId": 1, "reason": "active"}], "unchecked": []})
+        };
+        h.ack_ok(1, &close, result);
+        assert!(h.store().item(&item.id).unwrap().is_none(), "closed: {closed}");
+        assert!(archived(h.store()).iter().all(|i| i.id != item.id));
+    }
+}
+
+#[test]
+fn turning_off_a_rule_works_even_when_it_fails_todays_checks() {
+    use decay_core::{Rule, RuleAction, RuleScope, RuleSource};
+    let mut h = Harness::new();
+    // Saved by an older build: "com" is a public suffix, refused today.
+    let old = Rule {
+        id: "old-rule".into(),
+        scope: RuleScope::Domain,
+        pattern: "com".into(),
+        action: RuleAction::Protect,
+        threshold_hours: None,
+        enabled: true,
+        source: RuleSource::User,
+        created_at: h.now,
+        hit_count: 0,
+    };
+    h.store().insert_rule(&old).unwrap();
+    let mut off = rule_input(RuleScope::Domain, "com", RuleAction::Protect);
+    off.enabled = Some(false);
+    let (r, _, _) = h.engine.update_rule("old-rule", &off, h.now).unwrap();
+    assert!(!r.enabled);
+    // Turning it back on (or changing it) is checked as usual.
+    off.enabled = Some(true);
+    assert!(matches!(
+        h.engine.update_rule("old-rule", &off, h.now),
+        Err(decay_engine::RuleRefused::Invalid(_))
+    ));
+}
+
+#[test]
+fn only_exclude_rules_preview_a_purge_and_only_domain_ones_reach_the_extension() {
+    use decay_core::{RuleAction, RuleScope};
+    let mut h = ready_to_sweep(Mode::Shadow);
+    h.take(1, kinds::CONFIG);
+    let protect = rule_input(RuleScope::Domain, "old.example", RuleAction::Protect);
+    assert_eq!(h.engine.preview_exclude(&protect).unwrap(), 0);
+
+    // A title exclude purges here, without telling the extension.
+    let title = rule_input(RuleScope::TitleRegex, "Old", RuleAction::Exclude);
+    let n = h.engine.preview_exclude(&title).unwrap();
+    let (_, purged, out) = h.engine.create_rule(&title, h.now).unwrap();
+    h.collect(out);
+    assert_eq!(purged, n);
+    assert_eq!(h.take(1, kinds::CONFIG).len(), 0);
+
+    // Adding then deleting a domain exclude: the extension hears both.
+    let domain = rule_input(RuleScope::Domain, "news.example", RuleAction::Exclude);
+    let (d, _, out) = h.engine.create_rule(&domain, h.now).unwrap();
+    h.collect(out);
+    let config: Config = h.one(1, kinds::CONFIG).payload_as().unwrap();
+    assert_eq!(config.excluded_domains, vec!["news.example".to_owned()]);
+    let out = h.engine.delete_rule(&d.id, h.now).unwrap();
+    h.collect(out);
+    let config: Config = h.one(1, kinds::CONFIG).payload_as().unwrap();
+    assert_eq!(config.excluded_domains, Vec::<String>::new());
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "settings",
-  "description": "Settings: its settings, the hotkey, launch at login, Accessibility, and a waiting license key",
+  "description": "Settings: its settings, rules, browsers, the hotkey, launch at login, Accessibility, and a waiting license key",
   "windows": ["settings"],
   "permissions": [
     "core:default",
@@ -12,6 +12,17 @@
     "allow-set-launch-at-login",
     "allow-request-accessibility",
     "allow-ui-show-window",
-    "allow-ui-take-pending"
+    "allow-ui-take-pending",
+    "allow-list-rules",
+    "allow-create-rule",
+    "allow-update-rule",
+    "allow-delete-rule",
+    "allow-test-rule",
+    "allow-preview-exclude",
+    "allow-set-mode",
+    "allow-resume",
+    "allow-detect-browsers",
+    "allow-install-native-hosts",
+    "allow-open-extension-store"
   ]
 }

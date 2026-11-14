@@ -129,20 +129,21 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 
 | Command | Input | Output |
 | --- | --- | --- |
-| `list_rules` | `{}` | `Rule[]` |
-| `create_rule` | `Omit<Rule,'id'\|'hitCount'\|'createdAt'>` | `Rule` (free tier: max 3 `customThreshold` → `PRO_REQUIRED`) |
-| `update_rule` | `{ id } & Partial<Rule>` | `Rule` |
-| `delete_rule` | `{ id }` | `{}` |
-| `test_rule` | `{ rule: Partial<Rule> }` | `{ matchesLive: number; matchesArchived: number; sample: Item[] }` |
+| `list_rules` | `{}` | `Rule[]` — **as built (P1.12):** oldest first, every source (default, user, quick action) |
+| `create_rule` | `Omit<Rule,'id'\|'hitCount'\|'createdAt'>` | `Rule` (free tier: max 3 `customThreshold` → `PRO_REQUIRED`) — **as built (P1.12):** `{ rule: { scope; match; action; thresholdHours?; enabled? } }` → `{ rule: Rule; purged: number }`. Validated like the extension (domains normalized, bare public suffixes refused, safe title patterns, too-broad excludes refused, exclude not for app/global, closeAllowed only for apps, thresholds 1–720 h increasing); `INVALID_INPUT` with the reason, `CONFLICT` for an identical rule. The policy reloads at once; an enabled `exclude` deletes every stored item it matches (open tabs' records and archives, with their events) in the same transaction as the save (items a sweep is closing are deleted once the close settles) and tells the extensions. Every successful rule change (also `update_rule`, `delete_rule`, `protect_item`) emits `rules:changed`. `update_rule` that only turns a rule off skips validation. Pro limit not enforced yet (licensing) |
+| `update_rule` | `{ id } & Partial<Rule>` | `Rule` — **as built:** `{ id; rule: <as create> }` → `{ rule; purged }` (all editable fields; `enabled` kept when left out) |
+| `delete_rule` | `{ id }` | `{}` (`NOT_FOUND` when it's gone) |
+| `preview_exclude` | `{ rule }` | `{ count }` — P1.12: how many stored items saving this exclude rule would delete, including items a sweep is closing (the UI confirms first); 0 for other actions |
+| `test_rule` | `{ rule: Partial<Rule> }` | `{ matchesLive: number; matchesArchived: number; sample: Item[] }` — **as built:** `{ rule: <as create> }` (an invalid rule is refused with its reason); `sample` = up to 5 matching open tabs as panel rows, least recently used first |
 
 ### 2.5 Settings
 
 | Command | Input | Output |
 | --- | --- | --- |
 | `get_settings` | `{}` | `Settings` (see DB §3.9) |
-| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.8):** only `theme` (`system` / `light` / `dark`) so far; other keys → `INVALID_INPUT` until their screens exist. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
+| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.12):** `theme`; `preset` (gentle / balanced / aggressive: also sets its `thresholds`); `thresholds` (custom: sets `preset` to `custom`; not together with `preset`); `retention_days` 7–3650; `idle_cutoff_s` 60–3600; `window_management` off / hide. Saved in one transaction; the policy reloads at once. The mode goes through `set_mode` / `resume`, the hotkey and launch at login through their commands; other keys → `INVALID_INPUT`. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
 | `set_hotkey` | `{ accelerator: string }` | `{ ok: true } \| AppError('CONFLICT')` |
-| `set_launch_at_login` | `{ enabled: boolean }` | `{ enabled }` |
+| `set_launch_at_login` | `{ enabled: boolean }` | `{ enabled }` (debug builds only save the setting) |
 
 ### 2.6 Data and privacy
 

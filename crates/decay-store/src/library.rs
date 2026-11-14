@@ -9,6 +9,16 @@ use crate::items::sql_enum;
 use crate::sweeps::Sweep;
 use crate::{Result, Store, StoreError};
 
+/// What a rule matches an item on (see [`Store::item_targets`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ItemTarget {
+    pub id: String,
+    pub state: decay_core::ItemState,
+    pub app_id: String,
+    pub url: Option<String>,
+    pub title: String,
+}
+
 impl Store {
     /// Archived tabs and windows (still archived) archived at or after `since`.
     pub fn archived_since(&self, since: i64) -> Result<(u32, u32)> {
@@ -106,6 +116,25 @@ impl Store {
                     .transpose()
                     .map_err(|e| StoreError::InvalidData(e.to_string()))?,
                 at: r.get(5)?,
+            });
+        }
+        Ok(out)
+    }
+
+    /// Every item's id, state, app, URL and title (what rules match on), for purging an
+    /// excluded site and for testing a rule against the archive.
+    pub fn item_targets(&self) -> Result<Vec<ItemTarget>> {
+        let mut stmt =
+            self.conn.prepare_cached("SELECT id, state, app_id, url, title FROM items")?;
+        let mut rows = stmt.query([])?;
+        let mut out = Vec::new();
+        while let Some(r) = rows.next()? {
+            out.push(ItemTarget {
+                id: r.get(0)?,
+                state: sql_enum(&r.get::<_, String>(1)?)?,
+                app_id: r.get(2)?,
+                url: r.get(3)?,
+                title: r.get(4)?,
             });
         }
         Ok(out)
@@ -212,6 +241,20 @@ mod tests {
         assert_eq!((firsts[0].0.as_str(), firsts[0].1), (a.id.as_str(), NOW + 1));
         assert_eq!(firsts[0].2, Some(Reason::Unused { active_hours: 61, threshold: 60.0 }));
         assert_eq!((firsts[1].1, &firsts[1].2), (NOW + 3, &None));
+    }
+
+    #[test]
+    fn item_targets_list_every_item() {
+        let (store, _dir) = store();
+        let a = item(&store, ItemKind::Tab, ItemState::Archived, Some(NOW));
+        item(&store, ItemKind::Window, ItemState::Active, None);
+        let t = store.item_targets().unwrap();
+        assert_eq!(t.len(), 2);
+        let ta = t.iter().find(|x| x.id == a.id).unwrap();
+        assert_eq!(
+            (ta.state, ta.app_id.as_str(), ta.title.as_str()),
+            (ItemState::Archived, "com.google.Chrome", "t")
+        );
     }
 
     #[test]

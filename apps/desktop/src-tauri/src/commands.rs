@@ -204,22 +204,58 @@ pub fn ui_take_pending(window: tauri::Window, shell: State<'_, shell::Shell>) ->
     shell.take_pending(window.label())
 }
 
-/// Settings the shell lets the UI change so far (the Settings screens add the rest).
-/// Each value is checked before it's stored.
+/// Settings the UI may change (DB Design §3.9), each checked before it's stored. A pace
+/// (`preset`) also sets its thresholds; custom `thresholds` set the pace to `custom`.
+/// The mode goes through `set_mode` / `resume` (a pause remembers the mode before it);
+/// the hotkey and launch at login through their own commands.
 pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(String, Value)>> {
     if patch.is_empty() {
         return Err(AppError::new("INVALID_INPUT", "nothing to change"));
     }
-    patch
-        .iter()
-        .map(|(key, value)| match key.as_str() {
+    let bad = |why: &str| AppError::new("INVALID_INPUT", why.to_owned());
+    let int_in = |v: &Value, lo: u64, hi: u64| v.as_u64().filter(|n| (lo..=hi).contains(n));
+    if patch.contains_key("preset") && patch.contains_key("thresholds") {
+        return Err(bad("set a pace or custom thresholds, not both"));
+    }
+    let mut out = Vec::new();
+    for (key, value) in patch {
+        match key.as_str() {
             "theme" if matches!(value.as_str(), Some("system" | "light" | "dark")) => {
-                Ok((key.clone(), value.clone()))
+                out.push((key.clone(), value.clone()));
             }
-            "theme" => Err(AppError::new("INVALID_INPUT", "theme is system, light or dark")),
-            _ => Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here"))),
-        })
-        .collect()
+            "theme" => return Err(bad("theme is system, light or dark")),
+            "preset" => {
+                let preset: decay_core::Preset = serde_json::from_value(value.clone())
+                    .map_err(|_| bad("pace is gentle, balanced or aggressive"))?;
+                out.push((key.clone(), value.clone()));
+                out.push(("thresholds".into(), json!(preset.thresholds())));
+            }
+            "thresholds" => {
+                let t: decay_core::Thresholds = serde_json::from_value(value.clone())
+                    .map_err(|_| bad("thresholds need stale, hidden and archive hours"))?;
+                t.validate().map_err(|e| bad(&e.to_string()))?;
+                out.push((key.clone(), json!(t)));
+                out.push(("preset".into(), json!("custom")));
+            }
+            "retention_days" => {
+                let n =
+                    int_in(value, 7, 3650).ok_or_else(|| bad("keep the archive 7 to 3650 days"))?;
+                out.push((key.clone(), json!(n)));
+            }
+            "idle_cutoff_s" => {
+                let n = int_in(value, 60, 3600).ok_or_else(|| bad("away after 1 to 60 minutes"))?;
+                out.push((key.clone(), json!(n)));
+            }
+            "window_management" if matches!(value.as_str(), Some("off" | "hide")) => {
+                out.push((key.clone(), value.clone()));
+            }
+            "window_management" => return Err(bad("window handling is off or hide")),
+            _ => {
+                return Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here")));
+            }
+        }
+    }
+    Ok(out)
 }
 
 /// Every setting with defaults filled in (DB Design §3.9).
@@ -253,15 +289,23 @@ async fn save_settings(
     let handle = app.clone();
     blocking(app, move |core| {
         core.ask(move |e, now| {
-            let saved = changes
-                .iter()
-                .try_for_each(|(k, v)| e.store().set_setting(k, v, now))
+            let saved = e
+                .store_mut()
+                .atomically(false, |s| {
+                    changes.iter().try_for_each(|(k, v)| s.set_setting(k, v, now))
+                })
                 .and_then(|()| e.store().settings_snapshot())
                 .map_err(|err| AppError::db(&err));
+            let mut out = Vec::new();
             if let Ok(settings) = &saved {
                 broadcast_settings(&handle, settings);
+                // The policy (pace, retention, …) follows at once.
+                match e.settings_changed(now) {
+                    Ok(o) => out = o,
+                    Err(err) => tracing::warn!("settings: {err}"),
+                }
             }
-            (saved, Vec::new())
+            (saved, out)
         })?
     })
     .await
@@ -381,9 +425,36 @@ mod tests {
         let patch = |v: Value| v.as_object().unwrap().clone();
         let ok = validate_settings(&patch(json!({"theme": "dark"}))).unwrap();
         assert_eq!(ok, vec![("theme".to_owned(), json!("dark"))]);
-        for bad in
-            [json!({"theme": "neon"}), json!({"theme": 1}), json!({"mode": "paused"}), json!({})]
-        {
+        // A pace brings its thresholds; custom thresholds make the pace "custom".
+        let pace = validate_settings(&patch(json!({"preset": "gentle"}))).unwrap();
+        assert_eq!(
+            pace[1],
+            ("thresholds".to_owned(), json!({"stale": 24.0, "hidden": 60.0, "archive": 96.0}))
+        );
+        let custom = validate_settings(&patch(
+            json!({"thresholds": {"stale": 2, "hidden": 4, "archive": 8}}),
+        ))
+        .unwrap();
+        assert_eq!(custom[1], ("preset".to_owned(), json!("custom")));
+        let more = validate_settings(&patch(
+            json!({"retention_days": 30, "idle_cutoff_s": 300, "window_management": "off"}),
+        ))
+        .unwrap();
+        assert_eq!(more.len(), 3);
+        for bad in [
+            json!({"theme": "neon"}),
+            json!({"theme": 1}),
+            json!({"mode": "paused"}),
+            json!({}),
+            json!({"preset": "turbo"}),
+            json!({"thresholds": {"stale": 9, "hidden": 4, "archive": 8}}),
+            json!({"thresholds": {"stale": 2}}),
+            json!({"preset": "gentle", "thresholds": {"stale": 2, "hidden": 4, "archive": 8}}),
+            json!({"retention_days": 3}),
+            json!({"retention_days": 1.5}),
+            json!({"idle_cutoff_s": 10}),
+            json!({"window_management": "close"}),
+        ] {
             assert_eq!(validate_settings(&patch(bad)).unwrap_err().code, "INVALID_INPUT");
         }
     }

@@ -219,7 +219,8 @@ pub async fn restore_batch(app: AppHandle, item_id: String) -> Res<Value> {
 /// "Always keep" an item's site (⌘P): a protect rule for its domain.
 #[tauri::command]
 pub async fn protect_item(app: AppHandle, id: String) -> Res<decay_core::Rule> {
-    blocking(app, move |core| {
+    let handle = app.clone();
+    let out = blocking(app, move |core| {
         core.ask(move |e, now| match e.protect_site(&id, now) {
             Ok(Some(rule)) => (Ok(rule), Vec::new()),
             Ok(None) => {
@@ -228,7 +229,11 @@ pub async fn protect_item(app: AppHandle, id: String) -> Res<decay_core::Rule> {
             Err(err) => (Err(AppError::db(&err)), Vec::new()),
         })?
     })
-    .await
+    .await;
+    if out.is_ok() {
+        crate::rules::announce(&handle);
+    }
+    out
 }
 
 /// Opens an item's details in the Library (⌘I) and hides the panel.

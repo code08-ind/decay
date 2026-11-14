@@ -32,6 +32,12 @@ const COMMANDS: &[&str] = &[
     "list_sweeps",
     "get_sweep",
     "get_shadow_report",
+    "list_rules",
+    "create_rule",
+    "update_rule",
+    "delete_rule",
+    "test_rule",
+    "preview_exclude",
 ];
 
 fn main() {

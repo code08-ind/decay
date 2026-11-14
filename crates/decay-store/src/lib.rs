@@ -11,6 +11,7 @@ mod import;
 mod items;
 mod key;
 mod library;
+pub use library::ItemTarget;
 mod migrate;
 mod rules;
 mod search;

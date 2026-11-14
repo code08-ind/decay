@@ -24,6 +24,7 @@ mod keys;
 mod library;
 mod menu;
 mod onboarding;
+mod rules;
 mod search;
 mod shell;
 mod tray;
@@ -364,6 +365,12 @@ pub fn run() {
             library::list_sweeps,
             library::get_sweep,
             library::get_shadow_report,
+            rules::list_rules,
+            rules::create_rule,
+            rules::update_rule,
+            rules::delete_rule,
+            rules::test_rule,
+            rules::preview_exclude,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {

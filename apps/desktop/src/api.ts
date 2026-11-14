@@ -170,6 +170,42 @@ export interface ShadowReport {
   keptBy: { by: ProtectedBy; label: string; count: number }[];
 }
 
+export type RuleScope = 'app' | 'domain' | 'urlGlob' | 'titleRegex' | 'global';
+export type RuleAction = 'protect' | 'exclude' | 'customThreshold' | 'closeAllowed';
+
+export interface Thresholds {
+  stale: number;
+  hidden: number;
+  archive: number;
+}
+
+export interface Rule {
+  id: string;
+  scope: RuleScope;
+  match: string;
+  action: RuleAction;
+  thresholdHours?: Thresholds;
+  enabled: boolean;
+  source: 'user' | 'default' | 'quick_action';
+  createdAt: number;
+  hitCount: number;
+}
+
+/** What `create_rule` / `update_rule` / `test_rule` take. */
+export interface RuleInput {
+  scope: RuleScope;
+  match: string;
+  action: RuleAction;
+  thresholdHours?: Thresholds;
+  enabled?: boolean;
+}
+
+export interface RuleTestResult {
+  matchesLive: number;
+  matchesArchived: number;
+  sample: PanelItem[];
+}
+
 export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: number };
 
 export const api = {
@@ -218,6 +254,13 @@ export const api = {
     invoke<SweepRow[]>('list_sweeps', { input }),
   getSweep: (id: string) => invoke<SweepDetail>('get_sweep', { id }),
   getShadowReport: () => invoke<ShadowReport>('get_shadow_report'),
+  listRules: () => invoke<Rule[]>('list_rules'),
+  createRule: (rule: RuleInput) => invoke<{ rule: Rule; purged: number }>('create_rule', { rule }),
+  updateRule: (id: string, rule: RuleInput) =>
+    invoke<{ rule: Rule; purged: number }>('update_rule', { id, rule }),
+  deleteRule: (id: string) => invoke('delete_rule', { id }),
+  testRule: (rule: RuleInput) => invoke<RuleTestResult>('test_rule', { rule }),
+  previewExclude: (rule: RuleInput) => invoke<{ count: number }>('preview_exclude', { rule }),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),

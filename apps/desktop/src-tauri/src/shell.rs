@@ -147,7 +147,7 @@ fn spec(window: Window) -> (&'static str, f64, f64) {
     match window {
         Window::Panel => ("Search", 680.0, 440.0),
         Window::Library => ("Decay", 1100.0, 720.0),
-        Window::Settings => ("Settings", 720.0, 560.0),
+        Window::Settings => ("Settings", 920.0, 640.0),
         Window::Onboarding => ("Decay Setup Assistant", ONBOARDING_SIZE.0, ONBOARDING_SIZE.1),
     }
 }
@@ -173,7 +173,8 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
             .visible(false)
             .center()
             .build(),
-        Window::Settings => builder.resizable(false).center().build(),
+        // A sidebar beside the tab (Designs/09); taller tabs scroll.
+        Window::Settings => builder.min_inner_size(820.0, 520.0).center().build(),
         Window::Onboarding => {
             builder.resizable(false).maximizable(false).minimizable(false).center().build()
         }
