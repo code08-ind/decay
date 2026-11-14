@@ -135,7 +135,10 @@ impl Engine {
             items.push(archived_item(&hit.item, key));
         }
         let last_sweep = if q.query.trim().is_empty() {
-            match undoable(&self.store)?.into_iter().find(|w| w.undone_at.is_none()) {
+            let last = undoable(&self.store)?
+                .into_iter()
+                .find(|w| w.undone_at.is_none() && !crate::hide::is_hide_record(w));
+            match last {
                 Some(w) => Some(LastSweep {
                     remaining: u32::try_from(self.store.archived_in_sweep(&w.id)?.len())
                         .unwrap_or(u32::MAX),
@@ -217,6 +220,21 @@ impl Engine {
                 self.reply_err(conn, req, ErrorCode::NotFound, why.message());
                 Ok(())
             }
+            Ok((sweep_id, items)) if items.is_empty() && self.is_hide_sweep(&sweep_id)? => {
+                match self.undo_hide_sweep(&sweep_id, now)? {
+                    crate::hide::HideUndo::Done { restored, failed } => {
+                        let result = serde_json::json!({ "restored": restored, "failed": failed, "skipped": 0 });
+                        self.reply_ok(conn, req, &result);
+                    }
+                    _ => self.reply_err(
+                        conn,
+                        req,
+                        ErrorCode::NotFound,
+                        UndoRefused::WindowsUnknown.message(),
+                    ),
+                }
+                Ok(())
+            }
             Ok((sweep_id, items)) => self.start_restore(
                 Some((conn, req)),
                 &items,
@@ -239,6 +257,14 @@ impl Engine {
             Ok(found) => found,
             Err(why) => return Ok(Err(why)),
         };
+        // A hide sweep (P2.2): its windows come back through the window actor.
+        if items.is_empty() {
+            match self.undo_hide_sweep(&sweep_id, now)? {
+                crate::hide::HideUndo::Done { .. } => return Ok(Ok(())),
+                crate::hide::HideUndo::Unknown => return Ok(Err(UndoRefused::WindowsUnknown)),
+                crate::hide::HideUndo::NotHide => {}
+            }
+        }
         // Nothing left archived (restored one by one): the undo just marks the sweep undone.
         let reachable =
             items.is_empty() || items.iter().any(|i| matches!(self.home_conn(i, now), Ok(Some(_))));

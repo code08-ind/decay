@@ -109,6 +109,8 @@ pub enum Input {
     Platform(Box<decay_platform::PlatformSample>),
     /// Every app's standard windows (P2.1), every few seconds when they can be listed.
     Windows(Box<decay_platform::WindowList>),
+    /// The window actor's answer to an `Output::Window` (P2.2).
+    WindowActed { item_id: String, result: Result<(), String> },
 }
 
 /// What the engine wants done.
@@ -120,6 +122,8 @@ pub enum Output {
     /// port and so the host; the engine ignores anything more from it.
     Close(ConnId),
     Event(EngineEvent),
+    /// Hide or restore an app window (P2.2), done by the runtime's window actor.
+    Window(crate::hide::WindowCommand),
 }
 
 /// Things the UI shows (P1.7 turns `SweepCompleted` into the Undo toast).
@@ -148,6 +152,12 @@ pub enum EngineEvent {
     SweepUndone {
         sweep_id: String,
         restored: u32,
+        failed: u32,
+    },
+    /// A hide sweep finished (P2.2): windows minimised to the Dock (Undo brings them back).
+    WindowsHidden {
+        sweep_id: String,
+        hidden: u32,
         failed: u32,
     },
     /// The Accessibility permission was granted or revoked (F33 health; first sample too).
@@ -188,6 +198,8 @@ pub enum UndoRefused {
     NothingToUndo,
     #[error("the browser these tabs came from isn't connected")]
     NoBrowser,
+    #[error("Decay can't see your windows right now (Accessibility, or window handling is off)")]
+    WindowsUnknown,
 }
 
 impl UndoRefused {
@@ -197,6 +209,7 @@ impl UndoRefused {
             Self::StillClosing => "this sweep is still closing tabs; try again in a moment",
             Self::NothingToUndo => "this sweep can't be undone",
             Self::NoBrowser => "the browser these tabs came from isn't connected",
+            Self::WindowsUnknown => "Decay can't see your windows right now",
         }
     }
 }
@@ -470,6 +483,14 @@ pub struct Engine {
     pub(crate) exclude_pending: HashSet<String>,
     /// App windows (P2.1).
     pub(crate) app_windows: crate::windows::AppWindowsState,
+    /// Window commands waiting for the actor's answer (P2.2), by item id.
+    pub(crate) window_ops: HashMap<String, crate::hide::PendingWindowOp>,
+    /// When the last hide sweep started.
+    pub(crate) last_hide_at: Option<i64>,
+    /// Why each pending hide was chosen (written with its answer).
+    pub(crate) hide_reasons: HashMap<String, decay_core::Reason>,
+    /// Hides that timed out: a late success is still applied until the time given.
+    pub(crate) late_hides: HashMap<String, (String, i64)>,
     pub(crate) next_op: u64,
     pub(crate) sweep: SweepState,
     pub(crate) clock: AgingClock,
@@ -539,7 +560,12 @@ impl Engine {
     /// their browser's next snapshot arrives.
     pub fn new(store: Store, config: EngineConfig, now: i64) -> Result<Self, StoreError> {
         let policy = Arc::new(PolicySettings::load(&store)?);
-        let last_sweep_at = store.recent_sweeps(1)?.first().map(|s| s.started_at);
+        // The last tab sweep (hide sweeps keep their own interval).
+        let last_sweep_at = store
+            .recent_sweeps(20)?
+            .into_iter()
+            .find(|s| !crate::hide::is_hide_record(s))
+            .map(|s| s.started_at);
         let unfinished = store.unfinished_sweeps()?.len();
         if unfinished > 0 {
             tracing::info!(unfinished, "sweeps to settle when their browser reconnects");
@@ -556,6 +582,10 @@ impl Engine {
             restoring: HashSet::new(),
             exclude_pending: HashSet::new(),
             app_windows: crate::windows::AppWindowsState::default(),
+            window_ops: HashMap::new(),
+            last_hide_at: None,
+            hide_reasons: HashMap::new(),
+            late_hides: HashMap::new(),
             next_op: 0,
             sweep: SweepState::Idle,
             clock,
@@ -573,7 +603,7 @@ impl Engine {
         };
         // Window handling turned off while Decay wasn't running: no window records stay.
         if !engine.wants_windows()
-            && let Err(e) = engine.forget_windows()
+            && let Err(e) = engine.forget_windows(now)
         {
             engine.problem("forgetting window records", &e);
         }
@@ -613,6 +643,7 @@ impl Engine {
             Input::Disconnected(id) => self.disconnected(id, now),
             Input::Platform(sample) => self.on_platform(*sample, now),
             Input::Windows(list) => self.on_windows(*list, now),
+            Input::WindowActed { item_id, result } => self.on_window_acted(&item_id, &result, now),
         }
         self.purge_settled_excludes();
         std::mem::take(&mut self.out)
@@ -687,7 +718,9 @@ impl Engine {
                 self.problem("aging tick", &e);
             }
             self.maybe_sweep(now, decay_core::SweepTrigger::Scheduled, false);
+            self.maybe_hide_windows(now);
         }
+        self.expire_window_ops(now);
         if now >= self.next_maintenance_at {
             self.next_maintenance_at = now + timing::MAINTENANCE_EVERY_MS;
             if let Err(e) = self.maintenance(now) {

@@ -242,7 +242,7 @@ impl Engine {
     fn after_setting_change(&mut self, now: i64) -> Res<Vec<Output>> {
         self.reload_policy()?;
         if !self.wants_windows() {
-            self.forget_windows()?;
+            self.forget_windows(now)?;
         }
         self.publish_status(now);
         Ok(std::mem::take(&mut self.out))

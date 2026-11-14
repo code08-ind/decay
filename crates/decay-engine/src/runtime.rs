@@ -18,9 +18,10 @@ use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use decay_bridge::ipc::{Endpoint, IpcServer, IpcWriter, connect};
-use decay_platform::{Platform, WindowLister};
+use decay_platform::{Platform, WindowActor, WindowLister};
 
 use crate::engine::{ConnId, Engine, EngineEvent, Input, Output};
+use crate::hide::WindowCommand;
 
 /// Unix epoch milliseconds now.
 pub fn now_ms() -> i64 {
@@ -57,6 +58,8 @@ pub struct Runtime {
     /// Window handling is on (the engine says after every step): the window lister
     /// doesn't ask any app while it's off.
     wants_windows: Arc<AtomicBool>,
+    /// Window commands for the actor thread (P2.2).
+    window_commands: WindowCommands,
 }
 
 impl std::fmt::Debug for Msg {
@@ -71,10 +74,14 @@ impl std::fmt::Debug for Msg {
     }
 }
 
+/// Where window commands go (the actor thread, once `act_on_windows_with` started it).
+type WindowCommands = Arc<std::sync::Mutex<Option<Sender<WindowCommand>>>>;
+
 fn apply(
     outputs: Vec<Output>,
     writers: &mut HashMap<ConnId, IpcWriter>,
     events: &mut dyn FnMut(EngineEvent),
+    windows: &WindowCommands,
 ) {
     for out in outputs {
         match out {
@@ -90,6 +97,13 @@ fn apply(
                 writers.remove(&conn);
             }
             Output::Event(event) => events(event),
+            Output::Window(cmd) => {
+                // No actor (not started, or gone): the engine counts it failed after a while.
+                let sender = windows.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(tx) = sender.as_ref() {
+                    let _ = tx.send(cmd);
+                }
+            }
         }
     }
 }
@@ -108,6 +122,8 @@ impl Runtime {
         let stopping = Arc::new(AtomicBool::new(false));
         let endpoint = server.endpoint().clone();
         let wants_windows = Arc::new(AtomicBool::new(engine.wants_windows()));
+        let window_commands: WindowCommands = Arc::new(std::sync::Mutex::new(None));
+        let window_cmds = Arc::clone(&window_commands);
         let wants = Arc::clone(&wants_windows);
 
         let engine_thread =
@@ -141,14 +157,14 @@ impl Runtime {
                         }
                         None => Vec::new(),
                     };
-                    apply(outputs, &mut writers, &mut events);
+                    apply(outputs, &mut writers, &mut events, &window_cmds);
                     // Timers run even while messages keep arriving.
                     if now - last_poll >= 1000 || now < last_poll {
                         last_poll = now;
                         let sample = Box::new(platform.sample());
                         let mut outputs = engine.handle(Input::Platform(sample), now);
                         outputs.extend(engine.poll(now));
-                        apply(outputs, &mut writers, &mut events);
+                        apply(outputs, &mut writers, &mut events, &window_cmds);
                     }
                     wants.store(engine.wants_windows(), Ordering::SeqCst);
                 }
@@ -216,6 +232,7 @@ impl Runtime {
             stopping,
             endpoint,
             wants_windows,
+            window_commands,
         })
     }
 
@@ -233,6 +250,31 @@ impl Runtime {
     /// Lists app windows on a thread of its own (P2.1): a slow or hung app delays only
     /// the next list, never the engine. The thread ends with the runtime; it isn't
     /// joined, since a list in progress may wait on an app for a moment.
+    /// Acts on windows (hide / restore, P2.2) on a thread of its own; each answer goes
+    /// back to the engine as `Input::WindowActed`.
+    pub fn act_on_windows_with(&self, mut actor: Box<dyn WindowActor>) -> io::Result<()> {
+        let (cmd_tx, cmd_rx) = mpsc::channel::<WindowCommand>();
+        *self.window_commands.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(cmd_tx);
+        let tx = self.tx.clone();
+        std::thread::Builder::new().name("decay-window-actor".into()).spawn(move || {
+            // Ends when the runtime drops the sender (stop) or the engine is gone.
+            for cmd in cmd_rx {
+                // Queued behind a slow app past its deadline: the engine has moved on.
+                let result = if now_ms() > cmd.deadline {
+                    Err("too late".to_owned())
+                } else {
+                    actor.act(cmd.op, cmd.pid, cmd.window_id)
+                };
+                let input = Input::WindowActed { item_id: cmd.item_id, result };
+                if tx.send(Msg::Input(input)).is_err() {
+                    break;
+                }
+            }
+        })?;
+        Ok(())
+    }
+
     pub fn list_windows_with(&self, mut lister: Box<dyn WindowLister>) -> io::Result<()> {
         let tx = self.tx.clone();
         let stopping = Arc::clone(&self.stopping);
@@ -240,7 +282,12 @@ impl Runtime {
         std::thread::Builder::new().name("decay-windows".into()).spawn(move || {
             while !stopping.load(Ordering::SeqCst) {
                 // Off: no app is asked anything (titles aren't even read).
+                let started = now_ms();
                 let list = if wanted.load(Ordering::SeqCst) { lister.list() } else { None };
+                let list = list.map(|mut l| {
+                    l.started_at = Some(started);
+                    l
+                });
                 if let Some(list) = list {
                     let input = Input::Windows(Box::new(list));
                     if stopping.load(Ordering::SeqCst) || tx.send(Msg::Input(input)).is_err() {
@@ -256,6 +303,8 @@ impl Runtime {
     /// Stops the threads and returns the engine (its store is still open).
     pub fn stop(mut self) -> Option<Engine> {
         self.stopping.store(true, Ordering::SeqCst);
+        // The actor thread ends once its sender is gone.
+        self.window_commands.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
         let _ = self.tx.send(Msg::Stop);
         // Wake the accept loop so it sees the flag and drops the server (removing the socket).
         let _ = connect(&self.endpoint);

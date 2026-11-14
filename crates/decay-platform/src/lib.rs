@@ -31,7 +31,8 @@ mod mac_windows;
 pub mod windows;
 
 pub use windows::{
-    AppWindow, AppWindows, NullWindowLister, WindowList, WindowLister, window_lister,
+    AppWindow, AppWindows, NullWindowActor, NullWindowLister, WindowActor, WindowList,
+    WindowLister, WindowOp, window_actor, window_lister,
 };
 
 #[cfg(target_os = "macos")]

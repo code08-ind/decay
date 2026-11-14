@@ -172,6 +172,7 @@ pub async fn undo_sweep(app: AppHandle, id: Option<String>) -> Res<Value> {
                     UndoRefused::NoBrowser => "ADAPTER_UNAVAILABLE",
                     UndoRefused::StillClosing => "CONFLICT",
                     UndoRefused::NothingToUndo => "NOT_FOUND",
+                    UndoRefused::WindowsUnknown => "PERMISSION_DENIED",
                 };
                 (Err(AppError::new(code, why.to_string())), Vec::new())
             }

@@ -46,6 +46,9 @@ pub struct AppWindows {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct WindowList {
     pub apps: Vec<AppWindows>,
+    /// When listing started (epoch ms, set by the runtime): a list started before a
+    /// window was hidden can't say it was brought back.
+    pub started_at: Option<i64>,
 }
 
 /// Lists app windows.
@@ -53,6 +56,45 @@ pub trait WindowLister: Send {
     /// The windows now, or `None` when they can't be listed (no Accessibility access, or
     /// not supported here). `None` never means "every window closed".
     fn list(&mut self) -> Option<WindowList>;
+}
+
+/// What to do to one window (P2.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowOp {
+    /// Minimise it to the Dock ("hidden").
+    Hide,
+    /// Un-minimise it, raise it and bring its app to the front.
+    Restore,
+}
+
+/// Acts on single windows. Each call checks what it can before acting (a standard
+/// window, with an enabled minimise button, not full screen) and confirms the result by
+/// reading it back; anything unexpected is an error and nothing is changed.
+pub trait WindowActor: Send {
+    /// `Ok(())` once the window is minimised (`Hide`) or back on screen (`Restore`).
+    fn act(&mut self, op: WindowOp, pid: i32, window_id: u32) -> Result<(), String>;
+}
+
+/// An actor that can't do anything.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct NullWindowActor;
+
+impl WindowActor for NullWindowActor {
+    fn act(&mut self, _: WindowOp, _: i32, _: u32) -> Result<(), String> {
+        Err("windows can't be hidden on this platform".into())
+    }
+}
+
+/// The window actor for this OS.
+pub fn window_actor() -> Box<dyn WindowActor> {
+    #[cfg(target_os = "macos")]
+    {
+        Box::new(crate::mac_windows::MacWindowActor)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Box::new(NullWindowActor)
+    }
 }
 
 /// A lister that can't list anything.
@@ -129,7 +171,8 @@ mod tests {
     }
 
     #[test]
-    fn the_null_lister_lists_nothing() {
+    fn the_null_lister_lists_nothing_and_the_null_actor_does_nothing() {
         assert_eq!(NullWindowLister.list(), None);
+        assert!(NullWindowActor.act(WindowOp::Hide, 1, 1).is_err());
     }
 }

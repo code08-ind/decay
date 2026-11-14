@@ -318,6 +318,7 @@ fn after_a_crash_archiving_items_settle_when_the_browser_reconnects() {
         events: Vec::new(),
         dir,
         profile: None,
+        window_cmds: Vec::new(),
     };
     assert_eq!(h.store().unfinished_sweeps().unwrap().len(), 1);
     h.connect(1, "s");

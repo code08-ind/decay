@@ -144,6 +144,20 @@ fn same_window(item: &Item, w: &AppWindow) -> bool {
     }
 }
 
+/// Decay just started: every stored live window record joins the tracker (process
+/// unknown until a list shows its window), so the same matching and expiry apply to it.
+fn load_stored(state: &mut AppWindowsState, store: &Store) -> Res {
+    for item in store.live_items()? {
+        let live = matches!(item.state, ItemState::Active | ItemState::Stale | ItemState::Hidden);
+        if item.kind == ItemKind::Window && live && !state.tracked.contains_key(&item.id) {
+            let window_id = item.external_id.as_deref().and_then(|n| n.parse().ok());
+            state.tracked.insert(item.id.clone(), TrackedWindow::loaded(item, window_id));
+        }
+    }
+    state.loaded = true;
+    Ok(())
+}
+
 /// Copies what the window shows into its record; whether anything changed.
 fn refresh(item: &mut Item, w: &AppWindow) -> bool {
     let path = w.document.as_deref().map(document_path);
@@ -175,7 +189,7 @@ fn app_row(bundle: &str, name: &str) -> App {
 
 /// A process id no app has: records loaded from the store (Decay just started) until a
 /// list shows their window.
-const UNKNOWN_PID: i32 = -1;
+pub(crate) const UNKNOWN_PID: i32 = -1;
 
 /// What the latest list says about each app: the window numbers it still has on any
 /// Space, and whether Accessibility answered for it at all.
@@ -215,7 +229,7 @@ fn expire_missing(
         }
         let since = *state.missing.entry(id.clone()).or_insert(now);
         if now - since >= timing::MISSING_GRACE_MS
-            && matches!(t.item.state, ItemState::Active | ItemState::Stale)
+            && matches!(t.item.state, ItemState::Active | ItemState::Stale | ItemState::Hidden)
         {
             gone.push(id.clone());
         }
@@ -298,6 +312,8 @@ fn write_changes(
     apps: &[App],
     writes: &BTreeMap<String, (Item, bool)>,
     deleted: &[String],
+    used: &[String],
+    now: i64,
 ) -> Res {
     store.atomically(false, |s| {
         for app in apps {
@@ -322,6 +338,9 @@ fn write_changes(
         for (item, _) in writes.values().filter(|(_, new)| *new) {
             s.insert_item(item)?;
         }
+        for id in used.iter().filter(|id| !deleted.contains(id)) {
+            s.append_event(id, EventType::Used, None, None, now)?;
+        }
         Ok(())
     })?;
     Ok(())
@@ -345,23 +364,16 @@ impl Engine {
     /// the next list tries again.
     fn sync_windows(&mut self, list: WindowList, now: i64) -> Res {
         if !self.wants_windows() {
-            return self.forget_windows();
+            return self.forget_windows(now);
         }
         let policy = std::sync::Arc::clone(&self.policy);
         let mut state = self.app_windows.clone();
-        if !state.loaded {
-            // Decay just started: every stored live window record joins the tracker, so
-            // the same matching and expiry apply to it (never left behind).
-            for item in self.store.live_items()? {
-                let live = matches!(item.state, ItemState::Active | ItemState::Stale);
-                if item.kind == ItemKind::Window && live && !state.tracked.contains_key(&item.id) {
-                    let window_id = item.external_id.as_deref().and_then(|n| n.parse().ok());
-                    state.tracked.insert(item.id.clone(), TrackedWindow::loaded(item, window_id));
-                }
-            }
-            state.loaded = true;
+        let first_list = !state.loaded;
+        if first_list {
+            load_stored(&mut state, &self.store)?;
         }
         state.last_list_at = Some(now);
+        let started = list.started_at.unwrap_or(now);
         let by_number: HashMap<(String, u32), String> = state
             .tracked
             .iter()
@@ -372,6 +384,7 @@ impl Engine {
         let mut apps: Vec<App> = Vec::new();
         let mut writes: BTreeMap<String, (Item, bool)> = BTreeMap::new(); // id → (item, new)
         let mut deleted: Vec<String> = Vec::new();
+        let mut used: Vec<String> = Vec::new();
         for app in list.apps {
             if app.bundle_id == SELF_BUNDLE || is_browser(&app.bundle_id) {
                 continue;
@@ -382,7 +395,10 @@ impl Engine {
                 .or_default()
                 .extend(app.all_window_ids.iter().copied());
             if app.windows.is_empty() {
-                present.unanswered.insert(app.bundle_id.clone());
+                // The window server has windows Accessibility didn't return: keep them.
+                if !app.all_window_ids.is_empty() {
+                    present.unanswered.insert(app.bundle_id.clone());
+                }
                 continue;
             }
             if state.known_apps.insert(app.bundle_id.clone()) {
@@ -402,7 +418,21 @@ impl Engine {
                 let mut item = found.unwrap_or_else(|| {
                     Item::new_live(new_id(now), ItemKind::Window, app.bundle_id.clone(), now)
                 });
-                let changed = refresh(&mut item, w) || new;
+                let mut changed = refresh(&mut item, w) || new;
+                // Brought back: only a list taken after it was hidden says so (a list
+                // started before the hide can still arrive after its answer).
+                if item.state == ItemState::Hidden
+                    && !w.minimized
+                    && started > item.state_changed_at
+                {
+                    // Brought back by the user (or by Undo): used.
+                    item.state = ItemState::Active;
+                    item.state_changed_at = now;
+                    item.active_age_s = 0;
+                    item.last_used_at = now;
+                    used.push(item.id.clone());
+                    changed = true;
+                }
                 if excluded(&item, &policy) {
                     // Excluded by a title rule: not stored, not tracked.
                     if !new {
@@ -432,22 +462,42 @@ impl Engine {
         }
         release_reused_numbers(&mut state, &seen, &mut writes);
         deleted.extend(expire_missing(&mut state, &seen, &present, now));
-        write_changes(&mut self.store, &apps, &writes, &deleted)?;
+        write_changes(&mut self.store, &apps, &writes, &deleted, &used, now)?;
         self.app_windows = state;
+        if first_list {
+            // Hide sweeps a quit or crash left running: settled against this list.
+            self.settle_hide_sweeps(now)?;
+        }
         Ok(())
     }
 
     /// Window handling is off: no window records are kept. Every live, untouched window
     /// record goes (tracked or not: also after a restart or without Accessibility);
     /// nothing archived is touched.
-    pub(crate) fn forget_windows(&mut self) -> Res {
+    pub(crate) fn forget_windows(&mut self, now: i64) -> Res {
+        // Windows Decay hid come back: it stops managing them, so they aren't left in
+        // the Dock where nothing would bring them back.
+        for (id, t) in &self.app_windows.tracked {
+            if t.item.state == ItemState::Hidden
+                && t.pid != UNKNOWN_PID
+                && let Some(window_id) = t.window_id
+            {
+                self.out.push(crate::engine::Output::Window(crate::hide::WindowCommand {
+                    op: decay_platform::WindowOp::Restore,
+                    item_id: id.clone(),
+                    pid: t.pid,
+                    window_id,
+                    deadline: now + crate::hide::HIDE_ANSWER_MS,
+                }));
+            }
+        }
         let ids: Vec<String> = self
             .store
             .live_items()?
             .into_iter()
             .filter(|i| {
                 i.kind == ItemKind::Window
-                    && matches!(i.state, ItemState::Active | ItemState::Stale)
+                    && matches!(i.state, ItemState::Active | ItemState::Stale | ItemState::Hidden)
             })
             .map(|i| i.id)
             .collect();

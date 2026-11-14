@@ -31,6 +31,7 @@
 mod control;
 mod domain;
 mod engine;
+mod hide;
 mod platform;
 mod restore;
 mod rules;
@@ -45,4 +46,5 @@ pub use engine::{
     CORE_VERSION, ConnId, Engine, EngineConfig, EngineEvent, Input, MIN_EXT_VERSION, Output,
     RestoreRefused, SweepRefused, UndoRefused, timing,
 };
+pub use hide::WindowCommand;
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};

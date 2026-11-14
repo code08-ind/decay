@@ -92,6 +92,7 @@ impl Core {
             .map_err(|e| e.to_string())?;
         // App windows (P2.1): listed only with Accessibility and window handling on.
         runtime.list_windows_with(decay_platform::window_lister()).map_err(|e| e.to_string())?;
+        runtime.act_on_windows_with(decay_platform::window_actor()).map_err(|e| e.to_string())?;
         *self.runtime.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(runtime);
         Ok(())
     }

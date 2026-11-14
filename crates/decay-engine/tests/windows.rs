@@ -40,7 +40,10 @@ fn app(pid: i32, bundle: &str, windows: Vec<AppWindow>) -> AppWindows {
 
 impl Harness {
     fn windows(&mut self, apps: Vec<AppWindows>) {
-        let out = self.engine.handle(Input::Windows(Box::new(WindowList { apps })), self.now);
+        let out = self.engine.handle(
+            Input::Windows(Box::new(WindowList { apps, started_at: Some(self.now) })),
+            self.now,
+        );
         self.collect(out);
     }
 

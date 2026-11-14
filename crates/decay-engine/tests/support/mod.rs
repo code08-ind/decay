@@ -27,6 +27,8 @@ pub struct Harness {
     /// Every connection speaks for this browser profile (a reconnect of the same
     /// browser); `None`: connection `n` is profile `profile{n}`.
     pub profile: Option<String>,
+    /// Window commands the engine asked for (P2.2), in order.
+    pub window_cmds: Vec<decay_engine::WindowCommand>,
 }
 
 pub fn open_store(dir: &std::path::Path, now: i64) -> Store {
@@ -83,6 +85,7 @@ impl Harness {
             events: Vec::new(),
             dir,
             profile: None,
+            window_cmds: Vec::new(),
         }
     }
 
@@ -96,6 +99,7 @@ impl Harness {
                 Output::Send(c, env) => self.sent.push((c, env)),
                 Output::Close(c) => self.closed.push(c),
                 Output::Event(e) => self.events.push(e),
+                Output::Window(c) => self.window_cmds.push(c),
             }
         }
     }

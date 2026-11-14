@@ -19,7 +19,9 @@ use core_foundation::number::CFNumber;
 use core_foundation::string::{CFString, CFStringRef};
 use core_foundation::url::CFURL;
 
-use crate::windows::{AppWindow, AppWindows, WindowList, WindowLister, app_bundle_path};
+use crate::windows::{
+    AppWindow, AppWindows, WindowActor, WindowList, WindowLister, WindowOp, app_bundle_path,
+};
 
 /// Seconds an app may take to answer one Accessibility call.
 const AX_TIMEOUT_S: f32 = 0.3;
@@ -46,6 +48,12 @@ unsafe extern "C" {
         value: *mut CFTypeRef,
     ) -> i32;
     fn AXUIElementSetMessagingTimeout(element: AXUIElementRef, seconds: f32) -> i32;
+    fn AXUIElementSetAttributeValue(
+        element: AXUIElementRef,
+        attribute: CFStringRef,
+        value: CFTypeRef,
+    ) -> i32;
+    fn AXUIElementPerformAction(element: AXUIElementRef, action: CFStringRef) -> i32;
     /// Private but long stable (window managers outside the App Store use it): the
     /// `CGWindowID` of an AX window.
     fn _AXUIElementGetWindow(element: AXUIElementRef, window: *mut u32) -> i32;
@@ -135,6 +143,27 @@ impl Element {
         (err == AX_SUCCESS && id != 0).then_some(id)
     }
 
+    fn set_flag(&self, name: &str, on: bool) -> Result<(), String> {
+        let key = CFString::new(name);
+        let value = if on { CFBoolean::true_value() } else { CFBoolean::false_value() };
+        // SAFETY: valid element, key and CFBoolean.
+        let err = unsafe {
+            AXUIElementSetAttributeValue(
+                self.raw(),
+                key.as_concrete_TypeRef(),
+                value.as_CFTypeRef(),
+            )
+        };
+        if err == AX_SUCCESS { Ok(()) } else { Err(format!("{name} couldn't be set ({err})")) }
+    }
+
+    fn perform(&self, action: &str) -> Result<(), String> {
+        let key = CFString::new(action);
+        // SAFETY: valid element and action name.
+        let err = unsafe { AXUIElementPerformAction(self.raw(), key.as_concrete_TypeRef()) };
+        if err == AX_SUCCESS { Ok(()) } else { Err(format!("{action} failed ({err})")) }
+    }
+
     fn same_as(&self, other: &Self) -> bool {
         // SAFETY: two valid CF objects.
         unsafe { CFEqual(self.raw(), other.raw()) != 0 }
@@ -201,7 +230,8 @@ fn read_window(w: &Element, focused: Option<&Element>) -> Option<AppWindow> {
         title: w.string("AXTitle").unwrap_or_default(),
         document: w.string("AXDocument").filter(|d| !d.is_empty()),
         edited,
-        minimized: w.flag("AXMinimized").unwrap_or(false),
+        // Unreadable counts as minimised: never hidden on a guess, never "brought back".
+        minimized: w.flag("AXMinimized").unwrap_or(true),
         full_screen: w.flag("AXFullScreen").unwrap_or(false),
         can_minimize,
         focused: focused.is_some_and(|f| f.same_as(w)),
@@ -262,7 +292,82 @@ impl WindowLister for MacWindowLister {
             // other Spaces): its window numbers say its windows still exist.
             apps.push(AppWindows { pid, bundle_id, name, windows, all_window_ids });
         }
-        Some(WindowList { apps })
+        Some(WindowList { apps, started_at: None })
+    }
+}
+
+/// Hides and restores single windows through Accessibility.
+#[derive(Debug, Default)]
+pub struct MacWindowActor;
+
+impl MacWindowActor {
+    /// The app's standard window with this number (only windows Accessibility can reach:
+    /// on the current Space, or minimised).
+    fn find(pid: i32, window_id: u32) -> Result<(Element, Element), String> {
+        // SAFETY: a pure query.
+        if unsafe { AXIsProcessTrusted() } == 0 {
+            return Err("Decay doesn't have Accessibility access".into());
+        }
+        let app = Element::app(pid).ok_or("the app isn't running")?;
+        let window = app
+            .elements("AXWindows")
+            .into_iter()
+            .find(|w| w.window_id() == Some(window_id))
+            .ok_or("the window isn't reachable (closed, or on another Space)")?;
+        if window.string("AXSubrole").as_deref() != Some("AXStandardWindow") {
+            return Err("not a standard window".into());
+        }
+        Ok((app, window))
+    }
+}
+
+impl WindowActor for MacWindowActor {
+    fn act(&mut self, op: WindowOp, pid: i32, window_id: u32) -> Result<(), String> {
+        let (app, window) = Self::find(pid, window_id)?;
+        match op {
+            WindowOp::Hide => {
+                // In use right now (the focused window of the app in front): never.
+                let in_front = app.flag("AXFrontmost") != Some(false);
+                let focused = app.child("AXFocusedWindow").is_some_and(|f| f.same_as(&window));
+                if in_front && focused {
+                    return Err("the window is in use".into());
+                }
+                if window.flag("AXFullScreen") == Some(true) {
+                    return Err("the window is full screen".into());
+                }
+                let can = window
+                    .child("AXMinimizeButton")
+                    .is_some_and(|b| b.flag("AXEnabled").unwrap_or(false));
+                if !can {
+                    return Err("the window can't be minimised".into());
+                }
+                if window.flag("AXMinimized") == Some(true) {
+                    return Ok(()); // already out of the way
+                }
+                // A slow app may answer the set with an error and minimise anyway: the
+                // read-back decides.
+                let set = window.set_flag("AXMinimized", true);
+                if window.flag("AXMinimized") == Some(true) {
+                    Ok(())
+                } else {
+                    Err(set.err().unwrap_or_else(|| "the window didn't minimise".into()))
+                }
+            }
+            WindowOp::Restore => {
+                if window.flag("AXMinimized") == Some(true) {
+                    window.set_flag("AXMinimized", false)?;
+                }
+                // Raising and bringing the app forward are best effort: the window is
+                // back either way.
+                let _ = window.perform("AXRaise");
+                let _ = app.set_flag("AXFrontmost", true);
+                if window.flag("AXMinimized") == Some(true) {
+                    Err("the window is still minimised".into())
+                } else {
+                    Ok(())
+                }
+            }
+        }
     }
 }
 
@@ -283,6 +388,15 @@ mod tests {
         let me = unsafe { getpid() };
         // A test binary isn't an app bundle.
         assert_eq!(bundle_id(me), None);
+    }
+
+    #[test]
+    fn acting_without_accessibility_is_refused() {
+        // SAFETY: a pure query.
+        if unsafe { AXIsProcessTrusted() } == 0 {
+            let err = MacWindowActor.act(WindowOp::Hide, 1, 1).unwrap_err();
+            assert!(err.contains("Accessibility"), "{err}");
+        }
     }
 
     #[test]

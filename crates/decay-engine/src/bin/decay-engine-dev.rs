@@ -57,6 +57,7 @@ mod dev {
             eprintln!("event: {event:?}");
         })?;
         runtime.list_windows_with(decay_platform::window_lister())?;
+        runtime.act_on_windows_with(decay_platform::window_actor())?;
 
         for line in std::io::stdin().lock().lines() {
             let line = line?;
