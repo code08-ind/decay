@@ -46,10 +46,13 @@ describe('chunking', () => {
   });
 
   it('refuses messages that need too many chunks', () => {
-    const env = envelope('x', { q: 'a'.repeat((MAX_CHUNKS + 1) * CHUNK_BYTES) });
-    expect(() => splitEnvelope(env)).toThrow(/chunks/);
-    // Builds a very large message: slow when every package's tests run at once.
-  }, 30_000);
+    // Small chunks, same rule: more than MAX_CHUNKS pieces is refused (fast, even under
+    // coverage; a real-size message would be ~145 MB).
+    const env = envelope('x', { q: 'a'.repeat((MAX_CHUNKS + 1) * 100) });
+    expect(() => splitEnvelope(env, 100, 100)).toThrow(/chunks/);
+    const fits = envelope('x', { q: 'a'.repeat((MAX_CHUNKS - 2) * 100) });
+    expect(splitEnvelope(fits, 100, 100).length).toBeLessThanOrEqual(MAX_CHUNKS);
+  });
 
   it('rejects hostile chunks and caps groups', () => {
     const chunk = (seq: number, total: number, payload: unknown, groupId = 'g') => ({

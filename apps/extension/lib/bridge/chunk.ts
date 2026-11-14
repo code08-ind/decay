@@ -56,6 +56,10 @@ export function splitEnvelope(
       pieces.push(json.slice(start, i));
       start = i;
       budget = 0;
+      // Too big already: stop scanning (the receiver would refuse it anyway).
+      if (pieces.length >= MAX_CHUNKS) {
+        throw new SplitError(`message needs more than ${MAX_CHUNKS} chunks`);
+      }
     }
     budget += len;
     i += width;
