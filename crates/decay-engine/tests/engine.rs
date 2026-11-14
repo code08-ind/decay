@@ -10,7 +10,7 @@ use decay_bridge::protocol::{
     BrowserKind, Config, Hello, Snapshot, TabInfo, TabStatus, WindowInfo, WindowState,
 };
 use decay_bridge::{Envelope, ErrorCode, kinds};
-use decay_core::{EventType, ItemState, Mode, Preset, SweepStatus, Thresholds};
+use decay_core::{EventType, ItemState, Mode, Preset, ProtectedBy, SweepStatus, Thresholds};
 use decay_engine::{
     ConnId, Engine, EngineConfig, EngineEvent, Input, Output, WindowManagement, timing,
 };
@@ -478,6 +478,22 @@ fn shadow_mode_only_records_what_it_would_archive() {
     assert!(events_of(h.store(), &item.id).contains(&EventType::ShadowWouldArchive));
     let sweep = &h.store().recent_sweeps(1).unwrap()[0];
     assert!(sweep.is_shadow && sweep.status == SweepStatus::Done && sweep.item_count == 1);
+
+    // Sweeping again in the same stale period writes nothing new: each tab is reported
+    // once, and a manual sweep says there's nothing (new) to sweep.
+    h.events.clear();
+    let out = h.engine.sweep_now(h.now).unwrap();
+    h.collect(out);
+    for probe in h.take(1, kinds::PROBE) {
+        h.ack_ok(1, &probe, json!({"results": [{"tabId": 1, "dirtyForm": false, "beforeUnload": false, "uploading": false}], "missing": []}));
+    }
+    let shadow_events = events_of(h.store(), &item.id)
+        .into_iter()
+        .filter(|e| *e == EventType::ShadowWouldArchive)
+        .count();
+    assert_eq!(shadow_events, 1);
+    assert_eq!(h.store().recent_sweeps(10).unwrap().len(), 1);
+    assert!(h.events.iter().any(|e| matches!(e, EngineEvent::NothingToSweep { shadow: true })));
 }
 
 #[test]
@@ -1649,4 +1665,28 @@ fn completing_onboarding_sets_the_pace_and_starts_a_fresh_shadow_week() {
     assert_eq!(s.setting::<bool>("launch_at_login").unwrap(), Some(false));
     assert!(h.engine.onboarded().unwrap());
     assert_eq!(h.engine.status(now).mode, Mode::Shadow);
+}
+
+#[test]
+fn kept_live_lists_aged_tabs_a_protection_keeps() {
+    let mut h = ready_to_sweep(Mode::Shadow);
+    let kept: Vec<(String, ProtectedBy)> = h
+        .engine
+        .kept_live(h.now)
+        .into_iter()
+        .map(|(i, by)| (i.url.unwrap_or_default(), by))
+        .collect();
+    // The old page would be archived (not kept); the active and pinned tabs are kept.
+    assert_eq!(kept.len(), 2, "{kept:?}");
+    assert!(kept.contains(&("https://pinned.example/".into(), ProtectedBy::Pinned)));
+    assert!(kept.iter().any(|(u, _)| u == "https://active.example/"));
+    // A hold covers every tab: not a reason to list them.
+    h.store().set_setting("hold_until", &(h.now + 3_600_000), h.now).unwrap();
+    let out = h.engine.set_mode(Mode::Shadow, h.now).unwrap(); // reloads the policy
+    h.collect(out);
+    let held = h.engine.kept_live(h.now);
+    assert!(held.iter().all(|(_, by)| *by != ProtectedBy::Hold), "{held:?}");
+    // Young tabs aren't listed: nothing would have touched them anyway.
+    let fresh = Harness::new();
+    assert_eq!(fresh.engine.kept_live(fresh.now), Vec::new());
 }

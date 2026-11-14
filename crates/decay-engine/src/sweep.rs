@@ -24,8 +24,8 @@ use decay_bridge::protocol::{Ack, CloseResult, Probe, ProbeAck, SkipReason, Tabs
 use decay_core::policy::{is_excluded, is_web_url};
 use decay_core::{
     Decision, EventType, FormInput, Guards, ItemKind, ItemState, LifecycleEvent, MatchTarget, Mode,
-    PolicyTarget, Reason, Signals, SweepAction, SweepItemResult, SweepStatus, SweepTrigger,
-    Thresholds, evaluate, next_state,
+    PolicyTarget, ProtectedBy, Reason, Signals, SweepAction, SweepItemResult, SweepStatus,
+    SweepTrigger, Thresholds, evaluate, next_state,
 };
 use decay_store::{Item, Store, Sweep, SweepItem, new_id};
 
@@ -478,6 +478,49 @@ impl Engine {
         }
     }
 
+    /// Live tabs old enough to be stale that a protection keeps open right now (the Shadow
+    /// review's "Why things were kept"), with what protects each, oldest first. Protected
+    /// tabs are kept `active` (never marked stale), so they're found by age against the
+    /// global stale threshold; items mid-archive or hidden, and a hold (it covers every
+    /// tab), aren't listed.
+    pub fn kept_live(&self, now: i64) -> Vec<(Item, ProtectedBy)> {
+        let policy = &self.policy;
+        let ctx = policy.ctx(now, self.config.pro);
+        let stale_s = policy.thresholds.stale * 3600.0;
+        let mut out = Vec::new();
+        for conn in self.conns.values() {
+            let Some(a) = Self::live_adapter(conn, now) else { continue };
+            for tab in a.tabs.values() {
+                let Some(item) = tab
+                    .item
+                    .as_ref()
+                    .filter(|i| matches!(i.state, ItemState::Active | ItemState::Stale))
+                else {
+                    continue;
+                };
+                #[allow(clippy::cast_precision_loss, reason = "ages are far below 2^52 s")]
+                if (item.active_age_s as f64) < stale_s || excluded(item, policy) {
+                    continue;
+                }
+                let signals = Signals {
+                    in_use: tab.info.active,
+                    audible: tab.info.audible,
+                    form_input: a.form_input(tab, now),
+                    save_state: item.save_state,
+                };
+                if let Decision::Protect { by, .. } = evaluate(&target(item), &signals, &ctx)
+                    && by != ProtectedBy::Hold
+                {
+                    out.push((item.clone(), by));
+                }
+            }
+        }
+        out.sort_by(|x, y| {
+            y.0.active_age_s.cmp(&x.0.active_age_s).then_with(|| x.0.id.cmp(&y.0.id))
+        });
+        out
+    }
+
     /// Plans with the current verdicts, writes the plan, and sends the closes.
     fn execute_sweep(&mut self, now: i64, trigger: SweepTrigger) {
         if let Err(e) = self.try_execute_sweep(now, trigger) {
@@ -535,6 +578,19 @@ impl Engine {
         });
         plan.truncate(policy.max_items);
         let shadow = policy.mode == Mode::Shadow;
+        if shadow {
+            // Each tab once per stale period: a tab already reported since it last turned
+            // stale isn't written again every 15 minutes (the events table and the Shadow
+            // review would fill with repeats).
+            let mut fresh = Vec::with_capacity(plan.len());
+            for p in plan {
+                let last = self.store.last_event_at(&p.2.id, EventType::ShadowWouldArchive)?;
+                if last.is_none_or(|at| at < p.2.state_changed_at) {
+                    fresh.push(p);
+                }
+            }
+            plan = fresh;
+        }
         if plan.is_empty() {
             if trigger == SweepTrigger::Manual {
                 self.out.push(Output::Event(EngineEvent::NothingToSweep { shadow }));

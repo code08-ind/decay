@@ -67,6 +67,109 @@ export interface DetectedBrowser {
   storeUrl: string;
 }
 
+export type ItemState =
+  | 'active'
+  | 'stale'
+  | 'hidden'
+  | 'archiving'
+  | 'archived'
+  | 'restored'
+  | 'purged';
+
+export interface LibraryStats {
+  archivedTotal: number;
+  archivedToday: { tabs: number; windows: number };
+  restoredWeek: number;
+  openTabs: number;
+  mode: Mode;
+  shadowDay: number | null;
+}
+
+export interface TimelineEvent {
+  type: string;
+  at: number;
+  label: string | null;
+}
+
+export interface ItemDetail extends PanelItem {
+  state: ItemState;
+  pinned: boolean;
+  groupTitle: string | null;
+  firstSeenAt: number;
+  lastUsedAt: number;
+  activeHours: number;
+  sweepId: string | null;
+  sweepNumber: number | null;
+  restoreCount: number;
+  events: TimelineEvent[];
+}
+
+export interface SweepRow {
+  id: string;
+  number: number;
+  startedAt: number;
+  trigger: 'scheduled' | 'wake' | 'manual';
+  isShadow: boolean;
+  status: 'pending' | 'running' | 'done' | 'failed' | 'undone';
+  /** Items it archived (or would have), including ones deleted since. */
+  itemCount: number;
+  tabs: number;
+  windows: number;
+  restored: number;
+  failed: number;
+  undoneAt: number | null;
+  undoable: boolean;
+}
+
+export interface SweepEntry extends PanelItem {
+  state: ItemState;
+  archived: boolean;
+}
+
+export interface SweepDetail extends SweepRow {
+  items: SweepEntry[];
+}
+
+export type ProtectedBy =
+  | 'pinned'
+  | 'activeTab'
+  | 'audible'
+  | 'formInput'
+  | 'download'
+  | 'call'
+  | 'unsaved'
+  | 'unknownSaveState'
+  | 'rule'
+  | 'hold'
+  | 'meeting'
+  | 'grace'
+  | 'unrestorable';
+
+export interface ShadowItem extends PanelItem {
+  wouldArchiveAt: number;
+  usedAfter: boolean;
+  live: boolean;
+}
+
+export interface KeptItem extends PanelItem {
+  by: ProtectedBy;
+  label: string;
+  activeHours: number;
+}
+
+export interface ShadowReport {
+  mode: Mode;
+  startedAt: number | null;
+  day: number;
+  days: number;
+  tabs: number;
+  windows: number;
+  reopened: number;
+  wouldArchive: ShadowItem[];
+  kept: KeptItem[];
+  keptBy: { by: ProtectedBy; label: string; count: number }[];
+}
+
 export type HoldDuration = '1h' | 'untilTomorrow' | 'indefinite' | { minutes: number };
 
 export const api = {
@@ -95,13 +198,26 @@ export const api = {
     invoke('ui_show_window', { window, route }),
   hidePanel: () => invoke('ui_hide_panel'),
   takePending: () => invoke<Pending>('ui_take_pending'),
-  search: (input: { query: string; kind?: 'tab' | 'window'; limit?: number; cursor?: string }) =>
-    invoke<SearchOutput>('search', { input }),
+  search: (input: {
+    query: string;
+    kind?: 'tab' | 'window';
+    limit?: number;
+    cursor?: string;
+    after?: number;
+  }) => invoke<SearchOutput>('search', { input }),
   restoreItems: (ids: string[], target: 'original' | 'newWindow' = 'original') =>
     invoke('restore_items', { ids, target }),
   restoreBatch: (itemId: string) => invoke('restore_batch', { itemId }),
   protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
   showItem: (id: string) => invoke('ui_show_item', { id }),
+  libraryStats: (input: { todayStart: number; weekStart: number }) =>
+    invoke<LibraryStats>('library_stats', { input }),
+  getItem: (id: string) => invoke<ItemDetail>('get_item', { id }),
+  deleteItems: (ids: string[]) => invoke<{ deleted: number }>('delete_items', { ids }),
+  listSweeps: (input: { limit?: number; includeShadow?: boolean } = {}) =>
+    invoke<SweepRow[]>('list_sweeps', { input }),
+  getSweep: (id: string) => invoke<SweepDetail>('get_sweep', { id }),
+  getShadowReport: () => invoke<ShadowReport>('get_shadow_report'),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),

@@ -110,6 +110,20 @@ impl Store {
         Ok(out)
     }
 
+    /// The newest sweeps first, real ones only unless `include_shadow`.
+    pub fn recent_sweeps_of(&self, limit: usize, include_shadow: bool) -> Result<Vec<Sweep>> {
+        let mut stmt = self.conn.prepare_cached(&format!(
+            "SELECT {SWEEP_COLUMNS} FROM sweeps WHERE ?2 OR is_shadow = 0
+             ORDER BY started_at DESC, id DESC LIMIT ?1"
+        ))?;
+        let mut rows = stmt.query(params![limit, include_shadow])?;
+        let mut out = Vec::new();
+        while let Some(r) = rows.next()? {
+            out.push(sweep_from_row(r)?);
+        }
+        Ok(out)
+    }
+
     /// Sweeps left `pending` / `running` by a crash (to resume or fail at start-up).
     pub fn unfinished_sweeps(&self) -> Result<Vec<Sweep>> {
         let mut stmt = self.conn.prepare_cached(&format!(

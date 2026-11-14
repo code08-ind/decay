@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
-  "description": "Library and Settings: everything the shell offers",
-  "windows": ["library", "settings"],
+  "description": "The Library window: archive, sweeps, shadow review and the tray controls",
+  "windows": ["library"],
   "permissions": [
     "core:default",
     "allow-get-status",
@@ -24,6 +24,12 @@
     "allow-restore-items",
     "allow-restore-batch",
     "allow-protect-item",
-    "allow-ui-show-item"
+    "allow-ui-show-item",
+    "allow-library-stats",
+    "allow-get-item",
+    "allow-delete-items",
+    "allow-list-sweeps",
+    "allow-get-sweep",
+    "allow-get-shadow-report"
   ]
 }

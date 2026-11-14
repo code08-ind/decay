@@ -26,6 +26,12 @@ const COMMANDS: &[&str] = &[
     "install_native_hosts",
     "open_extension_store",
     "complete_onboarding",
+    "library_stats",
+    "get_item",
+    "delete_items",
+    "list_sweeps",
+    "get_sweep",
+    "get_shadow_report",
 ];
 
 fn main() {

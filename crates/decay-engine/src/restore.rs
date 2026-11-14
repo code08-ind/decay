@@ -92,6 +92,16 @@ fn undoable(s: &Store) -> Res<Vec<Sweep>> {
 }
 
 impl Engine {
+    /// Ids of the sweeps Undo accepts (the Library offers Undo for exactly these).
+    pub fn undoable_sweep_ids(&self) -> Res<std::collections::HashSet<String>> {
+        Ok(undoable(&self.store)?.into_iter().map(|s| s.id).collect())
+    }
+
+    /// The item is being restored right now (its tab is reopening).
+    pub fn is_restoring(&self, item_id: &str) -> bool {
+        self.restoring.contains(item_id)
+    }
+
     pub(crate) fn on_search(
         &mut self,
         conn: ConnId,

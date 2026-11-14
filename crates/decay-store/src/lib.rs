@@ -10,6 +10,7 @@ mod events;
 mod import;
 mod items;
 mod key;
+mod library;
 mod migrate;
 mod rules;
 mod search;

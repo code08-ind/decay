@@ -94,6 +94,8 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   size?: 'sm' | 'md' | 'lg';
   /** Bordered surface circle (toolbars) or plain (rows). */
   outlined?: boolean;
+  /** On the green feature card (its text colour, a tile-coloured hover). */
+  onFeature?: boolean;
 }
 
 /** Round icon-only button; `label` is required, so it's never unnamed. */
@@ -102,6 +104,7 @@ export function IconButton({
   icon,
   size = 'md',
   outlined = false,
+  onFeature = false,
   className,
   type = 'button',
   ...rest
@@ -113,10 +116,12 @@ export function IconButton({
       aria-label={label}
       title={label}
       className={cx(
-        'inline-flex shrink-0 items-center justify-center rounded-full text-muted transition hover:text-ink disabled:pointer-events-none disabled:opacity-50',
-        outlined
-          ? 'border border-line bg-surface shadow-sm hover:bg-surface-2'
-          : 'hover:bg-surface-2',
+        'inline-flex shrink-0 items-center justify-center rounded-full transition disabled:pointer-events-none disabled:opacity-50',
+        onFeature
+          ? 'text-feature-ink hover:bg-feature-tile'
+          : outlined
+            ? 'border border-line bg-surface text-muted shadow-sm hover:bg-surface-2 hover:text-ink'
+            : 'text-muted hover:bg-surface-2 hover:text-ink',
         dim,
         className,
       )}

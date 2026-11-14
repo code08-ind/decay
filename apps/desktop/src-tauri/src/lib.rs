@@ -21,6 +21,7 @@ mod commands;
 mod core;
 mod deeplink;
 mod keys;
+mod library;
 mod menu;
 mod onboarding;
 mod search;
@@ -357,6 +358,12 @@ pub fn run() {
             search::protect_item,
             search::ui_show_item,
             commands::update_settings,
+            library::library_stats,
+            library::get_item,
+            library::delete_items,
+            library::list_sweeps,
+            library::get_sweep,
+            library::get_shadow_report,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {

@@ -20,8 +20,8 @@ export function useStatus(): EngineStatus | null {
   return status;
 }
 
-/** The route from the URL hash, updated by `navigate` (deep links, tray). */
-export function useRoute(): string {
+/** The route from the URL hash, updated by `navigate` (deep links, tray) and by `go`. */
+export function useRoute(): [string, (route: string) => void] {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
   useEffect(() => {
     const off = listen<{ route: string }>('navigate', (e) => setRoute(e.payload.route));
@@ -29,5 +29,5 @@ export function useRoute(): string {
       off.then((f) => f());
     };
   }, []);
-  return route;
+  return [route, setRoute];
 }

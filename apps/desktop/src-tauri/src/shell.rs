@@ -177,7 +177,8 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
         Window::Onboarding => {
             builder.resizable(false).maximizable(false).minimizable(false).center().build()
         }
-        Window::Library => builder.min_inner_size(800.0, 520.0).center().build(),
+        // UI Design Guidelines: Library minimum 860×560.
+        Window::Library => builder.min_inner_size(860.0, 560.0).center().build(),
     }
 }
 

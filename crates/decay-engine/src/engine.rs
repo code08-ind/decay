@@ -561,6 +561,12 @@ impl Engine {
         &self.store
     }
 
+    /// The store, for writes outside the engine's own (deleting archived items). Live
+    /// items stay the engine's: callers only touch archived ones.
+    pub fn store_mut(&mut self) -> &mut Store {
+        &mut self.store
+    }
+
     /// Gives the store back (shutdown).
     pub fn into_store(self) -> Store {
         self.store

@@ -87,23 +87,24 @@ Each command returns `Promise<T>` and rejects with `AppError`. Access is limited
 | Command | Input | Output | Notes |
 | --- | --- | --- | --- |
 | `search` | `{ query: string; filters?: { app?: string; domain?: string; after?: number; before?: number; kind?: ItemKind; sourceId?: string }; limit?: number /*≤200, default 50*/ ; cursor?: string }` | `{ groups: { key: string; label: string; sourceTitle?: string; items: Item[] }[]; nextCursor?: string; tookMs: number }` | Parses inline operators `app:`, `site:`, `before:`, `after:`, `in:`. Groups by day + source |
-| `list_items` | `{ state?: ItemState[]; view: 'today' \| 'week' \| 'all' \| 'protected' \| 'live'; sort?: 'recent' \| 'age' \| 'title'; cursor?: string; limit?: number }` | `{ items: Item[]; nextCursor?: string; total: number }` | Library views |
-| `get_item` | `{ id }` | `Item & { events: { type: string; at: number; reason?: Reason }[] }` | Detail drawer timeline |
+| `list_items` | `{ state?: ItemState[]; view: 'today' \| 'week' \| 'all' \| 'protected' \| 'live'; sort?: 'recent' \| 'age' \| 'title'; cursor?: string; limit?: number }` | `{ items: Item[]; nextCursor?: string; total: number }` | Library views — **as built (P1.11):** not a command: the Library lists the archive with `search` (empty query = newest first) plus `after` (epoch ms: local midnight for Today, the start of the locale's week for This week) and `kind`. Protected / Live now views come later |
+| `library_stats` | `{ todayStart; weekStart }` (epoch ms, the UI's calendar) | `{ archivedTotal; archivedToday: { tabs; windows }; restoredWeek; openTabs; mode; shadowDay: number \| null }` | P1.11 stat cards and shadow banner. `shadowDay` counts calendar days from `shadow_started_at` in the system time zone (day 1 = the day it started). `restoredWeek` counts items restored or brought back by Undo |
+| `get_item` | `{ id }` | `Item & { events: { type: string; at: number; reason?: Reason }[] }` | Detail drawer timeline — **as built (P1.11):** the panel row (`id kind title url domain appName sourceId sourceTitle archivedAt reason batch`) plus `state pinned groupTitle firstSeenAt lastUsedAt activeHours sweepId sweepNumber restoreCount`, and `events: { type; at; label }[]` (newest first, ≤ 200; `label` = the reason in words) |
 | `get_batch` | `{ itemId }` | `{ sweepId; sourceTitle; items: Item[] }` | Items archived together from the same source |
 | `restore_items` | `{ ids: string[]; target?: 'original' \| 'newWindow' }` | `{ restored: string[]; failed: { id: string; error: AppError }[] }` | Batch restore with > 1 source requires Pro → `PRO_REQUIRED` |
 | `restore_batch` | `{ itemId }` | same as above | Pro |
-| `delete_items` | `{ ids: string[] }` | `{ deleted: number }` | Permanently removes from the archive |
+| `delete_items` | `{ ids: string[] }` | `{ deleted: number }` | Permanently removes from the archive — **as built:** 1–500 ids, only items that are `archived` and not being restored right now (others are skipped, not counted), one durable transaction; the UI asks first and reloads after |
 | `protect_item` | `{ id; scope: 'domain' \| 'app' \| 'url' }` | `Rule` | "Always protect" quick action |
 
 ### 2.2 Sweeps
 
 | Command | Input | Output |
 | --- | --- | --- |
-| `list_sweeps` | `{ limit?: number; includeShadow?: boolean }` | `Sweep[]` |
-| `get_sweep` | `{ id }` | `Sweep & { items: Item[] }` |
+| `list_sweeps` | `{ input?: { limit?: number; includeShadow?: boolean } }` | `Sweep[]` — **as built (P1.11):** newest first, ≤ 200 (default 50), shadow sweeps only with `includeShadow`; each row `{ id; number /* place among sweeps of its kind (real / shadow), oldest = 1 */; startedAt; trigger; isShadow; status; itemCount /* total, kept after deletes */; tabs; windows /* of the items still stored */; restored /* archived by it, back since */; failed; undoneAt; undoable /* Undo accepts it (last 20 real sweeps that archived something) and something is still archived from it */ }`. Only items the sweep really archived count (closes the browser skipped or that failed don't) |
+| `get_sweep` | `{ id }` | `Sweep & { items: Item[] }` — **as built:** the `list_sweeps` row plus `items: (panel row & { state; archived /* still archived from this sweep, not re-archived by a later one */ })[]`; a shadow sweep lists its `shadow_would_archive` items with their reasons |
 | `run_sweep_now` | `{ dryRun?: boolean }` | `Sweep` — **as built (P1.7):** `{ started: true }`; the result arrives as `sweep:completed` / `sweep:nothing` (a sweep waits for probes and close acks). Refusals: `ADAPTER_UNAVAILABLE` (no browser), `CONFLICT` (already sweeping), `UNSAFE` (paused / on hold) |
 | `undo_sweep` | `{ id?: string /* default: last */ }` | `{ restored: number; failed: number }` — **as built (P1.7):** `{ started: true }`; the counts arrive as `sweep:undone`. Refusals: `NOT_FOUND`, `CONFLICT` (still closing), `ADAPTER_UNAVAILABLE` (its browser isn't connected) |
-| `get_shadow_report` | `{}` | `{ days: number; wouldArchive: Item[]; wouldHide: Item[]; protectedCount: number; topDomains: { domain: string; count: number }[] }` |
+| `get_shadow_report` | `{}` | `{ days: number; wouldArchive: Item[]; wouldHide: Item[]; protectedCount: number; topDomains: { domain: string; count: number }[] }` — **as built (P1.11):** `{ mode; startedAt; day; days: 7; tabs; windows; reopened; wouldArchive: (row & { wouldArchiveAt /* first time */; usedAfter /* used again since: a regret */; live })[]; kept: (row & { by: ProtectedBy; label; activeHours })[]; keptBy: { by; label; count }[] }`. Would-archive = distinct items with `shadow_would_archive` events since `shadow_started_at` (aggregated in SQL; the engine writes one such event per item per stale period, not one per sweep, and records no shadow sweep when nothing new would be archived); `day` = calendar day in the system time zone (day 1 = the day it started; the week is over from day 8); kept = live tabs at least stale-old that a protection keeps right now (engine `kept_live`). Window hiding and top domains come with Phase 2 |
 
 ### 2.3 Engine status and control
 

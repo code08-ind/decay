@@ -35,6 +35,8 @@ pub struct SearchInput {
     /// `tab` or `window`; none = all.
     pub kind: Option<ItemKind>,
     pub limit: Option<usize>,
+    /// Only items archived at or after this (epoch ms; the Library's Today / This week).
+    pub after: Option<i64>,
     /// The `nextCursor` of the previous page.
     pub cursor: Option<String>,
 }
@@ -73,7 +75,12 @@ pub struct SearchOutput {
 
 /// Why an item was archived, as its reason chip says it.
 pub fn reason_label(item: &Item) -> Option<String> {
-    match item.archive_reason.as_ref()? {
+    reason_text(item.archive_reason.as_ref()?)
+}
+
+/// A reason as its chip says it ("Unused 61 active h"); none for a protection.
+pub fn reason_text(reason: &Reason) -> Option<String> {
+    match reason {
         Reason::Unused { active_hours, .. } => Some(format!("Unused {active_hours} active h")),
         Reason::CustomRule { active_hours, .. } => Some(format!("Rule: {active_hours} active h")),
         Reason::Protected { .. } => None,
@@ -85,7 +92,8 @@ fn local_offset_minutes() -> i32 {
     jiff::Zoned::now().offset().seconds() / 60
 }
 
-fn row(store: &Store, item: Item, names: &mut HashMap<String, String>) -> PanelItem {
+/// An item as a list row (app and source window names looked up, app names cached).
+pub fn row(store: &Store, item: Item, names: &mut HashMap<String, String>) -> PanelItem {
     let app_name = names
         .entry(item.app_id.clone())
         .or_insert_with(|| {
@@ -127,7 +135,7 @@ pub fn run_search(
     };
     let query = SearchQuery {
         text: input.query.chars().take(500).collect(),
-        filters: SearchFilters { kind: input.kind, ..SearchFilters::default() },
+        filters: SearchFilters { kind: input.kind, after: input.after, ..SearchFilters::default() },
         limit: input.limit.unwrap_or(50).clamp(1, MAX_LIMIT),
         offset,
         now,
