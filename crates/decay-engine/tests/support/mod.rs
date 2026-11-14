@@ -280,6 +280,8 @@ pub fn os(idle: u64, key: u64) -> decay_platform::PlatformSample {
         locked: Some(false),
         display_asleep: Some(false),
         audio_playing: Some(false),
+        mic_in_use: Some(false),
+        camera_in_use: Some(false),
         frontmost: Some(decay_platform::FrontApp { pid: 10, name: "Google Chrome".into() }),
         accessibility: Some(true),
         continuous_ms: None,

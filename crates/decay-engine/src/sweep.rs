@@ -364,7 +364,7 @@ impl Engine {
                 return;
             }
             match self.sweep_window(now) {
-                SweepWindow::Away | SweepWindow::Busy => return,
+                SweepWindow::Away | SweepWindow::Busy | SweepWindow::Meeting => return,
                 SweepWindow::JustWoke => trigger = SweepTrigger::Wake,
                 SweepWindow::Quiet => {}
             }

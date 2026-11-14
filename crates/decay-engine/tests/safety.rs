@@ -36,9 +36,11 @@
 //! and the extension refuses to close it too) and the engine's hold check (the policy
 //! holds as well).
 //!
+//! | In a call or meeting (mic or camera in use), and 2 min after | `nothing_is_swept_during_a_call_or_meeting` |
+//!
 //! Not covered yet:
-//! - Meetings / screen sharing: P2.3 adds the detection (until then a sweep can run
-//!   during a call; the call's audio tab is protected as audible).
+//! - Screen sharing without a call: macOS has no public signal for another app capturing
+//!   the screen (sharing nearly always comes with a call, which is covered).
 //! - The *order* of writing and closing inside one engine step (the record is written in
 //!   a durable transaction before the close is queued; a store-failure hook would test
 //!   that a failed write sends no close).
@@ -939,4 +941,56 @@ proptest! {
         let mode = if automatic { Mode::Automatic } else { Mode::Shadow };
         run_session(mode, specs, steps);
     }
+}
+
+#[test]
+fn nothing_is_swept_during_a_call_or_meeting() {
+    for (mic, camera) in [(true, false), (false, true)] {
+        let mut h = scene(Mode::Automatic, vec![], 61);
+        let call = |h: &mut Harness, on: bool| {
+            let mut sample = os(600, 600);
+            sample.mic_in_use = Some(on && mic);
+            sample.camera_in_use = Some(on && camera);
+            h.os(sample);
+        };
+        // Twenty minutes in a call: quiet otherwise, an old tab, automatic mode.
+        for _ in 0..(20 * 60) {
+            h.now += 1_000;
+            call(&mut h, true);
+            h.msg(1, kinds::HEARTBEAT, json!({"at": h.now}));
+            h.poll();
+        }
+        assert_eq!(h.take(1, kinds::PROBE).len() + h.take(1, kinds::TABS_CLOSE).len(), 0);
+        assert!(h.engine.status(h.now).in_meeting);
+        // The call ends: still nothing for two minutes…
+        for _ in 0..100 {
+            h.now += 1_000;
+            call(&mut h, false);
+            h.msg(1, kinds::HEARTBEAT, json!({"at": h.now}));
+            h.poll();
+        }
+        assert_eq!(h.take(1, kinds::PROBE).len(), 0, "mic {mic} camera {camera}: cool-down");
+        // …then the sweep goes ahead.
+        for _ in 0..60 {
+            h.now += 1_000;
+            call(&mut h, false);
+            h.msg(1, kinds::HEARTBEAT, json!({"at": h.now}));
+            h.poll();
+        }
+        assert!(!h.engine.status(h.now).in_meeting);
+        assert_eq!(h.take(1, kinds::PROBE).len(), 1, "after the meeting");
+    }
+}
+
+#[test]
+fn sweep_now_is_still_the_users_call_during_a_meeting() {
+    let mut h = scene(Mode::Automatic, vec![], 61);
+    let mut sample = os(600, 600);
+    sample.mic_in_use = Some(true);
+    h.os(sample);
+    h.poll(); // the tick: the tab goes stale, the scheduled sweep waits for the meeting
+    assert_eq!(h.take(1, kinds::PROBE).len(), 0);
+    let out = h.engine.sweep_now(h.now).unwrap();
+    h.collect(out);
+    assert_eq!(h.take(1, kinds::PROBE).len(), 1);
 }

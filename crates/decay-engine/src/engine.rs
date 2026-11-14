@@ -47,6 +47,9 @@ pub mod timing {
     pub const MISSING_GRACE_MS: i64 = 60_000;
     /// An OS sample older than this is ignored (the engine falls back to browser activity).
     pub const PLATFORM_FRESH_MS: i64 = 5_000;
+    /// After the microphone and camera go quiet, sweeps wait this long more (a call that
+    /// drops for a moment, the minutes right after a meeting).
+    pub const MEETING_COOLDOWN_MS: i64 = 2 * 60_000;
     /// A gap this long between OS samples means the machine slept (or the app was stopped).
     pub const WAKE_GAP_MS: i64 = 90_000;
     /// After a wake or unlock, a sweep may run this long without waiting for a quiet moment
@@ -487,6 +490,8 @@ pub struct Engine {
     pub(crate) window_ops: HashMap<String, crate::hide::PendingWindowOp>,
     /// When the last hide sweep started.
     pub(crate) last_hide_at: Option<i64>,
+    /// In a meeting until then (F12): no scheduled sweeps.
+    pub(crate) meeting_until: Option<i64>,
     /// Why each pending hide was chosen (written with its answer).
     pub(crate) hide_reasons: HashMap<String, decay_core::Reason>,
     /// Hides that timed out: a late success is still applied until the time given.
@@ -584,6 +589,7 @@ impl Engine {
             app_windows: crate::windows::AppWindowsState::default(),
             window_ops: HashMap::new(),
             last_hide_at: None,
+            meeting_until: None,
             hide_reasons: HashMap::new(),
             late_hides: HashMap::new(),
             next_op: 0,

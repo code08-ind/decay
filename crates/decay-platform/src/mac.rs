@@ -38,6 +38,17 @@ const fn fourcc(code: [u8; 4]) -> u32 {
 }
 const AUDIO_SYSTEM_OBJECT: u32 = 1;
 const AUDIO_DEFAULT_OUTPUT_DEVICE: u32 = fourcc(*b"dOut");
+const AUDIO_DEFAULT_INPUT_DEVICE: u32 = fourcc(*b"dIn ");
+/// `CoreMediaIO`: the system object, its device list, and "running somewhere" (as audio).
+const CMIO_SYSTEM_OBJECT: u32 = 1;
+const CMIO_HARDWARE_DEVICES: u32 = fourcc(*b"dev#");
+/// `kCMIOHardwarePropertyRunLoop`: set to NULL so device state updates without a run
+/// loop on the calling thread (the engine thread has none).
+const CMIO_HARDWARE_RUN_LOOP: u32 = fourcc(*b"rnlp");
+/// `kAudioHardwarePropertyProcessObjectList` and `kAudioProcessPropertyIsRunningInput`
+/// (macOS 14.2): which processes are recording, whatever the device.
+const AUDIO_PROCESS_LIST: u32 = fourcc(*b"prs#");
+const AUDIO_PROCESS_RUNNING_INPUT: u32 = fourcc(*b"piri");
 const AUDIO_RUNNING_SOMEWHERE: u32 = fourcc(*b"gone");
 const AUDIO_SCOPE_GLOBAL: u32 = fourcc(*b"glob");
 const AUDIO_ELEMENT_MAIN: u32 = 0;
@@ -87,8 +98,43 @@ fn continuous_ms() -> Option<u64> {
     (ns != 0).then_some(ns / 1_000_000)
 }
 
+#[link(name = "CoreMediaIO", kind = "framework")]
+unsafe extern "C" {
+    fn CMIOObjectGetPropertyDataSize(
+        object: u32,
+        address: *const AudioObjectPropertyAddress,
+        qualifier_size: u32,
+        qualifier: *const c_void,
+        data_size: *mut u32,
+    ) -> i32;
+    fn CMIOObjectSetPropertyData(
+        object: u32,
+        address: *const AudioObjectPropertyAddress,
+        qualifier_size: u32,
+        qualifier: *const c_void,
+        data_size: u32,
+        data: *const c_void,
+    ) -> i32;
+    fn CMIOObjectGetPropertyData(
+        object: u32,
+        address: *const AudioObjectPropertyAddress,
+        qualifier_size: u32,
+        qualifier: *const c_void,
+        data_size: u32,
+        data_used: *mut u32,
+        data: *mut c_void,
+    ) -> i32;
+}
+
 #[link(name = "CoreAudio", kind = "framework")]
 unsafe extern "C" {
+    fn AudioObjectGetPropertyDataSize(
+        object: u32,
+        address: *const AudioObjectPropertyAddress,
+        qualifier_size: u32,
+        qualifier: *const c_void,
+        data_size: *mut u32,
+    ) -> i32;
     fn AudioObjectGetPropertyData(
         object: u32,
         address: *const AudioObjectPropertyAddress,
@@ -197,6 +243,136 @@ fn audio_playing() -> Option<bool> {
     audio_u32(device, AUDIO_RUNNING_SOMEWHERE).map(|running| running != 0)
 }
 
+/// Whether some process is recording audio from any input (macOS 14.2+: per process,
+/// so a headset mic counts and music played through a headset doesn't); `None` where
+/// the process list isn't available.
+fn any_process_recording() -> Option<bool> {
+    let address = AudioObjectPropertyAddress {
+        selector: AUDIO_PROCESS_LIST,
+        scope: AUDIO_SCOPE_GLOBAL,
+        element: AUDIO_ELEMENT_MAIN,
+    };
+    let mut size = 0u32;
+    // SAFETY: valid address and out pointer; no qualifier.
+    let err = unsafe {
+        AudioObjectGetPropertyDataSize(
+            AUDIO_SYSTEM_OBJECT,
+            &raw const address,
+            0,
+            std::ptr::null(),
+            &raw mut size,
+        )
+    };
+    if err != 0 {
+        return None;
+    }
+    let count = (size as usize / std::mem::size_of::<u32>()).min(1024);
+    let mut processes = vec![0u32; count];
+    let mut got = u32::try_from(processes.len() * std::mem::size_of::<u32>()).ok()?;
+    // SAFETY: the buffer holds `got` bytes; CoreAudio writes at most that and updates it.
+    let err = unsafe {
+        AudioObjectGetPropertyData(
+            AUDIO_SYSTEM_OBJECT,
+            &raw const address,
+            0,
+            std::ptr::null(),
+            &raw mut got,
+            processes.as_mut_ptr().cast(),
+        )
+    };
+    if err != 0 {
+        return None;
+    }
+    let n = (got as usize / std::mem::size_of::<u32>()).min(processes.len());
+    Some(
+        processes[..n]
+            .iter()
+            .any(|p| audio_u32(*p, AUDIO_PROCESS_RUNNING_INPUT).is_some_and(|v| v != 0)),
+    )
+}
+
+/// Whether some app uses a microphone (`None` if it can't be read). Per process where
+/// macOS can tell; else the default input device running (which also counts playback
+/// through a device that's both).
+fn mic_in_use() -> Option<bool> {
+    if let Some(recording) = any_process_recording() {
+        return Some(recording);
+    }
+    let device = audio_u32(AUDIO_SYSTEM_OBJECT, AUDIO_DEFAULT_INPUT_DEVICE)?;
+    if device == 0 {
+        return Some(false); // no input device
+    }
+    audio_u32(device, AUDIO_RUNNING_SOMEWHERE).map(|running| running != 0)
+}
+
+fn cmio_address(selector: u32) -> AudioObjectPropertyAddress {
+    AudioObjectPropertyAddress { selector, scope: AUDIO_SCOPE_GLOBAL, element: AUDIO_ELEMENT_MAIN }
+}
+
+/// Whether some app uses any camera (`None` if the devices can't be read).
+fn camera_in_use() -> Option<bool> {
+    let address = cmio_address(CMIO_HARDWARE_DEVICES);
+    let mut size = 0u32;
+    // SAFETY: valid address and out pointer; no qualifier.
+    let err = unsafe {
+        CMIOObjectGetPropertyDataSize(
+            CMIO_SYSTEM_OBJECT,
+            &raw const address,
+            0,
+            std::ptr::null(),
+            &raw mut size,
+        )
+    };
+    if err != 0 {
+        return None;
+    }
+    let count = size as usize / std::mem::size_of::<u32>();
+    if count == 0 {
+        return Some(false);
+    }
+    let mut devices = vec![0u32; count.min(64)];
+    let capacity = u32::try_from(devices.len() * std::mem::size_of::<u32>()).ok()?;
+    let mut used = 0u32;
+    // SAFETY: the buffer holds `capacity` bytes.
+    let err = unsafe {
+        CMIOObjectGetPropertyData(
+            CMIO_SYSTEM_OBJECT,
+            &raw const address,
+            0,
+            std::ptr::null(),
+            capacity,
+            &raw mut used,
+            devices.as_mut_ptr().cast(),
+        )
+    };
+    if err != 0 {
+        return None;
+    }
+    let n = (used as usize / std::mem::size_of::<u32>()).min(devices.len());
+    let running = cmio_address(AUDIO_RUNNING_SOMEWHERE);
+    for device in &devices[..n] {
+        let mut value = 0u32;
+        let mut got = 0u32;
+        let want = u32::try_from(std::mem::size_of::<u32>()).ok()?;
+        // SAFETY: a 4-byte buffer for a UInt32 property.
+        let err = unsafe {
+            CMIOObjectGetPropertyData(
+                *device,
+                &raw const running,
+                0,
+                std::ptr::null(),
+                want,
+                &raw mut got,
+                (&raw mut value).cast(),
+            )
+        };
+        if err == 0 && value != 0 {
+            return Some(true);
+        }
+    }
+    Some(false)
+}
+
 fn accessibility_trusted() -> bool {
     // SAFETY: no arguments; reads this process's trust state.
     unsafe { AXIsProcessTrusted() != 0 }
@@ -208,6 +384,25 @@ pub struct MacPlatform;
 
 impl MacPlatform {
     pub fn new() -> Self {
+        // Camera state must update without a run loop on the sampling thread.
+        let address = AudioObjectPropertyAddress {
+            selector: CMIO_HARDWARE_RUN_LOOP,
+            scope: AUDIO_SCOPE_GLOBAL,
+            element: AUDIO_ELEMENT_MAIN,
+        };
+        let none: *const c_void = std::ptr::null();
+        let size = u32::try_from(std::mem::size_of::<*const c_void>()).unwrap_or(8);
+        // SAFETY: the value is a CFRunLoopRef-sized NULL, read for the call's duration.
+        unsafe {
+            CMIOObjectSetPropertyData(
+                CMIO_SYSTEM_OBJECT,
+                &raw const address,
+                0,
+                std::ptr::null(),
+                size,
+                (&raw const none).cast(),
+            );
+        }
         Self
     }
 }
@@ -220,6 +415,8 @@ impl Platform for MacPlatform {
             locked: session_locked(),
             display_asleep: Some(display_asleep()),
             audio_playing: audio_playing(),
+            mic_in_use: mic_in_use(),
+            camera_in_use: camera_in_use(),
             frontmost: frontmost_app(),
             accessibility: Some(accessibility_trusted()),
             continuous_ms: continuous_ms(),

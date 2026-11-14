@@ -50,6 +50,8 @@ pub struct EngineStatus {
     pub undoable_sweep: Option<String>,
     /// Accessibility permission (`None`: unknown on this platform).
     pub accessibility: Option<bool>,
+    /// In a call or meeting (F12): scheduled sweeps wait.
+    pub in_meeting: bool,
 }
 
 impl Engine {
@@ -87,6 +89,7 @@ impl Engine {
             sweeping: self.sweep != crate::sweep::SweepState::Idle,
             undoable_sweep,
             accessibility: self.platform.as_ref().and_then(|(p, _)| p.accessibility),
+            in_meeting: self.in_meeting(now),
         }
     }
 

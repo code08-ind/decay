@@ -68,6 +68,9 @@ fn headline(s: &EngineStatus, offset_at: OffsetAt<'_>) -> String {
     if s.sweeping {
         return "Sweeping…".into();
     }
+    if s.in_meeting {
+        return "In a meeting · sweeps wait".into();
+    }
     let mode = if s.mode == Mode::Shadow { " · shadow mode" } else { "" };
     format!("{} open, {} stale{mode}", plural(s.live_tabs, "tab", "tabs"), s.stale_count)
 }
@@ -186,6 +189,7 @@ mod tests {
             sweeping: false,
             undoable_sweep: Some("w1".into()),
             accessibility: Some(true),
+            in_meeting: false,
         }
     }
 
@@ -207,6 +211,12 @@ mod tests {
                 _ => None,
             })
             .unwrap_or_else(|| panic!("no {want}"))
+    }
+
+    #[test]
+    fn a_meeting_shows_in_the_headline() {
+        let s = EngineStatus { in_meeting: true, ..status() };
+        assert_eq!(headline(&s, &|_| 0), "In a meeting · sweeps wait");
     }
 
     #[test]

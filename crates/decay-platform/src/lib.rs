@@ -7,6 +7,9 @@
 //!   asleep**: the aging clock stops (PRD F1, story S1 "Monday reset").
 //! - **Audio playing** anywhere (watching a video counts as being active).
 //! - **The frontmost app** (an app switch postpones sweeps).
+//! - **Microphone / camera in use** by any app: a call or a meeting, during which Decay
+//!   doesn't sweep (F12). macOS has no public way to tell that another app is capturing
+//!   the screen; sharing a screen nearly always comes with a call, which this catches.
 //! - **Accessibility** permission (F33: needed to hide and close app windows later; its
 //!   loss is reported as a health problem).
 //!
@@ -59,6 +62,10 @@ pub struct PlatformSample {
     pub display_asleep: Option<bool>,
     /// Some app is playing (or recording) through the default output device.
     pub audio_playing: Option<bool>,
+    /// Some app is using the default microphone (a call, dictation): P2.3, F12.
+    pub mic_in_use: Option<bool>,
+    /// Some app is using a camera.
+    pub camera_in_use: Option<bool>,
     pub frontmost: Option<FrontApp>,
     /// Decay may use the Accessibility API.
     pub accessibility: Option<bool>,
@@ -121,6 +128,9 @@ mod tests {
         // On a Mac (even a CI runner) idle time is always known; values stay sane.
         if cfg!(target_os = "macos") {
             assert!(s.idle_secs.is_some());
+            // Mic use needs no permission to read (a CI runner may lack cameras: the
+            // camera can be unknown there).
+            assert!(s.mic_in_use.is_some(), "{s:?}");
         }
         if let (Some(idle), Some(key)) = (s.idle_secs, s.secs_since_key) {
             assert!(key >= idle.saturating_sub(1), "key {key} < idle {idle}");

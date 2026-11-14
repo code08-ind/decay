@@ -10,11 +10,13 @@ const base: EngineStatus = {
   sweeping: false,
   undoableSweep: null,
   accessibility: true,
+  inMeeting: false,
 };
 
 suite('describe', () => {
   it('matches the tray line', () => {
     expect(describe(base)).toBe('12 tabs open, 3 stale');
+    expect(describe({ ...base, inMeeting: true })).toBe('In a meeting · sweeps wait');
     expect(describe({ ...base, mode: 'shadow', liveTabs: 1 })).toBe(
       '1 tab open, 3 stale · shadow mode',
     );

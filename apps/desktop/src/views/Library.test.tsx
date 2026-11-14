@@ -96,6 +96,7 @@ beforeEach(() => {
     sweeping: false,
     undoableSweep: 's1',
     accessibility: true,
+    inMeeting: false,
   };
   api.libraryStats.mockResolvedValue({
     archivedTotal: 2,

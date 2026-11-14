@@ -22,6 +22,8 @@ use crate::engine::{Engine, EngineEvent, Output, timing};
 pub(crate) enum SweepWindow {
     /// Locked, or the displays are asleep: no scheduled sweep.
     Away,
+    /// In a call or meeting (microphone or camera in use, F12), or just after one.
+    Meeting,
     /// Typing, an app switch or a tab switch just now.
     Busy,
     Quiet,
@@ -55,6 +57,10 @@ impl Engine {
             if switched {
                 self.last_app_switch_at = Some(now);
             }
+        }
+        if sample.mic_in_use == Some(true) || sample.camera_in_use == Some(true) {
+            // A call: no sweeps until a little after it ends.
+            self.meeting_until = Some(now + timing::MEETING_COOLDOWN_MS);
         }
         if sample.locked == Some(true) || sample.display_asleep == Some(true) {
             self.away_since_tick = true;
@@ -101,11 +107,21 @@ impl Engine {
         }
     }
 
+    /// In a call or meeting (F12): the microphone or a camera was in use within the last
+    /// [`timing::MEETING_COOLDOWN_MS`]. Scheduled sweeps of tabs and windows wait;
+    /// "Sweep now" (asked by the user) doesn't.
+    pub fn in_meeting(&self, now: i64) -> bool {
+        self.meeting_until.is_some_and(|t| now < t)
+    }
+
     /// Whether a scheduled sweep may start now (Software Design §4.3).
     pub(crate) fn sweep_window(&self, now: i64) -> SweepWindow {
         let platform = self.fresh_platform(now);
         if platform.is_some_and(|p| p.locked == Some(true) || p.display_asleep == Some(true)) {
             return SweepWindow::Away;
+        }
+        if self.in_meeting(now) {
+            return SweepWindow::Meeting;
         }
         // Woke or unlocked just now, and no sweep since.
         let woke = self.woke_at.is_some_and(|w| {

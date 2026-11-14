@@ -19,6 +19,8 @@ export interface EngineStatus {
   sweeping: boolean;
   undoableSweep: string | null;
   accessibility: boolean | null;
+  /** In a call or meeting (mic or camera in use): scheduled sweeps wait (F12). */
+  inMeeting: boolean;
 }
 
 export interface AppError {
@@ -303,6 +305,7 @@ export function describe(s: EngineStatus, now = Date.now()): string {
   }
   if (s.browsers.length === 0) return 'No browser connected';
   if (s.sweeping) return 'Sweeping…';
+  if (s.inMeeting) return 'In a meeting · sweeps wait';
   const tabs = `${s.liveTabs} ${s.liveTabs === 1 ? 'tab' : 'tabs'} open, ${s.staleCount} stale`;
   return s.mode === 'shadow' ? `${tabs} · shadow mode` : tabs;
 }
