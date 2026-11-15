@@ -29,6 +29,7 @@ mod rules;
 mod search;
 mod shell;
 mod summary;
+mod transfer;
 mod tray;
 mod update;
 
@@ -349,6 +350,7 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![BACKGROUND_ARG]),
@@ -362,6 +364,7 @@ pub fn run() {
         .manage(tray::TrayState::default())
         .manage(update::Updates::default())
         .manage(notify::Notifier::default())
+        .manage(transfer::PendingImport::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
             commands::set_mode,
@@ -403,6 +406,9 @@ pub fn run() {
             rules::delete_rule,
             rules::test_rule,
             rules::preview_exclude,
+            transfer::export_archive,
+            transfer::import_archive,
+            transfer::confirm_import,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {

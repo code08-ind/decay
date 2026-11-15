@@ -73,7 +73,8 @@ interface Sweep {
 
 interface AppError { code: ErrorCode; message: string; details?: unknown }
 type ErrorCode = 'NOT_FOUND' | 'INVALID_INPUT' | 'ADAPTER_UNAVAILABLE' | 'PERMISSION_DENIED'
-  | 'PRO_REQUIRED' | 'UNSAFE' | 'DB_ERROR' | 'TIMEOUT' | 'CONFLICT';
+  | 'PRO_REQUIRED' | 'UNSAFE' | 'DB_ERROR' | 'TIMEOUT' | 'CONFLICT'
+  | 'IO_ERROR'; // as built (P2.5): a file couldn't be read or written (e.g. disk full)
 ```
 
 ---
@@ -149,8 +150,9 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 
 | Command | Input | Output |
 | --- | --- | --- |
-| `export_archive` | `{ format: 'json' \| 'html' \| 'csv'; path: string; include?: { rules: boolean; settings: boolean } }` | `{ path; count }` |
-| `import_archive` | `{ path: string; format: 'json' \| 'html' }` | `{ imported: number; skipped: number }` |
+| `export_archive` | `{ format: 'json' \| 'html' \| 'csv'; path: string; include?: { rules: boolean; settings: boolean } }` | `{ path; count }` — **as built (P2.5):** no `path`: the app opens the system's save dialog itself (a window can't name a file to write), and returns `null` when it's cancelled. `include` (JSON only) defaults to both on. Written owner-only (0600) to a temporary file next to the target, synced, renamed into place, folder synced. Bookmarks: web pages only, one folder per local day (each item's own offset). CSV starts with a UTF-8 BOM, times are local `YYYY-MM-DD HH:MM:SS`; cells starting with `= + - @`, tab or CR are prefixed with `'`. Errors: `PERMISSION_DENIED`, `NOT_FOUND`, `IO_ERROR` |
+| `import_archive` | `{ path: string; format: 'json' \| 'html' }` | `{ imported: number; skipped: number }` — **as built (P2.5):** no arguments: the app opens the system's file dialog (`null` when cancelled), reads a regular file of ≤ 64 MB (counted while reading), tells JSON (a leading BOM is fine) from bookmarks by content: a Netscape doctype or `<DT><A` entries (a saved web page is refused); otherwise JSON only when named `.json`. Returns `{ done: { fileName, itemsImported, itemsExisting, itemsUpdated, itemsLive, itemsInvalid, itemsExpired, itemsExcluded, itemsPurged, rulesImported, rulesExisting, rulesInvalid, rulesTurnedOff, settingsImported, linksCapped } }`, or — when the file's new "never record" rules would delete stored items — `{ confirm: { token, purge, fileName } }` with nothing imported (see `confirm_import`). Refused (`INVALID_INPUT`, nothing changed) unless it's a `decay-archive` v ≤ 1, a header-less archive with `items` (the extension's), or a bookmarks file with web links. A `decay-preimport-<ms>.db` backup is written first (3 kept). Items on never-recorded sites (this installation's exclude rules and the file's) are dropped; items archived longer ago than retention are skipped (`itemsExpired`); times are clamped to now, text capped, tabs must have an address that reopens, ids / app ids must be safe, the site comes from the address; a file only updates archived / restored records of the same kind with a later state, bookmarks never update and skip addresses already archived; rules pass the same checks as `create_rule`; settings must be in `update_settings`' ranges; the mode, shadow week, hold and retention never come from a file. Emits `archive:changed` and, when the file had rules, `rules:changed` |
+| `confirm_import` | — | **as built (P2.5):** `{ token: number; proceed: boolean }` → the same outcome as `import_archive`, or `null` (dropped, or `token` isn't the waiting file's). Imports the file `import_archive` kept waiting, allowing exactly the confirmed number of deletions (a file that would now delete more asks again). A new `import_archive` pick replaces a waiting file. Settings window only |
 | `erase_all_data` | `{ confirm: 'ERASE' }` | `{}` → app restarts into onboarding |
 | `get_storage_info` | `{}` | `{ dbBytes; itemCount; oldestArchivedAt; backups: { at: number; bytes: number }[] }` |
 | `restore_backup` | `{ at: number }` | `{}` |

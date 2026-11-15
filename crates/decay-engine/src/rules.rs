@@ -300,7 +300,7 @@ impl Engine {
 
     /// Stored items an exclude-style `probe` matches: those to delete now, and those a
     /// sweep is closing (the sweep owns them until the close settles; then they go too).
-    fn matching_items(&self, probe: &Rule) -> Res<(Vec<String>, Vec<String>)> {
+    pub(crate) fn matching_items(&self, probe: &Rule) -> Res<(Vec<String>, Vec<String>)> {
         let (mut now, mut later) = (Vec::new(), Vec::new());
         for t in self.store.item_targets()? {
             let target = MatchTarget { app_id: &t.app_id, url: t.url.as_deref(), title: &t.title };
@@ -338,7 +338,7 @@ impl Engine {
     }
 
     /// Drops deleted items from the open tabs' records.
-    fn forget_items(&mut self, ids: &[String]) {
+    pub(crate) fn forget_items(&mut self, ids: &[String]) {
         if ids.is_empty() {
             return;
         }

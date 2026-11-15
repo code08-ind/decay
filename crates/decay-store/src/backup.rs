@@ -3,6 +3,7 @@
 //! - `decay-YYYYMMDD.db`: daily (UTC date), 7 kept.
 //! - `decay-premigrate-v<NNNN>-<ms>.db`: taken before a migration, 3 kept.
 //! - `decay-prerestore-<ms>.db`: the data replaced by a restore, 3 kept.
+//! - `decay-preimport-<ms>.db`: taken before importing a file (P2.5), 3 kept.
 //!
 //! Each copy is written to a temporary file, synced and renamed into place, so a crash never
 //! leaves a half-written backup. Ages come from the file names (copy and sync tools change
@@ -26,13 +27,14 @@ pub enum BackupKind {
     Daily,
     PreMigration,
     PreRestore,
+    PreImport,
 }
 
 impl BackupKind {
     const fn kept(self) -> usize {
         match self {
             Self::Daily => 7,
-            Self::PreMigration | Self::PreRestore => 3,
+            Self::PreMigration | Self::PreRestore | Self::PreImport => 3,
         }
     }
 }
@@ -57,6 +59,9 @@ fn parse_name(name: &str) -> Option<(BackupKind, i64)> {
     }
     if let Some(ms) = stem.strip_prefix("prerestore-") {
         return Some((BackupKind::PreRestore, ms.parse().ok()?));
+    }
+    if let Some(ms) = stem.strip_prefix("preimport-") {
+        return Some((BackupKind::PreImport, ms.parse().ok()?));
     }
     if stem.len() != 8 || !stem.bytes().all(|b| b.is_ascii_digit()) {
         return None;
@@ -225,6 +230,14 @@ impl Store {
         Ok(dest)
     }
 
+    /// A copy of the data before a file import (`decay-preimport-<now>.db`, 3 kept).
+    pub fn backup_before_import(&self, now: i64) -> Result<PathBuf> {
+        let dest = self.paths.backups.join(format!("decay-preimport-{now}.db"));
+        copy_to(&self.conn, &dest, &self.key)?;
+        prune(&self.paths.backups, BackupKind::PreImport)?;
+        Ok(dest)
+    }
+
     /// Whether today's (UTC) daily backup is still missing.
     pub fn backup_due(&self, now: i64) -> bool {
         !self.paths.backups.join(format!("decay-{}.db", utc_date(now))).exists()
@@ -323,6 +336,7 @@ mod tests {
         assert!(names[0].starts_with("decay-premigrate-v0011-"), "{names:?}");
         assert!(!names.iter().any(|n| n.contains("v0002")));
         assert_eq!(parse_name("decay-20261104.db"), Some((BackupKind::Daily, NOW)));
+        assert_eq!(parse_name("decay-preimport-5.db"), Some((BackupKind::PreImport, 5)));
         assert_eq!(parse_name("decay-2026110.db"), None);
         assert_eq!(parse_name("notes.db"), None);
     }

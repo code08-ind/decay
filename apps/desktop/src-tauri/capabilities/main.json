@@ -32,6 +32,7 @@
     "allow-delete-items",
     "allow-list-sweeps",
     "allow-get-sweep",
-    "allow-get-shadow-report"
+    "allow-get-shadow-report",
+    "allow-export-archive"
   ]
 }

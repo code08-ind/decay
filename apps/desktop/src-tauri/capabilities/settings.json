@@ -26,6 +26,9 @@
     "allow-open-extension-store",
     "allow-get-update-state",
     "allow-check-for-updates",
-    "allow-install-update"
+    "allow-install-update",
+    "allow-export-archive",
+    "allow-import-archive",
+    "allow-confirm-import"
   ]
 }

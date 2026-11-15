@@ -61,7 +61,7 @@ export function Button({
       aria-keyshortcuts={shortcut}
       title={title ?? (shortcut ? shortcut : undefined)}
       className={cx(
-        'inline-flex shrink-0 items-center justify-center rounded-full font-medium whitespace-nowrap transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex shrink-0 items-center justify-center rounded-full font-medium whitespace-nowrap transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100',
         VARIANT[variant],
         SIZE[size],
         className,

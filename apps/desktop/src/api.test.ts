@@ -1,5 +1,5 @@
 import { expect, it, describe as suite } from 'vitest';
-import { describe, type EngineStatus, errorMessage } from './api';
+import { describe, type EngineStatus, errorMessage, exportSummary, importSummary } from './api';
 
 const base: EngineStatus = {
   mode: 'automatic',
@@ -35,4 +35,64 @@ suite('describe', () => {
 it('reads app errors', () => {
   expect(errorMessage({ code: 'CONFLICT', message: 'taken' })).toBe('taken');
   expect(errorMessage('plain')).toBe('plain');
+});
+
+suite('export / import summaries', () => {
+  const none = {
+    fileName: 'x.json',
+    itemsImported: 0,
+    itemsExisting: 0,
+    itemsUpdated: 0,
+    itemsLive: 0,
+    itemsInvalid: 0,
+    itemsExpired: 0,
+    itemsExcluded: 0,
+    itemsPurged: 0,
+    rulesImported: 0,
+    rulesExisting: 0,
+    rulesInvalid: 0,
+    rulesTurnedOff: 0,
+    settingsImported: 0,
+    linksCapped: false,
+  };
+  it('says what an import did', () => {
+    expect(importSummary({ ...none, itemsImported: 1 })).toBe('Imported 1 item');
+    expect(
+      importSummary({
+        ...none,
+        itemsImported: 12,
+        rulesImported: 2,
+        settingsImported: 1,
+        itemsExisting: 3,
+        itemsUpdated: 1,
+        itemsExcluded: 2,
+        itemsInvalid: 1,
+        itemsPurged: 1,
+      }),
+    ).toBe(
+      "Imported 12 items, 2 rules, 1 setting (3 already here; 1 updated; 2 on never-recorded sites skipped; 1 unreadable or can't be reopened; 1 stored item deleted by its rules)",
+    );
+  });
+  it('says why items were skipped', () => {
+    expect(
+      importSummary({
+        ...none,
+        itemsExpired: 4,
+        itemsLive: 1,
+        rulesInvalid: 2,
+        rulesTurnedOff: 1,
+        linksCapped: true,
+      }),
+    ).toBe(
+      'Imported 0 items (4 older than you keep items, skipped; 1 open tab left to the browser; 2 rules not accepted; 1 built-in protection turned off; only the first 100,000 links read)',
+    );
+  });
+  it('names the exported file on either platform', () => {
+    expect(exportSummary({ path: '/Users/me/Decay archive.json', count: 3 })).toBe(
+      'Exported 3 items to Decay archive.json',
+    );
+    expect(exportSummary({ path: 'C:\\Users\\me\\a.csv', count: 1 })).toBe(
+      'Exported 1 item to a.csv',
+    );
+  });
 });

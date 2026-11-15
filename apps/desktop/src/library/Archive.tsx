@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { api, type EngineStatus, errorMessage, type PanelItem } from '../api';
+import { api, type EngineStatus, errorMessage, exportSummary, type PanelItem } from '../api';
 import { displayUrl, timeLabel } from '../panel/results';
 import { eventText, firstDayOfWeek, shadowDaysLeft, startOfDay, startOfWeek } from './model';
 import { ItemTile, Stat, useLoad } from './parts';
@@ -75,6 +75,7 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
   const [total, setTotal] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const asked = useRef(0);
 
   // A typed `after:` / `before:` wins over the period buttons.
@@ -325,6 +326,25 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
                   Clear filters
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-disabled={exporting}
+                onClick={() => {
+                  if (exporting) return;
+                  setExporting(true);
+                  run(() =>
+                    api
+                      .exportArchive('json')
+                      .then((r) => {
+                        if (r) props.notify(exportSummary(r));
+                      })
+                      .finally(() => setExporting(false)),
+                  );
+                }}
+              >
+                {exporting ? 'Exporting…' : filtered ? 'Export all (JSON)' : 'Export JSON'}
+              </Button>
               {cursor && (
                 <Button size="sm" onClick={() => load(true)} disabled={loading}>
                   Show more

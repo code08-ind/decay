@@ -7,6 +7,7 @@
 
 mod backup;
 mod events;
+mod export;
 mod import;
 mod items;
 mod key;
@@ -28,7 +29,8 @@ use thiserror::Error;
 
 pub use backup::{BackupInfo, BackupKind};
 pub use events::EventRecord;
-pub use import::{ImportReport, catalog_app_id};
+pub use export::{MAX_BOOKMARKS, bookmarks_to_items};
+pub use import::{FileOptions, ImportReport, catalog_app_id};
 pub use items::{App, Item, Platform, RestoreKind};
 pub use key::DbKey;
 pub use migrate::SCHEMA_VERSION;

@@ -60,6 +60,7 @@ export function Library() {
       }),
       listen('sweep:nothing', () => notify('Nothing to sweep right now')),
       listen('settings:changed', bump),
+      listen('archive:changed', bump),
     ];
     return () => {
       for (const off of offs) off.then((f) => f()).catch(() => {});

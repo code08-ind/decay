@@ -1561,3 +1561,174 @@ fn only_exclude_rules_preview_a_purge_and_only_domain_ones_reach_the_extension()
     let config: Config = h.one(1, kinds::CONFIG).payload_as().unwrap();
     assert_eq!(config.excluded_domains, Vec::<String>::new());
 }
+
+#[test]
+fn an_imported_archive_restores_into_a_connected_browser_of_its_app() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    // Bookmarks from a file, as the app imports them (no window or profile known).
+    let html = r#"<DL><DT><A HREF="https://imported.example/page" ADD_DATE="1700000000">Imported</A></DL>"#;
+    let app = h.engine.import_browser_app(h.now);
+    assert_eq!(app, "com.google.Chrome");
+    let (items, _) = decay_store::bookmarks_to_items(html, &app, h.now);
+    let (result, out) = h
+        .engine
+        .import_from_app(
+            json!({ "items": items }),
+            h.now,
+            decay_engine::ImportOptions { bookmarks: true, allow_purge: 0 },
+        )
+        .unwrap();
+    h.collect(out);
+    assert_eq!(result.report.items_imported, 1);
+    let id = items[0]["id"].as_str().unwrap().to_owned();
+    // Restoring it from the app finds the connected Chrome (it used to be refused).
+    let out = h.engine.restore(&[id], false, h.now).unwrap().unwrap();
+    h.collect(out);
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    assert_eq!(restore.payload["items"][0]["url"], "https://imported.example/page");
+}
+
+#[test]
+fn an_imported_item_without_a_profile_is_refused_when_two_profiles_could_take_it() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.connect(2, "s2"); // a second Chrome profile: another account
+    for c in [1, 2] {
+        h.msg(c, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    }
+    let html = r#"<DT><A HREF="https://imported.example/page">Imported</A>"#;
+    let (items, _) = decay_store::bookmarks_to_items(html, "com.google.Chrome", h.now);
+    let (_, out) = h
+        .engine
+        .import_from_app(
+            json!({ "items": items }),
+            h.now,
+            decay_engine::ImportOptions { bookmarks: true, allow_purge: 0 },
+        )
+        .unwrap();
+    h.collect(out);
+    let id = items[0]["id"].as_str().unwrap().to_owned();
+    let refused = h.engine.restore(std::slice::from_ref(&id), false, h.now).unwrap();
+    assert!(matches!(refused, Err(decay_engine::RestoreRefused::NoBrowser)), "{refused:?}");
+    assert!(h.take(1, kinds::TABS_RESTORE).is_empty() && h.take(2, kinds::TABS_RESTORE).is_empty());
+    assert_eq!(h.store().item(&id).unwrap().unwrap().state, ItemState::Archived);
+}
+
+#[test]
+fn a_file_import_keeps_never_recorded_sites_unrecorded_and_the_mode_as_is() {
+    let mut h = Harness::new();
+    h.connect(1, "s");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(three_tabs())).unwrap());
+    // Already here: never record bank.example.
+    let input = decay_engine::RuleInput {
+        scope: decay_core::RuleScope::Domain,
+        pattern: "bank.example".into(),
+        action: decay_core::RuleAction::Exclude,
+        threshold_hours: None,
+        enabled: None,
+    };
+    let (_, _, out) = h.engine.create_rule(&input, h.now).unwrap();
+    h.collect(out);
+    // Stored before the import: a page the file's new exclude rule covers.
+    let html = r#"<DT><A HREF="https://secret.example/old">Old</A>"#;
+    let (old, _) = decay_store::bookmarks_to_items(html, "com.google.Chrome", h.now);
+    let (_, out) = h
+        .engine
+        .import_from_app(
+            json!({ "items": old }),
+            h.now,
+            decay_engine::ImportOptions { bookmarks: true, allow_purge: 0 },
+        )
+        .unwrap();
+    h.collect(out);
+    let recent = h.now - 1000;
+    let item = |id: &str, url: &str| {
+        json!({
+            "id": id, "kind": "tab", "appId": "com.google.Chrome", "title": id, "url": url,
+            "domain": "lies.example", "state": "archived", "firstSeenAt": 1, "lastUsedAt": 1,
+            "stateChangedAt": recent, "archivedAt": recent
+        })
+    };
+    let mut expired = item("expired", "https://ok.example/old");
+    expired["archivedAt"] = json!(1);
+    let file = json!({
+        "format": "decay-archive", "version": 1, "exportedAt": 1,
+        "items": [
+            item("keep", "https://ok.example/a"),
+            item("bank", "https://www.bank.example/statement"),
+            item("secret", "https://secret.example/new"),
+            expired,
+        ],
+        "rules": [{"id": "r-secret", "scope": "domain", "match": "secret.example",
+                   "action": "exclude", "enabled": true, "source": "user", "createdAt": 1}],
+        "settings": {"mode": "automatic", "retentionDays": 30}
+    });
+    // Its new rule would delete a stored item: refused until that's confirmed.
+    assert_eq!(h.engine.import_purge_count(&file).unwrap(), 1);
+    let backups = h.store().backups().unwrap().len();
+    let refused =
+        h.engine.import_from_app(file.clone(), h.now, decay_engine::ImportOptions::default());
+    assert!(matches!(refused, Err(decay_engine::ImportRefused::NeedsConfirm(1))), "{refused:?}");
+    assert_eq!(h.store().backups().unwrap().len(), backups, "nothing written");
+    let confirmed = decay_engine::ImportOptions { bookmarks: false, allow_purge: 1 };
+    let (result, out) = h.engine.import_from_app(file, h.now, confirmed).unwrap();
+    h.collect(out);
+    assert_eq!(
+        (
+            result.report.items_imported,
+            result.items_excluded,
+            result.report.items_purged,
+            result.report.items_expired
+        ),
+        (1, 2, 1, 1)
+    );
+    let keep = h.store().item("keep").unwrap().unwrap();
+    assert_eq!(keep.domain.as_deref(), Some("ok.example"), "the site comes from the address");
+    assert_eq!(result.report.rules_imported, 1);
+    assert!(h.store().item("keep").unwrap().is_some());
+    assert!(
+        h.store().item("bank").unwrap().is_none() && h.store().item("secret").unwrap().is_none()
+    );
+    let old_id = old[0]["id"].as_str().unwrap();
+    assert!(h.store().item(old_id).unwrap().is_none(), "purged by the imported rule");
+    assert_eq!(h.store().mode().unwrap(), Mode::Shadow, "a file never switches the mode");
+    // The extension hears about the new exclusion.
+    let config: Config = h.take(1, kinds::CONFIG).last().unwrap().payload_as().unwrap();
+    assert!(config.excluded_domains.contains(&"secret.example".to_owned()));
+    // Today's backup was written first.
+    assert_ne!(h.store().backups().unwrap().len(), 0);
+}
+
+#[test]
+fn a_file_that_isnt_an_archive_changes_nothing() {
+    let mut h = Harness::new();
+    let rules = h.store().rules().unwrap().len();
+    for odd in [
+        json!({"format": "decay-beta-metrics", "version": 1, "rules": [{"id": "x"}]}),
+        json!({"format": "decay-archive", "version": 9, "items": []}),
+    ] {
+        assert!(
+            h.engine.import_from_app(odd, h.now, decay_engine::ImportOptions::default()).is_err()
+        );
+    }
+    assert_eq!(h.store().rules().unwrap().len(), rules);
+    assert_eq!(h.store().backups().unwrap().len(), 0, "refused before the backup");
+}
+
+#[test]
+fn imported_bookmarks_go_to_the_browser_last_used_when_none_is_connected() {
+    let h = Harness::new();
+    assert_eq!(h.engine.import_browser_app(h.now), "com.google.Chrome", "nothing known");
+    let mut tab = decay_store::Item::new_live(
+        "e1".into(),
+        decay_core::ItemKind::Tab,
+        "com.microsoft.edgemac",
+        h.now,
+    );
+    tab.state = ItemState::Archived;
+    tab.archived_at = Some(h.now);
+    h.store().insert_item(&tab).unwrap();
+    assert_eq!(h.engine.import_browser_app(h.now), "com.microsoft.edgemac");
+}

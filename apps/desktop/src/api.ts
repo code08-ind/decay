@@ -296,9 +296,86 @@ export const api = {
   getUpdateState: () => invoke<UpdateState>('get_update_state'),
   checkForUpdates: () => invoke<UpdateState>('check_for_updates'),
   installUpdate: (when: 'now' | 'onQuit') => invoke<UpdateState>('install_update', { when }),
+  /** Opens a save dialog and writes the export there; `null` when cancelled. */
+  exportArchive: (format: ExportFormat) =>
+    invoke<{ path: string; count: number } | null>('export_archive', { format }),
+  /**
+   * Opens a file dialog and imports the picked file; `null` when cancelled. A file whose
+   * "never record" rules would delete stored items comes back as `{ confirm }` instead,
+   * imported only after `confirmImport(token, true)`.
+   */
+  importArchive: () => invoke<ImportOutcome | null>('import_archive'),
+  /** Imports (`proceed`) or drops the file waiting for confirmation. */
+  confirmImport: (token: number, proceed: boolean) =>
+    invoke<ImportOutcome | null>('confirm_import', { token, proceed }),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),
 };
+
+export type ExportFormat = 'json' | 'html' | 'csv';
+
+/** `import_archive`: what the import did (API Design §2.6, as built in P2.5). */
+export interface ImportResult {
+  fileName: string;
+  itemsImported: number;
+  /** Already here, unchanged. */
+  itemsExisting: number;
+  /** Already here, with a newer state from the file. */
+  itemsUpdated: number;
+  /** Open tabs in the file (not imported: they come from the browser). */
+  itemsLive: number;
+  /** Unreadable, or not usable (e.g. a tab whose address can't be reopened). */
+  itemsInvalid: number;
+  /** Archived longer ago than this Mac keeps items. */
+  itemsExpired: number;
+  /** On sites Decay never records. */
+  itemsExcluded: number;
+  /** Stored items deleted because an imported "never record" rule covers them. */
+  itemsPurged: number;
+  rulesImported: number;
+  rulesExisting: number;
+  /** Unreadable, or refused by the same checks as adding a rule by hand. */
+  rulesInvalid: number;
+  /** Built-in protections the file turned off. */
+  rulesTurnedOff: number;
+  settingsImported: number;
+  /** A bookmarks file with more links than Decay reads (100,000). */
+  linksCapped: boolean;
+}
+
+/** `import_archive` / `confirm_import`: done, or the file's rules would delete stored items. */
+export type ImportOutcome =
+  | { done: ImportResult }
+  | { confirm: { token: number; purge: number; fileName: string } };
+
+/** One sentence about an import, for a toast. */
+export function importSummary(r: ImportResult): string {
+  const n = (count: number, one: string, many = `${one}s`) =>
+    `${count} ${count === 1 ? one : many}`;
+  const parts = [`Imported ${n(r.itemsImported, 'item')}`];
+  if (r.rulesImported) parts.push(n(r.rulesImported, 'rule'));
+  if (r.settingsImported) parts.push(n(r.settingsImported, 'setting'));
+  let text = parts.join(', ');
+  const notes: string[] = [];
+  if (r.itemsExisting) notes.push(`${r.itemsExisting} already here`);
+  if (r.itemsUpdated) notes.push(`${r.itemsUpdated} updated`);
+  if (r.itemsExpired) notes.push(`${r.itemsExpired} older than you keep items, skipped`);
+  if (r.itemsExcluded) notes.push(`${r.itemsExcluded} on never-recorded sites skipped`);
+  if (r.itemsLive) notes.push(`${n(r.itemsLive, 'open tab')} left to the browser`);
+  if (r.itemsInvalid) notes.push(`${r.itemsInvalid} unreadable or can't be reopened`);
+  if (r.rulesInvalid) notes.push(`${n(r.rulesInvalid, 'rule')} not accepted`);
+  if (r.rulesTurnedOff) notes.push(`${n(r.rulesTurnedOff, 'built-in protection')} turned off`);
+  if (r.itemsPurged) notes.push(`${n(r.itemsPurged, 'stored item')} deleted by its rules`);
+  if (r.linksCapped) notes.push('only the first 100,000 links read');
+  if (notes.length) text += ` (${notes.join('; ')})`;
+  return text;
+}
+
+/** One sentence about an export, for a toast. */
+export function exportSummary(r: { path: string; count: number }): string {
+  const name = r.path.split(/[\\/]/).pop() ?? r.path;
+  return `Exported ${r.count} ${r.count === 1 ? 'item' : 'items'} to ${name}`;
+}
 
 /** The message of a rejected command. */
 export function errorMessage(e: unknown): string {

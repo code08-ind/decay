@@ -1,7 +1,16 @@
 import { Banner, Button, IconButton, SegmentedControl } from '@decay/ui';
-import { EyeOff, Lock, Trash2 } from 'lucide-react';
+import { Download, EyeOff, Lock, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { api, errorMessage, type Rule, type RuleScope } from '../api';
+import {
+  api,
+  type ExportFormat,
+  errorMessage,
+  exportSummary,
+  type ImportOutcome,
+  importSummary,
+  type Rule,
+  type RuleScope,
+} from '../api';
 import { useLoad } from '../library/parts';
 import { matchHint, SCOPE_TEXT } from './model';
 import { Group, Row, TabHeader, type TabProps } from './parts';
@@ -70,12 +79,124 @@ export function Privacy(props: TabProps & { version: number; changed: () => void
             }}
           />
         </Group>
+        <Transfer notify={notify} changed={props.changed} />
         <p className="flex items-center gap-2 text-xs text-muted">
-          <Lock size={12} aria-hidden /> Export, import and erasing all data come in a later
-          version.
+          <Lock size={12} aria-hidden /> Erasing all data comes in a later version.
         </p>
       </div>
     </>
+  );
+}
+
+const EXPORTS: { format: ExportFormat; label: string }[] = [
+  { format: 'json', label: 'Export JSON' },
+  { format: 'html', label: 'Export bookmarks (HTML)' },
+  { format: 'csv', label: 'Export CSV' },
+];
+
+type Waiting = { token: number; purge: number; fileName: string };
+
+/**
+ * Export & import (F20): the files are picked in the system's own dialogs. A file whose
+ * "never record" rules would delete stored items waits for a confirmation, as adding
+ * such a rule by hand does. Buttons stay focusable while busy (`aria-disabled`), so
+ * keyboard focus isn't lost.
+ */
+function Transfer(props: { notify: (text: string) => void; changed: () => void }) {
+  const [busy, setBusy] = useState<'' | 'export' | 'import'>('');
+  const [error, setError] = useState('');
+  const [waiting, setWaiting] = useState<Waiting | null>(null);
+  const finish = (outcome: ImportOutcome | null) => {
+    if (!outcome) return;
+    if ('confirm' in outcome) {
+      setWaiting(outcome.confirm);
+      return;
+    }
+    props.notify(importSummary(outcome.done));
+    props.changed();
+  };
+  const act = (what: 'export' | 'import', action: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(what);
+    setError('');
+    action()
+      .catch((e) => setError(errorMessage(e)))
+      .finally(() => setBusy(''));
+  };
+  const answer = (proceed: boolean) => {
+    if (!waiting) return;
+    const { token } = waiting;
+    setWaiting(null);
+    act('import', () => api.confirmImport(token, proceed).then(proceed ? finish : () => {}));
+  };
+  return (
+    <Group title="Export & import">
+      <div className="grid gap-3">
+        <p className="text-[13px] text-muted">
+          Save your archive as a file, or bring in one from another Mac or PC. JSON keeps
+          everything, including rules; bookmarks open in any browser. Importing keeps what's here,
+          saves a backup copy first and never adds sites you chose not to record. Imported bookmarks
+          are kept like archived tabs.
+        </p>
+        <div className="flex flex-wrap gap-2" aria-busy={busy !== ''}>
+          {EXPORTS.map((x) => (
+            <Button
+              key={x.format}
+              size="sm"
+              variant="secondary"
+              aria-disabled={busy !== '' || waiting !== null}
+              icon={<Download size={14} aria-hidden />}
+              onClick={() =>
+                !waiting &&
+                act('export', () =>
+                  api.exportArchive(x.format).then((r) => {
+                    if (r) props.notify(exportSummary(r));
+                  }),
+                )
+              }
+            >
+              {x.label}
+            </Button>
+          ))}
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-disabled={busy !== '' || waiting !== null}
+            icon={<Upload size={14} aria-hidden />}
+            onClick={() => !waiting && act('import', () => api.importArchive().then(finish))}
+          >
+            Import…
+          </Button>
+        </div>
+        <p role="status" className="text-sm text-muted empty:hidden">
+          {busy === 'export' ? 'Exporting…' : busy === 'import' ? 'Importing…' : ''}
+        </p>
+        {waiting && (
+          <Banner
+            tone="warning"
+            action={
+              <span className="flex gap-2">
+                <Button size="sm" variant="danger" autoFocus onClick={() => answer(true)}>
+                  {`Delete ${waiting.purge} and import`}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => answer(false)}>
+                  Cancel
+                </Button>
+              </span>
+            }
+          >
+            {`${waiting.fileName} has never-record rules that cover ${waiting.purge} stored ${
+              waiting.purge === 1 ? 'item' : 'items'
+            }. Importing it deletes ${waiting.purge === 1 ? 'it' : 'them'} for good.`}
+          </Banner>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+    </Group>
   );
 }
 

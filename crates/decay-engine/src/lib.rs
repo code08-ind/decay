@@ -38,6 +38,7 @@ mod rules;
 pub mod runtime;
 mod sweep;
 mod tabs;
+mod transfer;
 mod windows;
 
 pub use control::{BrowserStatus, EngineStatus, WindowManagement};
@@ -48,3 +49,4 @@ pub use engine::{
 };
 pub use hide::WindowCommand;
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};
+pub use transfer::{FileImport, ImportOptions, ImportRefused};

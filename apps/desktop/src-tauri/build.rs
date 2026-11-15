@@ -42,6 +42,9 @@ const COMMANDS: &[&str] = &[
     "check_for_updates",
     "install_update",
     "get_daily_summary",
+    "export_archive",
+    "import_archive",
+    "confirm_import",
 ];
 
 fn main() {

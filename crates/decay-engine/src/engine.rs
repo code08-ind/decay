@@ -1149,25 +1149,48 @@ impl Engine {
         match self.store.import_archive(&env.payload, self.config.platform, now) {
             Ok(report) => {
                 self.reply_ok(id, &env.id, &report);
-                if report.settings_imported > 0 {
-                    match self.store.settings_snapshot() {
-                        Ok(all) => self.out.push(Output::Event(EngineEvent::SettingsChanged(all))),
-                        Err(e) => self.problem("settings", &e),
-                    }
-                }
-                if let Err(e) = self.reload_policy() {
-                    self.problem("settings", &e);
-                }
-                // Imported exclusions must reach every extension before more is reported.
-                if self.policy.excluded_domains() != before {
-                    self.broadcast_config(now);
-                }
+                self.after_import(&report, &before, now);
             }
             Err(e) => {
                 self.problem("importing the archive", &e);
                 self.reply_err(id, &env.id, ErrorCode::BadMessage, &e.to_string());
             }
         }
+    }
+
+    /// After an import: settings broadcast, the policy reloaded, new exclusions sent to
+    /// every extension before more is reported.
+    pub(crate) fn after_import(
+        &mut self,
+        report: &decay_store::ImportReport,
+        before: &[String],
+        now: i64,
+    ) {
+        if report.settings_imported > 0 {
+            match self.store.settings_snapshot() {
+                Ok(all) => self.out.push(Output::Event(EngineEvent::SettingsChanged(all))),
+                Err(e) => self.problem("settings", &e),
+            }
+        }
+        if let Err(e) = self.reload_policy() {
+            self.problem("settings", &e);
+        }
+        if self.policy.excluded_domains() != before {
+            self.broadcast_config(now);
+        }
+    }
+
+    /// Where imported bookmarks will reopen: the connected browser heard from most
+    /// recently (ties: by app id, so the choice never depends on map order); with none
+    /// connected, the browser of the most recently archived tab; else Chrome.
+    pub fn import_browser_app(&self, now: i64) -> String {
+        self.conns
+            .values()
+            .filter_map(|c| Self::live_adapter(c, now).map(|a| (c.last_message_at, &a.app_id)))
+            .max_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(a.1)))
+            .map(|(_, app)| app.clone())
+            .or_else(|| self.store.latest_tab_app().ok().flatten())
+            .unwrap_or_else(|| browser_app(BrowserKind::Chrome, self.config.platform).0.to_owned())
     }
 
     fn answered(&mut self, cmd: PendingCmd, ack: &Ack, now: i64) {

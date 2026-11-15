@@ -82,7 +82,8 @@ impl Item {
     }
 }
 
-const COLUMNS: &str = "id, kind, app_id, source_id, external_id, title, url, domain, path, favicon,
+pub(crate) const COLUMNS: &str =
+    "id, kind, app_id, source_id, external_id, title, url, domain, path, favicon,
     tab_index, group_title, group_color, pinned, state, save_state, active_age_s, first_seen_at,
     last_used_at, state_changed_at, archived_at, archive_reason, last_sweep_id, restored_from_id,
     grace_until, restore_count, favicon_url";
@@ -135,7 +136,11 @@ pub(crate) fn from_row(row: &Row<'_>) -> Result<Item> {
     })
 }
 
-fn query_items(conn: &Connection, sql: &str, args: impl rusqlite::Params) -> Result<Vec<Item>> {
+pub(crate) fn query_items(
+    conn: &Connection,
+    sql: &str,
+    args: impl rusqlite::Params,
+) -> Result<Vec<Item>> {
     let mut stmt = conn.prepare_cached(sql)?;
     let mut rows = stmt.query(args)?;
     let mut out = Vec::new();

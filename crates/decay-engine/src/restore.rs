@@ -363,7 +363,18 @@ impl Engine {
 
     /// The connected adapter an item came from (Undo puts tabs back into their browser).
     fn home_conn(&self, item: &Item, now: i64) -> Res<Option<ConnId>> {
-        let Some(source) = item.source_id.as_deref() else { return Ok(None) };
+        // No known profile (imported, or migrated from the extension): the
+        // connected browser of the same app, only when exactly one profile of it is
+        // connected — with two, either could be the wrong account, so it's refused.
+        let any_of_app = || {
+            let mut of_app = self.conns.iter().filter_map(|(id, c)| {
+                Self::live_adapter(c, now).filter(|a| a.app_id == item.app_id).map(|a| (*id, a))
+            });
+            let (id, first) = of_app.next()?;
+            of_app.all(|(_, a)| a.profile == first.profile).then_some(id)
+        };
+        let Some(source) = item.source_id.as_deref() else { return Ok(any_of_app()) };
+        // A known profile that's gone: never guess another one.
         let Some(source) = self.store.source(source)? else { return Ok(None) };
         Ok(self.conns.iter().find_map(|(id, c)| {
             let a = Self::live_adapter(c, now)?;

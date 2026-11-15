@@ -36,6 +36,9 @@ const api = {
   getUpdateState: vi.fn(),
   checkForUpdates: vi.fn(),
   installUpdate: vi.fn(),
+  exportArchive: vi.fn(),
+  importArchive: vi.fn(),
+  confirmImport: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 const { Settings } = await import('./Settings');
@@ -341,6 +344,81 @@ describe('Settings', () => {
       match: 'secret.example',
       action: 'exclude',
     });
+  });
+
+  it('privacy: exports keep focus, say they are busy, and name the file', async () => {
+    let done: (v: { path: string; count: number }) => void = () => {};
+    api.exportArchive.mockReturnValue(new Promise((r) => (done = r)));
+    await show('/privacy');
+    const csv = screen.getByRole('button', { name: 'Export CSV' });
+    csv.focus();
+    fireEvent.click(csv);
+    await flush();
+    expect(screen.getByText('Exporting…')).toBeTruthy();
+    expect(csv.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(csv);
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+    expect(api.exportArchive).toHaveBeenCalledTimes(1);
+    done({ path: '/Users/me/Decay archive.csv', count: 2 });
+    await flush();
+    expect(screen.getByText('Exported 2 items to Decay archive.csv')).toBeTruthy();
+    expect(screen.queryByText('Exporting…')).toBeNull();
+  });
+
+  it('privacy: an import whose rules delete stored items asks first', async () => {
+    api.importArchive.mockResolvedValue({
+      confirm: { token: 7, purge: 3, fileName: 'other.json' },
+    });
+    await show('/privacy');
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    await flush();
+    expect(
+      screen.getByText(/other\.json has never-record rules that cover 3 stored items/),
+    ).toBeTruthy();
+    api.confirmImport.mockResolvedValue(null);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await flush();
+    expect(api.confirmImport).toHaveBeenCalledWith(7, false);
+
+    api.confirmImport.mockReset();
+    api.confirmImport.mockResolvedValue({
+      done: {
+        fileName: 'other.json',
+        itemsImported: 5,
+        itemsExisting: 0,
+        itemsUpdated: 0,
+        itemsLive: 0,
+        itemsInvalid: 0,
+        itemsExpired: 0,
+        itemsExcluded: 0,
+        itemsPurged: 3,
+        rulesImported: 1,
+        rulesExisting: 0,
+        rulesInvalid: 0,
+        rulesTurnedOff: 0,
+        settingsImported: 0,
+        linksCapped: false,
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    await flush();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete 3 and import' }));
+    await flush();
+    expect(api.confirmImport).toHaveBeenCalledWith(7, true);
+    expect(
+      screen.getByText('Imported 5 items, 1 rule (3 stored items deleted by its rules)'),
+    ).toBeTruthy();
+  });
+
+  it('privacy: a refused import says why', async () => {
+    api.importArchive.mockRejectedValue({
+      code: 'INVALID_INPUT',
+      message: "This file isn't a Decay archive.",
+    });
+    await show('/privacy');
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    await flush();
+    expect(screen.getByRole('alert').textContent).toBe("This file isn't a Decay archive.");
   });
 
   it('shortcuts: records a key press and uses it', async () => {

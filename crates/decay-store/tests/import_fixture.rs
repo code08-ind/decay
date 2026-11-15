@@ -21,9 +21,12 @@ fn the_extension_archive_imports() {
             items_updated: 0,
             items_live: 0, // the extension only sends archived / restored records
             items_invalid: 0,
+            items_expired: 0,
+            items_purged: 0,
             rules_imported: 3,
             rules_existing: 1, // the default rule
             rules_invalid: 0,
+            rules_turned_off: 0,
             settings_imported: 11, // a fresh app: every setting, and the earlier shadow start
         }
     );

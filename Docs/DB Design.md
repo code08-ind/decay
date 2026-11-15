@@ -351,6 +351,8 @@ Field names mirror the SQL schema (camelCase). Phase 0 differences:
 
 ## 8. Export format (JSON, v1)
 
+**As built (P2.5, `decay-store/src/export.rs`):** items are the archived and restored ones (newest first), in the importer's shape (§7: `appId`, `title`, `url`, `domain`, `path`, `tabIndex`, `groupTitle`, `groupColor`, `pinned`, `state`, `activeAgeS`, `firstSeenAt`, `lastUsedAt`, `stateChangedAt`, `archivedAt`, `archiveReason`, `restoredFromId`, `faviconUrl`, `graceUntil`, `restoreCount`), so an export imports back without loss into an installation that keeps items at least as long (items older than its retention are skipped, and `retentionDays` itself is never imported); favicon images, sources and sweeps aren't exported. `rules` = every rule (API shape). `settings` = the portable preferences only, under the extension's key names (`preset`, `thresholds`, `idleCutoffS`, `maxItemsPerSweep`, `retentionDays`, `theme`, `notifications`, `locale`), not the mode, shadow week or a hold. The sketch below is the original plan.
+
 ```json
 {
   "format": "decay-archive",
