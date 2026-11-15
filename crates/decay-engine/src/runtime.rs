@@ -209,7 +209,9 @@ impl Runtime {
                                     }
                                     // A frame that isn't valid JSON was read whole: skip it.
                                     Err(e) if e.kind() == io::ErrorKind::InvalidData => {
-                                        tracing::warn!(conn = id, "unreadable frame: {e}");
+                                        if crate::log_limit::allow(&crate::log_limit::BAD_FRAME) {
+                                            tracing::warn!(conn = id, "unreadable frame: {e}");
+                                        }
                                     }
                                     // Closed, or the connection failed.
                                     Ok(None) | Err(_) => break,

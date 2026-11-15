@@ -1085,7 +1085,9 @@ impl Engine {
                 match env.payload_as::<$t>() {
                     Ok(p) => p,
                     Err(e) => {
-                        tracing::warn!(conn = id, "bad {kind} payload: {e}");
+                        if crate::log_limit::allow(&crate::log_limit::BAD_PAYLOAD) {
+                            tracing::warn!(conn = id, "{e}");
+                        }
                         return Ok(());
                     }
                 }
@@ -1125,8 +1127,9 @@ impl Engine {
                 }
             }
             kinds::ERROR => {
-                let err = env.payload_as::<ErrorPayload>().ok();
-                tracing::warn!(conn = id, ?err, "error from the extension");
+                // The code only: the message is free text (it can name a page).
+                let code = env.payload_as::<ErrorPayload>().ok().map(|e| e.code);
+                tracing::warn!(conn = id, ?code, "error from the extension");
             }
             kinds::IMPORT_ARCHIVE => self.import(id, env, now),
             kinds::ARCHIVE_SEARCH => {

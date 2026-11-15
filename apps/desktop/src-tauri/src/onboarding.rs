@@ -163,7 +163,7 @@ pub async fn open_extension_store(browser: String) -> Res<Value> {
         .await
         .map_err(|e| AppError::new("INTERNAL", e.to_string()))?;
     opened.map_err(|e| {
-        tracing::warn!(browser = known.name, "store page: {e}");
+        tracing::warn!(browser = %known.name, "store page: {e}");
         AppError::new(
             "NOT_FOUND",
             format!(

@@ -418,7 +418,7 @@ pub fn show_window(app: &AppHandle, window: Window, route: &str) {
             set_dock_visible(app, true);
             let _ = w.set_focus();
         }
-        Err(e) => tracing::warn!(window = window.label(), "can't open: {e}"),
+        Err(e) => tracing::warn!(window = %window.label(), "can't open: {e}"),
     }
 }
 

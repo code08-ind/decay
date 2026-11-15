@@ -6,6 +6,7 @@
 //! Timestamps are Unix epoch milliseconds, passed in by the caller (no clocks here).
 
 mod backup;
+mod diagnostics;
 mod events;
 mod export;
 mod import;
@@ -28,6 +29,7 @@ use rusqlite::{Connection, ErrorCode, Transaction};
 use thiserror::Error;
 
 pub use backup::{BackupInfo, BackupKind};
+pub use diagnostics::{BackupSummary, StoreDiagnostics};
 pub use events::EventRecord;
 pub use export::{MAX_BOOKMARKS, bookmarks_to_items};
 pub use import::{FileOptions, ImportReport, catalog_app_id};

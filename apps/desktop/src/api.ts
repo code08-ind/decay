@@ -308,6 +308,15 @@ export const api = {
   /** Imports (`proceed`) or drops the file waiting for confirmation. */
   confirmImport: (token: number, proceed: boolean) =>
     invoke<ImportOutcome | null>('confirm_import', { token, proceed }),
+  /** Whether this build can send crash reports, and where the logs are. */
+  getDiagnosticsInfo: () =>
+    invoke<{ crashReportsAvailable: boolean; logsDir: string }>('get_diagnostics_info'),
+  openLogsFolder: () => invoke<void>('open_logs_folder'),
+  /** Opens a save dialog and writes a diagnostics zip there; `null` when cancelled. */
+  exportDiagnostics: () => invoke<string | null>('export_diagnostics'),
+  /** Writes a window's JavaScript error to Decay's log (scrubbed there). */
+  logUiError: (message: string, stack?: string) =>
+    invoke<void>('log_ui_error', { message, stack: stack ?? null }),
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),
 };

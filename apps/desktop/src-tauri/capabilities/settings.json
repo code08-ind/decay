@@ -29,6 +29,10 @@
     "allow-install-update",
     "allow-export-archive",
     "allow-import-archive",
-    "allow-confirm-import"
+    "allow-confirm-import",
+    "allow-get-diagnostics-info",
+    "allow-open-logs-folder",
+    "allow-export-diagnostics",
+    "allow-log-ui-error"
   ]
 }

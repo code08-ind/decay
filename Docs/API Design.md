@@ -142,7 +142,7 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | Command | Input | Output |
 | --- | --- | --- |
 | `get_settings` | `{}` | `Settings` (see DB §3.9) |
-| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.12, P1.13):** `theme`; `update_channel` stable / beta (a change checks the new channel at once); `auto_update` boolean; `preset` (gentle / balanced / aggressive: also sets its `thresholds`); `thresholds` (custom: sets `preset` to `custom`; not together with `preset`); `retention_days` 7–3650; `idle_cutoff_s` 60–3600; `window_management` off / hide. Saved in one transaction; the policy reloads at once. The mode goes through `set_mode` / `resume`, the hotkey and launch at login through their commands; other keys → `INVALID_INPUT`. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
+| `update_settings` | `Partial<Settings>` | `Settings` (validates thresholds: stale < hidden < archive, each 1–720 h) — **as built (P1.12, P1.13):** `theme`; `update_channel` stable / beta (a change checks the new channel at once); `auto_update` boolean; `preset` (gentle / balanced / aggressive: also sets its `thresholds`); `thresholds` (custom: sets `preset` to `custom`; not together with `preset`); `retention_days` 7–3650; `idle_cutoff_s` 60–3600; `window_management` off / hide; `crash_reports` true / false (P2.6: applied at once). Saved in one transaction; the policy reloads at once. The mode goes through `set_mode` / `resume`, the hotkey and launch at login through their commands; other keys → `INVALID_INPUT`. Every change (also `set_hotkey`, `set_launch_at_login`, an archive import) is broadcast as `settings:changed` with all settings |
 | `set_hotkey` | `{ accelerator: string }` | `{ ok: true } \| AppError('CONFLICT')` |
 | `set_launch_at_login` | `{ enabled: boolean }` | `{ enabled }` (debug builds only save the setting) |
 
@@ -156,7 +156,10 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `erase_all_data` | `{ confirm: 'ERASE' }` | `{}` → app restarts into onboarding |
 | `get_storage_info` | `{}` | `{ dbBytes; itemCount; oldestArchivedAt; backups: { at: number; bytes: number }[] }` |
 | `restore_backup` | `{ at: number }` | `{}` |
-| `export_diagnostics` | `{ path; includeUrls: boolean }` | `{ path }` |
+| `export_diagnostics` | `{ path; includeUrls: boolean }` | `{ path }` — **as built (P2.6):** no arguments: the app opens the system's save dialog (`null` when cancelled) and returns the saved path. A zip (owner-only, written atomically) with `diagnostics.json` (`format: "decay-diagnostics"`, version 1: app version / build / OS / arch, the engine's state without profile ids or sweep ids, settings, counts from the store — items by kind and state, rules by source / action / on-off, sweeps by kind and status, events, sources, backups, schema version, database size) and `logs/decay.<date>.log` (the end of each, ≤ 8 MB, scrubbed again). No `includeUrls`: logs never contain addresses (scrubbed when written). Settings window only |
+| `get_diagnostics_info` | — | **as built (P2.6):** `{ crashReportsAvailable: boolean; logsDir: string }` (the home folder as `~`). Settings window only |
+| `open_logs_folder` | — | **as built (P2.6):** opens `…/Decay/logs` in Finder / Explorer (created if missing). Settings window only |
+| `log_ui_error` | — | **as built (P2.6):** `{ message: string; stack?: string }` → nothing. A window's JavaScript error (`error`, `unhandledrejection`; a rejected command as `code: message`) written to the log at `error` level, scrubbed; at most 50 per window a run (then one line saying so), message ≤ 2,000 and stack ≤ 4,000 characters. Every window |
 | `get_metrics` | `{ days?: number }` | `{ regretRate; autoModeDays; openTabsTrend: { day; p50 }[]; archived; searchToRestoreP50Ms }` |
 
 ### 2.7 Onboarding, platform and license

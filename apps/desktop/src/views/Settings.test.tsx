@@ -39,6 +39,9 @@ const api = {
   exportArchive: vi.fn(),
   importArchive: vi.fn(),
   confirmImport: vi.fn(),
+  getDiagnosticsInfo: vi.fn(),
+  openLogsFolder: vi.fn(),
+  exportDiagnostics: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 const { Settings } = await import('./Settings');
@@ -77,6 +80,7 @@ beforeEach(() => {
     retention_days: 90,
   });
   api.takePending.mockResolvedValue({ prefill: null, licenseKey: null });
+  api.getDiagnosticsInfo.mockResolvedValue({ crashReportsAvailable: false, logsDir: '~/logs' });
   for (const f of [
     api.updateSettings,
     api.setLaunchAtLogin,
@@ -408,6 +412,44 @@ describe('Settings', () => {
     expect(
       screen.getByText('Imported 5 items, 1 rule (3 stored items deleted by its rules)'),
     ).toBeTruthy();
+  });
+
+  it('privacy: diagnostics — crash reports opt in, logs, export', async () => {
+    api.getDiagnosticsInfo.mockResolvedValue({
+      crashReportsAvailable: true,
+      logsDir: '~/Library/Application Support/Decay/logs',
+    });
+    api.exportDiagnostics.mockResolvedValue('/Users/me/Decay diagnostics 2026-11-15.zip');
+    api.openLogsFolder.mockResolvedValue(undefined);
+    await show('/privacy');
+    const crash = screen.getByRole('switch', { name: /Share anonymous crash reports/ });
+    expect(crash.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(crash);
+    await flush();
+    expect(api.updateSettings).toHaveBeenCalledWith({ crash_reports: true });
+    expect(screen.getByText(/~\/Library\/Application Support\/Decay\/logs/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open logs folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export diagnostics…' }));
+    await flush();
+    expect(api.openLogsFolder).toHaveBeenCalled();
+    expect(screen.getByText('Diagnostics saved to Decay diagnostics 2026-11-15.zip')).toBeTruthy();
+  });
+
+  it("privacy: says so when it can't tell whether crash reports are available", async () => {
+    api.getDiagnosticsInfo.mockRejectedValue({ code: 'TIMEOUT', message: 'busy' });
+    await show('/privacy');
+    expect(
+      screen.getByText("Couldn't check whether this build can send crash reports."),
+    ).toBeTruthy();
+    expect(screen.getByText(/Stored on this device for troubleshooting/)).toBeTruthy();
+  });
+
+  it("privacy: crash reports can't be turned on in a build without them", async () => {
+    api.getDiagnosticsInfo.mockResolvedValue({ crashReportsAvailable: false, logsDir: '~/x' });
+    await show('/privacy');
+    const crash = screen.getByRole('switch', { name: /Share anonymous crash reports/ });
+    expect((crash as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("This build can't send crash reports.")).toBeTruthy();
   });
 
   it('privacy: a refused import says why', async () => {

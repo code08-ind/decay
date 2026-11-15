@@ -33,6 +33,7 @@
     "allow-list-sweeps",
     "allow-get-sweep",
     "allow-get-shadow-report",
-    "allow-export-archive"
+    "allow-export-archive",
+    "allow-log-ui-error"
   ]
 }

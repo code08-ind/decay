@@ -404,7 +404,7 @@ pub async fn check(app: &AppHandle) -> UpdateState {
     let (channel, auto) = prefs(app).await;
     let result = fetch(&channel, app).await;
     if let Err(e) = &result {
-        tracing::warn!(channel, "update check failed: {e}");
+        tracing::warn!(channel = %channel, "update check failed: {e}");
     }
     let result = result.map(|u| u.map(|u| (found_of(&u), u)));
     let (is_new, next) = with(app, |s| s.after_check(result, auto, now_ms()));
@@ -449,7 +449,7 @@ pub async fn download(app: &AppHandle) {
     let next = with(app, |s| s.finish_download(result));
     if let Some(v) = with(app, |s| (s.state.phase == Phase::Ready).then(|| s.state.version.clone()))
     {
-        tracing::info!(version = v.as_deref().unwrap_or("?"), "update downloaded and verified");
+        tracing::info!(version = %v.as_deref().unwrap_or("?"), "update downloaded and verified");
     }
     publish(app);
     carry_out(app, next);
@@ -464,7 +464,7 @@ fn install_and_restart(app: &AppHandle) {
         publish(app);
         return;
     }
-    tracing::info!(version = update.version, "update installed; restarting");
+    tracing::info!(version = %update.version, "update installed; restarting");
     app.state::<crate::core::Core>().stop();
     app.restart();
 }
@@ -473,7 +473,7 @@ fn install_and_restart(app: &AppHandle) {
 pub fn install_on_quit(app: &AppHandle) {
     let Some((update, bytes)) = with(app, Slot::take_quit_install) else { return };
     match update.install(bytes) {
-        Ok(()) => tracing::info!(version = update.version, "update installed at quit"),
+        Ok(()) => tracing::info!(version = %update.version, "update installed at quit"),
         Err(e) => tracing::warn!("update not installed at quit: {e}"),
     }
 }

@@ -69,7 +69,7 @@ Pin exact versions in `Cargo.lock` and `pnpm-lock.yaml` when the project is scaf
 | `tauri-plugin-window-state` | Remember Library/Settings window size and position |
 | `tauri-plugin-dialog` / `-fs` | Export/import file pickers (scoped) |
 | `tauri-plugin-opener` | Open URLs and help links |
-| `tauri-plugin-log` | Bridges frontend logs into `tracing` |
+| `tauri-plugin-log` | Bridges frontend logs into `tracing` — **as built (P2.6):** not used; a `log_ui_error` command does this for errors |
 | `tauri-nspanel` (community, macOS) | Non-activating floating panel for Spotlight-style search |
 
 ## 4. Tooling and quality
@@ -105,7 +105,7 @@ Pin exact versions in `Cargo.lock` and `pnpm-lock.yaml` when the project is scaf
 | Updates | GitHub Releases (static `latest.json`) | No server |
 | License sales | Lemon Squeezy or Paddle (merchant of record) | Webhook → serverless function signs an Ed25519 license key and emails it |
 | License verification | **Offline** in the app (public key embedded) | No phone-home |
-| Crash reports (opt-in) | Sentry (Rust + JS SDKs) with PII scrubbing | Off by default |
+| Crash reports (opt-in) | Sentry (Rust + JS SDKs) with PII scrubbing | Off by default. **As built (P2.6):** the Rust SDK only (panics, scrubbed, DSN compiled in from `DECAY_SENTRY_DSN`); the windows' JavaScript errors go to the log through `log_ui_error` instead of a JS SDK |
 | Landing/docs | Astro static site on Cloudflare Pages | — |
 
 ## 7. Design tooling

@@ -255,7 +255,10 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
                 out.push((key.clone(), value.clone()));
             }
             "update_channel" => return Err(bad("the update channel is stable or beta")),
-            "auto_update" if value.is_boolean() => out.push((key.clone(), value.clone())),
+            "auto_update" | "crash_reports" if value.is_boolean() => {
+                out.push((key.clone(), value.clone()));
+            }
+            "crash_reports" => return Err(bad("crash reports are on or off")),
             "daily_summary_time"
                 if value.as_str().and_then(crate::notify::parse_time).is_some() =>
             {
@@ -301,6 +304,7 @@ pub async fn get_settings(app: AppHandle) -> Res<serde_json::Map<String, Value>>
 /// keep the order of the writes.
 pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Value>) {
     app.state::<crate::notify::Notifier>().set_settings(settings);
+    crate::diagnostics::apply_settings(settings);
     if let Some(theme) = settings.get("theme").and_then(Value::as_str) {
         let handle = app.clone();
         let theme = theme.to_owned();
@@ -478,6 +482,8 @@ mod tests {
         let updates =
             validate_settings(&patch(json!({"update_channel": "beta", "auto_update": false})))
                 .unwrap();
+        let crash = validate_settings(&patch(json!({"crash_reports": true}))).unwrap();
+        assert_eq!(crash, vec![("crash_reports".to_owned(), json!(true))]);
         let notes = validate_settings(&patch(json!({
             "daily_summary_time": "07:30",
             "notifications": {"summary": true, "sweep": false, "sweepBigOnly": false, "browser": true, "permission": false}
@@ -506,6 +512,7 @@ mod tests {
             json!({"notifications": {"summary": true, "sweep": true, "sweepBigOnly": true, "browser": true, "permission": "yes"}}),
             json!({"notifications": {"summary": true, "sweep": true, "sweepBigOnly": true, "browser": true, "permission": true, "extra": true}}),
             json!({"auto_update": "yes"}),
+            json!({"crash_reports": 1}),
         ] {
             assert_eq!(validate_settings(&patch(bad)).unwrap_err().code, "INVALID_INPUT");
         }

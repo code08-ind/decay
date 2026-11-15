@@ -32,6 +32,7 @@ mod control;
 mod domain;
 mod engine;
 mod hide;
+mod log_limit;
 mod platform;
 mod restore;
 mod rules;

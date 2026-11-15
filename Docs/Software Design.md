@@ -323,7 +323,7 @@ An internal `tokio::broadcast` channel of `CoreEvent` (`ItemChanged`, `SweepStar
 | Another user creates the IPC endpoint first to receive tabs ("squatting") | macOS: the host checks the socket's peer uid. Windows: a random pipe name per app start, published in the user's own profile folder |
 | XSS in the WebView via a malicious page title | React escaping; strict CSP (`default-src 'self'`); titles never rendered as HTML; Tauri capabilities allow only the needed commands per window |
 | Malicious update | Tauri updater Ed25519 signature + OS code signing |
-| Log leakage | URLs and titles redacted in logs unless "verbose diagnostics" is enabled |
+| Log leakage | URLs and titles redacted in logs unless "verbose diagnostics" is enabled — **as built (P2.6):** no verbose mode; every line is scrubbed when written (addresses, e-mail, quoted text, user folders) and log call sites don't log content |
 
 ## 7. Error handling and resilience
 

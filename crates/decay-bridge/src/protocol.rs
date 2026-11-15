@@ -39,13 +39,36 @@ pub struct Envelope {
     pub payload: Value,
 }
 
-/// A payload couldn't be built or read.
+/// A payload couldn't be built or read. Its message never repeats a value from the
+/// payload (serde quotes them: a page title or address would reach the log): only a
+/// missing or duplicate field's name, else the kind of error and where.
 #[derive(Debug, thiserror::Error)]
-#[error("bad {kind} payload: {source}")]
+#[error("bad {kind} payload: {}", safe_message(source))]
 pub struct PayloadError {
     pub kind: String,
     #[source]
     pub source: serde_json::Error,
+}
+
+/// A serde error without the values it quotes (see [`PayloadError`]).
+pub fn safe_message(e: &serde_json::Error) -> String {
+    let text = e.to_string();
+    let head = text.split(" at line ").next().unwrap_or_default();
+    if head.starts_with("missing field `") || head.starts_with("duplicate field `") {
+        return text;
+    }
+    let what = match e.classify() {
+        serde_json::error::Category::Io => "unreadable",
+        serde_json::error::Category::Syntax => "not valid JSON",
+        serde_json::error::Category::Data => "a value of the wrong type or shape",
+        serde_json::error::Category::Eof => "cut short",
+    };
+    // A payload read from a JSON value has no position.
+    if e.line() == 0 {
+        what.to_owned()
+    } else {
+        format!("{what} at line {} column {}", e.line(), e.column())
+    }
 }
 
 impl Envelope {
@@ -694,5 +717,23 @@ mod tests {
         )
         .unwrap();
         assert_eq!((hello.browser, hello.launch), (BrowserKind::Other, false));
+    }
+
+    #[test]
+    fn payload_errors_never_repeat_values() {
+        let bad = Envelope {
+            v: PROTOCOL_VERSION,
+            id: "1".into(),
+            kind: "tab.created".into(),
+            reply_to: None,
+            chunk: None,
+            payload: serde_json::json!({"tabId": "My bank statement"}),
+        };
+        let e = bad.payload_as::<TabInfo>().unwrap_err().to_string();
+        assert!(!e.contains("bank"), "{e}");
+        assert!(e.starts_with("bad tab.created payload: "), "{e}");
+        let missing = Envelope { payload: serde_json::json!({}), ..bad };
+        let e = missing.payload_as::<TabRemoved>().unwrap_err().to_string();
+        assert!(e.contains("missing field `"), "{e}");
     }
 }

@@ -1,4 +1,4 @@
-import { Banner, Button, IconButton, SegmentedControl } from '@decay/ui';
+import { Banner, Button, IconButton, SegmentedControl, Switch } from '@decay/ui';
 import { Download, EyeOff, Lock, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -80,11 +80,97 @@ export function Privacy(props: TabProps & { version: number; changed: () => void
           />
         </Group>
         <Transfer notify={notify} changed={props.changed} />
+        <Diagnostics crashReports={settings?.crash_reports === true} save={save} notify={notify} />
         <p className="flex items-center gap-2 text-xs text-muted">
           <Lock size={12} aria-hidden /> Erasing all data comes in a later version.
         </p>
       </div>
     </>
+  );
+}
+
+/**
+ * Diagnostics (F29, Designs/09c): opt-in crash reports, the logs folder, and a
+ * diagnostics zip (no addresses, titles or sites in either).
+ */
+function Diagnostics(props: {
+  crashReports: boolean;
+  save: TabProps['save'];
+  notify: (text: string) => void;
+}) {
+  const info = useLoad(() => api.getDiagnosticsInfo(), []);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const available = info.data?.crashReportsAvailable === true;
+  const description = info.error
+    ? "Couldn't check whether this build can send crash reports."
+    : available || info.loading
+      ? 'Helps fix bugs without sending URLs, titles, or browsing habits.'
+      : "This build can't send crash reports.";
+  const run = (action: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    action()
+      .catch((e) => setError(errorMessage(e)))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Group title="Diagnostics">
+      <Switch
+        className="pb-3"
+        label="Share anonymous crash reports"
+        description={description}
+        checked={props.crashReports && (available || info.loading)}
+        disabled={!available}
+        onChange={(on) =>
+          props.save({ crash_reports: on }, on ? 'Crash reports on' : 'Crash reports off')
+        }
+      />
+      <Row
+        label="Log files"
+        description={
+          info.data
+            ? `Stored on this device in ${info.data.logsDir}, 7 days kept. No addresses or titles.`
+            : 'Stored on this device for troubleshooting. No addresses or titles.'
+        }
+      >
+        <span className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setError('');
+              api.openLogsFolder().catch((e) => setError(errorMessage(e)));
+            }}
+          >
+            Open logs folder
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-disabled={busy}
+            onClick={() =>
+              run(() =>
+                api.exportDiagnostics().then((path) => {
+                  if (path) {
+                    const name = path.split(/[\\/]/).pop() ?? path;
+                    props.notify(`Diagnostics saved to ${name}`);
+                  }
+                }),
+              )
+            }
+          >
+            {busy ? 'Exporting…' : 'Export diagnostics…'}
+          </Button>
+        </span>
+      </Row>
+      {error && (
+        <p role="alert" className="pt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </Group>
   );
 }
 

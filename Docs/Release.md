@@ -29,6 +29,7 @@ How a version gets from a tag to users' Macs (P1.13, PRD F18). Workflow:
    - `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password from account.apple.com), `APPLE_TEAM_ID`
    
    The workflow then signs with hardened runtime and notarizes automatically. Nothing else changes.
+5. **Crash reports (optional):** create a Sentry project (platform: Rust) and save its DSN as the secret `DECAY_SENTRY_DSN`. It's compiled into release builds; users still have to turn crash reports on (Settings → Privacy & data → Diagnostics). Without it (or if it doesn't parse), the switch says the build can't send them. The client starts at launch either way but drops every event while the setting is off; after a user turns reports on, the first report may carry a count of events dropped before (a number only). In Sentry, also turn off IP address storage (Project → Settings → Security & Privacy → *Prevent Storing of IP Addresses*): the app sends no user data, but Sentry records the sender's IP unless told not to.
 
 ## Cutting a release
 

@@ -45,6 +45,10 @@ const COMMANDS: &[&str] = &[
     "export_archive",
     "import_archive",
     "confirm_import",
+    "get_diagnostics_info",
+    "open_logs_folder",
+    "export_diagnostics",
+    "log_ui_error",
 ];
 
 fn main() {

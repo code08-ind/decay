@@ -84,7 +84,12 @@ impl Core {
         let key = keys::load_or_create(&dir.key, &paths).map_err(|e| e.to_string())?;
         let (store, report) = Store::open(paths, key, now_ms())
             .map_err(|e| format!("the database can't be opened: {e}"))?;
-        tracing::info!(?report, data = %dir.data.display(), "store open");
+        tracing::info!(
+            created = report.created,
+            recovered = report.recovered_from.is_some(),
+            migrations = ?report.applied_migrations,
+            "store open"
+        );
         let engine = Engine::new(store, EngineConfig::default(), now_ms())
             .map_err(|e| format!("the engine can't start: {e}"))?;
         server.publish(&dir.support).map_err(|e| e.to_string())?;
@@ -235,10 +240,10 @@ pub fn install_host(support: &Path) -> Result<Vec<&'static str>, HostInstallErro
         failed(e.to_string())
     })?;
     for done in &report.done {
-        tracing::info!(browser = done.browser, "native host installed");
+        tracing::info!(browser = %done.browser, "native host installed");
     }
     for (browser, e) in &report.failed {
-        tracing::warn!(browser, "native host install failed: {e}");
+        tracing::warn!(browser = %browser, "native host install failed: {e}");
     }
     install_outcome(&report)
 }

@@ -222,7 +222,7 @@ impl Engine {
 
     fn window_acted(&mut self, item_id: &str, result: &Result<(), String>, now: i64) -> Res {
         if let Err(why) = result {
-            tracing::info!(item = item_id, "window not changed: {why}");
+            tracing::info!(item = %item_id, "window not changed: {why}");
         }
         let (op, late) = match self.window_ops.get(item_id) {
             Some(op) => (op.clone(), false),

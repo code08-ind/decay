@@ -20,6 +20,7 @@
 mod commands;
 mod core;
 mod deeplink;
+mod diagnostics;
 mod keys;
 mod library;
 mod menu;
@@ -86,9 +87,11 @@ fn forward(app: &AppHandle, event: EngineEvent) {
             let _ = app.emit("permission:changed", json!({ "accessibility": accessibility }));
         }
         EngineEvent::AdapterConnected { browser, profile_id } => {
+            tracing::info!(?browser, "browser connected");
             let _ = app.emit("adapter:health", json!({ "kind": "browser", "browser": browser, "profile": profile_id, "status": "connected" }));
         }
         EngineEvent::AdapterDisconnected { browser, profile_id } => {
+            tracing::info!(?browser, "browser disconnected");
             let _ = app.emit("adapter:health", json!({ "kind": "browser", "browser": browser, "profile": profile_id, "status": "down" }));
         }
         EngineEvent::Restored { restored, failed, skipped } => {
@@ -151,6 +154,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 .unwrap_or((None, None, true, None));
             if let Some(settings) = &settings {
                 handle.state::<notify::Notifier>().set_settings(settings);
+                diagnostics::apply_settings(settings);
             }
             shell::set_onboarded(&handle, onboarded);
             if let Some(theme) = theme {
@@ -332,13 +336,13 @@ pub fn run() {
         println!("{answer}");
         return;
     }
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-        )
-        .with_writer(std::io::stderr)
-        .init();
-    let Some(support) = decay_bridge::ipc::support_dir() else {
+    let support = decay_bridge::ipc::support_dir();
+    // Crash reports first, on this (the main) thread before any other exists, so a
+    // panic anywhere is caught; nothing is sent until the setting is on.
+    diagnostics::init_crash_reports();
+    diagnostics::init_logging(support.as_deref());
+    tracing::info!(version = %env!("CARGO_PKG_VERSION"), "Decay starting");
+    let Some(support) = support else {
         tracing::error!("no home folder: Decay can't store anything");
         std::process::exit(1);
     };
@@ -409,6 +413,10 @@ pub fn run() {
             transfer::export_archive,
             transfer::import_archive,
             transfer::confirm_import,
+            diagnostics::get_diagnostics_info,
+            diagnostics::open_logs_folder,
+            diagnostics::export_diagnostics,
+            diagnostics::log_ui_error,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {
