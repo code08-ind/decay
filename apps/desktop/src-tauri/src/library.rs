@@ -20,6 +20,7 @@ use tauri::AppHandle;
 
 use crate::commands::{Res, blocking};
 use crate::core::AppError;
+use crate::i18n::{t, tf};
 use crate::search::{PanelItem, reason_text, row};
 
 /// Shadow mode lasts this many days (PRD F2).
@@ -138,27 +139,29 @@ pub struct ItemDetail {
 }
 
 /// Words for a protection ("Pinned", "Playing audio").
-pub fn protected_text(by: ProtectedBy) -> &'static str {
-    match by {
-        ProtectedBy::Pinned => "Pinned",
-        ProtectedBy::ActiveTab => "Open in front",
-        ProtectedBy::Audible => "Playing audio",
-        ProtectedBy::FormInput => "Unsaved form",
-        ProtectedBy::Download => "Downloading",
-        ProtectedBy::Call => "In a call",
-        ProtectedBy::Unsaved => "Unsaved changes",
-        ProtectedBy::UnknownSaveState => "Save state unknown",
-        ProtectedBy::Rule => "Rule: always keep",
-        ProtectedBy::Hold => "On hold",
-        ProtectedBy::Meeting => "In a meeting",
-        ProtectedBy::Grace => "Just restored",
-        ProtectedBy::Unrestorable => "Can't be reopened",
-    }
+pub fn protected_text(by: ProtectedBy) -> String {
+    t(match by {
+        ProtectedBy::Pinned => "protected.pinned",
+        ProtectedBy::ActiveTab => "protected.activeTab",
+        ProtectedBy::Audible => "protected.audible",
+        ProtectedBy::FormInput => "protected.formInput",
+        ProtectedBy::Download => "protected.download",
+        ProtectedBy::Call => "protected.call",
+        ProtectedBy::Unsaved => "protected.unsaved",
+        ProtectedBy::UnknownSaveState => "protected.unknownSaveState",
+        ProtectedBy::Rule => "protected.rule",
+        ProtectedBy::Hold => "protected.hold",
+        ProtectedBy::Meeting => "protected.meeting",
+        ProtectedBy::Grace => "protected.grace",
+        ProtectedBy::Unrestorable => "protected.unrestorable",
+    })
 }
 
 fn label(reason: Option<&Reason>) -> Option<String> {
     match reason? {
-        Reason::Protected { by, .. } => Some(format!("Protected: {}", protected_text(*by))),
+        Reason::Protected { by, .. } => {
+            Some(tf("protected.reason", &[("why", protected_text(*by).into())]))
+        }
         other => reason_text(other),
     }
 }
@@ -167,7 +170,7 @@ pub fn item_detail(store: &Store, id: &str) -> Res<ItemDetail> {
     let item = store
         .item(id)
         .map_err(db)?
-        .ok_or_else(|| AppError::new("NOT_FOUND", "this item is no longer in the archive"))?;
+        .ok_or_else(|| AppError::new("NOT_FOUND", t("error.itemGone")))?;
     let events = store
         .events_for_item(id, 200)
         .map_err(db)?
@@ -203,7 +206,7 @@ fn valid_id(id: &str) -> bool {
 #[tauri::command]
 pub async fn get_item(app: AppHandle, id: String) -> Res<ItemDetail> {
     if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", "not an item id"));
+        return Err(AppError::new("INVALID_INPUT", t("error.notItem")));
     }
     blocking(app, move |core| core.ask(move |e, _| (item_detail(e.store(), &id), Vec::new()))?)
         .await
@@ -231,7 +234,7 @@ pub fn delete_archived(store: &mut Store, ids: &[String], busy: impl Fn(&str) ->
 #[tauri::command]
 pub async fn delete_items(app: AppHandle, ids: Vec<String>) -> Res<Value> {
     if ids.is_empty() || ids.len() > 500 || !ids.iter().all(|i| valid_id(i)) {
-        return Err(AppError::new("INVALID_INPUT", "delete 1 to 500 items"));
+        return Err(AppError::new("INVALID_INPUT", t("error.delete")));
     }
     blocking(app, move |core| {
         core.ask(move |e, _| {
@@ -397,7 +400,7 @@ pub fn sweep_detail(store: &Store, id: &str, undo_ids: &HashSet<String>) -> Res<
     let sweep = store
         .sweep(id)
         .map_err(db)?
-        .ok_or_else(|| AppError::new("NOT_FOUND", "this sweep isn't in the history"))?;
+        .ok_or_else(|| AppError::new("NOT_FOUND", t("error.sweepGone")))?;
     let items = sweep_items(store, &sweep)?;
     let row_info = sweep_row(store, &sweep, &items, undo_ids)?;
     let mut names = HashMap::new();
@@ -417,7 +420,7 @@ pub fn sweep_detail(store: &Store, id: &str, undo_ids: &HashSet<String>) -> Res<
 #[tauri::command]
 pub async fn get_sweep(app: AppHandle, id: String) -> Res<SweepDetail> {
     if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", "not a sweep id"));
+        return Err(AppError::new("INVALID_INPUT", t("error.notSweep")));
     }
     blocking(app, move |core| {
         core.ask(move |e, _| {
@@ -452,7 +455,7 @@ pub struct KeptItem {
     #[serde(flatten)]
     pub row: PanelItem,
     pub by: ProtectedBy,
-    pub label: &'static str,
+    pub label: String,
     pub active_hours: u64,
 }
 
@@ -460,7 +463,7 @@ pub struct KeptItem {
 #[serde(rename_all = "camelCase")]
 pub struct KeptCount {
     pub by: ProtectedBy,
-    pub label: &'static str,
+    pub label: String,
     pub count: u32,
 }
 
@@ -859,7 +862,10 @@ mod tests {
         assert!(first_a.live && !first_a.used_after);
         assert_eq!(first_a.row.reason.as_deref(), Some("Unused 61 active h"));
         assert_eq!(r.kept.len(), 3);
-        assert_eq!(r.kept_by[0], KeptCount { by: ProtectedBy::Pinned, label: "Pinned", count: 2 });
+        assert_eq!(
+            r.kept_by[0],
+            KeptCount { by: ProtectedBy::Pinned, label: "Pinned".into(), count: 2 }
+        );
         assert_eq!(r.kept[1].label, "Playing audio");
         let json = serde_json::to_value(&r).unwrap();
         assert_eq!(json["keptBy"][1]["by"], "audible");

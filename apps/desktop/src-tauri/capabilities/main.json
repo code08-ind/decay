@@ -19,6 +19,7 @@
     "allow-ui-hide-panel",
     "allow-ui-take-pending",
     "allow-get-settings",
+    "allow-system-language",
     "allow-get-daily-summary",
     "allow-create-rule",
     "allow-update-settings",

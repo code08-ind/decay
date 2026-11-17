@@ -1,3 +1,4 @@
+import { formatDate } from '@decay/ui';
 import { describe, expect, it } from 'vitest';
 import {
   acceleratorFrom,
@@ -125,11 +126,8 @@ describe('updates helpers', () => {
     const now = new Date(2026, 10, 14, 12).getTime();
     expect(checkedText(null, now)).toBe('Not checked yet');
     expect(checkedText(now - 60_000, now)).toMatch(/^Last checked today at /);
-    // Any locale: the date is the system's short form (CI runs en-US, a Mac may not).
-    const day = new Date(now - 3 * 86_400_000).toLocaleDateString([], {
-      day: 'numeric',
-      month: 'short',
-    });
+    // The date in the app's locale (its short form).
+    const day = formatDate(new Date(now - 3 * 86_400_000), { day: 'numeric', month: 'short' });
     expect(checkedText(now - 3 * 86_400_000, now)).toMatch(new RegExp(`^Last checked ${day} at `));
     expect(percent({ downloaded: 5, total: 10 })).toBe(50);
     expect(percent({ downloaded: 5, total: null })).toBeNull();

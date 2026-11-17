@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useRef } from 'react';
 import { cx } from './cx';
+import { logicalArrow } from './i18n';
 
 export interface Segment<T extends string> {
   value: T;
@@ -20,7 +21,7 @@ export function SegmentedControl<T extends string>(props: {
   const { label, options, value, onChange, className } = props;
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const onKey = (e: KeyboardEvent, index: number) => {
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[logicalArrow(e.key)];
     const edge = { Home: 0, End: options.length - 1 }[e.key];
     if (step === undefined && edge === undefined) return;
     e.preventDefault();

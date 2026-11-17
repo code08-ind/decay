@@ -15,6 +15,7 @@ use tauri_plugin_autostart::ManagerExt;
 
 use crate::core::{AppError, Core};
 use crate::deeplink::Window;
+use crate::i18n::{t, tf};
 use crate::menu::HOLD_INDEFINITE_MS;
 use crate::shell;
 
@@ -76,7 +77,7 @@ pub fn hold_end(duration: &HoldDuration, now: &jiff::Zoned) -> Res<i64> {
         }
         HoldDuration::Minutes { minutes } => {
             if *minutes == 0 || *minutes > 7 * 24 * 60 {
-                return Err(AppError::new("INVALID_INPUT", "a hold lasts 1 minute to 7 days"));
+                return Err(AppError::new("INVALID_INPUT", t("error.hold")));
             }
             ms + i64::from(*minutes) * 60_000
         }
@@ -141,12 +142,18 @@ pub async fn release_hold(app: AppHandle) -> Res<Value> {
 }
 
 fn sweep_refused(why: &SweepRefused) -> AppError {
-    let code = match why {
-        SweepRefused::NoBrowser => "ADAPTER_UNAVAILABLE",
-        SweepRefused::Busy => "CONFLICT",
-        SweepRefused::Paused | SweepRefused::OnHold(_) => "UNSAFE",
+    let (code, text) = match why {
+        SweepRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", t("refused.sweep.noBrowser")),
+        SweepRefused::Busy => ("CONFLICT", t("refused.sweep.busy")),
+        SweepRefused::Paused => ("UNSAFE", t("refused.sweep.paused")),
+        SweepRefused::OnHold(until) => {
+            let time = jiff::Timestamp::from_millisecond(*until)
+                .map(|ts| ts.to_zoned(jiff::tz::TimeZone::system()).strftime("%H:%M").to_string())
+                .unwrap_or_default();
+            ("UNSAFE", tf("refused.sweep.onHold", &[("time", time.into())]))
+        }
     };
-    AppError::new(code, why.to_string())
+    AppError::new(code, text)
 }
 
 /// Starts a sweep; its result comes as `sweep:completed`.
@@ -168,13 +175,15 @@ pub async fn undo_sweep(app: AppHandle, id: Option<String>) -> Res<Value> {
         core.ask(move |e, now| match e.undo(id.as_deref(), now) {
             Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
             Ok(Err(why)) => {
-                let code = match why {
-                    UndoRefused::NoBrowser => "ADAPTER_UNAVAILABLE",
-                    UndoRefused::StillClosing => "CONFLICT",
-                    UndoRefused::NothingToUndo => "NOT_FOUND",
-                    UndoRefused::WindowsUnknown => "PERMISSION_DENIED",
+                let (code, key) = match why {
+                    UndoRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", "refused.undo.noBrowser"),
+                    UndoRefused::StillClosing => ("CONFLICT", "refused.undo.stillClosing"),
+                    UndoRefused::NothingToUndo => ("NOT_FOUND", "refused.undo.nothing"),
+                    UndoRefused::WindowsUnknown => {
+                        ("PERMISSION_DENIED", "refused.undo.windowsUnknown")
+                    }
                 };
-                (Err(AppError::new(code, why.to_string())), Vec::new())
+                (Err(AppError::new(code, t(key))), Vec::new())
             }
             Err(err) => (Err(AppError::db(&err)), Vec::new()),
         })?
@@ -211,12 +220,12 @@ pub fn ui_take_pending(window: tauri::Window, shell: State<'_, shell::Shell>) ->
 /// the hotkey and launch at login through their own commands.
 pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(String, Value)>> {
     if patch.is_empty() {
-        return Err(AppError::new("INVALID_INPUT", "nothing to change"));
+        return Err(AppError::new("INVALID_INPUT", t("settings.nothing")));
     }
-    let bad = |why: &str| AppError::new("INVALID_INPUT", why.to_owned());
+    let bad = |key: &str| AppError::new("INVALID_INPUT", t(key));
     let int_in = |v: &Value, lo: u64, hi: u64| v.as_u64().filter(|n| (lo..=hi).contains(n));
     if patch.contains_key("preset") && patch.contains_key("thresholds") {
-        return Err(bad("set a pace or custom thresholds, not both"));
+        return Err(bad("settings.paceOrThresholds"));
     }
     let mut out = Vec::new();
     for (key, value) in patch {
@@ -224,47 +233,57 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
             "theme" if matches!(value.as_str(), Some("system" | "light" | "dark")) => {
                 out.push((key.clone(), value.clone()));
             }
-            "theme" => return Err(bad("theme is system, light or dark")),
+            "theme" => return Err(bad("settings.theme")),
+            // `system` or a language tag (BCP 47 characters only; F31).
+            "locale"
+                if value.as_str().is_some_and(|l| {
+                    !l.is_empty()
+                        && l.len() <= 35
+                        && l.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+                }) =>
+            {
+                out.push((key.clone(), value.clone()));
+            }
+            "locale" => return Err(bad("settings.locale")),
             "preset" => {
-                let preset: decay_core::Preset = serde_json::from_value(value.clone())
-                    .map_err(|_| bad("pace is gentle, balanced or aggressive"))?;
+                let preset: decay_core::Preset =
+                    serde_json::from_value(value.clone()).map_err(|_| bad("settings.pace"))?;
                 out.push((key.clone(), value.clone()));
                 out.push(("thresholds".into(), json!(preset.thresholds())));
             }
             "thresholds" => {
                 let t: decay_core::Thresholds = serde_json::from_value(value.clone())
-                    .map_err(|_| bad("thresholds need stale, hidden and archive hours"))?;
-                t.validate().map_err(|e| bad(&e.to_string()))?;
+                    .map_err(|_| bad("settings.thresholds"))?;
+                t.validate().map_err(|_| bad("settings.thresholdsRange"))?;
                 out.push((key.clone(), json!(t)));
                 out.push(("preset".into(), json!("custom")));
             }
             "retention_days" => {
-                let n =
-                    int_in(value, 7, 3650).ok_or_else(|| bad("keep the archive 7 to 3650 days"))?;
+                let n = int_in(value, 7, 3650).ok_or_else(|| bad("settings.retention"))?;
                 out.push((key.clone(), json!(n)));
             }
             "idle_cutoff_s" => {
-                let n = int_in(value, 60, 3600).ok_or_else(|| bad("away after 1 to 60 minutes"))?;
+                let n = int_in(value, 60, 3600).ok_or_else(|| bad("settings.idle"))?;
                 out.push((key.clone(), json!(n)));
             }
             "window_management" if matches!(value.as_str(), Some("off" | "hide")) => {
                 out.push((key.clone(), value.clone()));
             }
-            "window_management" => return Err(bad("window handling is off or hide")),
+            "window_management" => return Err(bad("settings.windows")),
             "update_channel" if matches!(value.as_str(), Some("stable" | "beta")) => {
                 out.push((key.clone(), value.clone()));
             }
-            "update_channel" => return Err(bad("the update channel is stable or beta")),
+            "update_channel" => return Err(bad("settings.channel")),
             "auto_update" | "crash_reports" if value.is_boolean() => {
                 out.push((key.clone(), value.clone()));
             }
-            "crash_reports" => return Err(bad("crash reports are on or off")),
+            "crash_reports" => return Err(bad("settings.crash")),
             "daily_summary_time"
                 if value.as_str().and_then(crate::notify::parse_time).is_some() =>
             {
                 out.push((key.clone(), value.clone()));
             }
-            "daily_summary_time" => return Err(bad("the summary time is HH:MM")),
+            "daily_summary_time" => return Err(bad("settings.time")),
             "notifications" => {
                 // All five switches, every time (a partial object would silently reset
                 // the ones left out).
@@ -275,13 +294,14 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
                         && KEYS.iter().all(|k| o.get(*k).is_some_and(Value::is_boolean))
                 });
                 if !ok {
-                    return Err(bad("notifications are on / off switches"));
+                    return Err(bad("settings.notifications"));
                 }
                 out.push((key.clone(), value.clone()));
             }
-            "auto_update" => return Err(bad("auto_update is true or false")),
+            "auto_update" => return Err(bad("settings.autoUpdate")),
             _ => {
-                return Err(AppError::new("INVALID_INPUT", format!("{key} can't be changed here")));
+                let why = tf("settings.readOnly", &[("key", key.into())]);
+                return Err(AppError::new("INVALID_INPUT", why));
             }
         }
     }
@@ -305,6 +325,7 @@ pub async fn get_settings(app: AppHandle) -> Res<serde_json::Map<String, Value>>
 pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Value>) {
     app.state::<crate::notify::Notifier>().set_settings(settings);
     crate::diagnostics::apply_settings(settings);
+    crate::apply_locale(app, settings.get("locale").and_then(Value::as_str));
     if let Some(theme) = settings.get("theme").and_then(Value::as_str) {
         let handle = app.clone();
         let theme = theme.to_owned();
@@ -463,6 +484,12 @@ mod tests {
         let patch = |v: Value| v.as_object().unwrap().clone();
         let ok = validate_settings(&patch(json!({"theme": "dark"}))).unwrap();
         assert_eq!(ok, vec![("theme".to_owned(), json!("dark"))]);
+        for locale in ["system", "en", "pt-BR", "en-XA"] {
+            assert!(validate_settings(&patch(json!({ "locale": locale }))).is_ok(), "{locale}");
+        }
+        for locale in [json!(""), json!("en_US"), json!("x\"y"), json!(1), json!("a".repeat(36))] {
+            assert!(validate_settings(&patch(json!({ "locale": locale }))).is_err(), "{locale}");
+        }
         // A pace brings its thresholds; custom thresholds make the pace "custom".
         let pace = validate_settings(&patch(json!({"preset": "gentle"}))).unwrap();
         assert_eq!(

@@ -4,7 +4,10 @@ import {
   Chip,
   cx,
   detectPlatform,
+  formatList,
   LiveRegion,
+  logicalArrow,
+  richText,
   Shortcut,
   StatusDot,
   Switch,
@@ -50,7 +53,10 @@ import {
   rowState,
   STEPS,
   sortRows,
+  stepKicker,
+  stepTitle,
 } from '../onboarding/model';
+import { t } from '../strings';
 import { useStatus } from '../useStatus';
 
 const platform = detectPlatform();
@@ -97,10 +103,10 @@ export function Onboarding() {
   const id = STEPS[step]?.id ?? 'welcome';
   const primary: { label: string; onClick: () => void } =
     id === 'welcome'
-      ? { label: 'Get started', onClick: () => go(next(step)) }
+      ? { label: t('onboarding.getStarted'), onClick: () => go(next(step)) }
       : id === 'shadow'
-        ? { label: 'Start shadow mode', onClick: finish }
-        : { label: 'Continue', onClick: () => go(next(step)) };
+        ? { label: t('onboarding.startShadow'), onClick: finish }
+        : { label: t('onboarding.continue'), onClick: () => go(next(step)) };
 
   return (
     <main className="flex h-screen gap-4 bg-canvas p-4 text-ink">
@@ -128,7 +134,7 @@ export function Onboarding() {
           <footer className="mt-4 flex items-center gap-3 border-t border-line pt-4">
             {step > 0 && !completed ? (
               <Button variant="secondary" size="lg" onClick={() => go(back(step, completed))}>
-                Back
+                {t('onboarding.back')}
               </Button>
             ) : (
               <span />
@@ -137,12 +143,12 @@ export function Onboarding() {
             <Button
               variant="primary"
               size="lg"
-              className="ml-auto"
+              className="ms-auto"
               loading={busy}
               onClick={primary.onClick}
             >
               {primary.label}
-              <ArrowRight size={16} aria-hidden />
+              <ArrowRight className="rtl:-scale-x-100" size={16} aria-hidden />
             </Button>
           </footer>
         )}
@@ -154,7 +160,7 @@ export function Onboarding() {
 function Sidebar({ step }: { step: number }) {
   return (
     <nav
-      aria-label="Setup steps"
+      aria-label={t('onboarding.steps')}
       className="flex w-60 shrink-0 flex-col rounded-card bg-feature p-5 text-feature-ink [--focus:var(--feature-text)]"
     >
       <div className="mb-6 flex items-center gap-2">
@@ -189,8 +195,8 @@ function Sidebar({ step }: { step: number }) {
                 {done ? <Check size={12} /> : i + 1}
               </span>
               <span>
-                {s.title}
-                {done && <span className="sr-only"> (done)</span>}
+                {stepTitle(s.id)}
+                {done && <span className="sr-only"> {t('onboarding.stepDone')}</span>}
               </span>
             </li>
           );
@@ -198,9 +204,9 @@ function Sidebar({ step }: { step: number }) {
       </ol>
       <div className="mt-auto rounded-xl border border-feature-tile-line bg-feature-tile p-3 text-xs leading-relaxed text-feature-sub">
         <p className="mb-1 flex items-center gap-1.5 font-semibold tracking-wide text-feature-ink uppercase">
-          <ShieldCheck size={14} aria-hidden /> Shadow guarantee
+          <ShieldCheck size={14} aria-hidden /> {t('onboarding.guarantee')}
         </p>
-        Nothing is closed for the first 7 days. Decay watches quietly in shadow mode first.
+        {t('onboarding.guarantee.text')}
       </div>
     </nav>
   );
@@ -228,12 +234,17 @@ function Header(props: {
   heading: RefObject<HTMLHeadingElement | null>;
   children?: ReactNode;
 }) {
-  const kicker = STEPS[props.step]?.kicker;
+  const stepId = STEPS[props.step]?.id;
+  const kicker = stepId ? stepKicker(stepId) : undefined;
   return (
     <header className="mb-5">
       <p className="mb-2 text-[11px] font-semibold tracking-widest text-muted uppercase">
-        Step {props.step + 1} of {STEPS.length}
-        {kicker && <span className="font-normal tracking-normal normal-case"> · {kicker}</span>}
+        {t('onboarding.stepOf', { n: props.step + 1, total: STEPS.length })}
+        {kicker && (
+          <span className="font-normal tracking-normal normal-case">
+            {t('onboarding.kickerSep', { kicker })}
+          </span>
+        )}
       </p>
       <h1
         id="step-title"
@@ -284,23 +295,24 @@ function Welcome({ heading }: HeadingRef) {
   const hotkey = useHotkey();
   return (
     <>
-      <Header step={0} heading={heading} title="A calmer desktop, without losing anything">
-        Decay notices the tabs and windows you've stopped using and quietly puts them away. Search
-        and bring anything back in a keystroke.
+      <Header step={0} heading={heading} title={t('welcome.title')}>
+        {t('welcome.text')}
       </Header>
       <ul className="grid gap-2.5">
-        <Point icon={<Clock size={16} />} title="Only active time counts">
-          Nights, weekends and meetings don't age your tabs.
+        <Point icon={<Clock size={16} />} title={t('welcome.active')}>
+          {t('welcome.active.text')}
         </Point>
-        <Point icon={<Shield size={16} />} title="Never loses work">
-          Pinned, playing and unsaved tabs are always protected.
+        <Point icon={<Shield size={16} />} title={t('welcome.safe')}>
+          {t('welcome.safe.text')}
         </Point>
-        <Point icon={<Search size={16} />} title="Everything comes back">
-          Press <Shortcut accelerator={hotkey} /> to search and restore anytime.
+        <Point icon={<Search size={16} />} title={t('welcome.back')}>
+          {richText((p) => t('welcome.back.text', p), {
+            keys: <Shortcut accelerator={hotkey} />,
+          })}
         </Point>
       </ul>
       <p className="mt-5 flex items-center gap-2 text-[13px] text-muted">
-        <Lock size={14} aria-hidden /> Runs entirely on this device. No account. No tracking.
+        <Lock size={14} aria-hidden /> {t('welcome.local')}
       </p>
     </>
   );
@@ -310,7 +322,7 @@ function Welcome({ heading }: HeadingRef) {
 function useRadioKeys<T>(values: T[], value: T, onChange: (v: T) => void) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const onKeyDown = (e: KeyboardEvent) => {
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[logicalArrow(e.key)];
     if (step === undefined) return;
     e.preventDefault();
     const i = (values.indexOf(value) + step + values.length) % values.length;
@@ -330,12 +342,12 @@ function Pace(props: HeadingRef & { value: Preset; onChange: (p: Preset) => void
   );
   return (
     <>
-      <Header step={1} heading={props.heading} title="How tidy do you like it?">
-        You can change this any time in Settings.
+      <Header step={1} heading={props.heading} title={t('pace.title')}>
+        {t('pace.text')}
       </Header>
       <div
         role="radiogroup"
-        aria-label="Pace"
+        aria-label={t('pace.label')}
         className="grid grid-cols-3 gap-3"
         onKeyDown={onKeyDown}
       >
@@ -354,7 +366,7 @@ function Pace(props: HeadingRef & { value: Preset; onChange: (p: Preset) => void
               tabIndex={on ? 0 : -1}
               onClick={() => props.onChange(p.id)}
               className={cx(
-                'relative flex flex-col rounded-xl border p-4 text-left',
+                'relative flex flex-col rounded-xl border p-4 text-start',
                 on
                   ? 'border-accent bg-accent-soft ring-1 ring-accent'
                   : 'border-line bg-surface hover:bg-surface-2',
@@ -363,30 +375,30 @@ function Pace(props: HeadingRef & { value: Preset; onChange: (p: Preset) => void
               {on && (
                 <span
                   aria-hidden
-                  className="absolute top-2.5 right-2.5 grid size-5 place-items-center rounded-full bg-accent-dot text-primary-ink"
+                  className="absolute top-2.5 end-2.5 grid size-5 place-items-center rounded-full bg-accent-dot text-primary-ink"
                 >
                   <Check size={12} />
                 </span>
               )}
-              <span className="font-serif text-lg font-medium">{p.name}</span>
+              <span className="font-serif text-lg font-medium">{t(p.name)}</span>
               {p.id === 'balanced' && (
                 <Chip tone="accent" className="mt-1 self-start">
-                  Recommended
+                  {t('pace.recommended')}
                 </Chip>
               )}
-              <span className="mt-2 mb-4 text-[13px] text-muted">{p.blurb}</span>
+              <span className="mt-2 mb-4 text-[13px] text-muted">{t(p.blurb)}</span>
               {/* Spans: a radio button may only hold phrasing content. */}
               <span className="mt-auto grid gap-1 rounded-lg border border-line bg-surface p-2.5 text-xs">
                 {(
                   [
-                    ['Stale', p.hours.stale],
-                    ['Hide', p.hours.hidden],
-                    ['Archive', p.hours.archive],
+                    [t('pace.stale'), p.hours.stale],
+                    [t('pace.hide'), p.hours.hidden],
+                    [t('pace.archive'), p.hours.archive],
                   ] as const
                 ).map(([k, v]) => (
                   <span key={k} className="flex justify-between">
                     <span className="text-muted">{k}</span>
-                    <span className="font-medium">{v} h</span>
+                    <span className="font-medium">{t('pace.hours', { n: v })}</span>
                   </span>
                 ))}
               </span>
@@ -394,9 +406,7 @@ function Pace(props: HeadingRef & { value: Preset; onChange: (p: Preset) => void
           );
         })}
       </div>
-      <p className="mt-4 text-[13px] text-muted">
-        Hours are active hours — the clock pauses when you're away.
-      </p>
+      <p className="mt-4 text-[13px] text-muted">{t('pace.note')}</p>
     </>
   );
 }
@@ -452,8 +462,8 @@ function Connect({ heading }: HeadingRef) {
   const connected = sorted.filter((b) => b.extensionConnected);
   return (
     <>
-      <Header step={2} heading={heading} title="Connect your browsers">
-        Decay uses a tiny extension to see tab activity. It never reads page content.
+      <Header step={2} heading={heading} title={t('connect.title')}>
+        {t('connect.text')}
       </Header>
       {hostError && (
         <Banner tone="warning" className="mb-3">
@@ -462,7 +472,7 @@ function Connect({ heading }: HeadingRef) {
       )}
       {detectError && (
         <Banner tone="danger" className="mb-3">
-          Decay couldn't look for browsers: {detectError}
+          {t('connect.cantLook', { error: detectError })}
         </Banner>
       )}
       {error && (
@@ -471,10 +481,12 @@ function Connect({ heading }: HeadingRef) {
         </Banner>
       )}
       <LiveRegion className="sr-only">
-        {connected.length > 0 ? `Connected: ${connected.map((b) => b.name).join(', ')}` : ''}
+        {connected.length > 0
+          ? t('connect.connected', { names: formatList(connected.map((b) => b.name)) })
+          : ''}
       </LiveRegion>
       {rows === null ? (
-        !detectError && <p className="text-sm text-muted">Looking for browsers…</p>
+        !detectError && <p className="text-sm text-muted">{t('connect.looking')}</p>
       ) : (
         <ul className="grid gap-2.5">
           {sorted.map((b) => {
@@ -497,7 +509,7 @@ function Connect({ heading }: HeadingRef) {
                   <span className="block text-sm font-semibold">{b.name}</span>
                   <span className="block text-xs text-muted">
                     {opened === b.id && state === 'install'
-                      ? `Add Decay in ${b.name}, then come back here`
+                      ? t('connect.addIn', { name: b.name })
                       : rowDetail(b)}
                   </span>
                 </span>
@@ -506,23 +518,20 @@ function Connect({ heading }: HeadingRef) {
                   <Button
                     size="sm"
                     onClick={() => open(b)}
-                    icon={<ExternalLink size={12} aria-hidden />}
-                    aria-label={`Install extension in ${b.name}`}
+                    icon={<ExternalLink className="rtl:-scale-x-100" size={12} aria-hidden />}
+                    aria-label={t('connect.installIn', { name: b.name })}
                   >
-                    Install extension
+                    {t('connect.install')}
                   </Button>
                 )}
-                {state === 'missing' && <span className="text-xs">Not found</span>}
+                {state === 'missing' && <span className="text-xs">{t('connect.notFound')}</span>}
               </li>
             );
           })}
         </ul>
       )}
       {rows !== null && connected.length === 0 && (
-        <p className="mt-4 text-[13px] text-muted">
-          No browser is connected yet. You can continue and connect one later — Decay picks it up as
-          soon as the extension is installed.
-        </p>
+        <p className="mt-4 text-[13px] text-muted">{t('connect.none')}</p>
       )}
     </>
   );
@@ -543,13 +552,7 @@ function WindowAccess(
   const ask = () =>
     api
       .requestAccessibility()
-      .then((r) =>
-        setNote(
-          r.opened === 'prompt'
-            ? 'macOS is asking — choose “Open System Settings”, then turn on Decay.'
-            : 'In System Settings, turn on Decay under Accessibility.',
-        ),
-      )
+      .then((r) => setNote(r.opened === 'prompt' ? t('windows.prompt') : t('windows.settings')))
       .catch((e) => setNote(errorMessage(e)));
   const option = (
     value: WindowManagement,
@@ -576,13 +579,13 @@ function WindowAccess(
           aria-checked={on}
           tabIndex={on ? 0 : -1}
           onClick={() => props.onChange(value)}
-          className="block w-full text-left after:absolute after:inset-0 after:content-['']"
+          className="block w-full text-start after:absolute after:inset-0 after:content-['']"
         >
           <span className="flex items-center gap-2 font-serif text-lg font-medium">
             {title}
             {value === 'hide' && (
               <Chip tone="accent" className="font-sans">
-                Recommended
+                {t('windows.recommended')}
               </Chip>
             )}
           </span>
@@ -591,7 +594,7 @@ function WindowAccess(
         {on && (
           <span
             aria-hidden
-            className="absolute top-2.5 right-2.5 grid size-5 place-items-center rounded-full bg-accent-dot text-primary-ink"
+            className="absolute top-2.5 end-2.5 grid size-5 place-items-center rounded-full bg-accent-dot text-primary-ink"
           >
             <Check size={12} />
           </span>
@@ -602,22 +605,20 @@ function WindowAccess(
   };
   return (
     <>
-      <Header step={3} heading={props.heading} title="Let Decay tidy app windows too">
-        {mac
-          ? "To hide windows you haven't touched in days, macOS asks you to allow Accessibility access. Decay never reads what's inside your windows."
-          : "Decay can also hide app windows you haven't touched in days. It never reads what's inside them."}
+      <Header step={3} heading={props.heading} title={t('windows.title')}>
+        {mac ? t('windows.text.mac') : t('windows.text')}
       </Header>
       <div
         role="radiogroup"
-        aria-label="What Decay tidies"
+        aria-label={t('windows.label')}
         className="grid gap-3"
         onKeyDown={onKeyDown}
       >
         {option(
           'hide',
           0,
-          'Tabs and windows',
-          mac ? 'Hide stale Finder, Preview and other app windows.' : 'Hide stale app windows.',
+          t('windows.both'),
+          mac ? t('windows.both.mac') : t('windows.both.text'),
           mac && props.value === 'hide' ? (
             // Above the radio's click area, so its buttons work on their own.
             // biome-ignore lint/a11y/noStaticElementInteractions: only stops arrow keys from reaching the radio group
@@ -626,30 +627,32 @@ function WindowAccess(
               onKeyDown={(e) => e.stopPropagation()}
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold">Accessibility</span>
-                <span className="block text-xs text-muted">
-                  macOS System Settings · Privacy &amp; Security
-                </span>
+                <span className="block text-sm font-semibold">{t('windows.ax')}</span>
+                <span className="block text-xs text-muted">{t('windows.ax.where')}</span>
               </span>
               {allowed ? (
-                <StatusDot status="connected" label="Allowed" />
+                <StatusDot status="connected" label={t('windows.ax.allowed')} />
               ) : (
-                <Button size="sm" onClick={ask} icon={<ExternalLink size={12} aria-hidden />}>
-                  Open System Settings
+                <Button
+                  size="sm"
+                  onClick={ask}
+                  icon={<ExternalLink className="rtl:-scale-x-100" size={12} aria-hidden />}
+                >
+                  {t('windows.ax.open')}
                 </Button>
               )}
             </div>
           ) : undefined,
         )}
-        {option('off', 1, 'Tabs only', 'Skip this for now. You can turn it on later in Settings.')}
+        {option('off', 1, t('windows.tabsOnly'), t('windows.tabsOnly.text'))}
       </div>
-      <LiveRegion className="sr-only">{allowed ? 'Accessibility allowed' : note}</LiveRegion>
+      <LiveRegion className="sr-only">{allowed ? t('windows.ax.live') : note}</LiveRegion>
       {mac && (
         <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
           <Info size={14} aria-hidden className="shrink-0" />
           {props.value === 'hide' && !allowed
-            ? note || 'You can continue now: windows are tidied once access is allowed.'
-            : 'You can revoke this at any time in System Settings → Privacy & Security.'}
+            ? note || t('windows.continueNow')
+            : t('windows.revoke')}
         </p>
       )}
     </>
@@ -659,8 +662,8 @@ function WindowAccess(
 function Shadow({ heading }: HeadingRef) {
   return (
     <>
-      <Header step={4} heading={heading} title="First, a quiet week in shadow mode">
-        For 7 days Decay only shows what it would have done. Nothing is closed until you say so.
+      <Header step={4} heading={heading} title={t('shadowStep.title')}>
+        {t('shadowStep.text')}
       </Header>
       <div className="rounded-xl border border-line bg-surface p-4">
         <div aria-hidden className="flex gap-1.5">
@@ -675,21 +678,20 @@ function Shadow({ heading }: HeadingRef) {
           ))}
         </div>
         <p className="mt-2 flex justify-between text-xs text-muted">
-          <span>Day 1 → Day 7</span>
-          <span className="font-semibold text-accent-text">then you decide</span>
+          <span>{t('shadowStep.days')}</span>
+          <span className="font-semibold text-accent-text">{t('shadowStep.decide')}</span>
         </p>
         <ul className="mt-3 grid gap-3 border-t border-line pt-3 text-sm">
           <li className="flex items-center gap-3">
-            <CalendarDays size={16} aria-hidden className="text-accent-text" /> See a daily list of
-            what would be archived
+            <CalendarDays size={16} aria-hidden className="text-accent-text" />{' '}
+            {t('shadowStep.list')}
           </li>
           <li className="flex items-center gap-3">
-            <ShieldCheck size={16} aria-hidden className="text-accent-text" /> Protect anything with
-            one click
+            <ShieldCheck size={16} aria-hidden className="text-accent-text" />{' '}
+            {t('shadowStep.protect')}
           </li>
           <li className="flex items-center gap-3">
-            <Play size={16} aria-hidden className="text-accent-text" /> Turn on automatic mode when
-            it feels right
+            <Play size={16} aria-hidden className="text-accent-text" /> {t('shadowStep.auto')}
           </li>
         </ul>
       </div>
@@ -731,26 +733,23 @@ function Done({ heading }: HeadingRef) {
         tabIndex={-1}
         className="font-serif text-[28px] leading-tight font-medium outline-none"
       >
-        You're all set
+        {t('done.title')}
       </h1>
-      <p className="mt-2 text-sm text-muted">
-        Decay is now in your {platform === 'mac' ? 'menu bar' : 'system tray'}. It's watching
-        quietly.
-      </p>
+      <p className="mt-2 text-sm text-muted">{t('done.text', { place: platform })}</p>
       <div className="mt-5 w-full rounded-xl border border-line bg-surface p-4">
         <Shortcut accelerator={hotkey} className="text-base" />
-        <p className="mt-2 text-xs text-muted">Open search from anywhere</p>
+        <p className="mt-2 text-xs text-muted">{t('done.search')}</p>
       </div>
-      <div className="mt-3 w-full rounded-xl border border-line bg-surface p-4 text-left">
-        <Switch checked={login} onChange={toggle} label="Launch Decay at login" />
+      <div className="mt-3 w-full rounded-xl border border-line bg-surface p-4 text-start">
+        <Switch checked={login} onChange={toggle} label={t('done.login')} />
       </div>
       {error && (
-        <Banner tone="danger" className="mt-3 w-full text-left">
+        <Banner tone="danger" className="mt-3 w-full text-start">
           {error}
         </Banner>
       )}
       <Button variant="primary" size="lg" className="mt-6 w-full" onClick={open}>
-        Open Decay
+        {t('done.open')}
       </Button>
     </div>
   );

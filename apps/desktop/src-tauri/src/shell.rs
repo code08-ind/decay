@@ -14,6 +14,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::core::{AppError, Core, quit_marker};
 use crate::deeplink::{self, DeepLink, Window};
+use crate::i18n::{t, tf};
 
 /// App state beside the engine.
 #[derive(Debug)]
@@ -22,7 +23,7 @@ pub struct Shell {
     /// The registered global hotkey (as stored in settings).
     pub hotkey: Mutex<Option<String>>,
     /// Why the engine couldn't start, if it couldn't.
-    pub fatal: Mutex<Option<String>>,
+    pub fatal: Mutex<Option<crate::core::StartError>>,
     /// What a window should pick up when it opens or is told to (`ui_take_pending`): a
     /// freshly created window would miss an event sent before its page listens.
     pub pending: Mutex<Pending>,
@@ -138,17 +139,19 @@ impl Shell {
             == Onboarded::Yes
     }
 
+    /// Why the engine couldn't start, in the user's language.
     pub fn fatal(&self) -> Option<String> {
-        self.fatal.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+        let fatal = self.fatal.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        fatal.as_ref().map(crate::core::StartError::text)
     }
 }
 
-fn spec(window: Window) -> (&'static str, f64, f64) {
+fn spec(window: Window) -> (String, f64, f64) {
     match window {
-        Window::Panel => ("Search", 680.0, 440.0),
-        Window::Library => ("Decay", 1100.0, 720.0),
-        Window::Settings => ("Settings", 920.0, 640.0),
-        Window::Onboarding => ("Decay Setup Assistant", ONBOARDING_SIZE.0, ONBOARDING_SIZE.1),
+        Window::Panel => (t("window.search"), 680.0, 440.0),
+        Window::Library => ("Decay".into(), 1100.0, 720.0),
+        Window::Settings => (t("window.settings"), 920.0, 640.0),
+        Window::Onboarding => (t("window.onboarding"), ONBOARDING_SIZE.0, ONBOARDING_SIZE.1),
     }
 }
 
@@ -289,7 +292,7 @@ mod mac_panel {
     pub fn build(app: &AppHandle) -> tauri::Result<()> {
         let panel = PanelBuilder::<_, SearchPanel>::new(app, Window::Panel.label())
             .url(WebviewUrl::App("index.html#/panel".into()))
-            .title("Search")
+            .title(crate::i18n::t("window.search"))
             .size(tauri::Size::Logical(tauri::LogicalSize::new(PANEL_SIZE.0, PANEL_SIZE.1)))
             .level(PanelLevel::ModalPanel)
             .collection_behavior(
@@ -500,9 +503,10 @@ pub struct HotkeySwap {
 /// Registers `accelerator` as the panel hotkey alongside the current one. Fails (and
 /// changes nothing) when it isn't a shortcut or another app holds it.
 pub fn try_hotkey(app: &AppHandle, accelerator: &str) -> Result<HotkeySwap, AppError> {
-    let shortcut: Shortcut = accelerator
-        .parse()
-        .map_err(|e| AppError::new("INVALID_INPUT", format!("not a shortcut: {e}")))?;
+    let shortcut: Shortcut =
+        accelerator.parse().map_err(|e: <Shortcut as std::str::FromStr>::Err| {
+            AppError::new("INVALID_INPUT", tf("error.shortcut", &[("error", e.to_string().into())]))
+        })?;
     let current = app.state::<Shell>().hotkey();
     let old = current.as_deref().and_then(|c| c.parse::<Shortcut>().ok());
     if old == Some(shortcut) {
@@ -514,7 +518,15 @@ pub fn try_hotkey(app: &AppHandle, accelerator: &str) -> Result<HotkeySwap, AppE
                 toggle_panel(app);
             }
         })
-        .map_err(|e| AppError::new("CONFLICT", format!("{accelerator} is in use: {e}")))?;
+        .map_err(|e| {
+            AppError::new(
+                "CONFLICT",
+                tf(
+                    "error.shortcutTaken",
+                    &[("shortcut", accelerator.into()), ("error", e.to_string().into())],
+                ),
+            )
+        })?;
     Ok(HotkeySwap { accelerator: accelerator.to_owned(), new: Some(shortcut), old })
 }
 

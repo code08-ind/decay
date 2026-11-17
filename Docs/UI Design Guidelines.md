@@ -162,6 +162,43 @@ Respect the OS text size (Dynamic Type isn't available in WebViews; scale the ro
 - Time is shown as **active hours** with a human equivalent: "60 active hours (≈ 1.5 work weeks)".
 - Sentence case everywhere. No exclamation marks except in onboarding success.
 
+## 10a. Localization (F31, as built P2.7)
+
+- **Every string people see comes from a catalog**, English at launch:
+  - Desktop windows: `apps/desktop/src/strings.ts`.
+  - Extension: `apps/extension/lib/strings.ts`, plus the store listing in `apps/extension/public/_locales/en/messages.json`.
+  - Shared components and Insights: `packages/ui/src/strings.ts`.
+  - App text from Rust (tray, menus, notifications, dialogs, errors, reasons): `apps/desktop/src-tauri/strings/en.json`.
+- **Keys** are `area.what` (`archive.empty`).
+- **Message syntax** is a small ICU subset, the same in TypeScript (`@decay/ui` `i18n.ts`) and Rust (`i18n.rs`):
+  - `{name}` for a parameter.
+  - `{n, plural, =0 {…} one {# tab} other {# tabs}}` for plurals.
+  - `{kind, select, tab {…} other {…}}` for choices.
+  - Write whole sentences with parameters. Never join fragments: word order differs between languages.
+  - Put embedded elements (bold site names, shortcuts) in with `richText`.
+- **Never compare a translated string** (`label === 'Undone'`, `day === 'Today'`): compare the data.
+- **Dates and numbers** go through `formatDate`, `formatNumber`, `formatList` and the percent helpers, never `toLocale…` with `[]` / `undefined`.
+- **Layouts are right-to-left safe:**
+  - Use logical classes: `ms-` / `me-`, `ps-` / `pe-`, `start-` / `end-`, `text-start` / `text-end`, `border-s` / `border-e`.
+  - Mirror direction icons (arrows, chevrons, undo, external link) with `rtl:-scale-x-100`.
+  - Swap Left / Right arrow keys with `logicalArrow`.
+  - The page's `lang` and `dir` follow the locale.
+- **The locale** follows the `locale` setting: `system` or a tag. Settings → General → Language lists the languages that have a catalog (and a stored tag without one, so the menu says what's set).
+  - A language without a catalog resolves to English with its region (`de-AT` → `en-AT`), in TypeScript (`resolveLocale`) and Rust alike. The text, plural rules, `lang` and `dir` are then English's; the region's date and number formats are kept.
+  - `system` in the desktop windows is the OS language as Rust reads it (`system_language`), so the windows agree with the tray and menus.
+  - A desktop window is drawn once the language is known. A language change re-renders every window in place: no remount, so state, focus and toasts are kept.
+  - Rust formats numbers and picks plural branches as `Intl` does for the main language families. A plural without a number takes `other` in both.
+- **Tests keep it this way:**
+  - Each package checks that its catalog is well formed and that translations use English's parameters.
+  - Each package checks that no `.tsx` / `.ts` writes text straight into JSX, text attributes, `?:` / `??` children, `notify` / `setError` / `failed` arguments, or `label` / `title` / … properties.
+  - The Rust tests check that every key the app uses exists. Mark deliberate exceptions such as key caps with `i18n-ignore`.
+- **Pseudo-locales** are offered in development builds: `en-XA` (accented, ~30 % longer, in brackets) and `ar-XB` (the same, right to left). Use them to find untranslated text and layouts that break.
+- **Adding a language:**
+  - Add `TRANSLATIONS[tag]` in each `strings.ts` (`makeT` registers the language).
+  - Add `strings/<tag>.json` to `TRANSLATIONS` in `i18n.rs`, plus its plural rule if new.
+  - Add `public/_locales/<lang>/messages.json` for the extension.
+  - Add the release's What's New text.
+
 ## 11. Accessibility checklist
 
 - [ ] Every interactive element is reachable by Tab/arrow keys, with a visible focus ring.

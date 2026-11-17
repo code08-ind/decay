@@ -1,18 +1,19 @@
 // Settings without the UI (P1.12): the tabs, rule wording, threshold multipliers and
 // shortcut recording.
 import type { Rule, RuleAction, RuleInput, RuleScope, Thresholds } from '../api';
+import { type Key, t } from '../strings';
 
 export const TABS = [
-  { id: 'general', label: 'General' },
-  { id: 'aging', label: 'Aging' },
-  { id: 'protection', label: 'Protection' },
-  { id: 'browsers', label: 'Browsers' },
-  { id: 'privacy', label: 'Privacy & data' },
-  { id: 'shortcuts', label: 'Shortcuts' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'updates', label: 'Updates' },
-  { id: 'about', label: 'About' },
-] as const;
+  { id: 'general', label: 'settings.tab.general' },
+  { id: 'aging', label: 'settings.tab.aging' },
+  { id: 'protection', label: 'settings.tab.protection' },
+  { id: 'browsers', label: 'settings.tab.browsers' },
+  { id: 'privacy', label: 'settings.tab.privacy' },
+  { id: 'shortcuts', label: 'settings.tab.shortcuts' },
+  { id: 'notifications', label: 'settings.tab.notifications' },
+  { id: 'updates', label: 'settings.tab.updates' },
+  { id: 'about', label: 'settings.tab.about' },
+] as const satisfies readonly { id: string; label: Key }[];
 
 export type TabId = (typeof TABS)[number]['id'];
 
@@ -34,13 +35,13 @@ const MIN_H = 1;
 const MAX_H = 720;
 
 /** Thresholds valid for the core: each 1–720 h, strictly increasing. */
-export function thresholdsProblem(t: Thresholds): string | null {
-  const vals = [t.stale, t.hidden, t.archive];
+export function thresholdsProblem(h: Thresholds): string | null {
+  const vals = [h.stale, h.hidden, h.archive];
   if (vals.some((h) => !Number.isFinite(h) || h < MIN_H || h > MAX_H)) {
-    return 'Each threshold is 1 to 720 active hours';
+    return t('thresholds.range');
   }
-  if (!(t.stale < t.hidden && t.hidden < t.archive)) {
-    return 'Stale comes before hidden, and hidden before archived';
+  if (!(h.stale < h.hidden && h.hidden < h.archive)) {
+    return t('thresholds.order');
   }
   return null;
 }
@@ -59,9 +60,9 @@ export function paceOf(t: Thresholds | null | undefined): keyof typeof PRESET_HO
 /** "≈ 1.5 work days" (8 active hours a day; 5 days a week). */
 export function workTime(hours: number): string {
   const days = hours / 8;
-  if (days < 1) return `≈ ${Math.round(hours)} h of work`;
-  if (days < 5) return `≈ ${Math.round(days * 2) / 2} work days`;
-  return `≈ ${Math.round((days / 5) * 2) / 2} work weeks`;
+  if (days < 1) return t('workTime.hours', { n: Math.round(hours) });
+  if (days < 5) return t('workTime.days', { n: Math.round(days * 2) / 2 });
+  return t('workTime.weeks', { n: Math.round((days / 5) * 2) / 2 });
 }
 
 /**
@@ -106,43 +107,33 @@ export function intentOf(
   return 'protect';
 }
 
-export const SCOPE_TEXT: Record<RuleScope, string> = {
-  domain: 'Site',
-  urlGlob: 'Page address',
-  titleRegex: 'Title',
-  app: 'App',
-  global: 'Everything',
-};
+/** A scope's name ("Site"). */
+export const scopeText = (scope: RuleScope): string => t(`rule.scope.${scope}`);
 
-const ACTION_TEXT: Record<RuleAction, string> = {
-  protect: 'Never archive',
-  exclude: 'Never store',
-  customThreshold: 'Custom timing',
-  closeAllowed: 'May close',
-};
+const actionText = (action: RuleAction): string => t(`rule.action.${action}`);
 
 /** The chip on a rule row. */
 export function actionChip(
   rule: Pick<Rule, 'action' | 'thresholdHours'>,
   global: Thresholds,
 ): string {
-  if (rule.action !== 'customThreshold') return ACTION_TEXT[rule.action];
-  return intentOf(rule, global) === 'sooner' ? 'Archive sooner' : 'Keep longer';
+  if (rule.action !== 'customThreshold') return actionText(rule.action);
+  return intentOf(rule, global) === 'sooner' ? t('rule.chip.sooner') : t('rule.chip.longer');
 }
 
 /** The sentence under a rule's pattern ("Archive after 120 active h"). */
 export function ruleSentence(rule: Pick<Rule, 'action' | 'thresholdHours' | 'scope'>): string {
   switch (rule.action) {
     case 'protect':
-      return 'Never archived';
+      return t('rule.sentence.protect');
     case 'exclude':
-      return 'Never recorded or stored';
+      return t('rule.sentence.exclude');
     case 'closeAllowed':
-      return 'Windows may be closed, not only hidden';
+      return t('rule.sentence.closeAllowed');
     default:
       return rule.thresholdHours
-        ? `Archived after ${rule.thresholdHours.archive} active h`
-        : 'Custom timing (thresholds missing)';
+        ? t('rule.sentence.after', { n: rule.thresholdHours.archive })
+        : t('rule.sentence.missing');
   }
 }
 

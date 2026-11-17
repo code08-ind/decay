@@ -5,7 +5,6 @@
 //! notification, by `notify`.
 
 use std::collections::HashMap;
-use std::fmt::Write as _;
 
 use decay_core::{EventType, RuleAction, RuleScope};
 use decay_store::Store;
@@ -63,30 +62,20 @@ impl DailySummary {
     /// The notification's text ("Yesterday Decay archived 14 tabs and hid 3 windows. 2
     /// things are worth a look.").
     pub fn sentence(&self) -> String {
-        let plural =
-            |n: u32, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
-        let mut done = Vec::new();
-        if self.archived_tabs > 0 {
-            done.push(format!("archived {}", plural(self.archived_tabs, "tab", "tabs")));
-        }
-        if self.hidden_windows > 0 {
-            done.push(format!("hid {}", plural(self.hidden_windows, "window", "windows")));
-        }
-        let mut out = if done.is_empty() {
-            "Yesterday Decay didn't tidy anything.".to_owned()
-        } else {
-            format!("Yesterday Decay {}.", done.join(" and "))
+        use crate::i18n::tf;
+        let counts = [("tabs", self.archived_tabs.into()), ("windows", self.hidden_windows.into())];
+        let key = match (self.archived_tabs, self.hidden_windows) {
+            (0, 0) => "summary.nothing",
+            (_, 0) => "summary.tabs",
+            (0, _) => "summary.windows",
+            _ => "summary.both",
         };
+        let mut out = tf(key, &counts);
         if self.restored > 0 {
-            let _ = write!(out, " You reopened {}.", plural(self.restored, "item", "items"));
+            out = tf("summary.reopened", &[("text", out.into()), ("n", self.restored.into())]);
         }
         if !self.hints.is_empty() {
-            let n = u32::try_from(self.hints.len()).unwrap_or(u32::MAX);
-            let _ = write!(
-                out,
-                " {} worth a look.",
-                if n == 1 { "1 thing is".to_owned() } else { format!("{n} things are") }
-            );
+            out = tf("summary.hints", &[("text", out.into()), ("n", self.hints.len().into())]);
         }
         out
     }

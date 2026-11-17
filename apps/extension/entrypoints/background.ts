@@ -1,3 +1,4 @@
+import { formatDate, setLocale } from '@decay/ui';
 import { Adapter } from '@/lib/bridge/adapter';
 import {
   adapterDeps,
@@ -27,6 +28,7 @@ import { probeStore, probeTab, syncProbeScripts } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { protectRuleFor, protectTargetFor } from '@/lib/shadow/actions';
+import { t } from '@/lib/strings';
 import { type DecayRequest, type DecayResponse, isDecayRequest } from '@/lib/sweep/messages';
 import { chromeApi, chromeCommands, detectAppId } from '@/lib/tracker/browser-api';
 import { TICK_MS } from '@/lib/tracker/clock';
@@ -45,7 +47,8 @@ const CLEAR_ALARM = 'decay-clear:';
 const UNDO_TOAST_MS = 30_000;
 /** How long the popup waits for the app (a restore waits for the browser's own ack). */
 const APP_REQUEST_MS = 30_000;
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+/** Notifications and messages in the user's language (the `locale` setting). */
+const followLocale = async () => setLocale((await settings.getAll()).locale);
 
 export default defineBackground(() => {
   // --- Who closes tabs: this extension or the Decay app (P1.4) ----------------------
@@ -66,7 +69,7 @@ export default defineBackground(() => {
     ...chromeCommands,
     async removeTab(tabId: number) {
       // Refused closes count as failed: the item goes back to its earlier state.
-      if (!localMayClose()) throw new Error('The Decay app manages tabs now');
+      if (!localMayClose()) throw new Error(t('error.appManagesTabs'));
       await chromeCommands.removeTab(tabId);
     },
   };
@@ -121,7 +124,7 @@ export default defineBackground(() => {
         await writeLinkStatus(
           result.ok
             ? { ...status, migratedAt: result.record.firstAt, detail: undefined }
-            : { ...status, detail: `Couldn't send the archive to the app: ${result.error}` },
+            : { ...status, detail: t('app.sendFailed', { error: result.error }) },
         );
       }
     })().finally(() => {
@@ -203,12 +206,13 @@ export default defineBackground(() => {
     const sweep = result.sweep;
     if (!sweep?.archived) return;
     const id = `${SWEEP_NOTIFICATION}${sweep.id}`;
+    await followLocale();
     await browser.notifications.create(id, {
       type: 'basic',
       iconUrl: browser.runtime.getURL('/icon/128.png'),
-      title: `Archived ${plural(sweep.archived, 'tab')}`,
-      message: "Tabs you hadn't used in a while. Undo brings them all back.",
-      buttons: [{ title: 'Undo' }, { title: 'View' }],
+      title: t('notify.archived', { n: sweep.archived }),
+      message: t('notify.archived.text'),
+      buttons: [{ title: t('notify.undo') }, { title: t('notify.view') }],
       // Stays on screen (OS banners otherwise vanish after ~5 s); the alarm removes it.
       requireInteraction: true,
       priority: 0,
@@ -259,15 +263,14 @@ export default defineBackground(() => {
     if (buttonIndex === 0) {
       run('undo from notification', async () => {
         const r = await tracker.undoSweep(sweepId);
+        await followLocale();
         await browser.notifications.create(`decay-undone:${sweepId}`, {
           type: 'basic',
           iconUrl: browser.runtime.getURL('/icon/128.png'),
           title: r.failed
-            ? `Restored ${r.restored} of ${r.restored + r.failed} tabs`
-            : `Restored ${plural(r.restored, 'tab')}`,
-          message: r.failed
-            ? 'Some tabs could not be reopened. Try Undo again from Sweeps.'
-            : 'They are back in their windows.',
+            ? t('notify.restoredSome', { n: r.restored, total: r.restored + r.failed })
+            : t('notify.restored', { n: r.restored }),
+          message: r.failed ? t('notify.restoredSome.text') : t('notify.restored.text'),
           priority: 0,
         });
       });
@@ -294,9 +297,7 @@ export default defineBackground(() => {
     const ack = reply.payload as Ack | null;
     if (reply.type !== kinds.ack || ack?.ok !== true) {
       const reason = ack?.error?.message;
-      throw new Error(
-        reason ? `The Decay app said: ${reason}.` : "The Decay app couldn't do that.",
-      );
+      throw new Error(reason ? t('app.said', { reason }) : t('app.failed'));
     }
     return ack.result as T;
   };
@@ -304,7 +305,7 @@ export default defineBackground(() => {
   const handle = async (message: DecayRequest): Promise<DecayResponse> => {
     switch (message.type) {
       case 'decay.search': {
-        if (!adapterMode()) return { ok: false, error: 'The Decay app is not connected.' };
+        if (!adapterMode()) return { ok: false, error: t('app.notConnected') };
         const search = await askApp<ArchiveSearchResult>(kinds.archiveSearch, {
           query: message.query,
           limit: message.limit ?? 50,
@@ -327,10 +328,7 @@ export default defineBackground(() => {
         if (!localMayClose()) {
           return {
             ok: false,
-            error:
-              bridge.state === 'connected'
-                ? 'The Decay app runs sweeps now.'
-                : 'Connecting to the Decay app. Try again in a moment.',
+            error: bridge.state === 'connected' ? t('app.runsSweeps') : t('app.connectingRetry'),
           };
         }
         return sweepNow();
@@ -396,15 +394,13 @@ export default defineBackground(() => {
   /** "Sweep now": real sweep in automatic mode, a simulation in shadow mode. */
   const sweepNow = async (): Promise<DecayResponse> => {
     const all = await settings.getAll();
+    setLocale(all.locale);
     if (all.mode === 'paused') {
-      return { ok: false, error: 'Decay is paused. Resume it to run a sweep.' };
+      return { ok: false, error: t('sweepNow.paused') };
     }
     if (all.holdUntil !== null && all.holdUntil > Date.now()) {
-      const until = new Date(all.holdUntil).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-      });
-      return { ok: false, error: `Decay is on hold until ${until}. Nothing is closed.` };
+      const until = formatDate(all.holdUntil, { hour: 'numeric', minute: '2-digit' });
+      return { ok: false, error: t('sweepNow.hold', { time: until }) };
     }
     const r = await tickAndAnnounce(() => tracker.sweepNow());
     if (all.mode === 'shadow') return { ok: true, simulated: r.shadowFlagged ?? 0 };
@@ -427,14 +423,21 @@ export default defineBackground(() => {
       1,
       Math.round((Date.now() - (item.archivedAt ?? Date.now())) / 60_000),
     );
-    const ago = minutes < 60 ? plural(minutes, 'minute') : plural(Math.round(minutes / 60), 'hour');
+    await followLocale();
+    const ago =
+      minutes < 60
+        ? t('notify.minutes', { n: minutes })
+        : t('notify.hours', { n: Math.round(minutes / 60) });
     await browser.notifications
       .create(id, {
         type: 'basic',
         iconUrl: browser.runtime.getURL('/icon/128.png'),
-        title: `Always keep ${target.label} open?`,
-        message: `You brought this back ${ago} after it was archived.`,
-        buttons: [{ title: `Always keep ${target.label}` }, { title: 'Not now' }],
+        title: t('notify.keep', { site: target.label }),
+        message: t('notify.keep.text', { ago }),
+        buttons: [
+          { title: t('notify.keep.yes', { site: target.label }) },
+          { title: t('notify.keep.no') },
+        ],
         priority: 0,
       })
       .catch((e) => console.error('[decay] notification failed', e));

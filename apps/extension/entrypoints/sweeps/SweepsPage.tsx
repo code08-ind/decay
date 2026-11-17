@@ -1,8 +1,10 @@
+import { setLocale } from '@decay/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { SweepHistory } from '@/components/SweepHistory';
 import { db } from '@/lib/db/db';
 import { settings } from '@/lib/settings/settings';
+import { t } from '@/lib/strings';
 import { type SweepHistory as History, loadSweepHistory } from '@/lib/sweep/history';
 import { sendDecay } from '@/lib/sweep/messages';
 import { faviconFor } from '@/lib/ui/favicon';
@@ -10,9 +12,12 @@ import { applyTheme } from '@/lib/ui/theme';
 
 const REFRESH_MS = 15_000;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export function SweepsPage() {
+  // The tab's name, in the page's language (again after a change).
+  useEffect(() => {
+    document.title = t('title.sweeps');
+  });
   const [history, setHistory] = useState<History | null>(null);
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState<string | null>(null);
@@ -24,13 +29,14 @@ export function SweepsPage() {
     const seq = ++loadSeq.current;
     try {
       const all = await settings.getAll();
+      setLocale(all.locale); // before the history: it's made of words
       const next = await loadSweepHistory(db, all.mode);
       if (seq !== loadSeq.current) return;
       applyTheme(all.theme);
       setHistory(next);
       setNow(Date.now());
     } catch (e) {
-      if (seq === loadSeq.current) setError(`Couldn't load sweeps: ${message(e)}`);
+      if (seq === loadSeq.current) setError(t('load.sweeps', { error: message(e) }));
     }
   }, []);
 
@@ -60,9 +66,9 @@ export function SweepsPage() {
       const r = await sendDecay({ type: 'decay.undoSweep', sweepId });
       const restored = r.restored ?? 0;
       if (r.failed) {
-        return `Restored ${restored} of ${restored + r.failed} tabs. Try Undo again for the rest.`;
+        return t('sweepsPage.restoredSome', { n: restored, total: restored + r.failed });
       }
-      return `Restored ${plural(restored, 'tab')}.`;
+      return t('popup.restored', { n: restored });
     });
 
   const onSweepNow = () =>
@@ -70,14 +76,14 @@ export function SweepsPage() {
       const r = await sendDecay({ type: 'decay.sweepNow' });
       if (r.simulated !== undefined) {
         return r.simulated
-          ? `Simulation: Decay would archive ${plural(r.simulated, 'more tab')}. Nothing was closed — see the shadow review.`
-          : 'Simulation: no new tabs would be archived right now. Nothing was closed.';
+          ? t('sweepsPage.simulated', { n: r.simulated })
+          : t('sweepsPage.simulatedNone');
       }
       if (!r.archived && r.failed) {
-        return `Nothing archived: ${plural(r.failed, 'tab')} stayed open (in use, unsaved work, or the page changed).`;
+        return t('sweepsPage.stayedOpen', { n: r.failed });
       }
-      if (!r.archived) return 'Nothing to archive right now: no tab is old enough.';
-      return `Archived ${plural(r.archived, 'tab')}.`;
+      if (!r.archived) return t('sweepsPage.nothing');
+      return t('sweepsPage.archived', { n: r.archived });
     });
 
   const onRestore = (ids: string[]) =>
@@ -85,14 +91,14 @@ export function SweepsPage() {
       const r = await sendDecay({ type: 'decay.restore', ids });
       const restored = r.restored ?? 0;
       return r.failed
-        ? `Restored ${restored} of ${restored + r.failed} tabs.`
-        : `Restored ${plural(restored, 'tab')}.`;
+        ? t('popup.restoredSome', { n: restored, total: restored + r.failed })
+        : t('popup.restored', { n: restored });
     });
 
   if (!history) {
     return (
       <p className="p-10 text-muted" aria-busy={!error}>
-        {error ?? 'Loading…'}
+        {error ?? t('common.loading')}
       </p>
     );
   }

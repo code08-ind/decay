@@ -10,32 +10,37 @@ import {
   Minus,
   PanelTop,
   Share2,
+  ShieldCheck,
   Sparkles,
   X,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
-import { type Goal, type Insights, RANGES, type RangeDays } from './insights';
+import { formatDate, formatNumber, logicalArrow } from '../i18n';
+import { t } from '../strings';
+import { type Goal, type Insights, percent, RANGES, type RangeDays } from './insights';
 import type { Mode } from './types';
-
-function percent(rate: number | null): string {
-  if (rate === null) return '—';
-  if (rate > 0 && rate < 0.01) return '<1%';
-  return `${Math.round(rate * 100)}%`;
-}
 
 /** What differs between the extension's page and the app's (where it's computed). */
 export interface InsightsCopy {
   intro: string;
   privacy: string;
-  shareWhat: string;
+  /** Who made the shared file (the share dialog says what else is in it). */
+  client: 'browser' | 'app';
 }
 
-export const BROWSER_COPY: InsightsCopy = {
-  intro:
-    'How your browsing has settled since you started using Decay. Computed in this browser only.',
-  privacy: 'Computed in this browser. Nothing leaves it unless you share.',
-  shareWhat: 'and the extension and browser version',
-};
+/** The extension's wording (in the current locale). */
+export const browserCopy = (): InsightsCopy => ({
+  intro: t('insights.intro.browser'),
+  privacy: t('insights.privacy.browser'),
+  client: 'browser',
+});
+
+/** The desktop app's wording (in the current locale). */
+export const appCopy = (): InsightsCopy => ({
+  intro: t('insights.intro.app'),
+  privacy: t('insights.privacy.app'),
+  client: 'app',
+});
 
 export interface InsightsProps {
   insights: Insights;
@@ -54,18 +59,23 @@ export interface InsightsProps {
   copy?: InsightsCopy;
   /** Inside another page (the app's Library): no full-page background or margins. */
   embedded?: boolean;
+  /** "Always keep" on the restored-most rows: makes a protect rule for the site. Rejects
+   * on failure (the page shows the error); without it, the rows have no button. */
+  onProtectSite?: (domain: string) => Promise<void>;
+  /** Sites already always kept (an enabled protect rule for the domain). */
+  protectedSites?: ReadonlySet<string>;
 }
 
-const fmt = (n: number) => n.toLocaleString();
+const fmt = (n: number) => formatNumber(n);
 const shortDay = (day: string) =>
-  new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  formatDate(new Date(`${day}T12:00:00`), { month: 'short', day: 'numeric' });
 
 /** Insights (Designs/14, adapted to what the extension measures): on-device metrics. */
 export function InsightsView(props: InsightsProps) {
   const { insights: data } = props;
   const mostTidied = data.topArchived[0];
   const regret = data.regretRate ?? data.shadowRegretRate;
-  const copy = props.copy ?? BROWSER_COPY;
+  const copy = props.copy ?? browserCopy();
   return (
     <div className={props.embedded ? 'text-ink' : 'min-h-screen bg-canvas text-ink'}>
       {/* Inert while the share dialog is open: focus stays in the dialog. */}
@@ -73,13 +83,13 @@ export function InsightsView(props: InsightsProps) {
         {props.header}
 
         <main className={props.embedded ? '' : 'mx-auto max-w-6xl px-4 py-8 sm:px-10'}>
-          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">Insights</h1>
+          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('insights.title')}</h1>
           <p className="mt-2 text-muted">{copy.intro}</p>
 
           {/* Filters scope everything below them: one row, above the content. */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <fieldset className="inline-flex rounded-full bg-surface-2 p-1">
-              <legend className="sr-only">Time range</legend>
+              <legend className="sr-only">{t('insights.range')}</legend>
               {RANGES.map((r) => (
                 <label
                   key={r}
@@ -95,24 +105,24 @@ export function InsightsView(props: InsightsProps) {
                     onChange={() => props.onRangeChange(r)}
                     className="sr-only"
                   />
-                  Last {r} days
+                  {t('insights.lastDays', { n: r })}
                 </label>
               ))}
             </fieldset>
-            <div className="flex gap-2 sm:ml-auto">
+            <div className="flex gap-2 sm:ms-auto">
               <button
                 type="button"
                 onClick={props.onExportCsv}
                 className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
               >
-                <Download size={16} aria-hidden /> Export CSV (all days)
+                <Download size={16} aria-hidden /> {t('insights.exportCsv')}
               </button>
               <button
                 type="button"
                 onClick={props.onShare}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
               >
-                <Share2 size={16} aria-hidden /> Share with beta team
+                <Share2 size={16} aria-hidden /> {t('insights.share')}
               </button>
             </div>
           </div>
@@ -126,9 +136,12 @@ export function InsightsView(props: InsightsProps) {
             </p>
           )}
 
-          <section aria-label="Summary" className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Tile label="Median open tabs" icon={<PanelTop size={18} aria-hidden />}>
-              <Value>{data.openTabs === null ? '—' : fmt(data.openTabs)}</Value>
+          <section
+            aria-label={t('insights.summary')}
+            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <Tile label={t('insights.medianOpenTabs')} icon={<PanelTop size={18} aria-hidden />}>
+              <Value>{data.openTabs === null ? t('insights.none') : fmt(data.openTabs)}</Value>
               {data.openTabsChange !== null && data.firstWeekOpenTabs !== null ? (
                 <p className="mt-2 flex items-center gap-2 text-sm text-muted">
                   <span className="inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 text-chip-ink">
@@ -140,48 +153,48 @@ export function InsightsView(props: InsightsProps) {
                     {percent(Math.abs(data.openTabsChange))}
                     <span className="sr-only">
                       {data.openTabsChange < 0
-                        ? 'fewer'
+                        ? t('insights.change.fewer')
                         : data.openTabsChange > 0
-                          ? 'more'
-                          : 'no change'}
+                          ? t('insights.change.more')
+                          : t('insights.change.none')}
                     </span>
                   </span>
-                  last 7 days vs {fmt(data.firstWeekOpenTabs)} in week 1
+                  {t('insights.vsWeek1', { n: data.firstWeekOpenTabs })}
                 </p>
               ) : (
                 <Sub>
                   {data.openTabs === null
-                    ? 'Counted every hour while you browse'
-                    : 'Compared with week 1 after 14 days'}
+                    ? t('insights.countedHourly')
+                    : t('insights.comparedAfter14')}
                 </Sub>
               )}
             </Tile>
-            <Tile label="Regret rate" icon={<History size={18} aria-hidden />}>
-              <Value>{regret === null ? '—' : percent(regret)}</Value>
+            <Tile label={t('insights.regretRate')} icon={<History size={18} aria-hidden />}>
+              <Value>{percent(regret)}</Value>
               <Sub>
                 {data.regretRate !== null
-                  ? `${fmt(data.restored24h)} restored within a day`
+                  ? t('insights.restoredWithinDay', { n: data.restored24h })
                   : data.shadowRegretRate !== null
-                    ? 'Shadow mode: used again within a day'
-                    : 'Nothing archived yet'}
+                    ? t('insights.shadowRegret')
+                    : t('insights.nothingArchived')}
               </Sub>
             </Tile>
-            <Tile label="Items archived" icon={<Archive size={18} aria-hidden />}>
+            <Tile label={t('insights.itemsArchived')} icon={<Archive size={18} aria-hidden />}>
               <Value>{fmt(data.archived)}</Value>
               <Sub>
                 {data.undos
-                  ? `${fmt(data.undos)} sweep${data.undos === 1 ? '' : 's'} undone`
-                  : `In the last ${data.range} days`}
+                  ? t('insights.sweepsUndone', { n: data.undos })
+                  : t('insights.inLastDays', { n: data.range })}
               </Sub>
             </Tile>
-            <Tile label="Most tidied site" icon={<Sparkles size={18} aria-hidden />}>
+            <Tile label={t('insights.mostTidied')} icon={<Sparkles size={18} aria-hidden />}>
               <p className="mt-3 truncate text-2xl font-medium" title={mostTidied?.domain}>
-                {mostTidied?.domain ?? '—'}
+                {mostTidied?.domain ?? t('insights.none')}
               </p>
               <Sub>
                 {mostTidied
-                  ? `${fmt(mostTidied.count)} tab${mostTidied.count === 1 ? '' : 's'} quietly archived`
-                  : 'Nothing archived yet'}
+                  ? t('insights.quietlyArchived', { n: mostTidied.count })
+                  : t('insights.nothingArchived')}
               </Sub>
             </Tile>
           </section>
@@ -194,18 +207,20 @@ export function InsightsView(props: InsightsProps) {
             <Goals goals={data.goals} privacy={copy.privacy} />
             <div className="grid gap-6 sm:grid-cols-2 lg:col-start-1 lg:row-start-2">
               <DomainList
-                title="Archived most"
-                subtitle={`Sites Decay put away in the last ${data.range} days`}
+                title={t('insights.archivedMost')}
+                subtitle={t('insights.archivedMost.sub', { n: data.range })}
                 rows={data.topArchived}
-                unit="tab"
-                empty="Nothing archived in this range."
+                count={(n) => t('insights.tabs', { n })}
+                empty={t('insights.archivedMost.empty')}
               />
               <DomainList
-                title="Restored most often"
-                subtitle="All time, including Undo — consider “Never archive this site”"
+                title={t('insights.restoredMost')}
+                subtitle={t('insights.restoredMost.sub')}
                 rows={data.restoredMost}
-                unit="restore"
-                empty="You haven't restored anything yet."
+                count={(n) => t('insights.restores', { n })}
+                empty={t('insights.restoredMost.empty')}
+                onProtect={props.onProtectSite}
+                protectedSites={props.protectedSites}
               />
             </div>
           </div>
@@ -217,7 +232,7 @@ export function InsightsView(props: InsightsProps) {
           json={props.sharePreview}
           onDownload={props.onShareDownload}
           onCancel={props.onShareCancel}
-          shareWhat={copy.shareWhat}
+          client={copy.client}
         />
       )}
     </div>
@@ -280,14 +295,14 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 id="open-tabs-title" className="font-serif text-2xl">
-            Open tabs, last {insights.range} days
+            {t('insights.chart.title', { n: insights.range })}
           </h2>
-          <p className="text-sm text-muted">Median open tabs per day, counted hourly</p>
+          <p className="text-sm text-muted">{t('insights.chart.sub')}</p>
         </div>
         {baseline !== null && (
           <p className="flex items-center gap-2 text-sm text-muted">
-            <span className="inline-block w-4 border-t border-faint" aria-hidden /> First week:{' '}
-            {fmt(baseline)}
+            <span className="inline-block w-4 border-t border-faint" aria-hidden />{' '}
+            {t('insights.chart.firstWeek', { n: baseline })}
           </p>
         )}
       </div>
@@ -299,7 +314,7 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
             {[top, top / 2, 0].map((t) => (
               <span
                 key={t}
-                className="absolute right-0 -translate-y-1/2"
+                className="absolute end-0 -translate-y-1/2"
                 style={{ bottom: pctOf(t) }}
               >
                 {fmt(Math.round(t))}
@@ -321,13 +336,13 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
                 style={{ bottom: pctOf(baseline) }}
                 aria-hidden
               >
-                <span className="absolute right-0 -translate-y-full rounded-full bg-surface px-1.5 text-xs text-muted">
-                  {fmt(baseline)} tabs
+                <span className="absolute end-0 -translate-y-full rounded-full bg-surface px-1.5 text-xs text-muted">
+                  {t('insights.tabs', { n: baseline })}
                 </span>
               </div>
             )}
             <ul
-              aria-label="Open tabs per day (arrow keys move between days)"
+              aria-label={t('insights.chart.days')}
               className="absolute inset-0 flex items-end gap-[2px] border-b border-line-strong"
             >
               {insights.days.map((d, i) => (
@@ -339,14 +354,15 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
                     type="button"
                     tabIndex={i === focusIdx ? 0 : -1}
                     onKeyDown={(e) => {
+                      const key = logicalArrow(e.key);
                       const to =
-                        e.key === 'ArrowLeft'
+                        key === 'ArrowLeft'
                           ? i - 1
-                          : e.key === 'ArrowRight'
+                          : key === 'ArrowRight'
                             ? i + 1
-                            : e.key === 'Home'
+                            : key === 'Home'
                               ? 0
-                              : e.key === 'End'
+                              : key === 'End'
                                 ? insights.days.length - 1
                                 : null;
                       if (to === null) return;
@@ -354,7 +370,11 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
                       moveFocus(to);
                     }}
                     className="group flex h-full w-full items-end justify-center rounded-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
-                    aria-label={`${shortDay(d.day)}: ${d.openTabs === null ? 'no data' : `${d.openTabs} open tabs`}`}
+                    aria-label={t('insights.chart.bar', {
+                      day: shortDay(d.day),
+                      data: d.openTabs === null ? 'none' : 'some',
+                      n: d.openTabs ?? 0,
+                    })}
                     onPointerEnter={() => setHover(i)}
                     onPointerLeave={() => setHover((h) => (h === i ? null : h))}
                     onFocus={() => {
@@ -376,13 +396,15 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
             {hovered && hover !== null && (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-full bg-primary px-3 py-1 text-xs whitespace-nowrap text-primary-ink"
+                className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rtl:translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs whitespace-nowrap text-primary-ink"
                 style={{
-                  left: `clamp(48px, ${((hover + 0.5) / insights.days.length) * 100}%, calc(100% - 48px))`,
+                  insetInlineStart: `clamp(48px, ${((hover + 0.5) / insights.days.length) * 100}%, calc(100% - 48px))`,
                 }}
               >
                 <strong>
-                  {hovered.openTabs === null ? 'No data' : `${hovered.openTabs} tabs`}
+                  {hovered.openTabs === null
+                    ? t('insights.chart.tip.none')
+                    : t('insights.tabs', { n: hovered.openTabs })}
                 </strong>{' '}
                 · {shortDay(hovered.day)}
               </div>
@@ -399,25 +421,29 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
         </div>
       ) : (
         <p className="mt-6 rounded-tile bg-surface-2 px-4 py-10 text-center text-sm text-muted">
-          No samples yet. Decay counts your open tabs once an hour while you browse.
+          {t('insights.chart.empty')}
         </p>
       )}
 
       {hasData && (
         <details className="mt-4 text-sm">
-          <summary className="cursor-pointer text-muted hover:text-ink">Show as table</summary>
-          <table className="mt-2 w-full text-left">
+          <summary className="cursor-pointer text-muted hover:text-ink">
+            {t('insights.chart.table')}
+          </summary>
+          <table className="mt-2 w-full text-start">
             <thead className="text-muted">
               <tr>
-                <th className="py-1 font-medium">Day</th>
-                <th className="py-1 text-right font-medium">Open tabs (median)</th>
+                <th className="py-1 font-medium">{t('insights.chart.day')}</th>
+                <th className="py-1 text-end font-medium">{t('insights.chart.median')}</th>
               </tr>
             </thead>
             <tbody>
               {insights.days.map((d) => (
                 <tr key={d.day} className="border-t border-line">
                   <td className="py-1">{shortDay(d.day)}</td>
-                  <td className="py-1 text-right font-mono">{d.openTabs ?? '—'}</td>
+                  <td className="py-1 text-end font-mono">
+                    {d.openTabs === null ? t('insights.none') : fmt(d.openTabs)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -428,10 +454,10 @@ function OpenTabsChart({ insights }: { insights: Insights }) {
   );
 }
 
-const STATUS: Record<Goal['status'], { label: string; icon: ReactNode }> = {
-  met: { label: 'On target', icon: <Check size={14} aria-hidden /> },
-  notYet: { label: 'Not yet', icon: <Clock size={14} aria-hidden /> },
-  noData: { label: 'No data yet', icon: <Minus size={14} aria-hidden /> },
+const STATUS: Record<Goal['status'], { label: () => string; icon: ReactNode }> = {
+  met: { label: () => t('insights.status.met'), icon: <Check size={14} aria-hidden /> },
+  notYet: { label: () => t('insights.status.notYet'), icon: <Clock size={14} aria-hidden /> },
+  noData: { label: () => t('insights.status.noData'), icon: <Minus size={14} aria-hidden /> },
 };
 
 function Goals({ goals, privacy }: { goals: Goal[]; privacy: string }) {
@@ -441,12 +467,12 @@ function Goals({ goals, privacy }: { goals: Goal[]; privacy: string }) {
       className="flex flex-col rounded-card bg-feature p-6 text-feature-ink lg:col-start-2 lg:row-span-2 lg:row-start-1"
     >
       <span className="self-start rounded-full bg-lime px-3 py-1 text-xs font-medium tracking-widest text-lime-ink uppercase">
-        Beta goals
+        {t('insights.goals.badge')}
       </span>
       <h2 id="goals-title" className="mt-4 font-serif text-3xl">
-        How Decay is doing
+        {t('insights.goals.title')}
       </h2>
-      <p className="mt-1 text-sm text-feature-sub">The targets the beta is measured against.</p>
+      <p className="mt-1 text-sm text-feature-sub">{t('insights.goals.sub')}</p>
       <ul className="mt-5 space-y-3">
         {goals.map((g) => (
           <li
@@ -457,11 +483,13 @@ function Goals({ goals, privacy }: { goals: Goal[]; privacy: string }) {
               <span className="text-xs tracking-widest text-feature-sub uppercase">{g.label}</span>
               <span className="inline-flex shrink-0 items-center gap-1 text-xs whitespace-nowrap">
                 {STATUS[g.status].icon}
-                {STATUS[g.status].label}
+                {STATUS[g.status].label()}
               </span>
             </div>
             <p className="mt-1 font-serif text-2xl">{g.value}</p>
-            <p className="text-sm text-feature-sub">Target: {g.target}</p>
+            <p className="text-sm text-feature-sub">
+              {t('insights.goals.target', { target: g.target })}
+            </p>
           </li>
         ))}
       </ul>
@@ -476,10 +504,41 @@ function DomainList(props: {
   title: string;
   subtitle: string;
   rows: { domain: string; count: number }[];
-  unit: string;
+  /** "3 tabs", in the locale's words. */
+  count: (n: number) => string;
   empty: string;
+  /** Adds an "Always keep" button per row. */
+  onProtect?: (domain: string) => Promise<void>;
+  protectedSites?: ReadonlySet<string>;
 }) {
   const max = Math.max(1, ...props.rows.map((r) => r.count));
+  const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
+  // Kept here until the page's `protectedSites` catch up; once they change (a rule added,
+  // turned off or deleted anywhere), they alone say which sites are kept.
+  const [kept, setKept] = useState<ReadonlySet<string>>(new Set());
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the page's list changes
+  useEffect(() => setKept(new Set()), [props.protectedSites]);
+  // Clicks before a re-render see the same `busy`: this one is current at once.
+  const inFlight = useRef(new Set<string>());
+  const { onProtect } = props;
+  const protect = (domain: string) => {
+    if (!onProtect || inFlight.current.has(domain)) return;
+    inFlight.current.add(domain);
+    setBusy((b) => new Set(b).add(domain));
+    onProtect(domain)
+      .then(() => setKept((k) => new Set(k).add(domain)))
+      .catch(() => {
+        // The page shows the error; the button stays for another try.
+      })
+      .finally(() => {
+        inFlight.current.delete(domain);
+        setBusy((b) => {
+          const next = new Set(b);
+          next.delete(domain);
+          return next;
+        });
+      });
+  };
   return (
     <section className="rounded-card border border-line bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
       <h2 className="font-serif text-2xl">{props.title}</h2>
@@ -488,23 +547,44 @@ function DomainList(props: {
         <p className="mt-4 text-sm text-muted">{props.empty}</p>
       ) : (
         <ul className="mt-4 space-y-3">
-          {props.rows.map((r) => (
-            <li key={r.domain}>
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate">{r.domain}</span>
-                <span className="shrink-0 font-mono text-muted">
-                  {fmt(r.count)} {props.unit}
-                  {r.count === 1 ? '' : 's'}
-                </span>
-              </div>
-              <div className="mt-1 h-1.5 rounded-full bg-surface-2" aria-hidden>
-                <div
-                  className="h-full rounded-full bg-chart"
-                  style={{ width: `${(r.count / max) * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
+          {props.rows.map((r) => {
+            const isKept = kept.has(r.domain) || (props.protectedSites?.has(r.domain) ?? false);
+            const isBusy = busy.has(r.domain);
+            return (
+              <li key={r.domain}>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate">{r.domain}</span>
+                  <span className="ms-auto shrink-0 font-mono text-muted">
+                    {props.count(r.count)}
+                  </span>
+                  {onProtect &&
+                    (isKept ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted">
+                        <ShieldCheck size={14} aria-hidden /> {t('insights.protected')}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => protect(r.domain)}
+                        disabled={isBusy}
+                        aria-busy={isBusy}
+                        aria-label={t('insights.protectSite', { site: r.domain })}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line-strong px-2.5 py-0.5 text-xs font-medium hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60"
+                      >
+                        <ShieldCheck size={14} aria-hidden />
+                        {isBusy ? t('insights.protecting') : t('insights.protect')}
+                      </button>
+                    ))}
+                </div>
+                <div className="mt-1 h-1.5 rounded-full bg-surface-2" aria-hidden>
+                  <div
+                    className="h-full rounded-full bg-chart"
+                    style={{ width: `${(r.count / max) * 100}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -515,7 +595,7 @@ function ShareDialog(props: {
   json: string;
   onDownload: () => void;
   onCancel: () => void;
-  shareWhat: string;
+  client: InsightsCopy['client'];
 }) {
   const titleId = useId();
   const downloadRef = useRef<HTMLButtonElement>(null);
@@ -560,14 +640,10 @@ function ShareDialog(props: {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id={titleId} className="font-serif text-2xl">
-              Share with the beta team
+              {t('insights.share.title')}
             </h2>
             <p className="mt-1 text-sm text-muted">
-              This is the whole file. It has counts and medians only — no addresses, page titles,
-              sites or rule patterns — plus the dates you browsed and for how many minutes, your
-              Decay settings (mode, thresholds, number of rules), {props.shareWhat}. The install id
-              is random, made on this device; it links your exports to each other so the team can
-              count testers, but not to you. Save the file, then send it to the team yourself.
+              {t('insights.share.body', { client: props.client })}
             </p>
           </div>
           <button
@@ -576,7 +652,7 @@ function ShareDialog(props: {
             className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-2"
           >
             <X size={16} aria-hidden />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('insights.share.close')}</span>
           </button>
         </div>
         {/* Chrome makes scrollable boxes keyboard-focusable on its own. */}
@@ -589,7 +665,7 @@ function ShareDialog(props: {
             onClick={props.onCancel}
             className="rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
           >
-            Cancel
+            {t('insights.share.cancel')}
           </button>
           <button
             ref={downloadRef}
@@ -597,7 +673,7 @@ function ShareDialog(props: {
             onClick={props.onDownload}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
           >
-            <Download size={16} aria-hidden /> Save file
+            <Download size={16} aria-hidden /> {t('insights.share.save')}
           </button>
         </div>
       </div>

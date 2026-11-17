@@ -26,6 +26,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::commands::{Res, blocking};
 use crate::core::AppError;
+use crate::i18n::{t, tf};
 
 /// Largest file an import reads.
 pub const MAX_IMPORT_BYTES: u64 = 64 * 1024 * 1024;
@@ -50,15 +51,18 @@ impl ExportFormat {
     /// The suggested file name, e.g. `Decay archive 2026-11-14.json`.
     pub fn file_name(self, date: &str) -> String {
         let what = if self == Self::Html { "bookmarks" } else { "archive" };
-        format!("Decay {what} {date}.{}", self.extension())
+        tf(
+            "file.name",
+            &[("what", what.into()), ("date", date.into()), ("ext", self.extension().into())],
+        )
     }
 
-    fn filter_name(self) -> &'static str {
-        match self {
-            Self::Json => "Decay archive (JSON)",
-            Self::Html => "Bookmarks (HTML)",
-            Self::Csv => "Spreadsheet (CSV)",
-        }
+    fn filter_name(self) -> String {
+        t(match self {
+            Self::Json => "file.json",
+            Self::Html => "file.html",
+            Self::Csv => "file.csv",
+        })
     }
 }
 
@@ -95,13 +99,13 @@ fn io(what: &str, e: &std::io::Error) -> AppError {
         ErrorKind::NotFound => "NOT_FOUND",
         _ => "IO_ERROR",
     };
-    AppError::new(code, format!("{what}: {e}"))
+    AppError::new(code, tf(what, &[("error", e.to_string().into())]))
 }
 
 /// Writes `bytes` to `path` through a temporary file in the same folder, renamed into
 /// place: the target is either the old file or the whole new one. Owner-only on Unix.
 pub fn write_atomically(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
-    let name = path.file_name().ok_or_else(|| AppError::new("INVALID_INPUT", "No file name."))?;
+    let name = path.file_name().ok_or_else(|| AppError::new("INVALID_INPUT", t("file.noName")))?;
     let tmp = path.with_file_name(format!(".{}.decay-tmp", name.to_string_lossy()));
     let written = (|| {
         let mut options = std::fs::OpenOptions::new();
@@ -121,7 +125,7 @@ pub fn write_atomically(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
     })();
     if let Err(e) = written {
         let _ = std::fs::remove_file(&tmp);
-        return Err(io("Couldn't save the file", &e));
+        return Err(io("file.cantSave", &e));
     }
     Ok(())
 }
@@ -169,7 +173,7 @@ pub async fn export_archive(
     let dialog = app
         .dialog()
         .file()
-        .set_title("Export Decay archive")
+        .set_title(t("dialog.export"))
         .set_file_name(format.file_name(&today))
         .add_filter(format.filter_name(), &[format.extension()])
         .set_parent(&window);
@@ -220,31 +224,35 @@ pub fn import_kind(path: &Path, text: &str) -> Option<ImportKind> {
 /// Reads a regular file of at most [`MAX_IMPORT_BYTES`] (counted while reading: the
 /// size can change after a check, and a pipe or device has none).
 fn read_limited(path: &Path) -> Result<String, AppError> {
-    let too_large =
-        || AppError::new("INVALID_INPUT", "This file is too large to import (over 64 MB).");
-    let file = std::fs::File::open(path).map_err(|e| io("Couldn't open the file", &e))?;
-    let meta = file.metadata().map_err(|e| io("Couldn't open the file", &e))?;
+    let too_large = || AppError::new("INVALID_INPUT", t("file.tooLarge"));
+    let file = std::fs::File::open(path).map_err(|e| io("file.cantOpen", &e))?;
+    let meta = file.metadata().map_err(|e| io("file.cantOpen", &e))?;
     if !meta.is_file() {
-        return Err(AppError::new("INVALID_INPUT", "Pick a file to import."));
+        return Err(AppError::new("INVALID_INPUT", t("file.pick")));
     }
     if meta.len() > MAX_IMPORT_BYTES {
         return Err(too_large());
     }
     let mut bytes = Vec::new();
-    file.take(MAX_IMPORT_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|e| io("Couldn't read the file", &e))?;
+    file.take(MAX_IMPORT_BYTES + 1).read_to_end(&mut bytes).map_err(|e| io("file.cantRead", &e))?;
     if bytes.len() as u64 > MAX_IMPORT_BYTES {
         return Err(too_large());
     }
-    String::from_utf8(bytes)
-        .map_err(|_| AppError::new("INVALID_INPUT", "This file isn't text (UTF-8)."))
+    String::from_utf8(bytes).map_err(|_| AppError::new("INVALID_INPUT", t("file.notText")))
 }
 
 pub fn refused(why: &ImportRefused) -> AppError {
     match why {
         ImportRefused::Store(e) => AppError::db(e),
-        other => AppError::new("INVALID_INPUT", other.to_string()),
+        ImportRefused::NotAnArchive => {
+            AppError::new("INVALID_INPUT", t("refused.import.notArchive"))
+        }
+        ImportRefused::NewerFormat(n) => {
+            AppError::new("INVALID_INPUT", tf("refused.import.newer", &[("n", (*n).into())]))
+        }
+        ImportRefused::NeedsConfirm(n) => {
+            AppError::new("INVALID_INPUT", tf("refused.import.confirm", &[("n", (*n).into())]))
+        }
     }
 }
 
@@ -308,7 +316,7 @@ fn parse_file(core: &crate::core::Core, path: &Path) -> Result<Parsed, AppError>
     match import_kind(path, &text) {
         Some(ImportKind::Json) => {
             let doc = serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}'))
-                .map_err(|_| AppError::new("INVALID_INPUT", "This file isn't valid JSON."))?;
+                .map_err(|_| AppError::new("INVALID_INPUT", t("file.notJson")))?;
             Ok(Parsed { doc, file_name, bookmarks: false, links_capped: false })
         }
         Some(ImportKind::Bookmarks) => {
@@ -316,15 +324,12 @@ fn parse_file(core: &crate::core::Core, path: &Path) -> Result<Parsed, AppError>
             let app_id = core.ask(|e, now| (e.import_browser_app(now), Vec::new()))?;
             let (items, links_capped) = decay_store::bookmarks_to_items(&text, &app_id, now_ms());
             if items.is_empty() {
-                return Err(AppError::new("INVALID_INPUT", "There are no web links in this file."));
+                return Err(AppError::new("INVALID_INPUT", t("file.noLinks")));
             }
             let doc = serde_json::json!({ "items": items });
             Ok(Parsed { doc, file_name, bookmarks: true, links_capped })
         }
-        None => Err(AppError::new(
-            "INVALID_INPUT",
-            "Pick a Decay export (.json) or a bookmarks file (.html).",
-        )),
+        None => Err(AppError::new("INVALID_INPUT", t("file.which"))),
     }
 }
 
@@ -375,8 +380,8 @@ pub async fn import_archive(app: AppHandle, window: Window) -> Res<Option<Import
     let dialog = app
         .dialog()
         .file()
-        .set_title("Import into Decay")
-        .add_filter("Decay archive or bookmarks", &["json", "html", "htm"])
+        .set_title(t("dialog.import"))
+        .add_filter(t("dialog.importFilter"), &["json", "html", "htm"])
         .set_parent(&window);
     let (handle, emit) = (app.clone(), app.clone());
     let outcome = blocking(app, move |core| {

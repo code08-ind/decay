@@ -21,9 +21,14 @@ import { parseRoute, routeFor, type View } from '../library/model';
 import { ShadowReview } from '../library/ShadowReview';
 import { Summary } from '../library/Summary';
 import { Sweeps } from '../library/Sweeps';
+import { t } from '../strings';
 import { useRoute, useStatus } from '../useStatus';
 
-const MODE_TEXT = { shadow: 'Shadow mode', automatic: 'Automatic', paused: 'Paused' } as const;
+const MODE_TEXT = {
+  shadow: 'mode.shadow',
+  automatic: 'mode.automatic',
+  paused: 'mode.paused',
+} as const;
 
 // The Library window (P1.11, F22): Library, Sweeps, Shadow review and the overview with
 // the tray's controls. Routes come from deep links, the tray and the panel (`navigate`).
@@ -46,24 +51,29 @@ export function Library() {
         bump();
         notify(
           e.payload.isShadow
-            ? `Shadow sweep: ${e.payload.archived} would have been archived`
-            : `Archived ${e.payload.archived} ${e.payload.archived === 1 ? 'item' : 'items'}`,
+            ? t('library.toast.shadowSweep', { n: e.payload.archived })
+            : t('library.toast.archived', { n: e.payload.archived }),
           !e.payload.isShadow,
         );
       }),
       listen<{ restored: number; failed: number }>('sweep:undone', (e) => {
         bump();
-        notify(`Restored ${e.payload.restored} from the sweep`);
+        notify(t('library.toast.undone', { n: e.payload.restored }));
       }),
       listen<{ restored: string[]; failed: unknown[] }>('items:restored', (e) => {
         bump();
         const n = e.payload.restored?.length ?? 0;
         const failed = e.payload.failed?.length ?? 0;
-        notify(failed ? `Restored ${n}; ${failed} couldn't be restored` : `Restored ${n}`);
+        notify(
+          failed
+            ? t('library.toast.restoredSome', { n, failed })
+            : t('library.toast.restored', { n }),
+        );
       }),
-      listen('sweep:nothing', () => notify('Nothing to sweep right now')),
+      listen('sweep:nothing', () => notify(t('library.toast.nothing'))),
       listen('settings:changed', bump),
       listen('archive:changed', bump),
+      listen('rules:changed', bump), // Insights' "Always kept" rows
     ];
     return () => {
       for (const off of offs) off.then((f) => f()).catch(() => {});
@@ -137,24 +147,24 @@ export function Library() {
         </div>
         <Tabs<View>
           idPrefix="library"
-          label="Library"
+          label={t('library.title')}
           current={r.view}
           onSelect={(view) => go(routeFor({ view }))}
           panelId={(id) => `view-${id}`}
           tabs={[
-            { id: 'library', label: 'Library' },
-            { id: 'sweeps', label: 'Sweeps' },
-            { id: 'shadow', label: 'Shadow review' },
-            { id: 'summary', label: 'Yesterday' },
-            { id: 'insights', label: 'Insights' },
-            { id: 'overview', label: 'Overview' },
+            { id: 'library', label: t('library.tab.library') },
+            { id: 'sweeps', label: t('library.tab.sweeps') },
+            { id: 'shadow', label: t('library.tab.shadow') },
+            { id: 'summary', label: t('library.tab.summary') },
+            { id: 'insights', label: t('library.tab.insights') },
+            { id: 'overview', label: t('library.tab.overview') },
           ]}
         />
         <div className="flex items-center gap-2">
           {status && (
             <StatusDot
               status={status.mode === 'paused' ? 'degraded' : 'connected'}
-              label={MODE_TEXT[status.mode]}
+              label={t(MODE_TEXT[status.mode])}
               className="rounded-full border border-line bg-surface px-3 py-1"
             />
           )}
@@ -163,7 +173,7 @@ export function Library() {
             icon={<SettingsIcon size={14} />}
             onClick={() => run(() => api.showWindow('settings'))}
           >
-            Settings
+            {t('library.settings')}
           </Button>
         </div>
       </header>
@@ -175,12 +185,13 @@ export function Library() {
           className="grid gap-4"
         >
           {status && status.browsers.length === 0 && (
-            <Banner tone="info">
-              No browser is connected. Install the Decay extension to start.
-            </Banner>
+            <Banner tone="info">{t('library.noBrowser')}</Banner>
           )}
           {error && (
-            <Banner tone="danger" action={<Button onClick={() => setError('')}>Dismiss</Button>}>
+            <Banner
+              tone="danger"
+              action={<Button onClick={() => setError('')}>{t('common.dismiss')}</Button>}
+            >
               {error}
             </Banner>
           )}
@@ -196,7 +207,7 @@ export function Library() {
           {r.view === 'overview' && <Overview status={status} run={run} />}
         </div>
       </main>
-      <LiveRegion className="fixed right-6 bottom-6">
+      <LiveRegion className="fixed end-6 bottom-6">
         {toast && (
           <Toast
             key={toast.id}
@@ -204,7 +215,7 @@ export function Library() {
             action={
               toast.undo ? (
                 <Button size="sm" onClick={() => run(() => api.undoSweep())}>
-                  Undo
+                  {t('library.undo')}
                 </Button>
               ) : undefined
             }
@@ -241,11 +252,15 @@ function Overview(props: {
   const paused = status?.mode === 'paused';
   return (
     <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-      <h1 className="font-serif text-4xl font-normal md:col-span-2">Overview</h1>
+      <h1 className="font-serif text-4xl font-normal md:col-span-2">{t('overview.title')}</h1>
       <FeatureCard>
-        <p className="text-sm text-feature-sub">Right now</p>
-        <p className="mt-1 font-serif text-4xl">{status ? status.staleCount : '–'} stale</p>
-        <p className="mt-1 text-sm text-feature-sub">{status ? describe(status) : 'Starting…'}</p>
+        <p className="text-sm text-feature-sub">{t('overview.now')}</p>
+        <p className="mt-1 font-serif text-4xl">
+          {t('overview.stale', { n: status ? status.staleCount : '–' })}
+        </p>
+        <p className="mt-1 text-sm text-feature-sub">
+          {status ? describe(status) : t('overview.starting')}
+        </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Button
             variant="onFeature"
@@ -253,25 +268,25 @@ function Overview(props: {
             disabled={!status || status.browsers.length === 0 || paused || status.sweeping}
             onClick={() => run(api.runSweepNow)}
           >
-            Sweep now
+            {t('overview.sweepNow')}
           </Button>
           <Button
             variant="onFeatureOutline"
-            icon={<RotateCcw size={14} />}
+            icon={<RotateCcw className="rtl:-scale-x-100" size={14} />}
             disabled={!status?.undoableSweep}
             onClick={() => run(() => api.undoSweep())}
           >
-            Undo last sweep
+            {t('overview.undo')}
           </Button>
         </div>
       </FeatureCard>
       <Card as="section" className="grid content-start gap-3">
-        <h2 className="font-serif text-lg">Browsers</h2>
+        <h2 className="font-serif text-lg">{t('overview.browsers')}</h2>
         {status?.browsers.length ? (
           status.browsers.map((b) => (
             <div key={b.profileId} className="flex items-center justify-between text-sm">
               <span className="capitalize">{b.browser}</span>
-              <StatusDot status="connected" label={`${b.tabs} tabs`} />
+              <StatusDot status="connected" label={t('overview.tabs', { n: b.tabs })} />
             </div>
           ))
         ) : (
@@ -281,7 +296,7 @@ function Overview(props: {
           icon={paused ? <Play size={14} /> : <Pause size={14} />}
           onClick={() => run(() => (paused ? api.resume() : api.setMode('paused')))}
         >
-          {paused ? 'Resume' : 'Pause'}
+          {paused ? t('overview.resume') : t('overview.pause')}
         </Button>
       </Card>
     </div>

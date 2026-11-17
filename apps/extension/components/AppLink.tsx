@@ -1,4 +1,5 @@
 import type { AppLinkStatus } from '@/lib/bridge/chrome';
+import { t } from '@/lib/strings';
 
 /**
  * The link to the Decay desktop app (P1.4), one quiet line in the popup: whether the app
@@ -15,12 +16,11 @@ export function AppLink(props: {
   const { status, enabled } = props;
   const state = enabled ? (status?.state ?? 'connecting') : 'off';
   const label: Record<string, string> = {
-    off: 'Have the Decay desktop app?',
-    connecting: 'Connecting to the Decay app…',
-    connected: 'Connected to the Decay app. It manages your tabs now.',
-    unavailable:
-      'The Decay app isn’t running (or isn’t installed). Decay works on its own until it is.',
-    outdated: 'Update this extension to connect to the Decay app.',
+    off: t('app.off'),
+    connecting: t('app.connecting'),
+    connected: t('app.connected'),
+    unavailable: t('app.unavailable'),
+    outdated: t('app.outdated'),
   };
   return (
     <div
@@ -35,7 +35,7 @@ export function AppLink(props: {
           disabled={props.busy}
           className="rounded-full border border-line-strong px-3 py-1 text-ink hover:bg-surface-2 disabled:opacity-50"
         >
-          Connect
+          {t('app.connect')}
         </button>
       ) : (
         <button
@@ -44,7 +44,7 @@ export function AppLink(props: {
           disabled={props.busy}
           className="text-muted underline-offset-2 hover:text-ink hover:underline disabled:opacity-50"
         >
-          Disconnect
+          {t('app.disconnect')}
         </button>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { Search, X } from 'lucide-react';
 import { type InputHTMLAttributes, type KeyboardEvent, useRef } from 'react';
 import { cx } from './cx';
+import { t } from './strings';
 
 /**
  * Search field: leading icon, clear button. `Esc` clears the text first, then (when
@@ -45,7 +46,7 @@ export function SearchInput({
       <Search
         aria-hidden
         size={large ? 20 : 14}
-        className={cx('pointer-events-none absolute text-faint', large ? 'left-4' : 'left-3')}
+        className={cx('pointer-events-none absolute text-faint', large ? 'start-4' : 'start-3')}
       />
       <input
         ref={input}
@@ -60,21 +61,21 @@ export function SearchInput({
           bare
             ? 'border-0 bg-transparent focus-visible:outline-none'
             : 'rounded-full border border-line bg-surface-2 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft',
-          large ? 'h-12 pr-11 pl-12 text-xl' : 'h-8 pr-8 pl-8 text-xs',
+          large ? 'h-12 pe-11 ps-12 text-xl' : 'h-8 pe-8 ps-8 text-xs',
         )}
         {...rest}
       />
       {value && (
         <button
           type="button"
-          aria-label="Clear search"
+          aria-label={t('search.clear')}
           onClick={() => {
             onValueChange('');
             input.current?.focus();
           }}
           className={cx(
             'absolute flex items-center justify-center rounded-full text-faint hover:text-ink',
-            large ? 'right-3 size-7' : 'right-2 size-5',
+            large ? 'end-3 size-7' : 'end-2 size-5',
           )}
         >
           <X aria-hidden size={large ? 16 : 12} />

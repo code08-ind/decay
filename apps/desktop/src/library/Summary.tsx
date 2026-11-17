@@ -1,7 +1,8 @@
-import { Banner, Button } from '@decay/ui';
+import { Banner, Button, richText } from '@decay/ui';
 import { AppWindow, History, PanelsTopLeft, RotateCcw, ShieldCheck, Timer } from 'lucide-react';
 import { api, type DailySummary } from '../api';
 import { displayUrl } from '../panel/results';
+import { t } from '../strings';
 import type { PageProps } from './Archive';
 import { yesterday } from './model';
 import { ItemTile, Stat, useLoad } from './parts';
@@ -38,17 +39,25 @@ export function Summary(props: PageProps) {
     <section aria-labelledby="summary-h" className="grid gap-4">
       <div>
         <h1 id="summary-h" className="font-serif text-4xl font-normal">
-          Yesterday
+          {t('summary.title')}
         </h1>
-        <p className="text-sm text-muted">What Decay tidied while you worked.</p>
+        <p className="text-sm text-muted">{t('summary.subtitle')}</p>
       </div>
       {summary.error && <Banner tone="danger">{summary.error}</Banner>}
       {s && (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat label="Tabs archived" value={s.archivedTabs} icon={<PanelsTopLeft size={16} />} />
-            <Stat label="Windows hidden" value={s.hiddenWindows} icon={<AppWindow size={16} />} />
-            <Stat label="Reopened" value={s.restored} icon={<History size={16} />} />
+            <Stat
+              label={t('summary.tabs')}
+              value={s.archivedTabs}
+              icon={<PanelsTopLeft size={16} />}
+            />
+            <Stat
+              label={t('summary.windows')}
+              value={s.hiddenWindows}
+              icon={<AppWindow size={16} />}
+            />
+            <Stat label={t('summary.reopened')} value={s.restored} icon={<History size={16} />} />
           </div>
           {hints.length > 0 && (
             <section
@@ -59,27 +68,26 @@ export function Summary(props: PageProps) {
                 id="hints-h"
                 className="mb-3 text-[11px] font-semibold tracking-wider text-muted uppercase"
               >
-                Worth a look
+                {t('summary.hints')}
               </h2>
               <ul className="grid gap-2">
                 {hints.map((h) => (
                   <li key={`${h.kind}-${h.domain}`} className="flex flex-wrap items-center gap-3">
                     <span className="min-w-0 flex-1 text-sm">
-                      {h.kind === 'alwaysKeep' ? (
-                        <>
-                          You reopened <strong>{h.domain}</strong> {h.count} times this week
-                        </>
-                      ) : (
-                        <>
-                          <strong>{h.domain}</strong> was archived {h.count} times this week
-                        </>
+                      {richText(
+                        (p) =>
+                          t(
+                            h.kind === 'alwaysKeep' ? 'summary.hint.keep' : 'summary.hint.longer',
+                            p,
+                          ),
+                        { site: <strong>{h.domain}</strong>, n: h.count },
                       )}
                     </span>
                     {h.kind === 'alwaysKeep' ? (
                       <Button
                         size="sm"
                         icon={<ShieldCheck size={14} aria-hidden />}
-                        aria-label={`Always keep ${h.domain}`}
+                        aria-label={t('summary.alwaysKeepFor', { site: h.domain })}
                         onClick={() =>
                           run(async () => {
                             await api.createRule({
@@ -87,18 +95,18 @@ export function Summary(props: PageProps) {
                               match: h.domain,
                               action: 'protect',
                             });
-                            notify(`Decay always keeps ${h.domain}`);
+                            notify(t('summary.alwaysKept', { site: h.domain }));
                             refresh();
                           })
                         }
                       >
-                        Always keep
+                        {t('summary.alwaysKeep')}
                       </Button>
                     ) : (
                       <Button
                         size="sm"
                         icon={<Timer size={14} aria-hidden />}
-                        aria-label={`Keep ${h.domain} longer`}
+                        aria-label={t('summary.keepLongerFor', { site: h.domain })}
                         onClick={() =>
                           run(async () => {
                             if (!longer) return;
@@ -108,12 +116,12 @@ export function Summary(props: PageProps) {
                               action: 'customThreshold',
                               thresholdHours: longer,
                             });
-                            notify(`${h.domain} is kept twice as long`);
+                            notify(t('summary.keptLonger', { site: h.domain }));
                             refresh();
                           })
                         }
                       >
-                        Keep longer
+                        {t('summary.keepLonger')}
                       </Button>
                     )}
                   </li>
@@ -129,12 +137,10 @@ export function Summary(props: PageProps) {
               id="archived-h"
               className="border-b border-line px-5 py-3 text-[11px] font-semibold tracking-wider text-muted uppercase"
             >
-              Archived yesterday
+              {t('summary.archived')}
             </h2>
             {s.items.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted">
-                Nothing from yesterday is in the archive.
-              </p>
+              <p className="px-5 py-6 text-sm text-muted">{t('summary.empty')}</p>
             ) : (
               <ul className="divide-y divide-line">
                 {s.items.map((i) => (
@@ -146,16 +152,16 @@ export function Summary(props: PageProps) {
                     </span>
                     <Button
                       size="sm"
-                      icon={<RotateCcw size={14} aria-hidden />}
-                      aria-label={`Restore ${i.title || displayUrl(i.url)}`}
+                      icon={<RotateCcw className="rtl:-scale-x-100" size={14} aria-hidden />}
+                      aria-label={t('summary.restoreItem', { title: i.title || displayUrl(i.url) })}
                       onClick={() =>
                         run(async () => {
                           await api.restoreItems([i.id]);
-                          notify('Restoring…');
+                          notify(t('summary.restoring'));
                         })
                       }
                     >
-                      Restore
+                      {t('summary.restore')}
                     </Button>
                   </li>
                 ))}

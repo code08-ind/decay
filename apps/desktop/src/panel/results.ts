@@ -1,6 +1,9 @@
 // The panel's result logic (P1.9), kept pure for tests: grouping, labels, highlighting,
 // monograms and keyboard actions.
+
+import { getLocale, logicalArrow } from '@decay/ui';
 import type { PanelItem } from '../api';
+import { t } from '../strings';
 
 export interface ResultGroup {
   key: string;
@@ -21,12 +24,13 @@ function startOfDay(t: number): number {
 }
 
 /** "Today", "Yesterday", "Last Tuesday" (within a week), else a date. */
-export function dayLabel(at: number, now: number, locale?: string): string {
+export function dayLabel(at: number, now: number, locale = getLocale()): string {
   const days = Math.round((startOfDay(now) - startOfDay(at)) / DAY);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
+  if (days <= 0) return t('day.today');
+  if (days === 1) return t('day.yesterday');
   const d = new Date(at);
-  if (days < 7) return `Last ${d.toLocaleDateString(locale, { weekday: 'long' })}`;
+  if (days < 7)
+    return t('day.last', { weekday: d.toLocaleDateString(locale, { weekday: 'long' }) });
   const sameYear = d.getFullYear() === new Date(now).getFullYear();
   return d.toLocaleDateString(locale, {
     month: 'short',
@@ -36,10 +40,12 @@ export function dayLabel(at: number, now: number, locale?: string): string {
 }
 
 /** The time column: "Today, 2:14 PM" or "Tue, Oct 28". */
-export function timeLabel(at: number, now: number, locale?: string): string {
+export function timeLabel(at: number, now: number, locale = getLocale()): string {
   const d = new Date(at);
   if (startOfDay(at) === startOfDay(now)) {
-    return `Today, ${d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}`;
+    return t('day.todayAt', {
+      time: d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }),
+    });
   }
   return d.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
 }
@@ -216,7 +222,8 @@ export function panelAction(
   // Keys confirming an input method's candidate (Japanese, Chinese…) belong to it.
   if (e.isComposing || e.key === 'Process') return null;
   const mod = mac ? e.metaKey : e.ctrlKey;
-  switch (e.key) {
+  // ⌘→ "into the details" is ⌘← right to left.
+  switch (logicalArrow(e.key)) {
     case 'ArrowDown':
       return 'next';
     case 'ArrowUp':

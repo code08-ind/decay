@@ -1,4 +1,5 @@
 import { cx } from './cx';
+import { t } from './strings';
 
 export type KeyPlatform = 'mac' | 'windows';
 
@@ -45,6 +46,25 @@ const WIN: Record<string, [label: string, name: string]> = {
 
 const ORDER_MAC = ['⌃', '⌥', '⇧', '⌘'];
 
+/** A key's spoken name in the locale's words (other keys are read as they are). */
+const SPOKEN: Record<string, Parameters<typeof t>[0]> = {
+  Command: 'key.command',
+  Option: 'key.option',
+  Shift: 'key.shift',
+  Control: 'key.control',
+  Return: 'key.return',
+  Delete: 'key.delete',
+  Escape: 'key.escape',
+  Windows: 'key.windows',
+  Alt: 'key.alt',
+  Enter: 'key.enter',
+  Backspace: 'key.backspace',
+};
+const spoken = (name: string) => {
+  const key = SPOKEN[name];
+  return key ? t(key) : name;
+};
+
 /**
  * An accelerator ("Alt+Super+D", "CmdOrCtrl+Enter") as keycaps for `platform`, plus a
  * spoken label. macOS lists modifiers in its own order (⌃⌥⇧⌘).
@@ -71,7 +91,7 @@ export function formatShortcut(
     };
     parts.sort((a, b) => rank(a[0]) - rank(b[0]));
   }
-  return { keys: parts.map((p) => p[0]), label: parts.map((p) => p[1]).join(' ') };
+  return { keys: parts.map((p) => p[0]), label: parts.map((p) => spoken(p[1])).join(' ') };
 }
 
 /** One keycap. */

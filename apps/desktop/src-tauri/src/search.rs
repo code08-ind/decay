@@ -21,6 +21,7 @@ use tauri::AppHandle;
 use crate::commands::{Res, blocking};
 use crate::core::AppError;
 use crate::deeplink::Window;
+use crate::i18n::{t, tf};
 use crate::shell;
 
 /// The most a page may hold (API Design: ≤ 200).
@@ -81,8 +82,12 @@ pub fn reason_label(item: &Item) -> Option<String> {
 /// A reason as its chip says it ("Unused 61 active h"); none for a protection.
 pub fn reason_text(reason: &Reason) -> Option<String> {
     match reason {
-        Reason::Unused { active_hours, .. } => Some(format!("Unused {active_hours} active h")),
-        Reason::CustomRule { active_hours, .. } => Some(format!("Rule: {active_hours} active h")),
+        Reason::Unused { active_hours, .. } => {
+            Some(tf("reason.unused", &[("n", (*active_hours).into())]))
+        }
+        Reason::CustomRule { active_hours, .. } => {
+            Some(tf("reason.rule", &[("n", (*active_hours).into())]))
+        }
         Reason::Protected { .. } => None,
     }
 }
@@ -163,11 +168,11 @@ pub async fn search(app: AppHandle, input: SearchInput) -> Res<SearchOutput> {
 }
 
 fn restore_refused(why: &RestoreRefused) -> AppError {
-    let code = match why {
-        RestoreRefused::NothingToRestore => "NOT_FOUND",
-        RestoreRefused::NoBrowser => "ADAPTER_UNAVAILABLE",
+    let (code, key) = match why {
+        RestoreRefused::NothingToRestore => ("NOT_FOUND", "refused.restore.nothing"),
+        RestoreRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", "refused.restore.noBrowser"),
     };
-    AppError::new(code, why.to_string())
+    AppError::new(code, t(key))
 }
 
 /// Where `restore_items` puts the tabs.
@@ -191,7 +196,7 @@ pub async fn restore_items(
     search_ms: Option<u64>,
 ) -> Res<Value> {
     if ids.is_empty() || ids.len() > 500 {
-        return Err(AppError::new("INVALID_INPUT", "restore 1 to 500 items"));
+        return Err(AppError::new("INVALID_INPUT", t("error.restore")));
     }
     let new_window = target.unwrap_or_default() == RestoreTarget::NewWindow;
     blocking(app, move |core| {
@@ -224,9 +229,7 @@ pub async fn protect_item(app: AppHandle, id: String) -> Res<decay_core::Rule> {
     let out = blocking(app, move |core| {
         core.ask(move |e, now| match e.protect_site(&id, now) {
             Ok(Some(rule)) => (Ok(rule), Vec::new()),
-            Ok(None) => {
-                (Err(AppError::new("NOT_FOUND", "this item has no site to keep")), Vec::new())
-            }
+            Ok(None) => (Err(AppError::new("NOT_FOUND", t("error.noSite"))), Vec::new()),
             Err(err) => (Err(AppError::db(&err)), Vec::new()),
         })?
     })
@@ -242,7 +245,7 @@ pub async fn protect_item(app: AppHandle, id: String) -> Res<decay_core::Rule> {
 pub fn ui_show_item(app: AppHandle, id: String) -> Res<Value> {
     if !(1..=64).contains(&id.len()) || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
     {
-        return Err(AppError::new("INVALID_INPUT", "not an item id"));
+        return Err(AppError::new("INVALID_INPUT", t("error.notItem")));
     }
     shell::hide_panel(&app);
     shell::show_window(&app, Window::Library, &format!("/item/{id}"));

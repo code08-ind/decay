@@ -19,6 +19,7 @@ use tauri::{AppHandle, Emitter as _};
 use crate::commands::{Res, blocking};
 use crate::core::AppError;
 use crate::deeplink::Window;
+use crate::i18n::{t, tf};
 
 /// The public releases repo (Docs/Release.md).
 const RELEASES_REPO: &str = "https://github.com/code08-ind/decay-releases";
@@ -50,12 +51,12 @@ pub enum Link {
 
 /// The new-issue page, prefilled: a title to replace, questions, and version / OS.
 pub fn feedback_url(version: &str, os: &str) -> String {
-    let body = format!(
-        "**What happened, or what would you like?**\n\n\n**What did you expect?**\n\n\n---\nDecay {version} · {os} · {}",
-        std::env::consts::ARCH
+    let body = tf(
+        "feedback.body",
+        &[("version", version.into()), ("os", os.into()), ("arch", std::env::consts::ARCH.into())],
     );
     let mut url = url::Url::parse(&format!("{RELEASES_REPO}/issues/new")).expect("a valid URL");
-    url.query_pairs_mut().append_pair("title", "Feedback: ").append_pair("body", &body);
+    url.query_pairs_mut().append_pair("title", &t("feedback.title")).append_pair("body", &body);
     url.into()
 }
 
@@ -71,7 +72,7 @@ pub fn link_url(link: Link, version: &str, os: &str) -> String {
 /// Opens an `https` address in the default browser (blocks while the opener starts).
 pub fn open_url(url: &str) -> Res<()> {
     if !url.starts_with("https://") {
-        return Err(AppError::new("INVALID_INPUT", "only https links open"));
+        return Err(AppError::new("INVALID_INPUT", t("error.httpsOnly")));
     }
     #[cfg(windows)]
     let status = {
@@ -84,8 +85,13 @@ pub fn open_url(url: &str) -> Res<()> {
     let status = std::process::Command::new("/usr/bin/open").arg(url).status();
     match status {
         Ok(s) if s.success() => Ok(()),
-        Ok(s) => Err(AppError::new("IO_ERROR", format!("Couldn't open the link ({s})"))),
-        Err(e) => Err(AppError::new("IO_ERROR", format!("Couldn't open the link: {e}"))),
+        Ok(s) => Err(AppError::new(
+            "IO_ERROR",
+            tf("error.linkStatus", &[("status", s.to_string().into())]),
+        )),
+        Err(e) => {
+            Err(AppError::new("IO_ERROR", tf("error.link", &[("error", e.to_string().into())])))
+        }
     }
 }
 

@@ -1,17 +1,18 @@
 import { Button, Kbd, Shortcut } from '@decay/ui';
 import { type KeyboardEvent, useState } from 'react';
 import { api, errorMessage } from '../api';
+import { type Key, t } from '../strings';
 import { acceleratorFrom } from './model';
 import { Group, Row, TabHeader, type TabProps } from './parts';
 
-const IN_APP: [string, string][] = [
-  ['Search panel: restore the selected item', 'Enter'],
-  ['Search panel: restore the whole group', 'CmdOrCtrl+Enter'],
-  ['Search panel: restore into a new window', 'Alt+Enter'],
-  ['Search panel: always keep the site', 'CmdOrCtrl+P'],
-  ['Search panel: show details in the Library', 'CmdOrCtrl+I'],
-  ['Close the panel or a drawer', 'Escape'],
-  ['This list of shortcuts (Help menu, while a Decay window is in front)', 'CmdOrCtrl+/'],
+const IN_APP: [Key, string][] = [
+  ['shortcuts.inApp.restore', 'Enter'],
+  ['shortcuts.inApp.group', 'CmdOrCtrl+Enter'],
+  ['shortcuts.inApp.newWindow', 'Alt+Enter'],
+  ['shortcuts.inApp.keep', 'CmdOrCtrl+P'],
+  ['shortcuts.inApp.details', 'CmdOrCtrl+I'],
+  ['shortcuts.inApp.close', 'Escape'],
+  ['shortcuts.inApp.list', 'CmdOrCtrl+/'],
 ];
 
 // Shortcuts (Designs/09d): record the global search shortcut; the in-app keys.
@@ -36,7 +37,7 @@ export function Shortcuts(props: TabProps) {
       setCandidate(acc);
       setHint('');
     } else if (!['Alt', 'Control', 'Meta', 'Shift'].includes(e.key)) {
-      setHint('Use at least one of ⌘ / Ctrl / ⌥ / Alt with a key.');
+      setHint(t('shortcuts.needModifier'));
     }
   };
   const use = () => {
@@ -44,21 +45,21 @@ export function Shortcuts(props: TabProps) {
     api
       .setHotkey(candidate)
       .then(() => {
-        notify('Search shortcut changed');
+        notify(t('shortcuts.changed'));
         setRecording(false);
         setCandidate(null);
       })
       .catch((e) => {
         // One message, next to the recorder (not the top banner too).
-        setHint(`${errorMessage(e) || 'That shortcut is taken or not allowed.'} Try another.`);
+        setHint(t('shortcuts.tryAnother', { error: errorMessage(e) || t('shortcuts.taken') }));
       });
   };
   return (
     <>
-      <TabHeader title="Shortcuts">Decay is keyboard-first.</TabHeader>
+      <TabHeader title={t('settings.tab.shortcuts')}>{t('shortcuts.subtitle')}</TabHeader>
       <div className="grid gap-4">
-        <Group title="Global shortcut">
-          <Row label="Search the archive" description="Works from any app.">
+        <Group title={t('shortcuts.global')}>
+          <Row label={t('shortcuts.search')} description={t('shortcuts.search.text')}>
             {current && <Shortcut accelerator={current} />}
           </Row>
           <div className="grid gap-2 pt-3">
@@ -73,34 +74,34 @@ export function Shortcuts(props: TabProps) {
                   setHint('');
                 }}
                 onKeyDown={onKey}
-                className="h-9 min-w-56 rounded-lg border border-line-strong bg-surface-2 px-3 text-left text-sm"
+                className="h-9 min-w-56 rounded-lg border border-line-strong bg-surface-2 px-3 text-start text-sm"
               >
                 {recording ? (
                   candidate ? (
                     <Shortcut accelerator={candidate} />
                   ) : (
-                    'Press the new shortcut…'
+                    t('shortcuts.press')
                   )
                 ) : (
-                  'Record a new shortcut'
+                  t('shortcuts.record')
                 )}
               </button>
               {recording && candidate && (
                 <Button size="sm" variant="primary" onClick={use}>
-                  Use it
+                  {t('shortcuts.use')}
                 </Button>
               )}
             </div>
             <p id="hotkey-hint" role={hint ? 'alert' : undefined} className="text-xs text-muted">
-              {hint || (recording ? 'Esc cancels.' : 'Click, then press the keys together.')}
+              {hint || (recording ? t('shortcuts.escCancels') : t('shortcuts.howTo'))}
             </p>
           </div>
         </Group>
-        <Group title="In the app">
+        <Group title={t('shortcuts.inApp')}>
           {IN_APP.map(([what, keys]) => (
-            <Row key={what} label={what}>
+            <Row key={what} label={t(what)}>
               {keys === 'Enter' || keys === 'Escape' ? (
-                <Kbd>{keys === 'Enter' ? '↵' : 'Esc'}</Kbd>
+                <Kbd>{keys === 'Enter' ? '↵' : 'Esc' /* i18n-ignore: a key cap */}</Kbd>
               ) : (
                 <Shortcut accelerator={keys} />
               )}

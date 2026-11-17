@@ -6,8 +6,10 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({ plugins: [tailwindcss()] }),
   manifest: {
-    name: 'Decay',
-    description: 'Your tabs, gently put away. Archives stale tabs; search and restore anything.',
+    // Store listing text is in public/_locales (Chrome localizes the manifest itself).
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
+    default_locale: 'en',
     // Permissions (Software Design §4.7).
     // Web-page access is optional, asked for at runtime for the form probe (P0.7): it lets
     // Decay check whether a page holds unsaved work before archiving it.
@@ -34,7 +36,7 @@ export default defineConfig({
     commands: {
       _execute_action: {
         suggested_key: { default: 'Alt+Shift+D' },
-        description: 'Search archived tabs',
+        description: '__MSG_commandSearch__',
       },
     },
   },

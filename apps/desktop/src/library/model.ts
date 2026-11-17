@@ -1,7 +1,9 @@
 // The Library window without the UI (P1.11): routes, calendar boundaries and the words
 // the screens use.
+import { getLocale } from '@decay/ui';
 import type { SweepRow } from '../api';
 import { dayLabel } from '../panel/results';
+import { t } from '../strings';
 
 export type View = 'library' | 'sweeps' | 'shadow' | 'summary' | 'insights' | 'overview';
 
@@ -92,10 +94,11 @@ export function startOfWeek(now: number, firstDay = 1): number {
   return d.getTime();
 }
 
-/** The first day of the week for a locale (Intl's week info where the engine has it). */
-export function firstDayOfWeek(locale?: string): number {
+/** The first day of the week for a locale (Intl's week info where the engine has it);
+ * the app's language (the `locale` setting) by default. */
+export function firstDayOfWeek(locale: string = getLocale()): number {
   try {
-    const loc = new Intl.Locale(locale ?? navigator.language) as Intl.Locale & {
+    const loc = new Intl.Locale(locale) as Intl.Locale & {
       getWeekInfo?: () => { firstDay: number };
       weekInfo?: { firstDay: number };
     };
@@ -108,46 +111,56 @@ export function firstDayOfWeek(locale?: string): number {
   return 1;
 }
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
 /** "Archived 11 tabs, 3 windows" / "Would archive 4 tabs". */
 export function sweepHeadline(
   s: Pick<SweepRow, 'tabs' | 'windows' | 'isShadow'> & { itemCount?: number },
 ): string {
-  const parts = [s.tabs && plural(s.tabs, 'tab'), s.windows && plural(s.windows, 'window')].filter(
-    Boolean,
-  );
+  const parts = [
+    s.tabs && t('sweep.tabs', { n: s.tabs }),
+    s.windows && t('sweep.windows', { n: s.windows }),
+  ].filter(Boolean);
   // Some were deleted from the archive since: the sweep's own total says how many.
   const known = s.tabs + s.windows;
   const what =
     s.itemCount !== undefined && s.itemCount > known
-      ? plural(s.itemCount, 'item')
+      ? t('sweep.items', { n: s.itemCount })
       : parts.length
-        ? parts.join(', ')
-        : 'nothing';
-  return `${s.isShadow ? 'Would archive' : 'Archived'} ${what}`;
+        ? parts.join(t('common.listSeparator'))
+        : t('sweep.nothing');
+  return t('sweep.headline', { shadow: s.isShadow ? 'yes' : 'no', what });
 }
 
 /** What became of a sweep's item that isn't archived from it any more. */
 export function entryState(state: string): string {
-  if (state === 'archiving') return 'Closing…';
-  if (state === 'archived') return 'Archived again later';
-  return 'Restored';
+  if (state === 'archiving') return t('sweep.entry.closing');
+  if (state === 'archived') return t('sweep.entry.archivedAgain');
+  return t('sweep.entry.restored');
 }
 
 /** How a sweep was started, in words. */
-export function triggerText(t: SweepRow['trigger']): string {
-  return t === 'manual' ? 'manual' : t === 'wake' ? 'after wake' : 'automatic';
+export function triggerText(trigger: SweepRow['trigger']): string {
+  return trigger === 'manual'
+    ? t('sweep.trigger.manual')
+    : trigger === 'wake'
+      ? t('sweep.trigger.wake')
+      : t('sweep.trigger.scheduled');
 }
 
 /** What a sweep row offers: Undo, Undo rest (some restored), or its final state. */
 export function sweepAction(s: SweepRow): { label: string; undo: boolean } {
-  if (s.isShadow) return { label: 'Simulated', undo: false };
-  if (s.status === 'undone' || s.undoneAt !== null) return { label: 'Undone', undo: false };
-  if (s.status === 'failed') return { label: 'Failed', undo: false };
+  if (s.isShadow) return { label: t('sweep.action.simulated'), undo: false };
+  if (s.status === 'undone' || s.undoneAt !== null)
+    return { label: t('sweep.action.undone'), undo: false };
+  if (s.status === 'failed') return { label: t('sweep.action.failed'), undo: false };
   if (!s.undoable)
-    return { label: s.restored > 0 ? 'All restored' : 'Nothing to undo', undo: false };
-  return { label: s.restored > 0 ? 'Undo rest' : 'Undo', undo: true };
+    return {
+      label: s.restored > 0 ? t('sweep.action.allRestored') : t('sweep.action.nothing'),
+      undo: false,
+    };
+  return {
+    label: s.restored > 0 ? t('sweep.action.undoRest') : t('sweep.action.undo'),
+    undo: true,
+  };
 }
 
 /** Sweeps grouped by local day, newest first (they arrive newest first). */
@@ -169,34 +182,35 @@ export function groupByDay<T extends { startedAt: number }>(
 /** A whole percentage ("3 %"), or a dash when there's nothing to divide by. */
 export function percent(part: number, whole: number): string {
   if (whole <= 0) return '–';
-  return `${Math.round((part / whole) * 100)} %`;
+  return t('percent.whole', { n: Math.round((part / whole) * 100) });
 }
 
 /** Words for timeline event types. */
 export function eventText(type: string): string {
-  const words: Record<string, string> = {
-    seen: 'Opened',
-    used: 'Used',
-    stale: 'Turned stale',
-    hidden: 'Hidden',
-    archived: 'Archived',
-    close_failed: "Couldn't close",
-    restored: 'Restored',
-    undo: 'Undone',
-    protected: 'Protected',
-    purged: 'Removed',
-    shadow_would_archive: 'Would have been archived',
-  };
-  return words[type] ?? type;
+  const known = [
+    'seen',
+    'used',
+    'stale',
+    'hidden',
+    'archived',
+    'close_failed',
+    'restored',
+    'undo',
+    'protected',
+    'purged',
+    'shadow_would_archive',
+  ] as const;
+  const k = known.find((x) => x === type);
+  return k ? t(`event.${k}`) : type;
 }
 
 /** Shadow mode's remaining days, in words. */
 export function shadowDaysLeft(day: number, days = 7): string {
   // Day 7 is the last day of the week: it's over from day 8.
   const left = days - day + 1;
-  if (left <= 0) return 'the shadow week is over';
-  if (left === 1) return 'last day';
-  return `${plural(left, 'day')} left`;
+  if (left <= 0) return t('shadow.over');
+  if (left === 1) return t('shadow.lastDay');
+  return t('shadow.daysLeft', { n: left });
 }
 
 /** The shadow week is over: time to decide about automatic mode. */

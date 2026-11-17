@@ -1,39 +1,33 @@
+import { formatNumber } from '@decay/ui';
 import type { ProtectedBy } from '@/lib/db/types';
 import type { KeptGroup } from '@/lib/shadow/report';
+import { t } from '@/lib/strings';
 
-export const PROTECTED_LABEL: Record<ProtectedBy, string> = {
-  pinned: 'pinned',
-  activeTab: 'open in a window',
-  audible: 'playing audio',
-  formInput: 'unsaved work',
-  download: 'downloading',
-  call: 'in a call',
-  unsaved: 'unsaved changes',
-  unknownSaveState: 'save state unknown',
-  rule: 'your rule',
-  hold: 'on hold',
-  meeting: 'in a meeting',
-  grace: 'recently restored',
-  unrestorable: "can't be reopened",
-};
+/** Why an item is kept, in words ("playing audio"). */
+export const protectedLabel = (by: ProtectedBy): string => t(`protected.${by}`);
 
-export const KEPT_GROUP_LABEL: Record<KeptGroup, string> = {
-  pinned: 'Pinned tabs',
-  audio: 'Playing audio',
-  active: 'Open in a window',
-  form: 'Unsaved work',
-  rules: 'Rules & safelist',
-  hold: 'On hold',
-  other: "Can't be reopened",
-};
+/** A group on the review's "Why things were kept" card. */
+export const keptGroupLabel = (group: KeptGroup): string => t(`kept.${group}`);
+
+/** The groups, in the card's order. */
+export const KEPT_GROUPS: KeptGroup[] = [
+  'pinned',
+  'audio',
+  'active',
+  'form',
+  'rules',
+  'hold',
+  'other',
+];
 
 /** Whole active hours, never rounded up (an item is never shown older than it is). */
 export const activeHours = (seconds: number) => Math.floor(seconds / 3600);
 
 export function percent(rate: number | null): string {
-  if (rate === null) return '—';
-  if (rate > 0 && rate < 0.01) return '<1%';
-  return `${Math.round(rate * 100)}%`;
+  if (rate === null) return t('percent.none');
+  const p = (r: number) => formatNumber(r, { style: 'percent', maximumFractionDigits: 0 });
+  if (rate > 0 && rate < 0.01) return `<${p(0.01)}`;
+  return p(Math.round(rate * 100) / 100);
 }
 
 /** `example.com/path` for display; falls back to the raw URL. */

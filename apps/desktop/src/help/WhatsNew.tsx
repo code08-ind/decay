@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { errorMessage } from '../api';
+import { t } from '../strings';
 import { formatDate, type NoteIcon, type ReleaseNotes } from './releases';
 
 const ICONS: Record<NoteIcon, LucideIcon> = {
@@ -93,12 +94,14 @@ export function WhatsNew(props: {
           <div className="min-w-0 flex-1">
             <p className="flex flex-wrap items-center gap-3 text-sm text-muted">
               <span className="rounded-full bg-chip px-2.5 py-0.5 text-chip-ink">
-                {props.latest ? `Latest notes · ${notes.version}` : `Updated to ${notes.version}`}
+                {props.latest
+                  ? t('whatsNew.latest', { version: notes.version })
+                  : t('whatsNew.updatedTo', { version: notes.version })}
               </span>
               {formatDate(notes.date)}
             </p>
             <h2 id={titleId} className="mt-1 font-serif text-3xl">
-              What’s new in Decay
+              {t('whatsNew.title')}
             </h2>
           </div>
           <button
@@ -107,14 +110,14 @@ export function WhatsNew(props: {
             className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-2 text-muted hover:text-ink"
           >
             <X size={16} aria-hidden />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('common.close')}</span>
           </button>
         </div>
         <div className="mt-5 grid min-h-0 gap-3 overflow-auto">
           {notes.major && (
             <section className="rounded-card bg-feature p-5 text-feature-ink">
               <p className="flex items-center gap-2 font-mono text-xs tracking-widest text-feature-sub uppercase">
-                <Star size={14} aria-hidden /> Major feature
+                <Star size={14} aria-hidden /> {t('whatsNew.major')}
               </p>
               <h3 className="mt-2 font-serif text-2xl">{notes.major.title}</h3>
               <p className="mt-1 text-feature-sub">{notes.major.text}</p>
@@ -153,7 +156,8 @@ export function WhatsNew(props: {
               }}
               className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
             >
-              Full changelog <ArrowRight size={14} aria-hidden />
+              {t('whatsNew.changelog')}{' '}
+              <ArrowRight className="rtl:-scale-x-100" size={14} aria-hidden />
             </button>
             {error && (
               <p role="alert" className="text-sm text-danger">
@@ -162,9 +166,9 @@ export function WhatsNew(props: {
             )}
           </div>
           <div className="flex gap-2">
-            <Button onClick={props.onLater}>Later</Button>
+            <Button onClick={props.onLater}>{t('whatsNew.later')}</Button>
             <Button ref={gotItRef} variant="primary" onClick={props.onGotIt}>
-              Got it
+              {t('whatsNew.gotIt')}
             </Button>
           </div>
         </div>

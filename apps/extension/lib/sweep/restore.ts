@@ -1,4 +1,5 @@
 import { uuidv7 } from 'uuidv7';
+import { t } from '@/lib/strings';
 import type { DecayDB } from '../db/db';
 import type { Item, ItemEvent, Sweep } from '../db/types';
 import { emptyMetrics, localDay } from '../shadow/shadow';
@@ -225,13 +226,11 @@ export async function findUndoTarget(db: DecayDB, sweepId?: string): Promise<Swe
       }
     }
   }
-  if (!sweep) throw new UndoError('NOT_FOUND', 'There is no sweep to undo.');
+  if (!sweep) throw new UndoError('NOT_FOUND', t('undo.none'));
   if (!canUndo(sweep, recent)) {
     throw new UndoError(
       'NOT_UNDOABLE',
-      sweep.status === 'undone'
-        ? 'This sweep was already undone.'
-        : 'Only the last 20 sweeps can be undone.',
+      sweep.status === 'undone' ? t('undo.already') : t('undo.tooOld'),
     );
   }
   return sweep;
@@ -262,7 +261,7 @@ export async function undoSweep(
     (i): i is Item => i !== undefined && i.state === 'archived' && i.lastSweepId === sweep.id,
   );
   if (!records.length) {
-    throw new UndoError('NOT_UNDOABLE', 'Everything from this sweep is already open again.');
+    throw new UndoError('NOT_UNDOABLE', t('undo.allOpen'));
   }
   const windowOf = new Map(sweep.items.map((e) => [e.itemId, e.windowExternalId]));
   const session = await commands.browserSession();

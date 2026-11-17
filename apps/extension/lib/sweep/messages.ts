@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import type { ArchiveSearchResult } from '../bridge/protocol';
+import { t } from '../strings';
 
 /**
  * Messages from extension pages (popup, Sweeps page) to the background worker, which owns
@@ -100,7 +101,7 @@ export async function sendDecay(
     // The worker restarted mid-request ("message channel closed", "Receiving end does not exist").
     response = undefined;
   }
-  if (!response) throw new Error('Decay is not responding. Try again in a moment.');
+  if (!response) throw new Error(t('error.notResponding'));
   if (!response.ok) throw new Error(response.error);
   return response;
 }

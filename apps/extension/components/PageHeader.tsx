@@ -1,18 +1,19 @@
 import { Leaf } from 'lucide-react';
 import type { Mode } from '@/lib/db/types';
+import { type Key, t } from '@/lib/strings';
 
-const MODE_LABEL: Record<Mode, string> = {
-  shadow: 'Shadow mode',
-  automatic: 'Automatic',
-  paused: 'Paused',
+const MODE_LABEL: Record<Mode, Key> = {
+  shadow: 'mode.shadow',
+  automatic: 'mode.automatic',
+  paused: 'mode.paused',
 };
 
 export type PageId = 'review' | 'sweeps' | 'insights';
 
-const PAGES: { id: PageId; href: string; label: string }[] = [
-  { id: 'review', href: 'review.html', label: 'Shadow review' },
-  { id: 'sweeps', href: 'sweeps.html', label: 'Sweeps' },
-  { id: 'insights', href: 'insights.html', label: 'Insights' },
+const PAGES: { id: PageId; href: string; label: Key }[] = [
+  { id: 'review', href: 'review.html', label: 'pages.review' },
+  { id: 'sweeps', href: 'sweeps.html', label: 'pages.sweeps' },
+  { id: 'insights', href: 'insights.html', label: 'pages.insights' },
 ];
 
 /** Shared header of the extension pages: wordmark, links between the pages, current mode. */
@@ -23,7 +24,7 @@ export function PageHeader(props: { current: PageId; mode: Mode }) {
         <Leaf size={20} className="text-accent" aria-hidden />
         <span className="font-serif text-xl">Decay</span>
       </div>
-      <nav aria-label="Decay pages" className="order-last w-full sm:order-none sm:w-auto">
+      <nav aria-label={t('pages.nav')} className="order-last w-full sm:order-none sm:w-auto">
         <ul className="flex gap-1 text-sm">
           {PAGES.map((p) => (
             <li key={p.id}>
@@ -36,7 +37,7 @@ export function PageHeader(props: { current: PageId; mode: Mode }) {
                     : 'text-muted hover:text-ink'
                 }`}
               >
-                {p.label}
+                {t(p.label)}
               </a>
             </li>
           ))}
@@ -44,7 +45,7 @@ export function PageHeader(props: { current: PageId; mode: Mode }) {
       </nav>
       <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm">
         <span className="size-2 rounded-full bg-accent-dot" aria-hidden />
-        {MODE_LABEL[props.mode]}
+        {t(MODE_LABEL[props.mode])}
       </span>
     </header>
   );

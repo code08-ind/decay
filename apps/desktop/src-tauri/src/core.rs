@@ -16,6 +16,47 @@ use serde::Serialize;
 
 use crate::keys::{self, KeySource};
 
+/// Why the engine couldn't start: a catalog key (shown in the user's language, so it
+/// follows a language change) and the detail, which isn't translated.
+#[derive(Debug, Clone)]
+pub struct StartError {
+    key: &'static str,
+    args: Vec<(&'static str, String)>,
+}
+
+impl StartError {
+    fn new(key: &'static str, detail: impl std::fmt::Display) -> Self {
+        Self { key, args: vec![("detail", detail.to_string())] }
+    }
+
+    fn key(e: &keys::KeyError) -> Self {
+        match e {
+            keys::KeyError::Missing(store) => {
+                Self { key: "start.keyMissing", args: vec![("store", (*store).to_owned())] }
+            }
+            other => Self::new("start.key", other),
+        }
+    }
+
+    /// In the user's language.
+    pub fn text(&self) -> String {
+        let args: Vec<(&str, crate::i18n::Arg)> =
+            self.args.iter().map(|(k, v)| (*k, v.into())).collect();
+        crate::i18n::tf(self.key, &args)
+    }
+}
+
+/// For the log (in English, whatever the user's language).
+impl std::fmt::Display for StartError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.key)?;
+        for (k, v) in &self.args {
+            write!(f, " {k}={v}")?;
+        }
+        Ok(())
+    }
+}
+
 /// How long a command waits for the engine thread.
 const CALL_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -76,14 +117,14 @@ impl Core {
         dir: &DataDir,
         endpoint: Endpoint,
         events: impl FnMut(EngineEvent) + Send + 'static,
-    ) -> Result<(), String> {
+    ) -> Result<(), StartError> {
         // The endpoint first: if another copy serves it, the data isn't touched at all.
-        let mut server = IpcServer::bind(endpoint)
-            .map_err(|e| format!("another copy of Decay (or decay-engine-dev) is running: {e}"))?;
+        let mut server =
+            IpcServer::bind(endpoint).map_err(|e| StartError::new("start.running", e))?;
         let paths = StorePaths::in_dir(&dir.data);
-        let key = keys::load_or_create(&dir.key, &paths).map_err(|e| e.to_string())?;
-        let (store, report) = Store::open(paths, key, now_ms())
-            .map_err(|e| format!("the database can't be opened: {e}"))?;
+        let key = keys::load_or_create(&dir.key, &paths).map_err(|e| StartError::key(&e))?;
+        let (store, report) =
+            Store::open(paths, key, now_ms()).map_err(|e| StartError::new("start.database", e))?;
         tracing::info!(
             created = report.created,
             recovered = report.recovered_from.is_some(),
@@ -91,13 +132,17 @@ impl Core {
             "store open"
         );
         let engine = Engine::new(store, EngineConfig::default(), now_ms())
-            .map_err(|e| format!("the engine can't start: {e}"))?;
-        server.publish(&dir.support).map_err(|e| e.to_string())?;
+            .map_err(|e| StartError::new("start.engine", e))?;
+        server.publish(&dir.support).map_err(|e| StartError::new("start.engine", e))?;
         let runtime = Runtime::start(server, engine, decay_platform::native(), events)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| StartError::new("start.engine", e))?;
         // App windows (P2.1): listed only with Accessibility and window handling on.
-        runtime.list_windows_with(decay_platform::window_lister()).map_err(|e| e.to_string())?;
-        runtime.act_on_windows_with(decay_platform::window_actor()).map_err(|e| e.to_string())?;
+        runtime
+            .list_windows_with(decay_platform::window_lister())
+            .map_err(|e| StartError::new("start.engine", e))?;
+        runtime
+            .act_on_windows_with(decay_platform::window_actor())
+            .map_err(|e| StartError::new("start.engine", e))?;
         *self.runtime.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(runtime);
         Ok(())
     }

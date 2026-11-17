@@ -1,3 +1,4 @@
+import { setLocale } from '@decay/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { InsightsView } from '@/components/Insights';
@@ -6,8 +7,10 @@ import type { Mode } from '@/lib/db/types';
 import { buildBetaExport, getInstallId, toCsv } from '@/lib/metrics/export';
 import { buildInsights, type Insights, type RangeDays } from '@/lib/metrics/insights';
 import { probeAccess } from '@/lib/probe/chrome';
+import { rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { localDay } from '@/lib/shadow/shadow';
+import { t } from '@/lib/strings';
 import { detectAppId } from '@/lib/tracker/browser-api';
 import { applyTheme } from '@/lib/ui/theme';
 
@@ -42,28 +45,42 @@ function saveFile(name: string, text: string, type: string) {
 
 /** Insights page (P0.8, F34): on-device metrics + "Share with beta team". */
 export function InsightsPage() {
+  // The tab's name, in the page's language (again after a change).
+  useEffect(() => {
+    document.title = t('title.insights');
+  });
   const [range, setRange] = useState<RangeDays>(storedRange);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [mode, setMode] = useState<Mode>('shadow');
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [protectedSites, setProtectedSites] = useState<ReadonlySet<string>>(new Set());
   const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [all, metrics, items] = await Promise.all([
+      const [all, metrics, items, ruleRows] = await Promise.all([
         settings.getAll(),
         db.metrics.toArray(),
         db.items.toArray(),
+        db.rules.toArray(),
       ]);
       if (seq !== loadSeq.current) return;
       applyTheme(all.theme);
+      setLocale(all.locale);
       setMode(all.mode);
+      setProtectedSites(
+        new Set(
+          ruleRows
+            .filter((r) => r.enabled && r.scope === 'domain' && r.action === 'protect')
+            .map((r) => r.match),
+        ),
+      );
       setInsights(buildInsights({ now: Date.now(), range, mode: all.mode, metrics, items }));
       setError(null);
     } catch (e) {
-      if (seq === loadSeq.current) setError(`Couldn't load insights: ${message(e)}`);
+      if (seq === loadSeq.current) setError(t('load.insights', { error: message(e) }));
     }
   }, [range]);
 
@@ -115,7 +132,7 @@ export function InsightsPage() {
     try {
       setPreview(JSON.stringify(await buildExport(true), null, 2));
     } catch (e) {
-      setError(`Couldn't prepare the file: ${message(e)}`);
+      setError(t('insights.prepareFailed', { error: message(e) }));
     }
   };
 
@@ -123,8 +140,23 @@ export function InsightsPage() {
     try {
       saveFile(`decay-metrics-${stamp()}.csv`, toCsv(await buildExport(false)), 'text/csv');
     } catch (e) {
-      setError(`Couldn't export: ${message(e)}`);
+      setError(t('insights.exportFailed', { error: message(e) }));
     }
+  };
+
+  /**
+   * "Always keep" on a restored-most row: a protect rule for the site (a quick action, as
+   * from the popup). One already there counts, but turned off it's turned on.
+   */
+  const onProtectSite = async (domain: string) => {
+    try {
+      await rules.alwaysKeep(domain);
+    } catch (e) {
+      setError(t('insights.protectFailed', { site: domain, error: message(e) }));
+      throw e;
+    }
+    setProtectedSites((s) => new Set(s).add(domain));
+    setError(null);
   };
 
   const onShareDownload = () => {
@@ -137,7 +169,7 @@ export function InsightsPage() {
   if (!insights) {
     return (
       <p className="p-10 text-muted" aria-busy={!error}>
-        {error ?? 'Loading…'}
+        {error ?? t('common.loading')}
       </p>
     );
   }
@@ -151,6 +183,8 @@ export function InsightsPage() {
       onShare={() => void onShare()}
       onShareDownload={onShareDownload}
       onShareCancel={() => setPreview(null)}
+      onProtectSite={onProtectSite}
+      protectedSites={protectedSites}
       error={error}
     />
   );

@@ -11,6 +11,7 @@
     "allow-ui-show-window",
     "allow-ui-take-pending",
     "allow-get-settings",
+    "allow-system-language",
     "allow-search",
     "allow-restore-items",
     "allow-restore-batch",

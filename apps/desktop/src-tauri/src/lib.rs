@@ -22,6 +22,7 @@ mod core;
 mod deeplink;
 mod diagnostics;
 mod help;
+mod i18n;
 mod keys;
 mod library;
 mod menu;
@@ -111,8 +112,10 @@ fn forward(app: &AppHandle, event: EngineEvent) {
     }
 }
 
-fn fail(app: &AppHandle, why: String) {
+fn fail(app: &AppHandle, why: crate::core::StartError) {
     tracing::error!("Decay can't start: {why}");
+    // No settings without the engine: the system's language.
+    apply_locale(app, None);
     // Onboarding can't work without the engine: the Library shows the error.
     shell::set_onboarded(app, true);
     *app.state::<Shell>().fatal.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
@@ -162,6 +165,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 handle.state::<notify::Notifier>().set_settings(settings);
                 diagnostics::apply_settings(settings);
             }
+            apply_locale(&handle, settings.as_ref().and_then(|s| s.get("locale")?.as_str()));
             shell::set_onboarded(&handle, onboarded);
             if let Some(theme) = theme {
                 let main = handle.clone();
@@ -247,62 +251,90 @@ fn stop_on_signals(app: &AppHandle) {
     });
 }
 
+/// Follows the `locale` setting (F31): the app's text, and the menus already built with
+/// the previous language.
+pub(crate) fn apply_locale(app: &AppHandle, setting: Option<&str>) {
+    let before = i18n::locale();
+    i18n::set_locale(setting);
+    if i18n::locale() == before {
+        return; // the menus already say it this way (the first build was in English)
+    }
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if let Ok(menu) = app_menu(&handle) {
+            let _ = handle.set_menu(menu);
+        }
+        tray::refresh(&handle);
+    });
+}
+
 /// The app's own menu (macOS menu bar while a window is open). Its Quit is the user's
 /// quit, like the tray's: it writes the quit marker (the default menu's Quit didn't).
 fn app_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
-    let quit = MenuItem::with_id(app, APP_QUIT, "Quit Decay", true, Some("CmdOrCtrl+Q"))?;
+    use i18n::t;
+    let s = |key: &str| Some(t(key));
+    let quit = MenuItem::with_id(app, APP_QUIT, t("menu.quit"), true, Some("CmdOrCtrl+Q"))?;
     let decay = Submenu::with_items(
         app,
         "Decay",
         true,
         &[
-            &PredefinedMenuItem::about(app, None, None)?,
+            &PredefinedMenuItem::about(app, s("menu.about").as_deref(), None)?,
             &PredefinedMenuItem::separator(app)?,
-            &PredefinedMenuItem::hide(app, None)?,
-            &PredefinedMenuItem::hide_others(app, None)?,
+            &PredefinedMenuItem::hide(app, s("menu.hide").as_deref())?,
+            &PredefinedMenuItem::hide_others(app, s("menu.hideOthers").as_deref())?,
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
     )?;
     let edit = Submenu::with_items(
         app,
-        "Edit",
+        t("menu.edit"),
         true,
         &[
-            &PredefinedMenuItem::undo(app, None)?,
-            &PredefinedMenuItem::redo(app, None)?,
+            &PredefinedMenuItem::undo(app, s("menu.undo").as_deref())?,
+            &PredefinedMenuItem::redo(app, s("menu.redo").as_deref())?,
             &PredefinedMenuItem::separator(app)?,
-            &PredefinedMenuItem::cut(app, None)?,
-            &PredefinedMenuItem::copy(app, None)?,
-            &PredefinedMenuItem::paste(app, None)?,
-            &PredefinedMenuItem::select_all(app, None)?,
+            &PredefinedMenuItem::cut(app, s("menu.cut").as_deref())?,
+            &PredefinedMenuItem::copy(app, s("menu.copy").as_deref())?,
+            &PredefinedMenuItem::paste(app, s("menu.paste").as_deref())?,
+            &PredefinedMenuItem::select_all(app, s("menu.selectAll").as_deref())?,
         ],
     )?;
     let window = Submenu::with_items(
         app,
-        "Window",
-        true,
-        &[&PredefinedMenuItem::minimize(app, None)?, &PredefinedMenuItem::close_window(app, None)?],
-    )?;
-    // Help (F32). macOS adds its menu search to a submenu named "Help".
-    let help = Submenu::with_items(
-        app,
-        "Help",
+        t("menu.window"),
         true,
         &[
-            &MenuItem::with_id(app, HELP_DOCS, "Decay Help", true, None::<&str>)?,
+            &PredefinedMenuItem::minimize(app, s("menu.minimize").as_deref())?,
+            &PredefinedMenuItem::close_window(app, s("menu.close").as_deref())?,
+        ],
+    )?;
+    // Help (F32). macOS adds its menu search to the help menu: registered by role, so the
+    // title can be in any language.
+    let help = Submenu::with_items(
+        app,
+        t("menu.help"),
+        true,
+        &[
+            &MenuItem::with_id(app, HELP_DOCS, t("menu.docs"), true, None::<&str>)?,
             &MenuItem::with_id(
                 app,
                 HELP_SHORTCUTS,
-                "Keyboard Shortcuts",
+                t("menu.shortcuts"),
                 true,
                 Some("CmdOrCtrl+/"),
             )?,
-            &MenuItem::with_id(app, HELP_WHATS_NEW, "What's New in Decay", true, None::<&str>)?,
+            &MenuItem::with_id(app, HELP_WHATS_NEW, t("menu.whatsNew"), true, None::<&str>)?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, HELP_FEEDBACK, "Send Feedback…", true, None::<&str>)?,
+            &MenuItem::with_id(app, HELP_FEEDBACK, t("menu.feedback"), true, None::<&str>)?,
         ],
     )?;
+    #[cfg(target_os = "macos")]
+    {
+        let _ = window.set_as_windows_menu_for_nsapp();
+        let _ = help.set_as_help_menu_for_nsapp();
+    }
     Menu::with_items(app, &[&decay, &edit, &window, &help])
 }
 
@@ -447,6 +479,7 @@ pub fn run() {
             metrics::get_beta_context,
             metrics::save_metrics_file,
             help::open_link,
+            i18n::system_language,
             help::whats_new,
             help::whats_new_seen,
             help::ui_show_whats_new,

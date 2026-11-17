@@ -1,3 +1,4 @@
+import { setLocale } from '@decay/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { Popup } from '@/components/Popup';
@@ -11,13 +12,13 @@ import { RuleError, rules } from '@/lib/rules/rules';
 import { ArchiveSearch } from '@/lib/search/search';
 import { settings } from '@/lib/settings/settings';
 import { protectRuleFor } from '@/lib/shadow/actions';
+import { t } from '@/lib/strings';
 import { sendDecay } from '@/lib/sweep/messages';
 import type { TabInfo } from '@/lib/tracker/tabs';
 import { faviconFor } from '@/lib/ui/favicon';
 import { applyTheme } from '@/lib/ui/theme';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const isMac = /Mac/i.test(navigator.platform || navigator.userAgent);
 
 /** Extension popup (Designs/15): status, search across the archive, restore, undo. */
@@ -44,6 +45,7 @@ export function App() {
         loadProbeAccess(),
       ]);
       applyTheme(all.theme);
+      setLocale(all.locale);
       const [linkStatus, enabled] = await Promise.all([readLinkStatus(), linkEnabled()]);
       setAppLink({ status: linkStatus, enabled });
       const t = Date.now();
@@ -72,7 +74,7 @@ export function App() {
       setData(popup);
       setNow(t);
     } catch (e) {
-      setError(`Couldn't load Decay: ${message(e)}`);
+      setError(t('load.decay', { error: message(e) }));
     }
   }, []);
 
@@ -92,7 +94,7 @@ export function App() {
 
   const searchApp = useCallback(async (query: string) => {
     const r = await sendDecay({ type: 'decay.search', query, limit: 50 });
-    if (!r.search) throw new Error('No answer from the Decay app.');
+    if (!r.search) throw new Error(t('popup.noAnswer'));
     return appSearchResult(r.search, Date.now());
   }, []);
 
@@ -152,8 +154,8 @@ export function App() {
         window.close();
         return null;
       }
-      if (r.skipped) return 'That tab is already open again.';
-      throw new Error("Couldn't reopen that tab. Try again, or open it from Sweeps.");
+      if (r.skipped) return t('popup.tabOpen');
+      throw new Error(t('popup.reopenFailed'));
     });
 
   const onRestoreBatch = (item: Item, opts?: { fromSearch?: boolean }) =>
@@ -161,10 +163,10 @@ export function App() {
       const searchMs = takeSearchMs(opts?.fromSearch);
       const r = await sendDecay({ type: 'decay.restoreBatch', itemId: item.id, searchMs });
       const restored = r.restored ?? 0;
-      if (!restored && r.skipped && !r.failed) return 'That batch is already open again.';
+      if (!restored && r.skipped && !r.failed) return t('popup.batchOpen');
       return r.failed
-        ? `Restored ${restored} of ${restored + r.failed} tabs.`
-        : `Restored ${plural(restored, 'tab')} in a new window, in their original order.`;
+        ? t('popup.restoredSome', { n: restored, total: restored + r.failed })
+        : t('popup.restoredBatch', { n: restored });
     });
 
   // The app link (P1.4): the permission must be asked for from this click.
@@ -178,7 +180,7 @@ export function App() {
   const onDisconnectApp = () =>
     act(async () => {
       await sendDecay({ type: 'decay.app.disconnect' });
-      return 'Decay works on its own again.';
+      return t('popup.ownAgain');
     });
   // The link's state changes in the background (connecting → connected): follow it.
   useEffect(() => {
@@ -193,7 +195,7 @@ export function App() {
     act(async () => {
       const sweepId = data?.lastSweep?.sweep.id;
       const r = await sendDecay({ type: 'decay.undoSweep', sweepId });
-      return `Restored ${plural(r.restored ?? 0, 'tab')}.`;
+      return t('popup.restored', { n: r.restored ?? 0 });
     });
 
   const onProtectSite = () =>
@@ -206,7 +208,7 @@ export function App() {
       } catch (e) {
         if (!(e instanceof RuleError && e.code === 'DUPLICATE_RULE')) throw e;
       }
-      return `Decay will never archive ${site.host}.`;
+      return t('popup.neverArchiveSite', { host: site.host });
     });
 
   // `permissions.request` needs the click's user gesture, so it isn't wrapped in `act`
@@ -217,7 +219,7 @@ export function App() {
     setBusy(true); // one permission request at a time (double clicks)
     requestProbeAccess()
       .then((granted) => {
-        if (granted) setStatus('Thanks. Decay now checks pages for unsaved work.');
+        if (granted) setStatus(t('popup.probeThanks'));
       })
       .catch((e: unknown) => setError(message(e)))
       .finally(() => {
@@ -229,7 +231,7 @@ export function App() {
   if (!data) {
     return (
       <p className="w-[380px] p-4 text-sm text-muted" aria-busy={!error}>
-        {error ?? 'Loading…'}
+        {error ?? t('common.loading')}
       </p>
     );
   }

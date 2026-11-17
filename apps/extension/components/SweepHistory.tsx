@@ -1,3 +1,4 @@
+import { formatDate } from '@decay/ui';
 import {
   ChevronDown,
   CircleAlert,
@@ -12,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import type { Reason, SweepSkipReason } from '@/lib/db/types';
 import { localDay } from '@/lib/shadow/shadow';
+import { t } from '@/lib/strings';
 import type { SweepHistory as History, SweepEntry, SweepEntryItem } from '@/lib/sweep/history';
 import { avatarClass, shortUrl } from './format';
 import { PageHeader } from './PageHeader';
@@ -31,47 +33,34 @@ export interface SweepHistoryProps {
   notice?: string | null;
 }
 
-const SKIP_LABEL: Record<SweepSkipReason, string> = {
-  inUse: 'Kept open: in use',
-  changed: 'Kept open: page changed',
-  modeChanged: 'Kept open: Decay was paused',
-  error: "Kept open: couldn't close",
-  closedByUser: 'You closed it first',
-  formInput: 'Kept open: unsaved work',
-};
+const skipLabel = (reason: SweepSkipReason): string => t(`skip.${reason}`);
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-const time = (ts: number) =>
-  new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+const time = (ts: number) => formatDate(ts, { hour: 'numeric', minute: '2-digit' });
 
 export function dayLabel(ts: number, now: number): string {
   const day = localDay(ts);
-  if (day === localDay(now)) return 'Today';
+  if (day === localDay(now)) return t('day.today');
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (day === localDay(yesterday.getTime())) return 'Yesterday';
-  return new Date(ts).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
+  if (day === localDay(yesterday.getTime())) return t('day.yesterday');
+  return formatDate(ts, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export function reasonLabel(reason: Reason | undefined): string {
-  if (!reason || reason.type === 'protected') return 'Unused';
-  const base = `Unused ${reason.activeHours} active h`;
-  return reason.type === 'customRule' ? `${base} · your rule` : base;
+  if (!reason || reason.type === 'protected') return t('reason.unused');
+  return t(reason.type === 'customRule' ? 'reason.rule' : 'reason.hours', {
+    n: reason.activeHours,
+  });
 }
 
 function headline(entry: SweepEntry): string {
-  if (entry.status === 'running') return 'Archiving…';
-  if (entry.status === 'nothing') return 'Nothing archived';
-  return `Archived ${plural(entry.archived, 'tab')}`;
+  if (entry.status === 'running') return t('sweeps.archiving');
+  if (entry.status === 'nothing') return t('sweeps.nothingArchived');
+  return t('sweeps.archived', { n: entry.archived });
 }
 
 type Range = '7' | '30' | 'all';
-const RANGE_LABEL: Record<Range, string> = { '7': 'Last 7 days', '30': 'Last 30 days', all: 'All' };
+const RANGES: Range[] = ['7', '30', 'all'];
 
 export function SweepHistory(props: SweepHistoryProps) {
   const { mode } = props.history;
@@ -108,28 +97,26 @@ export function SweepHistory(props: SweepHistoryProps) {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">Sweeps</h1>
-            <p className="mt-2 text-muted">
-              Every tidy-up Decay has made. The last 20 can be undone.
-            </p>
+            <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('sweeps.title')}</h1>
+            <p className="mt-2 text-muted">{t('sweeps.subtitle')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
             <label className="relative">
-              <span className="sr-only">Show sweeps from</span>
+              <span className="sr-only">{t('sweeps.rangeLabel')}</span>
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value as Range)}
-                className="appearance-none rounded-full border border-line-strong bg-surface py-3 pr-10 pl-5 text-sm"
+                className="appearance-none rounded-full border border-line-strong bg-surface py-3 pe-10 ps-5 text-sm"
               >
-                {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
+                {RANGES.map((r) => (
                   <option key={r} value={r}>
-                    {RANGE_LABEL[r]}
+                    {t(`sweeps.range.${r}`)}
                   </option>
                 ))}
               </select>
               <ChevronDown
                 size={16}
-                className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-muted"
+                className="pointer-events-none absolute top-1/2 end-4 -translate-y-1/2 text-muted"
                 aria-hidden
               />
             </label>
@@ -143,11 +130,11 @@ export function SweepHistory(props: SweepHistoryProps) {
                 <Plus size={16} aria-hidden />
                 {mode === 'shadow'
                   ? props.busy === 'sweepNow'
-                    ? 'Simulating…'
-                    : 'Run a simulation'
+                    ? t('sweeps.simulating')
+                    : t('sweeps.simulate')
                   : props.busy === 'sweepNow'
-                    ? 'Sweeping…'
-                    : 'Sweep now'}
+                    ? t('sweeps.sweeping')
+                    : t('sweeps.sweepNow')}
               </button>
             )}
           </div>
@@ -156,16 +143,14 @@ export function SweepHistory(props: SweepHistoryProps) {
         {mode !== 'automatic' && (
           <p className="mt-6 flex flex-wrap items-center gap-2 rounded-tile border border-line bg-surface-2 px-4 py-3 text-sm text-muted">
             <Info size={16} className="text-accent" aria-hidden />
-            {mode === 'shadow'
-              ? 'Shadow mode is on: sweeps are simulated and nothing is closed.'
-              : 'Decay is paused: no sweeps run until you resume.'}
+            {mode === 'shadow' ? t('sweeps.shadowNote') : t('sweeps.pausedNote')}
             {mode === 'shadow' && (
               <button
                 type="button"
                 onClick={props.onOpenReview}
                 className="text-accent-text underline underline-offset-4"
               >
-                Open shadow review
+                {t('sweeps.openReview')}
               </button>
             )}
           </p>
@@ -190,15 +175,12 @@ export function SweepHistory(props: SweepHistoryProps) {
 
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
           <section
-            aria-label="Sweep history"
+            aria-label={t('sweeps.history')}
             className="min-w-0 rounded-card border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-6"
           >
             {entries.length === 0 ? (
               <p className="py-12 text-center text-muted">
-                No sweeps yet.{' '}
-                {mode === 'automatic'
-                  ? 'Decay archives stale tabs at a quiet moment, at most every 15 minutes.'
-                  : 'Real sweeps start once automatic mode is on.'}
+                {mode === 'automatic' ? t('sweeps.empty.automatic') : t('sweeps.empty')}
               </p>
             ) : (
               groups.map((group) => (
@@ -244,8 +226,7 @@ export function SweepHistory(props: SweepHistoryProps) {
 
       <footer className="border-t border-line px-4 py-3 text-sm text-muted sm:px-10">
         <p className="mx-auto flex max-w-6xl items-center gap-2">
-          <Lock size={14} aria-hidden /> Decay saves the address before closing a tab. Nothing
-          leaves this device.
+          <Lock size={14} aria-hidden /> {t('sweeps.local')}
         </p>
       </footer>
     </div>
@@ -272,41 +253,44 @@ function SweepRow(props: {
       }`}
     >
       {props.selected && (
-        <span className="absolute top-3 bottom-3 left-0 w-1 rounded-full bg-accent" aria-hidden />
+        <span className="absolute top-3 bottom-3 start-0 w-1 rounded-full bg-accent" aria-hidden />
       )}
       <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-muted">
-        {undone ? <RotateCcw size={18} aria-hidden /> : <Wind size={18} aria-hidden />}
+        {undone ? (
+          <RotateCcw className="rtl:-scale-x-100" size={18} aria-hidden />
+        ) : (
+          <Wind size={18} aria-hidden />
+        )}
       </span>
       <button
         type="button"
         onClick={props.onSelect}
         aria-pressed={props.selected}
-        className="min-w-0 flex-1 text-left"
+        className="min-w-0 flex-1 text-start"
       >
         <span className="flex flex-wrap items-center gap-2">
           <span className={`font-serif text-xl ${undone ? 'text-muted line-through' : ''}`}>
-            Sweep #{entry.number}
+            {t('sweeps.number', { n: entry.number })}
           </span>
           {entry.archived > 0 && (
             <span className="rounded-full border border-line px-2 py-0.5 text-sm">
-              {plural(entry.archived, 'tab')}
+              {t('sweeps.tabs', { n: entry.archived })}
             </span>
           )}
           {skipped > 0 && (
             <span className="rounded-full border border-line px-2 py-0.5 text-sm text-muted">
-              {skipped} kept open
+              {t('sweeps.keptOpen', { n: skipped })}
             </span>
           )}
         </span>
         <span className="mt-0.5 block text-sm text-muted">
-          {time(entry.sweep.startedAt)} ·{' '}
-          {entry.sweep.trigger === 'manual' ? 'manual' : 'automatic'}
+          {t('sweeps.meta', { time: time(entry.sweep.startedAt), trigger: entry.sweep.trigger })}
         </span>
       </button>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
         {entry.status === 'partial' && (
           <span className="hidden rounded-full bg-lime px-3 py-1 text-sm text-lime-ink sm:inline">
-            Partially restored · {entry.restored}
+            {t('sweeps.partly', { n: entry.restored })}
           </span>
         )}
         {entry.undoable ? (
@@ -314,20 +298,27 @@ function SweepRow(props: {
             type="button"
             onClick={props.onUndo}
             disabled={props.disabled}
-            aria-label={`${props.busy ? 'Undoing' : entry.status === 'partial' ? 'Undo rest of' : 'Undo'} sweep #${entry.number}`}
+            aria-label={t('sweeps.undoLabel', {
+              state: props.busy ? 'busy' : entry.status === 'partial' ? 'partial' : 'all',
+              n: entry.number,
+            })}
             className="rounded-full border border-line-strong bg-surface px-4 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50"
           >
-            {props.busy ? 'Undoing…' : entry.status === 'partial' ? 'Undo rest' : 'Undo'}
+            {props.busy
+              ? t('sweeps.undoing')
+              : entry.status === 'partial'
+                ? t('sweeps.undoRest')
+                : t('sweeps.undo')}
           </button>
         ) : (
           <span className="rounded-full border border-line px-3 py-1 text-sm text-faint">
             {entry.status === 'undone'
-              ? 'Undone'
+              ? t('sweeps.state.undone')
               : entry.status === 'running'
-                ? 'Running'
+                ? t('sweeps.state.running')
                 : entry.status === 'nothing'
-                  ? 'Nothing closed'
-                  : 'Too old to undo'}
+                  ? t('sweeps.state.nothing')
+                  : t('sweeps.state.old')}
           </span>
         )}
       </div>
@@ -367,16 +358,19 @@ function SweepDetail(props: {
       else next.add(id);
       return next;
     });
-  const when = `${dayLabel(entry.sweep.startedAt, props.now)} ${time(entry.sweep.startedAt)}`;
+  const when = t('sweeps.detail.when', {
+    day: dayLabel(entry.sweep.startedAt, props.now),
+    time: time(entry.sweep.startedAt),
+  });
   return (
     <aside
-      aria-label={`Sweep #${entry.number}`}
+      aria-label={t('sweeps.number', { n: entry.number })}
       className="min-w-0 self-start rounded-card bg-feature p-6 text-feature-ink"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium tracking-widest text-feature-sub uppercase">
-            Sweep #{entry.number} · {when}
+            {t('sweeps.detail.title', { n: entry.number, when })}
           </p>
           <h2 className="mt-2 font-serif text-3xl">{headline(entry)}</h2>
         </div>
@@ -386,18 +380,18 @@ function SweepDetail(props: {
           className="grid size-9 shrink-0 place-items-center rounded-full border border-feature-tile-line"
         >
           <X size={16} aria-hidden />
-          <span className="sr-only">Close details</span>
+          <span className="sr-only">{t('sweeps.detail.close')}</span>
         </button>
       </div>
 
       <p className="mt-4 rounded-tile bg-feature-tile px-4 py-3 text-sm">
-        Trigger: {entry.sweep.trigger === 'manual' ? 'Sweep now' : 'scheduled sweep'}
+        {t('sweeps.detail.trigger', { trigger: entry.sweep.trigger })}
       </p>
 
       <div className="mt-4 rounded-tile border border-feature-tile-line bg-feature-tile p-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-xs font-medium tracking-widest text-feature-sub uppercase">
-            Items in this sweep
+            {t('sweeps.detail.items')}
           </h3>
           {restorableIds.length > 1 && (
             <button
@@ -407,7 +401,9 @@ function SweepDetail(props: {
               }
               className="text-xs text-feature-sub underline underline-offset-4"
             >
-              {picked.size === restorableIds.length ? 'Select none' : 'Select all'}
+              {picked.size === restorableIds.length
+                ? t('sweeps.detail.none')
+                : t('sweeps.detail.all')}
             </button>
           )}
         </div>
@@ -425,10 +421,7 @@ function SweepDetail(props: {
         </ul>
       </div>
 
-      <p className="mt-4 text-sm text-feature-sub">
-        Decay saved each address, window and tab group before closing. Undo reopens them in the
-        background, in their original order.
-      </p>
+      <p className="mt-4 text-sm text-feature-sub">{t('sweeps.detail.saved')}</p>
 
       {restorableIds.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-feature-tile-line pt-4">
@@ -439,12 +432,12 @@ function SweepDetail(props: {
               disabled={props.disabled}
               className="inline-flex items-center gap-2 rounded-full bg-surface px-5 py-2.5 font-medium text-ink disabled:opacity-60"
             >
-              <RotateCcw size={16} aria-hidden />
+              <RotateCcw className="rtl:-scale-x-100" size={16} aria-hidden />
               {props.busy
-                ? 'Undoing…'
+                ? t('sweeps.undoing')
                 : entry.status === 'partial'
-                  ? `Undo the other ${plural(entry.remaining, 'tab')}`
-                  : 'Undo whole sweep'}
+                  ? t('sweeps.detail.undoOther', { n: entry.remaining })
+                  : t('sweeps.detail.undoAll')}
             </button>
           )}
           <button
@@ -453,7 +446,9 @@ function SweepDetail(props: {
             disabled={props.disabled || picked.size === 0}
             className="rounded-full border border-feature-tile-line px-5 py-2.5 font-medium disabled:opacity-50"
           >
-            Restore selected{picked.size ? ` (${picked.size})` : ''}
+            {picked.size
+              ? t('sweeps.detail.restoreN', { n: picked.size })
+              : t('sweeps.detail.restore')}
           </button>
         </div>
       )}
@@ -480,14 +475,14 @@ function DetailItem({
   onToggle: () => void;
 }) {
   const { item, entry } = row;
-  const title = item?.title || shortUrl(item?.url) || 'Deleted item';
+  const title = item?.title || shortUrl(item?.url) || t('sweeps.item.deleted');
   const key = (item?.domain ?? title).replace(/^www\./, '');
   const favicon = item?.url && item.faviconUrl ? faviconFor?.(item.url) : undefined;
   let note: string;
-  if (entry.result === 'pending') note = 'Closing…';
+  if (entry.result === 'pending') note = t('sweeps.item.closing');
   else if (entry.result !== 'ok')
-    note = entry.skipReason ? SKIP_LABEL[entry.skipReason] : 'Kept open';
-  else if (item && item.state !== 'archived') note = 'Restored';
+    note = entry.skipReason ? skipLabel(entry.skipReason) : t('sweeps.item.keptOpen');
+  else if (item && item.state !== 'archived') note = t('sweeps.item.restored');
   else note = reasonLabel(item?.archiveReason);
   return (
     <li className="flex items-center gap-3 py-1.5">
@@ -496,7 +491,7 @@ function DetailItem({
           type="checkbox"
           checked={picked}
           onChange={onToggle}
-          aria-label={`Select ${title}`}
+          aria-label={t('sweeps.item.select', { title })}
           className="size-4 shrink-0 accent-[var(--lime)]"
         />
       ) : (
@@ -520,7 +515,7 @@ function DetailItem({
         {title}
       </span>
       <span
-        className="max-w-[45%] shrink-0 truncate text-right font-mono text-xs text-feature-sub"
+        className="max-w-[45%] shrink-0 truncate text-end font-mono text-xs text-feature-sub"
         title={note}
       >
         {note}

@@ -1,6 +1,9 @@
 // The shell's commands and events (API Design §2.3, §3). Typed by hand until the UI
 // phases generate them (tauri-specta).
+
+import { formatDate } from '@decay/ui';
 import { invoke } from '@tauri-apps/api/core';
+import { t } from './strings';
 
 export type Mode = 'shadow' | 'automatic' | 'paused';
 
@@ -308,6 +311,8 @@ export const api = {
   testRule: (rule: RuleInput) => invoke<RuleTestResult>('test_rule', { rule }),
   previewExclude: (rule: RuleInput) => invoke<{ count: number }>('preview_exclude', { rule }),
   getSettings: () => invoke<Record<string, unknown>>('get_settings'),
+  /** The OS language as the app reads it (the windows' `system` language). */
+  systemLanguage: () => invoke<string>('system_language'),
   getDailySummary: (dayStart: number, dayEnd: number) =>
     invoke<DailySummary>('get_daily_summary', { input: { dayStart, dayEnd } }),
   getUpdateState: () => invoke<UpdateState>('get_update_state'),
@@ -398,31 +403,29 @@ export type ImportOutcome =
 
 /** One sentence about an import, for a toast. */
 export function importSummary(r: ImportResult): string {
-  const n = (count: number, one: string, many = `${one}s`) =>
-    `${count} ${count === 1 ? one : many}`;
-  const parts = [`Imported ${n(r.itemsImported, 'item')}`];
-  if (r.rulesImported) parts.push(n(r.rulesImported, 'rule'));
-  if (r.settingsImported) parts.push(n(r.settingsImported, 'setting'));
-  let text = parts.join(', ');
+  const parts = [t('import.items', { n: r.itemsImported })];
+  if (r.rulesImported) parts.push(t('import.rules', { n: r.rulesImported }));
+  if (r.settingsImported) parts.push(t('import.settings', { n: r.settingsImported }));
+  const text = parts.join(t('common.listSeparator'));
   const notes: string[] = [];
-  if (r.itemsExisting) notes.push(`${r.itemsExisting} already here`);
-  if (r.itemsUpdated) notes.push(`${r.itemsUpdated} updated`);
-  if (r.itemsExpired) notes.push(`${r.itemsExpired} older than you keep items, skipped`);
-  if (r.itemsExcluded) notes.push(`${r.itemsExcluded} on never-recorded sites skipped`);
-  if (r.itemsLive) notes.push(`${n(r.itemsLive, 'open tab')} left to the browser`);
-  if (r.itemsInvalid) notes.push(`${r.itemsInvalid} unreadable or can't be reopened`);
-  if (r.rulesInvalid) notes.push(`${n(r.rulesInvalid, 'rule')} not accepted`);
-  if (r.rulesTurnedOff) notes.push(`${n(r.rulesTurnedOff, 'built-in protection')} turned off`);
-  if (r.itemsPurged) notes.push(`${n(r.itemsPurged, 'stored item')} deleted by its rules`);
-  if (r.linksCapped) notes.push('only the first 100,000 links read');
-  if (notes.length) text += ` (${notes.join('; ')})`;
-  return text;
+  if (r.itemsExisting) notes.push(t('import.note.existing', { n: r.itemsExisting }));
+  if (r.itemsUpdated) notes.push(t('import.note.updated', { n: r.itemsUpdated }));
+  if (r.itemsExpired) notes.push(t('import.note.expired', { n: r.itemsExpired }));
+  if (r.itemsExcluded) notes.push(t('import.note.excluded', { n: r.itemsExcluded }));
+  if (r.itemsLive) notes.push(t('import.note.live', { n: r.itemsLive }));
+  if (r.itemsInvalid) notes.push(t('import.note.invalid', { n: r.itemsInvalid }));
+  if (r.rulesInvalid) notes.push(t('import.note.rulesInvalid', { n: r.rulesInvalid }));
+  if (r.rulesTurnedOff) notes.push(t('import.note.rulesOff', { n: r.rulesTurnedOff }));
+  if (r.itemsPurged) notes.push(t('import.note.purged', { n: r.itemsPurged }));
+  if (r.linksCapped) notes.push(t('import.note.capped', { n: 100_000 }));
+  if (!notes.length) return text;
+  return t('import.withNotes', { text, notes: notes.join(t('common.noteSeparator')) });
 }
 
 /** One sentence about an export, for a toast. */
 export function exportSummary(r: { path: string; count: number }): string {
   const name = r.path.split(/[\\/]/).pop() ?? r.path;
-  return `Exported ${r.count} ${r.count === 1 ? 'item' : 'items'} to ${name}`;
+  return t('export.done', { n: r.count, name });
 }
 
 /** The message of a rejected command. */
@@ -433,15 +436,17 @@ export function errorMessage(e: unknown): string {
 
 /** One line about the status, like the tray's. */
 export function describe(s: EngineStatus, now = Date.now()): string {
-  if (s.mode === 'paused') return 'Paused';
+  if (s.mode === 'paused') return t('status.paused');
   if (s.holdUntil !== null && s.holdUntil > now) {
     const until = new Date(s.holdUntil);
-    if (until.getUTCFullYear() >= 9999) return 'On hold';
-    return `On hold until ${until.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    if (until.getUTCFullYear() >= 9999) return t('status.onHold');
+    return t('status.onHoldUntil', {
+      time: formatDate(until, { hour: '2-digit', minute: '2-digit' }),
+    });
   }
-  if (s.browsers.length === 0) return 'No browser connected';
-  if (s.sweeping) return 'Sweeping…';
-  if (s.inMeeting) return 'In a meeting · sweeps wait';
-  const tabs = `${s.liveTabs} ${s.liveTabs === 1 ? 'tab' : 'tabs'} open, ${s.staleCount} stale`;
-  return s.mode === 'shadow' ? `${tabs} · shadow mode` : tabs;
+  if (s.browsers.length === 0) return t('status.noBrowser');
+  if (s.sweeping) return t('status.sweeping');
+  if (s.inMeeting) return t('status.inMeeting');
+  const p = { tabs: s.liveTabs, stale: s.staleCount };
+  return s.mode === 'shadow' ? t('status.tabsShadow', p) : t('status.tabs', p);
 }

@@ -11,6 +11,7 @@ import {
 } from '../api';
 import { useLoad } from '../library/parts';
 import { displayUrl } from '../panel/results';
+import { type Key, t } from '../strings';
 import {
   actionChip,
   BALANCED,
@@ -19,17 +20,17 @@ import {
   matchHint,
   ruleInput,
   ruleSentence,
-  SCOPE_TEXT,
+  scopeText,
   sliderFactor,
 } from './model';
 import { Group, TabHeader, type TabProps } from './parts';
 
-const BUILT_IN = [
-  'Pinned tabs',
-  'The tab open in front, and tabs playing audio',
-  'Pages with unsaved form input, uploads or a "leave site?" prompt',
-  'Tabs you restored in the last 48 hours',
-  'Pages that can’t be reopened exactly (files, data: and blob: addresses)',
+const BUILT_IN: Key[] = [
+  'protection.builtin.pinned',
+  'protection.builtin.front',
+  'protection.builtin.forms',
+  'protection.builtin.restored',
+  'protection.builtin.exact',
 ];
 
 type Editing = { rule: Rule | null } | null;
@@ -62,17 +63,17 @@ export function Protection(props: TabProps & { version: number; changed: () => v
         thresholdHours: r.thresholdHours,
         enabled: on,
       }),
-      on ? 'Rule on' : 'Rule off',
+      on ? t('protection.ruleOn') : t('protection.ruleOff'),
     );
   return (
     <>
-      <TabHeader title="Protection">Tell Decay what to keep, and what to tidy sooner.</TabHeader>
+      <TabHeader title={t('settings.tab.protection')}>{t('protection.subtitle')}</TabHeader>
       <div className="grid gap-4">
-        <Group title="Always protected">
+        <Group title={t('protection.always')}>
           <ul className="grid gap-1.5 text-sm">
             {BUILT_IN.map((b) => (
               <li key={b} className="flex items-center gap-2">
-                <ShieldCheck size={14} aria-hidden className="shrink-0 text-accent-text" /> {b}
+                <ShieldCheck size={14} aria-hidden className="shrink-0 text-accent-text" /> {t(b)}
               </li>
             ))}
           </ul>
@@ -88,7 +89,8 @@ export function Protection(props: TabProps & { version: number; changed: () => v
               id="rules-h"
               className="text-[11px] font-semibold tracking-wider text-muted uppercase"
             >
-              Rules <span className="ml-1 rounded bg-surface-2 px-1.5">{shown.length}</span>
+              {t('protection.rules')}{' '}
+              <span className="ms-1 rounded bg-surface-2 px-1.5">{shown.length}</span>
             </h2>
             <Button
               size="sm"
@@ -96,36 +98,39 @@ export function Protection(props: TabProps & { version: number; changed: () => v
               icon={<Plus size={14} aria-hidden />}
               onClick={() => setEditing({ rule: null })}
             >
-              New rule
+              {t('protection.new')}
             </Button>
           </div>
           {shown.length === 0 && !rules.loading ? (
-            <p className="px-5 py-6 text-sm text-muted">
-              No rules yet. Add one to keep a site longer, archive it sooner, or never archive it.
-            </p>
+            <p className="px-5 py-6 text-sm text-muted">{t('protection.empty')}</p>
           ) : (
             <ul className="divide-y divide-line">
               {shown.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                   <Switch
-                    label={`${actionChip(r, global)} rule for ${r.match}`}
+                    label={t('protection.toggle', {
+                      action: actionChip(r, global),
+                      match: r.match,
+                    })}
                     className="[&_label]:sr-only"
                     checked={r.enabled}
                     onChange={(on) => toggle(r, on)}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-mono text-[13px]">
-                      {r.scope === 'titleRegex' ? `Title: ${r.match}` : r.match}
+                      {r.scope === 'titleRegex'
+                        ? t('protection.titleMatch', { match: r.match })
+                        : r.match}
                     </span>
                     <span className="block text-[13px] text-muted">{ruleSentence(r)}</span>
                   </span>
-                  <Chip>{SCOPE_TEXT[r.scope]}</Chip>
+                  <Chip>{scopeText(r.scope)}</Chip>
                   <Chip tone={intentOf(r, global) === 'sooner' ? 'warning' : 'accent'}>
                     {actionChip(r, global)}
                   </Chip>
                   {SCOPES.some((x) => x.value === r.scope) && r.action !== 'closeAllowed' && (
                     <IconButton
-                      label={`Edit rule for ${r.match}`}
+                      label={t('protection.edit', { match: r.match })}
                       icon={<Pencil size={14} />}
                       onClick={() => setEditing({ rule: r })}
                     />
@@ -137,20 +142,20 @@ export function Protection(props: TabProps & { version: number; changed: () => v
                         variant="danger"
                         autoFocus
                         onClick={() =>
-                          run(api.deleteRule(r.id), 'Rule deleted').then(() =>
+                          run(api.deleteRule(r.id), t('protection.deleted')).then(() =>
                             setConfirmDelete(null),
                           )
                         }
                       >
-                        Delete
+                        {t('protection.delete')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </span>
                   ) : (
                     <IconButton
-                      label={`Delete rule for ${r.match}`}
+                      label={t('protection.deleteFor', { match: r.match })}
                       icon={<Trash2 size={14} />}
                       onClick={() => setConfirmDelete(r.id)}
                     />
@@ -160,8 +165,7 @@ export function Protection(props: TabProps & { version: number; changed: () => v
             </ul>
           )}
           <p className="flex items-center gap-2 border-t border-line px-5 py-3 text-xs text-muted">
-            <Info size={14} aria-hidden /> A "never archive" rule always wins; otherwise the most
-            specific rule decides (page address, then title, then site).
+            <Info size={14} aria-hidden /> {t('protection.precedence')}
           </p>
         </section>
         {editing && (
@@ -182,10 +186,10 @@ export function Protection(props: TabProps & { version: number; changed: () => v
   );
 }
 
-const SCOPES: { value: RuleScope; label: string }[] = [
-  { value: 'domain', label: 'Site' },
-  { value: 'urlGlob', label: 'Page address' },
-  { value: 'titleRegex', label: 'Title' },
+const SCOPES: { value: RuleScope }[] = [
+  { value: 'domain' },
+  { value: 'urlGlob' },
+  { value: 'titleRegex' },
 ];
 
 /** The add / edit panel: when, matches, do, how much, and a live test. */
@@ -228,7 +232,7 @@ export function RuleEditor(props: {
       return;
     }
     let live = true;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       api
         .testRule(input)
         .then((res) => {
@@ -244,14 +248,14 @@ export function RuleEditor(props: {
     }, 250);
     return () => {
       live = false;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [key]);
   const save = () => {
     setSaving(true);
     const done = r ? api.updateRule(r.id, input) : api.createRule(input);
     done
-      .then(() => props.onSaved(r ? 'Rule saved' : 'Rule added'))
+      .then(() => props.onSaved(r ? t('protection.saved') : t('protection.added')))
       .catch((e) => setProblem(errorMessage(e)))
       .finally(() => setSaving(false));
   };
@@ -265,10 +269,10 @@ export function RuleEditor(props: {
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 id="editor-h" className="font-serif text-2xl">
-          {r ? 'Edit rule' : 'New rule'}
+          {r ? t('editor.edit') : t('editor.new')}
         </h2>
         <IconButton
-          label="Close the rule editor"
+          label={t('editor.close')}
           icon={<X size={16} />}
           outlined
           onClick={props.onClose}
@@ -282,16 +286,16 @@ export function RuleEditor(props: {
         }}
       >
         <div className="grid gap-1.5">
-          <span className="text-sm">When</span>
+          <span className="text-sm">{t('editor.when')}</span>
           <SegmentedControl<RuleScope>
-            label="When"
+            label={t('editor.when')}
             value={scope}
             onChange={setScope}
-            options={SCOPES}
+            options={SCOPES.map((s) => ({ value: s.value, label: scopeText(s.value) }))}
           />
         </div>
         <label className="grid gap-1.5">
-          <span className="text-sm">Matches</span>
+          <span className="text-sm">{t('editor.matches')}</span>
           <input
             ref={first}
             value={match}
@@ -303,25 +307,28 @@ export function RuleEditor(props: {
           />
         </label>
         <div className="grid gap-1.5">
-          <span className="text-sm">Do</span>
+          <span className="text-sm">{t('editor.do')}</span>
           <SegmentedControl<Exclude<Intent, 'exclude'>>
-            label="Do"
+            label={t('editor.do')}
             value={intent}
             onChange={setIntent}
             options={[
-              { value: 'protect', label: 'Never archive' },
-              { value: 'longer', label: 'Keep longer' },
-              { value: 'sooner', label: 'Archive sooner' },
+              { value: 'protect', label: t('editor.do.protect') },
+              { value: 'longer', label: t('editor.do.longer') },
+              { value: 'sooner', label: t('editor.do.sooner') },
             ]}
           />
         </div>
         {intent !== 'protect' && (
           <label className="grid gap-1.5">
             <span className="flex justify-between text-sm">
-              <span>{intent === 'longer' ? 'How much longer' : 'How much sooner'}</span>
+              <span>{intent === 'longer' ? t('editor.howLonger') : t('editor.howSooner')}</span>
               <Chip tone={intent === 'longer' ? 'accent' : 'warning'}>
-                {factor}× {intent === 'longer' ? 'longer' : 'sooner'} · archive after{' '}
-                {input.thresholdHours?.archive} active h
+                {t('editor.factor', {
+                  intent,
+                  factor,
+                  hours: input.thresholdHours?.archive ?? '',
+                })}
               </Chip>
             </span>
             <input
@@ -349,8 +356,9 @@ export function RuleEditor(props: {
           <div className="rounded-xl bg-feature p-3 text-feature-ink">
             <p className="mb-2 flex items-center gap-2 text-sm">
               <Filter size={14} aria-hidden />
-              Test: {test.matchesLive} open {test.matchesLive === 1 ? 'tab matches' : 'tabs match'}
-              {test.matchesArchived > 0 && ` · ${test.matchesArchived} archived`}
+              {test.matchesArchived > 0
+                ? t('editor.testArchived', { n: test.matchesLive, archived: test.matchesArchived })
+                : t('editor.test', { n: test.matchesLive })}
             </p>
             <ul className="grid gap-1">
               {test.sample.map((i) => (
@@ -365,14 +373,14 @@ export function RuleEditor(props: {
           </div>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={props.onClose}>Cancel</Button>
+          <Button onClick={props.onClose}>{t('common.cancel')}</Button>
           <Button
             type="submit"
             variant="primary"
             loading={saving}
             disabled={!match.trim() || problem !== ''}
           >
-            {r ? 'Save rule' : 'Add rule'}
+            {r ? t('editor.save') : t('editor.add')}
           </Button>
         </div>
       </form>

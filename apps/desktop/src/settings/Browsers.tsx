@@ -4,6 +4,7 @@ import { ExternalLink, Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, type DetectedBrowser, errorMessage } from '../api';
 import { rowDetail, rowState, sortRows } from '../onboarding/model';
+import { t } from '../strings';
 import { Group, TabHeader, type TabProps } from './parts';
 
 // Browsers (Designs/09e): which browsers are found and connected, and installing the
@@ -24,21 +25,19 @@ export function Browsers(props: TabProps) {
         .catch((e) => live && setError(errorMessage(e)));
     refresh();
     const off = listen('adapter:health', refresh);
-    const t = setInterval(refresh, 5000);
+    const timer = setInterval(refresh, 5000);
     return () => {
       live = false;
-      clearInterval(t);
+      clearInterval(timer);
       off.then((f) => f()).catch(() => {});
     };
   }, []);
   return (
     <>
-      <TabHeader title="Browsers">
-        Decay sees tab activity through a small extension in each browser.
-      </TabHeader>
+      <TabHeader title={t('settings.tab.browsers')}>{t('browsers.subtitle')}</TabHeader>
       {error && <Banner tone="danger">{error}</Banner>}
-      <Group title="Chromium browsers">
-        {rows === null && !error && <p className="text-sm text-muted">Looking for browsers…</p>}
+      <Group title={t('browsers.chromium')}>
+        {rows === null && !error && <p className="text-sm text-muted">{t('browsers.looking')}</p>}
         {rows &&
           sortRows(rows).map((b) => {
             const state = rowState(b);
@@ -53,14 +52,16 @@ export function Browsers(props: TabProps) {
                 {state === 'install' && (
                   <Button
                     size="sm"
-                    icon={<ExternalLink size={12} aria-hidden />}
-                    aria-label={`Install extension in ${b.name}`}
+                    icon={<ExternalLink className="rtl:-scale-x-100" size={12} aria-hidden />}
+                    aria-label={t('browsers.installIn', { name: b.name })}
                     onClick={() => api.openExtensionStore(b.id).catch(props.fail)}
                   >
-                    Install extension
+                    {t('browsers.install')}
                   </Button>
                 )}
-                {state === 'missing' && <span className="text-xs text-muted">Not found</span>}
+                {state === 'missing' && (
+                  <span className="text-xs text-muted">{t('browsers.notFound')}</span>
+                )}
               </div>
             );
           })}

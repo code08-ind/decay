@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { cx } from './cx';
+import { t } from './strings';
 
 export type Health = 'connected' | 'degraded' | 'down';
 
-const HEALTH: Record<Health, { dot: string; text: string }> = {
-  connected: { dot: 'bg-accent-dot', text: 'Connected' },
-  degraded: { dot: 'bg-warning', text: 'Degraded' },
-  down: { dot: 'bg-danger', text: 'Not connected' },
+const HEALTH: Record<Health, { dot: string; text: () => string }> = {
+  connected: { dot: 'bg-accent-dot', text: () => t('health.connected') },
+  degraded: { dot: 'bg-warning', text: () => t('health.degraded') },
+  down: { dot: 'bg-danger', text: () => t('health.down') },
 };
 
 /** 8 px status dot with its meaning in words (never colour alone). */
@@ -15,18 +16,18 @@ export function StatusDot(props: { status: Health; label?: string; className?: s
   return (
     <span className={cx('inline-flex items-center gap-1.5 text-xs text-muted', props.className)}>
       <span aria-hidden className={cx('size-2 rounded-full', h.dot)} />
-      {props.label ?? h.text}
+      {props.label ?? h.text()}
     </span>
   );
 }
 
 /** Age stages of an item: fresh, stale, hidden, archived. */
 export type AgeStage = 0 | 1 | 2 | 3;
-const AGE: Record<AgeStage, { dot: string; text: string }> = {
-  0: { dot: 'bg-age-0', text: 'Fresh' },
-  1: { dot: 'bg-age-1', text: 'Stale' },
-  2: { dot: 'bg-age-2', text: 'Hidden' },
-  3: { dot: 'bg-age-3', text: 'Archived' },
+const AGE: Record<AgeStage, { dot: string; text: () => string }> = {
+  0: { dot: 'bg-age-0', text: () => t('age.fresh') },
+  1: { dot: 'bg-age-1', text: () => t('age.stale') },
+  2: { dot: 'bg-age-2', text: () => t('age.hidden') },
+  3: { dot: 'bg-age-3', text: () => t('age.archived') },
 };
 
 /** The age-scale dot ("gentle ageing"); the stage name is always available as text. */
@@ -35,7 +36,7 @@ export function AgeDot(props: { stage: AgeStage; showLabel?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted">
       <span aria-hidden className={cx('size-2 rounded-full', a.dot)} />
-      <span className={props.showLabel ? undefined : 'sr-only'}>{a.text}</span>
+      <span className={props.showLabel ? undefined : 'sr-only'}>{a.text()}</span>
     </span>
   );
 }

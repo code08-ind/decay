@@ -3,6 +3,7 @@ import { Eye, Ghost, Info, Lock, ShieldCheck, Zap } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { api, errorMessage, type PanelItem } from '../api';
 import { displayUrl } from '../panel/results';
+import { t } from '../strings';
 import type { PageProps } from './Archive';
 import { percent, shadowWeekOver } from './model';
 import { ItemTile, useLoad } from './parts';
@@ -37,7 +38,7 @@ export function ShadowReview(props: PageProps) {
       .protectItem(item.id)
       .then(() => {
         setProtected((old) => new Set(old).add(item.domain ?? item.id));
-        notify(`Decay will always keep ${item.domain ?? 'this site'}`);
+        notify(t('shadowReview.alwaysKeep', { site: item.domain ?? t('shadowReview.thisSite') }));
       })
       .catch((e) => setError(errorMessage(e)));
   };
@@ -47,7 +48,7 @@ export function ShadowReview(props: PageProps) {
     api
       .setMode('automatic')
       .then(() => {
-        notify('Automatic mode is on. Undo any sweep from Sweeps.');
+        notify(t('shadowReview.automaticOn'));
         go('/');
       })
       .catch((e) => setError(errorMessage(e)))
@@ -63,10 +64,9 @@ export function ShadowReview(props: PageProps) {
   return (
     <div className="grid gap-5">
       <div>
-        <h1 className="font-serif text-4xl font-normal">Shadow review</h1>
+        <h1 className="font-serif text-4xl font-normal">{t('shadowReview.title')}</h1>
         <p className="mt-1 text-sm text-muted">
-          Here's what Decay would have done{r?.mode === 'shadow' ? ' this week' : ''}. Nothing has
-          been closed.
+          {r?.mode === 'shadow' ? t('shadowReview.subtitleWeek') : t('shadowReview.subtitle')}
         </p>
       </div>
       {report.error && <Banner tone="danger">{report.error}</Banner>}
@@ -76,31 +76,44 @@ export function ShadowReview(props: PageProps) {
           <div>
             <h2 className="font-serif text-3xl">
               {r.mode !== 'shadow'
-                ? 'Automatic mode is on'
+                ? t('shadowReview.isAutomatic')
                 : ready
-                  ? "You're ready for automatic mode"
-                  : `Day ${r.day} of ${r.days} in shadow mode`}
+                  ? t('shadowReview.ready')
+                  : t('shadowReview.day', { day: r.day, days: r.days })}
             </h2>
             <p className="mt-2 text-sm text-feature-sub">
               {total === 0
-                ? 'Decay hasn’t found anything to archive yet. It needs a few hours of your active time.'
-                : `Decay would have archived ${r.tabs} ${r.tabs === 1 ? 'tab' : 'tabs'}${
-                    r.windows ? ` and ${r.windows} ${r.windows === 1 ? 'window' : 'windows'}` : ''
-                  }. You used ${r.reopened} of them again afterwards (${percent(r.reopened, total)}).`}
+                ? t('shadowReview.nothingYet')
+                : t(r.windows ? 'shadowReview.wouldWindows' : 'shadowReview.would', {
+                    tabs: r.tabs,
+                    windows: r.windows,
+                    reopened: r.reopened,
+                    pct: percent(r.reopened, total),
+                  })}
             </p>
             <div className="mt-4 grid grid-cols-3 gap-3">
               {[
-                [`${r.tabs}`, r.tabs === 1 ? 'tab' : 'tabs', 'simulated archive'],
-                [`${r.windows}`, r.windows === 1 ? 'window' : 'windows', 'simulated archive'],
-                [percent(r.reopened, total), 'regret', 'used again later'],
-              ].map(([n, what, sub]) => (
+                [
+                  'tabs',
+                  t('shadowReview.stat.tabs', { n: r.tabs }),
+                  t('shadowReview.stat.simulated'),
+                ],
+                [
+                  'windows',
+                  t('shadowReview.stat.windows', { n: r.windows }),
+                  t('shadowReview.stat.simulated'),
+                ],
+                [
+                  'regret',
+                  t('shadowReview.stat.regret', { pct: percent(r.reopened, total) }),
+                  t('shadowReview.stat.usedLater'),
+                ],
+              ].map(([id, value, sub]) => (
                 <div
-                  key={sub + (what ?? '')}
+                  key={id}
                   className="rounded-xl border border-feature-tile-line bg-feature-tile p-3"
                 >
-                  <p className="font-serif text-2xl">
-                    {n} {what}
-                  </p>
+                  <p className="font-serif text-2xl">{value}</p>
                   <p className="text-xs text-feature-sub">{sub}</p>
                 </div>
               ))}
@@ -115,12 +128,11 @@ export function ShadowReview(props: PageProps) {
                 loading={busy}
                 onClick={ready || confirming ? automatic : () => setConfirming(true)}
               >
-                {confirming ? 'Yes, turn it on now' : 'Turn on automatic mode'}
+                {confirming ? t('shadowReview.confirm') : t('shadowReview.turnOn')}
               </Button>
               {confirming && (
                 <p role="status" className="max-w-64 text-xs text-feature-sub">
-                  It's day {r.day} of {r.days}. Decay will start closing stale tabs; any sweep can
-                  be undone from Sweeps.
+                  {t('shadowReview.confirm.text', { day: r.day, days: r.days })}
                 </p>
               )}
               <Button
@@ -129,7 +141,7 @@ export function ShadowReview(props: PageProps) {
                 icon={<Eye size={16} />}
                 onClick={() => go('/')}
               >
-                Keep watching
+                {t('shadowReview.keepWatching')}
               </Button>
             </div>
           )}
@@ -138,25 +150,29 @@ export function ShadowReview(props: PageProps) {
 
       <div className="grid items-start gap-4 xl:grid-cols-[1fr_360px]">
         <section
-          aria-label="Decisions"
+          aria-label={t('shadowReview.decisions')}
           className="rounded-card border border-line bg-surface p-4 shadow-sm"
         >
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <Tabs<List>
               idPrefix="shadow"
-              label="Decisions"
+              label={t('shadowReview.decisions')}
               current={list}
               onSelect={setList}
               panelId={(id) => `shadow-${id}`}
               tabs={[
-                { id: 'would', label: 'Would archive', count: r?.wouldArchive.length },
-                { id: 'kept', label: 'Protected', count: r?.kept.length },
+                {
+                  id: 'would',
+                  label: t('shadowReview.tab.would'),
+                  count: r?.wouldArchive.length,
+                },
+                { id: 'kept', label: t('shadowReview.tab.kept'), count: r?.kept.length },
               ]}
             />
             <SearchInput
-              className="ml-auto min-w-48 flex-1"
-              label="Filter"
-              placeholder="Filter…"
+              className="ms-auto min-w-48 flex-1"
+              label={t('shadowReview.filter')}
+              placeholder={t('shadowReview.filterPlaceholder')}
               value={filter}
               onValueChange={setFilter}
               onEscape={() => setFilter('')}
@@ -167,9 +183,9 @@ export function ShadowReview(props: PageProps) {
               would.length === 0 ? (
                 <EmptyState
                   icon={<Ghost size={20} />}
-                  title={filter ? 'Nothing matches' : 'Nothing yet'}
+                  title={filter ? t('shadowReview.noMatch') : t('shadowReview.nothing')}
                 >
-                  {filter ? 'Try other words.' : 'Tabs Decay would archive show up here.'}
+                  {filter ? t('shadowReview.tryOther') : t('shadowReview.wouldEmpty')}
                 </EmptyState>
               ) : (
                 <ul className="divide-y divide-line">
@@ -178,21 +194,21 @@ export function ShadowReview(props: PageProps) {
                     return (
                       <Row key={i.id} item={i}>
                         {i.reason && <Chip>{i.reason}</Chip>}
-                        {i.usedAfter && <Chip tone="warning">Used again</Chip>}
-                        {!i.live && <Chip>Closed since</Chip>}
+                        {i.usedAfter && <Chip tone="warning">{t('shadowReview.usedAgain')}</Chip>}
+                        {!i.live && <Chip>{t('shadowReview.closedSince')}</Chip>}
                         {i.domain &&
                           (kept ? (
                             <Chip tone="accent" icon={<ShieldCheck size={12} />}>
-                              Always kept
+                              {t('shadowReview.alwaysKept')}
                             </Chip>
                           ) : (
                             <Button
                               size="sm"
                               icon={<ShieldCheck size={12} />}
-                              aria-label={`Protect ${i.domain}`}
+                              aria-label={t('shadowReview.protectSite', { site: i.domain })}
                               onClick={() => protect(i)}
                             >
-                              Protect
+                              {t('shadowReview.protect')}
                             </Button>
                           ))}
                       </Row>
@@ -201,15 +217,15 @@ export function ShadowReview(props: PageProps) {
                 </ul>
               )
             ) : kept.length === 0 ? (
-              <EmptyState icon={<ShieldCheck size={20} />} title="Nothing protected right now">
-                Pinned, playing and unsaved tabs that are old enough to archive show up here.
+              <EmptyState icon={<ShieldCheck size={20} />} title={t('shadowReview.keptEmpty')}>
+                {t('shadowReview.keptEmpty.text')}
               </EmptyState>
             ) : (
               <ul className="divide-y divide-line">
                 {kept.map((i) => (
                   <Row key={i.id} item={i}>
-                    <Chip>Unused {i.activeHours} active h</Chip>
-                    <Chip tone="accent">Protected: {i.label}</Chip>
+                    <Chip>{t('shadowReview.unused', { n: i.activeHours })}</Chip>
+                    <Chip tone="accent">{t('shadowReview.protectedBy', { why: i.label })}</Chip>
                   </Row>
                 ))}
               </ul>
@@ -217,16 +233,17 @@ export function ShadowReview(props: PageProps) {
           </div>
           <p className="mt-3 text-xs text-muted">
             {list === 'would'
-              ? `Showing ${would.length} of ${r?.wouldArchive.length ?? 0} simulated decisions`
-              : `Showing ${kept.length} of ${r?.kept.length ?? 0} protected tabs`}
+              ? t('shadowReview.showingWould', {
+                  shown: would.length,
+                  total: r?.wouldArchive.length ?? 0,
+                })
+              : t('shadowReview.showingKept', { shown: kept.length, total: r?.kept.length ?? 0 })}
           </p>
         </section>
 
         <aside className="rounded-card border border-line bg-surface p-5 shadow-sm">
-          <h2 className="font-serif text-xl">Why things were kept</h2>
-          <p className="mt-1 text-[13px] text-muted">
-            Decay leaves tabs alone while one of your safety rules applies.
-          </p>
+          <h2 className="font-serif text-xl">{t('shadowReview.why')}</h2>
+          <p className="mt-1 text-[13px] text-muted">{t('shadowReview.why.text')}</p>
           <ul className="mt-4 grid gap-2">
             {(r?.keptBy ?? []).map((k) => (
               <li
@@ -240,18 +257,17 @@ export function ShadowReview(props: PageProps) {
               </li>
             ))}
             {r && r.keptBy.length === 0 && (
-              <li className="text-sm text-muted">Nothing is protected right now.</li>
+              <li className="text-sm text-muted">{t('shadowReview.why.none')}</li>
             )}
           </ul>
           {r?.mode === 'shadow' && (
             <p className="mt-4 flex gap-2 rounded-xl bg-surface-2 p-3 text-[13px] text-muted">
               <Info size={14} aria-hidden className="mt-0.5 shrink-0" />
-              Shadow mode keeps going until you turn on automatic mode. Nothing is closed before
-              then.
+              {t('shadowReview.keepsGoing')}
             </p>
           )}
           <p className="mt-4 flex items-center gap-1.5 border-t border-line pt-3 text-xs text-muted">
-            <Lock size={12} aria-hidden /> Local processing only
+            <Lock size={12} aria-hidden /> {t('shadowReview.local')}
           </p>
         </aside>
       </div>
@@ -265,9 +281,9 @@ function Row(props: { item: PanelItem; children: ReactNode }) {
     <li className="flex flex-wrap items-center gap-3 py-3">
       <ItemTile item={i} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{i.title || 'Untitled'}</span>
+        <span className="block truncate text-sm font-medium">{i.title || t('item.untitled')}</span>
         <span className="block truncate font-mono text-xs text-muted">
-          {i.kind === 'window' ? `${i.appName} window` : displayUrl(i.url)}
+          {i.kind === 'window' ? t('item.appWindow', { app: i.appName }) : displayUrl(i.url)}
         </span>
       </span>
       <span className="flex flex-wrap items-center justify-end gap-2">{props.children}</span>

@@ -28,6 +28,8 @@ import {
   type SearchResult,
   timeLabel,
 } from '@/lib/search/search';
+import { localDay } from '@/lib/shadow/shadow';
+import { t } from '@/lib/strings';
 import { AppLink } from './AppLink';
 import { avatarClass, shortUrl } from './format';
 import { ProbeBanner } from './ProbeBanner';
@@ -67,24 +69,22 @@ export interface PopupProps {
   error?: string | null;
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 /** App search waits for a pause in typing. */
 const APP_SEARCH_DELAY_MS = 120;
 
 /** "2:14 PM" today, otherwise "Yesterday" / "Mon, 2 Nov". */
 function whenLabel(ts: number, now: number): string {
-  const day = dayLabel(ts, now);
-  return day === 'Today' ? timeLabel(ts) : day;
+  return localDay(ts) === localDay(now) ? timeLabel(ts) : dayLabel(ts, now);
 }
 
 function modeChip(data: PopupData, now: number): string {
   if (data.holdUntil !== null && data.holdUntil > now) {
-    return `On hold until ${timeLabel(data.holdUntil)}`;
+    return t('popup.onHold', { time: timeLabel(data.holdUntil) });
   }
   if (data.mode === 'shadow') {
-    return `Shadow mode · day ${data.shadow.dayNumber}`;
+    return t('popup.shadowDay', { n: data.shadow.dayNumber });
   }
-  return data.mode === 'automatic' ? 'Automatic' : 'Paused';
+  return data.mode === 'automatic' ? t('popup.automatic') : t('popup.paused');
 }
 
 export function Popup(props: PopupProps) {
@@ -187,31 +187,31 @@ export function Popup(props: PopupProps) {
           <button
             type="button"
             onClick={props.onOpenInsights}
-            title="Insights"
-            className="ml-auto grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2"
+            title={t('popup.insights')}
+            className="ms-auto grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2"
           >
             <ChartColumn size={16} aria-hidden />
-            <span className="sr-only">Insights</span>
+            <span className="sr-only">{t('popup.insights')}</span>
           </button>
         )}
         <button
           type="button"
           onClick={props.onOpenSweeps}
-          title="Sweep history"
-          className={`${props.onOpenInsights ? '' : 'ml-auto '}grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2`}
+          title={t('popup.sweepHistory')}
+          className={`${props.onOpenInsights ? '' : 'ms-auto '}grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2`}
         >
           <History size={16} aria-hidden />
-          <span className="sr-only">Sweep history</span>
+          <span className="sr-only">{t('popup.sweepHistory')}</span>
         </button>
       </header>
 
       <div className="relative mt-3">
         <label htmlFor={inputId} className="sr-only">
-          Search archived tabs
+          {t('popup.search')}
         </label>
         <Search
           size={16}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
+          className="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2 text-faint"
           aria-hidden
         />
         <input
@@ -231,14 +231,15 @@ export function Popup(props: PopupProps) {
             props.onQueryChange?.(e.target.value);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Search archived tabs"
-          className="w-full rounded-full border border-line bg-surface-2 py-2 pr-14 pl-9 text-sm placeholder:text-faint"
+          placeholder={t('popup.search')}
+          className="w-full rounded-full border border-line bg-surface-2 py-2 pe-14 ps-9 text-sm placeholder:text-faint"
         />
         {/* Decorative hint (the shortcut is in the extension's commands), so not a <kbd>. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 font-mono text-xs text-muted"
+          className="pointer-events-none absolute top-1/2 end-2 -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 font-mono text-xs text-muted"
         >
+          {/* i18n-ignore: a shortcut, as the keyboard says it */}
           {props.isMac ? '⌥⇧D' : 'Alt+Shift+D'}
         </span>
       </div>
@@ -257,22 +258,18 @@ export function Popup(props: PopupProps) {
             {props.status}
           </p>
         )}
-        <span className="sr-only">
-          {found ? (found.total ? `${plural(found.total, 'result')}` : 'No results') : ''}
-        </span>
+        <span className="sr-only">{found ? t('popup.results', { n: found.total }) : ''}</span>
       </div>
 
       {!searching ? (
         <Home {...props} />
       ) : result && 'tooShort' in result ? (
-        <p className="mt-4 px-1 text-sm text-muted">Keep typing to search your archive…</p>
+        <p className="mt-4 px-1 text-sm text-muted">{t('popup.keepTyping')}</p>
       ) : result && 'failed' in result ? (
-        <p className="mt-4 px-1 text-sm text-danger">
-          Couldn&rsquo;t search the Decay app. Try again in a moment.
-        </p>
+        <p className="mt-4 px-1 text-sm text-danger">{t('popup.searchFailed')}</p>
       ) : result && 'pending' in result ? (
         <p className="mt-4 px-1 text-sm text-muted" aria-busy="true">
-          Searching…
+          {t('popup.searching')}
         </p>
       ) : found ? (
         <Results
@@ -305,13 +302,13 @@ export function Popup(props: PopupProps) {
         {searching ? (
           <p className="flex flex-wrap gap-x-3 text-xs text-muted">
             <span>
-              <Key>↵</Key> Restore
+              <Key>↵</Key> {t('popup.key.restore')}
             </span>
             <span>
-              <Key>{mod}↵</Key> Restore batch
+              <Key>{mod}↵</Key> {t('popup.key.batch')}
             </span>
             <span>
-              <Key>Esc</Key> Clear
+              <Key>Esc</Key> {t('popup.key.clear')}
             </span>
           </p>
         ) : (
@@ -321,12 +318,14 @@ export function Popup(props: PopupProps) {
               onClick={props.onOpenSweeps}
               className="inline-flex items-center gap-1 text-muted hover:text-ink"
             >
-              Sweeps &amp; undo <ArrowRight size={14} aria-hidden />
+              {t('popup.sweepsUndo')}{' '}
+              <ArrowRight className="rtl:-scale-x-100" size={14} aria-hidden />
             </button>
             {data.currentSite &&
               (data.currentSite.protected ? (
                 <span className="inline-flex items-center gap-1 text-xs text-muted">
-                  <ShieldCheck size={14} aria-hidden /> {data.currentSite.host} is always kept
+                  <ShieldCheck size={14} aria-hidden />{' '}
+                  {t('popup.siteKept', { host: data.currentSite.host })}
                 </span>
               ) : (
                 <button
@@ -335,7 +334,7 @@ export function Popup(props: PopupProps) {
                   disabled={props.busy}
                   className="rounded-full border border-line-strong px-3 py-1 hover:bg-surface-2 disabled:opacity-50"
                 >
-                  Never archive this site
+                  {t('popup.neverArchive')}
                 </button>
               ))}
           </>
@@ -362,10 +361,10 @@ function Home(props: PopupProps) {
   return (
     <>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <Stat value={data.openTabs} label="open tabs" />
+        <Stat value={data.openTabs} label={t('popup.openTabs')} />
         <Stat
           value={automatic ? data.archivedToday : data.shadow.wouldArchive}
-          label={automatic ? 'archived today' : 'would archive now'}
+          label={automatic ? t('popup.archivedToday') : t('popup.wouldArchive')}
           dot
         />
       </div>
@@ -378,19 +377,19 @@ function Home(props: PopupProps) {
         />
       )}
       <ModeCard {...props} />
-      <section aria-label="Recently archived" className="mt-3">
+      <section aria-label={t('popup.recent')} className="mt-3">
         <div className="flex items-baseline justify-between px-1">
           <h2 className="text-xs font-medium tracking-widest text-muted uppercase">
-            Recently archived
+            {t('popup.recent')}
           </h2>
           {/* The newest few only: a count here read like a total (QA P0). */}
-          {recent.length > 0 && <span className="text-xs text-muted">Latest {recent.length}</span>}
+          {recent.length > 0 && (
+            <span className="text-xs text-muted">{t('popup.latest', { n: recent.length })}</span>
+          )}
         </div>
         {recent.length === 0 ? (
           <p className="mt-2 rounded-tile border border-line bg-surface px-3 py-4 text-center text-sm text-muted">
-            {automatic
-              ? 'Nothing archived yet. Stale tabs are put away at a quiet moment.'
-              : 'Nothing is archived in shadow mode.'}
+            {automatic ? t('popup.recent.automatic') : t('popup.recent.shadow')}
           </p>
         ) : (
           <ul className="mt-1.5 space-y-1.5">
@@ -410,10 +409,10 @@ function Home(props: PopupProps) {
                   type="button"
                   onClick={() => props.onRestore(item)}
                   disabled={props.busy}
-                  aria-label={`Restore ${item.title || shortUrl(item.url)}`}
+                  aria-label={t('popup.restoreItem', { title: item.title || shortUrl(item.url) })}
                   className="grid size-7 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-50"
                 >
-                  <RotateCcw size={14} aria-hidden />
+                  <RotateCcw className="rtl:-scale-x-100" size={14} aria-hidden />
                 </button>
               </li>
             ))}
@@ -433,41 +432,44 @@ function ModeCard(props: PopupProps) {
   let secondary: { label: string; onClick: () => void } | null = null;
   if (data.mode === 'shadow') {
     const left = Math.max(0, data.shadow.targetDays - data.shadow.dayNumber);
-    eyebrow = 'Shadow mode';
-    title = 'Nothing is closed yet';
+    eyebrow = t('popup.card.shadow');
+    title = t('popup.card.shadow.title');
     body = data.shadow.ready
-      ? 'You can switch on automatic archiving.'
-      : `In ${plural(left || 1, 'day')} you can switch on automatic archiving.`;
-    action = { label: 'Review what Decay would do', onClick: props.onOpenReview };
+      ? t('popup.card.shadow.ready')
+      : t('popup.card.shadow.wait', { n: left || 1 });
+    action = { label: t('popup.card.shadow.action'), onClick: props.onOpenReview };
   } else if (data.mode === 'paused') {
-    eyebrow = 'Paused';
-    title = 'Nothing is archived';
-    body = 'Decay keeps tracking tabs but closes nothing while paused.';
-    action = { label: 'Open sweeps', onClick: props.onOpenSweeps };
+    eyebrow = t('popup.card.paused');
+    title = t('popup.card.paused.title');
+    body = t('popup.card.paused.text');
+    action = { label: t('popup.card.openSweeps'), onClick: props.onOpenSweeps };
   } else {
-    eyebrow = 'Automatic';
+    eyebrow = t('popup.card.automatic');
     const last = data.lastSweep;
     if (last && last.sweep.itemCount > 0) {
-      title = `Archived ${plural(last.sweep.itemCount, 'tab')}`;
+      title = t('popup.card.archived', { n: last.sweep.itemCount });
       const reopened = last.sweep.itemCount - last.remaining;
-      body = `Last sweep at ${timeLabel(last.sweep.startedAt)}.${
+      const time = timeLabel(last.sweep.startedAt);
+      body =
         last.remaining === 0
-          ? ' Everything from it is open again.'
+          ? t('popup.card.allOpen', { time })
           : reopened > 0
-            ? ` ${last.remaining} still archived.`
-            : ''
-      }`;
-      action = { label: 'View sweeps', onClick: props.onOpenSweeps };
+            ? t('popup.card.stillArchived', { time, n: last.remaining })
+            : t('popup.card.lastSweep', { time });
+      action = { label: t('popup.card.viewSweeps'), onClick: props.onOpenSweeps };
       if (last.remaining > 0 && last.sweep.status === 'done') {
         secondary = {
-          label: last.remaining < last.sweep.itemCount ? `Undo ${last.remaining}` : 'Undo',
+          label:
+            last.remaining < last.sweep.itemCount
+              ? t('popup.card.undoN', { n: last.remaining })
+              : t('popup.card.undo'),
           onClick: props.onUndoLastSweep,
         };
       }
     } else {
-      title = 'Watching your tabs';
-      body = 'Stale tabs are archived at a quiet moment. Every sweep can be undone.';
-      action = { label: 'View sweeps', onClick: props.onOpenSweeps };
+      title = t('popup.card.watching');
+      body = t('popup.card.watching.text');
+      action = { label: t('popup.card.viewSweeps'), onClick: props.onOpenSweeps };
     }
   }
   return (
@@ -485,7 +487,7 @@ function ModeCard(props: PopupProps) {
             onClick={action.onClick}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-surface px-4 py-2 text-sm font-medium text-ink"
           >
-            {action.label} <ArrowRight size={14} aria-hidden />
+            {action.label} <ArrowRight className="rtl:-scale-x-100" size={14} aria-hidden />
           </button>
         )}
         {secondary && (
@@ -495,7 +497,7 @@ function ModeCard(props: PopupProps) {
             disabled={props.busy}
             className="inline-flex items-center gap-1.5 rounded-full border border-feature-tile-line px-4 py-2 text-sm disabled:opacity-60"
           >
-            <RotateCcw size={14} aria-hidden /> {secondary.label}
+            <RotateCcw className="rtl:-scale-x-100" size={14} aria-hidden /> {secondary.label}
           </button>
         )}
       </div>
@@ -507,7 +509,7 @@ function Stat({ value, label, dot }: { value: number; label: string; dot?: boole
   return (
     <div className="relative rounded-tile border border-line bg-surface px-4 py-2">
       {dot && (
-        <span className="absolute top-3 right-3 size-2 rounded-full bg-accent-dot" aria-hidden />
+        <span className="absolute top-3 end-3 size-2 rounded-full bg-accent-dot" aria-hidden />
       )}
       <div className="font-serif text-2xl tabular-nums">{value}</div>
       <div className="text-sm text-muted">{label}</div>
@@ -562,9 +564,7 @@ function Results(props: {
   if (!props.groups.length) {
     return (
       <p className="mt-4 rounded-tile border border-line bg-surface px-3 py-6 text-center text-sm text-muted">
-        {props.empty
-          ? 'Your archive is empty. Archived tabs show up here.'
-          : 'No archived tabs match. Try fewer words, or site:, after:, before:.'}
+        {props.empty ? t('popup.empty') : t('popup.noMatch')}
       </p>
     );
   }
@@ -572,13 +572,17 @@ function Results(props: {
     <div
       id={props.listId}
       role="listbox"
-      aria-label="Archived tabs"
+      aria-label={t('popup.list')}
       className="mt-3 max-h-[400px] overflow-y-auto"
     >
       {props.groups.map((group) => (
         // A listbox group (ARIA), not a form <fieldset>.
         // biome-ignore lint/a11y/useSemanticElements: role=group is the listbox grouping role
-        <div key={group.key} role="group" aria-label={`${group.dayLabel} · ${group.sourceLabel}`}>
+        <div
+          key={group.key}
+          role="group"
+          aria-label={t('popup.group', { day: group.dayLabel, source: group.sourceLabel })}
+        >
           {/* Visual header; the group's aria-label carries it, and ⌘/Ctrl+Enter is the keyboard path. */}
           <div
             aria-hidden="true"
@@ -595,7 +599,7 @@ function Results(props: {
                 disabled={props.busy}
                 className="shrink-0 rounded-full px-2 py-0.5 text-xs text-accent-text hover:bg-surface-2 disabled:opacity-50"
               >
-                Restore batch {props.mod}↵
+                {t('popup.batch', { keys: `${props.mod}↵` })}
               </button>
             )}
           </div>
@@ -621,7 +625,7 @@ function Results(props: {
                 >
                   {isSelected && (
                     <span
-                      className="absolute top-2 bottom-2 left-0 w-1 rounded-full bg-accent"
+                      className="absolute top-2 bottom-2 start-0 w-1 rounded-full bg-accent"
                       aria-hidden
                     />
                   )}
@@ -644,9 +648,7 @@ function Results(props: {
         </div>
       ))}
       {props.total > props.groups.reduce((n, g) => n + g.items.length, 0) && (
-        <p className="px-1 py-2 text-xs text-muted">
-          Showing the best 50 of {props.total}. Add words or filters to narrow it down.
-        </p>
+        <p className="px-1 py-2 text-xs text-muted">{t('popup.best', { n: props.total })}</p>
       )}
     </div>
   );

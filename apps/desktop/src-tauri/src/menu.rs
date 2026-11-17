@@ -8,6 +8,8 @@
 use decay_core::Mode;
 use decay_engine::EngineStatus;
 
+use crate::i18n::{t, tf};
+
 /// Menu item ids (also the actions).
 pub mod id {
     pub const STATUS: &str = "status";
@@ -38,10 +40,6 @@ fn item(id: &'static str, label: impl Into<String>, enabled: bool) -> Entry {
     Entry::Item { id, label: label.into(), enabled, accelerator: None }
 }
 
-fn plural(n: u32, one: &str, many: &str) -> String {
-    format!("{n} {}", if n == 1 { one } else { many })
-}
-
 /// The local UTC offset in minutes at a moment (it changes across daylight saving).
 pub type OffsetAt<'a> = &'a dyn Fn(i64) -> i32;
 
@@ -54,25 +52,25 @@ fn clock(at_ms: i64, offset_at: OffsetAt<'_>) -> String {
 /// The first line: what Decay is doing.
 fn headline(s: &EngineStatus, offset_at: OffsetAt<'_>) -> String {
     if s.mode == Mode::Paused {
-        return "Paused".into();
+        return t("tray.paused");
     }
     if let Some(until) = s.hold_until {
         if until >= HOLD_INDEFINITE_MS {
-            return "On hold".into();
+            return t("tray.onHold");
         }
-        return format!("On hold until {}", clock(until, offset_at));
+        return tf("tray.onHoldUntil", &[("time", clock(until, offset_at).into())]);
     }
     if s.browsers.is_empty() {
-        return "No browser connected".into();
+        return t("tray.noBrowser");
     }
     if s.sweeping {
-        return "Sweeping…".into();
+        return t("tray.sweeping");
     }
     if s.in_meeting {
-        return "In a meeting · sweeps wait".into();
+        return t("tray.inMeeting");
     }
-    let mode = if s.mode == Mode::Shadow { " · shadow mode" } else { "" };
-    format!("{} open, {} stale{mode}", plural(s.live_tabs, "tab", "tabs"), s.stale_count)
+    let key = if s.mode == Mode::Shadow { "tray.tabsShadow" } else { "tray.tabs" };
+    tf(key, &[("tabs", s.live_tabs.into()), ("stale", s.stale_count.into())])
 }
 
 /// The menu. `status` is `None` until the engine reported (start-up); `hotkey` is shown
@@ -84,9 +82,9 @@ pub fn entries(
 ) -> Vec<Entry> {
     let Some(s) = status else {
         return vec![
-            item(id::STATUS, "Starting…", false),
+            item(id::STATUS, t("tray.starting"), false),
             Entry::Separator,
-            item(id::QUIT, "Quit Decay", true),
+            item(id::QUIT, t("tray.quit"), true),
         ];
     };
     let paused = s.mode == Mode::Paused;
@@ -97,32 +95,32 @@ pub fn entries(
         Entry::Separator,
         Entry::Item {
             id: id::SEARCH,
-            label: "Search archive…".into(),
+            label: t("tray.search"),
             enabled: true,
             accelerator: hotkey.map(str::to_owned),
         },
         Entry::Separator,
     ];
     out.push(if held {
-        item(id::RELEASE_HOLD, "Release hold", true)
+        item(id::RELEASE_HOLD, t("tray.releaseHold"), true)
     } else {
-        item(id::HOLD, "Hold for 1 hour", !paused)
+        item(id::HOLD, t("tray.hold"), !paused)
     });
     out.push(if paused {
-        item(id::RESUME, "Resume", true)
+        item(id::RESUME, t("tray.resume"), true)
     } else {
-        item(id::PAUSE, "Pause", true)
+        item(id::PAUSE, t("tray.pause"), true)
     });
     let sweep_label =
-        if s.mode == Mode::Shadow { "Run sweep now (shadow)" } else { "Run sweep now" };
+        if s.mode == Mode::Shadow { t("tray.sweepNowShadow") } else { t("tray.sweepNow") };
     out.push(item(id::SWEEP_NOW, sweep_label, connected && !paused && !held && !s.sweeping));
-    out.push(item(id::UNDO, "Undo last sweep", s.undoable_sweep.is_some() && connected));
+    out.push(item(id::UNDO, t("tray.undo"), s.undoable_sweep.is_some() && connected));
     out.extend([
         Entry::Separator,
-        item(id::LIBRARY, "Open Library", true),
-        item(id::SETTINGS, "Settings…", true),
+        item(id::LIBRARY, t("tray.library"), true),
+        item(id::SETTINGS, t("tray.settings"), true),
         Entry::Separator,
-        item(id::QUIT, "Quit Decay", true),
+        item(id::QUIT, t("tray.quit"), true),
     ]);
     out
 }
@@ -131,10 +129,10 @@ pub fn entries(
 pub fn failed_entries(why: &str) -> Vec<Entry> {
     let short: String = why.chars().take(80).collect();
     vec![
-        item(id::STATUS, "Decay couldn't start", false),
+        item(id::STATUS, t("tray.failed"), false),
         item(id::STATUS_DETAIL, short, false),
         Entry::Separator,
-        item(id::QUIT, "Quit Decay", true),
+        item(id::QUIT, t("tray.quit"), true),
     ]
 }
 
@@ -163,7 +161,7 @@ pub fn badge(status: Option<&EngineStatus>) -> Option<String> {
 /// The icon's tooltip.
 pub fn tooltip(status: Option<&EngineStatus>, offset_at: OffsetAt<'_>) -> String {
     match status {
-        Some(s) => format!("Decay — {}", headline(s, offset_at)),
+        Some(s) => tf("tray.tooltip", &[("status", headline(s, offset_at).into())]),
         None => "Decay".into(),
     }
 }

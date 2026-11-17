@@ -1,4 +1,6 @@
+import { formatDate } from '@decay/ui';
 import MiniSearch from 'minisearch';
+import { t } from '@/lib/strings';
 import type { Item } from '../db/types';
 import { localDay } from '../shadow/shadow';
 
@@ -205,17 +207,12 @@ export class ArchiveSearch {
 
 export function dayLabel(ts: number, now: number): string {
   const day = localDay(ts);
-  if (day === localDay(now)) return 'Today';
-  if (day === localDay(daysBefore(now, 1))) return 'Yesterday';
-  return new Date(ts).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
+  if (day === localDay(now)) return t('day.today');
+  if (day === localDay(daysBefore(now, 1))) return t('day.yesterday');
+  return formatDate(ts, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export const timeLabel = (ts: number) =>
-  new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+export const timeLabel = (ts: number) => formatDate(ts, { hour: 'numeric', minute: '2-digit' });
 
 /**
  * Groups by batch (same sweep, same original window — exactly what "Restore batch"
@@ -250,10 +247,15 @@ export function groupItems(
     const first = group.items[0];
     group.sourceLabel =
       titles.size === 1 && only
-        ? `“${only}” group`
-        : `Sweep at ${timeLabel(first?.archivedAt ?? 0)}`;
+        ? t('search.group', { title: only })
+        : t('search.sweepAt', { time: timeLabel(first?.archivedAt ?? 0) });
     const siblings = perSweep.get(group.key.split('|')[0] ?? '') ?? [];
-    if (siblings.length > 1) group.sourceLabel += ` · window ${siblings.indexOf(group) + 1}`;
+    if (siblings.length > 1) {
+      group.sourceLabel = t('search.window', {
+        label: group.sourceLabel,
+        n: siblings.indexOf(group) + 1,
+      });
+    }
   }
   return [...groups.values()];
 }

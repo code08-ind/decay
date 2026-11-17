@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { DetectedBrowser } from '../api';
-import { back, hostProblem, next, PRESETS, rowDetail, rowState, STEPS, sortRows } from './model';
+import {
+  back,
+  hostProblem,
+  next,
+  PRESETS,
+  rowDetail,
+  rowState,
+  STEPS,
+  sortRows,
+  stepTitle,
+} from './model';
 
 const browser = (over: Partial<DetectedBrowser>): DetectedBrowser => ({
   id: 'chrome',
@@ -15,7 +25,7 @@ const browser = (over: Partial<DetectedBrowser>): DetectedBrowser => ({
 
 describe('onboarding model', () => {
   it('has the six steps of the design', () => {
-    expect(STEPS.map((s) => s.title)).toEqual([
+    expect(STEPS.map((s) => stepTitle(s.id))).toEqual([
       'Welcome',
       'Choose pace',
       'Connect browsers',

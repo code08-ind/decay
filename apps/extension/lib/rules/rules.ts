@@ -4,7 +4,8 @@ import { uuidv7 } from 'uuidv7';
 import { type DecayDB, db as defaultDb } from '../db/db';
 import type { Rule, RuleAction, RuleScope, RuleSource, Thresholds } from '../db/types';
 import { type MatchTarget, ruleMatches, titleRegexProblem } from '../policy/match';
-import { thresholdsProblem } from '../policy/thresholds';
+import { THRESHOLD_MAX_H, THRESHOLD_MIN_H, thresholdsProblem } from '../policy/thresholds';
+import { type Key, t } from '../strings';
 
 export interface RuleInput {
   scope: RuleScope;
@@ -42,7 +43,37 @@ const BROADNESS_CANARIES: MatchTarget[] = [
   { appId: 'canary', url: 'https://mail.proton.me/u/0/inbox', title: 'Inbox | Proton Mail' },
 ];
 
-const invalid = (message: string) => new RuleError('INVALID_RULE', message);
+/**
+ * The checks' English words (`lib/policy` returns them, as the desktop engine does) as
+ * catalog keys, so the error is in the user's language; anything else as written.
+ */
+const RULE_TEXT: Record<string, Key> = {
+  'Not a valid domain': 'rule.domain',
+  'Match is required': 'rule.matchRequired',
+  'Match is too long': 'rule.matchLong',
+  'Use the global scope to match every URL': 'rule.global',
+  'Exclude rules need a domain, URL or title pattern': 'rule.exclude',
+  'Close-allowed rules apply to apps only': 'rule.closeAllowed',
+  'Custom threshold rules need thresholds': 'rule.thresholds',
+  'Pattern is too long': 'rule.titleLong',
+  'Inline flags are not supported': 'rule.titleFlags',
+  'Invalid title pattern': 'rule.titleInvalid',
+  'Back-references are not supported': 'rule.titleBackrefs',
+  'Lookarounds are not supported': 'rule.titleLookarounds',
+  'Repeated groups are not supported': 'rule.titleRepeats',
+  'Pattern is too complex': 'rule.titleComplex',
+};
+
+export function ruleText(english: string): string {
+  const key = RULE_TEXT[english];
+  if (key) return t(key);
+  if (english.startsWith('Thresholds must be')) {
+    return t('rule.thresholdsRange', { min: THRESHOLD_MIN_H, max: THRESHOLD_MAX_H });
+  }
+  return english;
+}
+
+const invalid = (message: string) => new RuleError('INVALID_RULE', ruleText(message));
 
 /**
  * Accepts `github.com`, `*.github.com`, `GitHub.com`, `bücher.de` (→ punycode), an IP,
@@ -63,7 +94,7 @@ export function normalizeDomain(input: string): string {
   if (!host) throw invalid('Not a valid domain');
   const info = parse(host, { allowPrivateDomains: true });
   if (!info.isIp && host !== 'localhost' && !info.domain) {
-    throw invalid(`“${host}” is a public suffix; use a specific site such as example.${host}`);
+    throw new RuleError('INVALID_RULE', t('rule.suffix', { host }));
   }
   return host;
 }
@@ -156,7 +187,7 @@ export function createRulesStore(database: DecayDB = defaultDb) {
         await database.rules.add(rule);
       } catch (error) {
         if (error instanceof Dexie.ConstraintError) {
-          throw new RuleError('DUPLICATE_RULE', 'An identical rule already exists');
+          throw new RuleError('DUPLICATE_RULE', t('rule.duplicate'));
         }
         throw error;
       }
@@ -171,7 +202,7 @@ export function createRulesStore(database: DecayDB = defaultDb) {
   ): Promise<{ rule: Rule; purged: number }> {
     return database.transaction('rw', database.rules, database.items, database.events, async () => {
       const current = await database.rules.get(id);
-      if (!current) throw new RuleError('NOT_FOUND', 'Rule not found');
+      if (!current) throw new RuleError('NOT_FOUND', t('rule.notFound'));
       // Disabling must always work, even for a rule that is invalid under today's checks.
       if (Object.keys(patch).every((k) => k === 'enabled') && patch.enabled === false) {
         const next = { ...current, enabled: false };
@@ -185,7 +216,7 @@ export function createRulesStore(database: DecayDB = defaultDb) {
         await database.rules.put(next);
       } catch (error) {
         if (error instanceof Dexie.ConstraintError) {
-          throw new RuleError('DUPLICATE_RULE', 'An identical rule already exists');
+          throw new RuleError('DUPLICATE_RULE', t('rule.duplicate'));
         }
         throw error;
       }
@@ -199,7 +230,25 @@ export function createRulesStore(database: DecayDB = defaultDb) {
     await database.rules.delete(id);
   }
 
-  return { list, previewExclude, create, update, remove };
+  /**
+   * "Always keep" a site from a quick action (Insights): a domain protect rule. One already
+   * there counts, but turned off it's turned on — a rule that doesn't apply keeps nothing.
+   */
+  async function alwaysKeep(domain: string): Promise<void> {
+    try {
+      await create({ scope: 'domain', match: domain, action: 'protect', source: 'quick_action' });
+      return;
+    } catch (e) {
+      if (!(e instanceof RuleError && e.code === 'DUPLICATE_RULE')) throw e;
+    }
+    const match = normalizeDomain(domain);
+    const rule = (await list()).find(
+      (r) => r.scope === 'domain' && r.action === 'protect' && r.match === match,
+    );
+    if (rule && !rule.enabled) await update(rule.id, { enabled: true });
+  }
+
+  return { list, previewExclude, create, update, remove, alwaysKeep };
 }
 
 /**

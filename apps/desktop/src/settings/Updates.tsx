@@ -1,19 +1,20 @@
-import { Banner, Button, SegmentedControl, Switch } from '@decay/ui';
+import { Banner, Button, formatDate, SegmentedControl, Switch } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { Leaf, RefreshCw, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, errorMessage, type UpdateState } from '../api';
+import { t } from '../strings';
 import { Group, Row, TabHeader, type TabProps } from './parts';
 
 /** "Last checked today at 9:02" / "… on 12 Nov at 9:02" / "Not checked yet". */
 export function checkedText(at: number | null, now = Date.now()): string {
-  if (at === null) return 'Not checked yet';
+  if (at === null) return t('updates.notChecked');
   const d = new Date(at);
-  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const time = formatDate(d, { hour: 'numeric', minute: '2-digit' });
   const today = new Date(now).toDateString() === d.toDateString();
   return today
-    ? `Last checked today at ${time}`
-    : `Last checked ${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} at ${time}`;
+    ? t('updates.checkedToday', { time })
+    : t('updates.checkedOn', { date: formatDate(d, { day: 'numeric', month: 'short' }), time });
 }
 
 /** Download progress, 0–100, or null when the size isn't known. */
@@ -53,7 +54,7 @@ export function Updates(props: TabProps) {
   const pct = state ? percent(state) : null;
   return (
     <>
-      <TabHeader title="Updates">Decay updates itself quietly in the background.</TabHeader>
+      <TabHeader title={t('settings.tab.updates')}>{t('updates.subtitle')}</TabHeader>
       <div className="grid gap-4">
         {error && <Banner tone="danger">{error}</Banner>}
         {waiting && state && (
@@ -63,25 +64,24 @@ export function Updates(props: TabProps) {
             className="rounded-card bg-feature p-5 text-feature-ink shadow-sm"
           >
             <p className="mb-1 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
-              <Leaf size={14} aria-hidden /> New release
+              <Leaf size={14} aria-hidden /> {t('updates.newRelease')}
             </p>
             <h2 id="release-h" className="font-serif text-2xl">
               {phase === 'ready'
-                ? `Decay ${state.version} is ready`
-                : `Decay ${state.version} is available`}
+                ? t('updates.ready', { version: state.version })
+                : t('updates.available', { version: state.version })}
             </h2>
             {state.notes && <p className="mt-1 text-sm whitespace-pre-line">{state.notes}</p>}
             {failedLate && state.error && (
               <p role="alert" className="mt-2 text-sm text-danger">
-                {state.failed === 'install' ? 'Couldn’t install' : 'Couldn’t download'}:{' '}
-                {state.error}
+                {t('updates.failed', { step: state.failed ?? 'download', error: state.error })}
               </p>
             )}
             {phase === 'downloading' && (
               <div className="mt-3">
                 <div
                   role="progressbar"
-                  aria-label="Downloading the update"
+                  aria-label={t('updates.downloadingLabel')}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={pct ?? undefined}
@@ -92,7 +92,9 @@ export function Updates(props: TabProps) {
                     style={{ width: `${pct ?? 10}%` }}
                   />
                 </div>
-                <p className="mt-1 text-xs">Downloading{pct !== null ? ` · ${pct}%` : '…'}</p>
+                <p className="mt-1 text-xs">
+                  {pct !== null ? t('updates.downloadingPct', { pct }) : t('updates.downloading')}
+                </p>
               </div>
             )}
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -104,32 +106,34 @@ export function Updates(props: TabProps) {
                 onClick={() => act(api.installUpdate('now'))}
               >
                 {restarting
-                  ? 'Restarting when ready…'
+                  ? t('updates.restarting')
                   : phase === 'ready'
-                    ? 'Restart to update'
+                    ? t('updates.restart')
                     : failedLate
-                      ? 'Try again and restart'
-                      : 'Download and restart'}
+                      ? t('updates.retry')
+                      : t('updates.downloadRestart')}
               </Button>
               {state.installOnQuit ? (
-                <span className="text-sm">Installs when you quit Decay</span>
+                <span className="text-sm">{t('updates.onQuitSet')}</span>
               ) : (
-                <Button onClick={() => act(api.installUpdate('onQuit'))}>Install on quit</Button>
+                <Button onClick={() => act(api.installUpdate('onQuit'))}>
+                  {t('updates.onQuit')}
+                </Button>
               )}
             </div>
           </section>
         )}
-        <Group title="Current version">
+        <Group title={t('updates.current')}>
           <Row
-            label={state ? `Decay ${state.current}` : 'Decay'}
+            label={state ? t('updates.version', { version: state.current }) : 'Decay'}
             description={
               <span aria-live="polite">
                 {phase === 'checking'
-                  ? 'Checking…'
+                  ? t('updates.checking')
                   : phase === 'error' && state?.failed === 'check' && state.error
-                    ? `Couldn’t check: ${state.error}`
+                    ? t('updates.checkFailed', { error: state.error })
                     : phase === 'idle' && state?.checkedAt
-                      ? `Up to date · ${checkedText(state.checkedAt)}`
+                      ? t('updates.upToDate', { checked: checkedText(state.checkedAt) })
                       : checkedText(state?.checkedAt ?? null)}
               </span>
             }
@@ -141,39 +145,34 @@ export function Updates(props: TabProps) {
               disabled={phase === 'checking' || phase === 'downloading'}
               onClick={() => act(api.checkForUpdates())}
             >
-              Check now
+              {t('updates.checkNow')}
             </Button>
           </Row>
         </Group>
-        <Group title="Preferences">
+        <Group title={t('updates.preferences')}>
           <Switch
-            label="Download updates automatically"
-            description="New versions download in the background; nothing installs until you restart or quit."
+            label={t('updates.auto')}
+            description={t('updates.auto.text')}
             checked={settings?.auto_update !== false}
             onChange={(on) =>
-              save(
-                { auto_update: on },
-                on ? 'Updates download automatically' : 'Updates wait for you',
-              )
+              save({ auto_update: on }, on ? t('updates.autoOn') : t('updates.autoOff'))
             }
           />
           <Row
-            label="Channel"
+            label={t('updates.channel')}
             description={
-              channel === 'beta'
-                ? 'Beta gets new versions early, and every stable release too.'
-                : 'Stable gets tested releases only.'
+              channel === 'beta' ? t('updates.channel.beta.text') : t('updates.channel.stable.text')
             }
           >
             <SegmentedControl<'stable' | 'beta'>
-              label="Channel"
+              label={t('updates.channel')}
               value={channel}
               onChange={(c) => {
-                save({ update_channel: c }, c === 'beta' ? 'Beta channel' : 'Stable channel');
+                save({ update_channel: c }, t('updates.channel.saved', { channel: c }));
               }}
               options={[
-                { value: 'stable', label: 'Stable' },
-                { value: 'beta', label: 'Beta' },
+                { value: 'stable', label: t('updates.channel.stable') },
+                { value: 'beta', label: t('updates.channel.beta') },
               ]}
             />
           </Row>

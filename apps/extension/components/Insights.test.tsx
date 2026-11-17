@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { InsightsPage } from '@/entrypoints/insights/InsightsPage';
+import { db } from '@/lib/db/db';
 import { buildInsights, dayRange } from '@/lib/metrics/insights';
+import { rules } from '@/lib/rules/rules';
 import { emptyMetrics } from '@/lib/shadow/shadow';
 import { type InsightsProps, InsightsView } from './Insights';
 
@@ -69,7 +72,7 @@ describe('Insights', () => {
 
   it('has a hover/focus readout per day and a table view', () => {
     renderView();
-    const bars = screen.getAllByRole('button', { name: /open tabs$|no data$/ });
+    const bars = screen.getAllByRole('button', { name: /open tabs?$|no data$/ });
     expect(bars).toHaveLength(30);
     fireEvent.focus(bars[29] as HTMLElement);
     expect(screen.getByText('31 tabs')).toBeTruthy();
@@ -102,7 +105,7 @@ describe('Insights', () => {
     const { rerender } = render(<InsightsView {...renderProps()} insights={insights} />);
     const seven = buildInsights({ now: NOW, range: 7, mode: 'automatic', metrics, items: [] });
     rerender(<InsightsView {...renderProps()} insights={seven} />);
-    const bars = screen.getAllByRole('button', { name: /open tabs$|no data$/ });
+    const bars = screen.getAllByRole('button', { name: /open tabs?$|no data$/ });
     expect(bars).toHaveLength(7);
     expect(bars.filter((b) => b.tabIndex === 0)).toHaveLength(1);
   });
@@ -145,5 +148,104 @@ describe('Insights', () => {
     });
     expect(screen.getByText(/No samples yet/)).toBeTruthy();
     expect(screen.queryByText('Show as table')).toBeNull();
+  });
+
+  it('has no "Always keep" button without onProtectSite', () => {
+    renderView();
+    expect(screen.queryByRole('button', { name: /Always keep/ })).toBeNull();
+  });
+
+  it('"Always keep" on a restored-most row: busy, then kept', async () => {
+    let resolve = () => {};
+    const onProtectSite = vi.fn(
+      () =>
+        new Promise<void>((r) => {
+          resolve = r;
+        }),
+    );
+    renderView({ onProtectSite });
+    const button = screen.getByRole('button', { name: 'Always keep docs.example' });
+    fireEvent.click(button);
+    expect(onProtectSite).toHaveBeenCalledWith('docs.example');
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(button.textContent).toContain('Keeping…');
+    await act(async () => resolve());
+    expect(screen.queryByRole('button', { name: 'Always keep docs.example' })).toBeNull();
+    expect(screen.getByText('Always kept')).toBeTruthy();
+  });
+
+  it('shows sites already kept, and keeps the button after a failure', async () => {
+    const { rerender } = render(
+      <InsightsView
+        {...renderProps({ onProtectSite: vi.fn(), protectedSites: new Set(['docs.example']) })}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /Always keep/ })).toBeNull();
+    expect(screen.getByText('Always kept')).toBeTruthy();
+    const onProtectSite = vi.fn().mockRejectedValue(new Error('nope'));
+    rerender(<InsightsView {...renderProps({ onProtectSite, error: 'Could not' })} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep docs.example' }));
+    await act(async () => {});
+    const button = screen.getByRole('button', { name: 'Always keep docs.example' });
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByRole('alert').textContent).toBe('Could not');
+  });
+});
+
+describe('Insights page: "Always keep"', () => {
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await Promise.all([db.items.clear(), db.rules.clear()]);
+  });
+
+  const seed = () =>
+    db.items.bulkAdd([
+      { id: 'a', domain: 'docs.example', restoreCount: 3 },
+      { id: 'b', domain: 'mail.example', restoreCount: 2 },
+    ] as never);
+
+  it('makes a protect rule for the site', async () => {
+    await seed();
+    render(<InsightsPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Always keep docs.example' }));
+    await screen.findByText('Always kept');
+    const saved = await db.rules.where('match').equals('docs.example').toArray();
+    expect(saved.map((r) => [r.scope, r.action, r.enabled])).toEqual([['domain', 'protect', true]]);
+  });
+
+  it('turns on a rule for the site that was turned off', async () => {
+    await seed();
+    await rules.create({
+      scope: 'domain',
+      match: 'docs.example',
+      action: 'protect',
+      enabled: false,
+    });
+    render(<InsightsPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Always keep docs.example' }));
+    await screen.findByText('Always kept');
+    const saved = await db.rules.where('match').equals('docs.example').toArray();
+    expect(saved.map((r) => r.enabled)).toEqual([true]);
+  });
+
+  it('shows a site already kept, and shows errors', async () => {
+    await seed();
+    await rules.create({ scope: 'domain', match: 'docs.example', action: 'protect' });
+    render(<InsightsPage />);
+    await screen.findByText('Always kept');
+    expect(screen.queryByRole('button', { name: 'Always keep docs.example' })).toBeNull();
+
+    vi.spyOn(rules, 'alwaysKeep').mockRejectedValueOnce(new Error('disk full'));
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep mail.example' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "Couldn't always keep mail.example: disk full",
+    );
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Always keep mail.example' }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
   });
 });

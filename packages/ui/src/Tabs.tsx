@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useId, useRef } from 'react';
 import { cx } from './cx';
+import { logicalArrow } from './i18n';
 
 export interface Tab<T extends string> {
   id: T;
@@ -35,7 +36,7 @@ export function Tabs<T extends string>(props: {
   const prefix = props.idPrefix ?? generated;
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const onKey = (e: KeyboardEvent, index: number) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[logicalArrow(e.key)];
     const edge = { Home: 0, End: tabs.length - 1 }[e.key];
     if (step === undefined && edge === undefined) return;
     e.preventDefault();

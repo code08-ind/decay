@@ -1,3 +1,5 @@
+import { formatNumber } from '../i18n';
+import { t } from '../strings';
 import type { MetricItem, MetricsDay, Mode } from './types';
 
 /** A day with at least this much active time is an "active day". */
@@ -126,7 +128,19 @@ function topDomains(entries: Iterable<[string | undefined, number]>, limit = 5) 
 export const rate = (num: number, den: number): number | null =>
   den > 0 ? Math.min(1, num / den) : null;
 
-const pct = (r: number) => `${r > 0 && r < 0.01 ? '<1' : Math.round(r * 100)}%`;
+/** A rate as a percentage for the locale ("5%", "5 %"), "<1%" for a sliver, a dash for none. */
+export function percent(rate: number | null): string {
+  if (rate === null) return t('insights.none');
+  const p = (r: number) => formatNumber(r, { style: 'percent', maximumFractionDigits: 0 });
+  if (rate > 0 && rate < 0.01) return t('insights.percentUnder1', { p: p(0.01) });
+  return t('insights.percent', { p: p(Math.round(rate * 100) / 100) });
+}
+
+/** Milliseconds as seconds for the locale ("2.0 s"). */
+const seconds = (ms: number, digits: number) =>
+  t('insights.goal.seconds', {
+    s: formatNumber(ms / 1000, { minimumFractionDigits: digits, maximumFractionDigits: digits }),
+  });
 
 export function buildInsights(input: {
   now: number;
@@ -207,19 +221,25 @@ export function buildInsights(input: {
   const goals: Goal[] = [
     {
       id: 'regret',
-      label: gArchived === 0 && gFlagged > 0 ? 'Regret (shadow, 14 days)' : 'Regret (14 days)',
-      value: gRegret === null ? '—' : pct(gRegret),
-      target: `under ${pct(TARGETS.regretRate)}`,
+      label:
+        gArchived === 0 && gFlagged > 0
+          ? t('insights.goal.regretShadow')
+          : t('insights.goal.regret'),
+      value: percent(gRegret),
+      target: t('insights.goal.under', { value: percent(TARGETS.regretRate) }),
       status: gRegret === null ? 'noData' : gRegret < TARGETS.regretRate ? 'met' : 'notYet',
     },
     {
       id: 'openTabs',
-      label: 'Open tabs, last week vs week 1',
+      label: t('insights.goal.openTabs'),
       value:
         openTabsChange === null
-          ? '—'
-          : `${openTabsChange < 0 ? '−' : openTabsChange > 0 ? '+' : ''}${pct(Math.abs(openTabsChange))}`,
-      target: `${pct(TARGETS.openTabsDrop)} fewer`,
+          ? t('insights.none')
+          : t('insights.goal.change', {
+              sign: openTabsChange < 0 ? 'minus' : openTabsChange > 0 ? 'plus' : 'none',
+              p: percent(Math.abs(openTabsChange)),
+            }),
+      target: t('insights.goal.fewer', { p: percent(TARGETS.openTabsDrop) }),
       status:
         openTabsChange === null
           ? 'noData'
@@ -229,17 +249,17 @@ export function buildInsights(input: {
     },
     {
       id: 'search',
-      label: 'Search to restore (14 days)',
-      value: gSearchMs === null ? '—' : `${(gSearchMs / 1000).toFixed(1)} s`,
-      target: `under ${TARGETS.searchToRestoreMs / 1000} s`,
+      label: t('insights.goal.search'),
+      value: gSearchMs === null ? t('insights.none') : seconds(gSearchMs, 1),
+      target: t('insights.goal.under', { value: seconds(TARGETS.searchToRestoreMs, 0) }),
       status:
         gSearchMs === null ? 'noData' : gSearchMs < TARGETS.searchToRestoreMs ? 'met' : 'notYet',
     },
     {
       id: 'automatic',
-      label: 'Automatic mode',
-      value: !autoSince ? 'Off' : `On for ${autoDays} day${autoDays === 1 ? '' : 's'}`,
-      target: `still on after ${TARGETS.autoModeDays} days`,
+      label: t('insights.goal.automatic'),
+      value: !autoSince ? t('insights.goal.off') : t('insights.goal.onFor', { n: autoDays }),
+      target: t('insights.goal.stillOn', { n: TARGETS.autoModeDays }),
       status: autoDays >= TARGETS.autoModeDays ? 'met' : 'notYet',
     },
   ];

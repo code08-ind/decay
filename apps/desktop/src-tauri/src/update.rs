@@ -227,7 +227,7 @@ impl<U: Clone> Slot<U> {
     /// "Restart now" / "Install on quit".
     pub fn request_install(&mut self, when: When) -> Result<Next, AppError> {
         if self.update.is_none() || self.state.version.is_none() {
-            return Err(AppError::new("NOT_FOUND", "no update to install; check first"));
+            return Err(AppError::new("NOT_FOUND", crate::i18n::t("error.noUpdate")));
         }
         let s = &mut self.state;
         match when {

@@ -118,21 +118,20 @@ pub enum MetricsFile {
 /// Checks a file the page asks to save is what it says: the beta JSON (its format
 /// header) or the daily CSV (its header row).
 fn checked(kind: MetricsFile, content: &str) -> Result<(), AppError> {
-    let bad = |why: &str| AppError::new("INVALID_INPUT", why.to_owned());
+    let bad = |key: &str| AppError::new("INVALID_INPUT", crate::i18n::t(key));
     if content.len() > MAX_FILE_BYTES {
-        return Err(bad("This file is too large."));
+        return Err(bad("metrics.tooLarge"));
     }
     match kind {
         MetricsFile::Beta => {
-            let doc: Value =
-                serde_json::from_str(content).map_err(|_| bad("This isn't a metrics export."))?;
+            let doc: Value = serde_json::from_str(content).map_err(|_| bad("metrics.notExport"))?;
             if doc.get("format").and_then(Value::as_str) != Some("decay-beta-metrics") {
-                return Err(bad("This isn't a metrics export."));
+                return Err(bad("metrics.notExport"));
             }
         }
         MetricsFile::Csv => {
             if !content.starts_with("day,activeMinutes,") {
-                return Err(bad("This isn't a metrics export."));
+                return Err(bad("metrics.notExport"));
             }
         }
     }
@@ -151,13 +150,17 @@ pub async fn save_metrics_file(
     checked(kind, &content)?;
     let today = jiff::Zoned::now().date().to_string();
     let (name, filter, ext) = match kind {
-        MetricsFile::Beta => (format!("decay-beta-metrics-{today}.json"), "JSON", "json"),
-        MetricsFile::Csv => (format!("decay-metrics-{today}.csv"), "Spreadsheet (CSV)", "csv"),
+        MetricsFile::Beta => {
+            (format!("decay-beta-metrics-{today}.json"), "JSON".to_owned(), "json")
+        }
+        MetricsFile::Csv => {
+            (format!("decay-metrics-{today}.csv"), crate::i18n::t("file.csv"), "csv")
+        }
     };
     let dialog = app
         .dialog()
         .file()
-        .set_title("Save metrics")
+        .set_title(crate::i18n::t("dialog.metrics"))
         .set_file_name(name)
         .add_filter(filter, &[ext])
         .set_parent(&window);

@@ -169,3 +169,38 @@ describe('rules store', () => {
     });
   });
 });
+
+describe('alwaysKeep', () => {
+  it('adds a protect rule for the site, as a quick action', async () => {
+    const { store } = fresh();
+    await store.alwaysKeep('Docs.Example.com');
+    const [rule] = (await store.list()).filter((r) => r.match === 'docs.example.com');
+    expect(rule).toMatchObject({
+      scope: 'domain',
+      match: 'docs.example.com',
+      action: 'protect',
+      enabled: true,
+      source: 'quick_action',
+    });
+  });
+
+  it('turns on an identical rule that was turned off, and leaves an enabled one', async () => {
+    const { store } = fresh();
+    const { rule } = await store.create({
+      scope: 'domain',
+      match: 'docs.example.com',
+      action: 'protect',
+      enabled: false,
+    });
+    const mine = async () => (await store.list()).filter((r) => r.match === 'docs.example.com');
+    await store.alwaysKeep('docs.example.com');
+    expect((await mine()).map((r) => [r.id, r.enabled])).toEqual([[rule.id, true]]);
+    await store.alwaysKeep('docs.example.com');
+    expect(await mine()).toHaveLength(1);
+  });
+
+  it('says why a site can’t be kept', async () => {
+    const { store } = fresh();
+    await expect(store.alwaysKeep('com')).rejects.toThrow(/public suffix/);
+  });
+});

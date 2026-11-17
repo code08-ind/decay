@@ -1,40 +1,45 @@
 // Onboarding (F21) without the UI: the steps, the presets and what each browser row shows.
 import type { DetectedBrowser, Preset } from '../api';
+import { type Key, t } from '../strings';
 
 export const STEPS = [
-  { id: 'welcome', title: 'Welcome', kicker: 'Introduction' },
-  { id: 'pace', title: 'Choose pace', kicker: 'Pace' },
-  { id: 'connect', title: 'Connect browsers', kicker: 'Browsers' },
-  { id: 'windows', title: 'Window access', kicker: 'Windows' },
-  { id: 'shadow', title: 'Shadow mode', kicker: 'Shadow mode' },
-  { id: 'done', title: 'All set', kicker: 'Done' },
+  { id: 'welcome' },
+  { id: 'pace' },
+  { id: 'connect' },
+  { id: 'windows' },
+  { id: 'shadow' },
+  { id: 'done' },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]['id'];
 
+/** A step's name in the sidebar, and its kicker above the title. */
+export const stepTitle = (id: StepId): string => t(`onboarding.step.${id}`);
+export const stepKicker = (id: StepId): string => t(`onboarding.kicker.${id}`);
+
 /** Active hours to Stale / Hidden / Archived (PRD §1.1; decay-core `Thresholds`). */
 export const PRESETS: {
   id: Preset;
-  name: string;
-  blurb: string;
+  name: Key;
+  blurb: Key;
   hours: { stale: number; hidden: number; archive: number };
 }[] = [
   {
     id: 'gentle',
-    name: 'Gentle',
-    blurb: 'For people who keep research open for days.',
+    name: 'onboarding.preset.gentle',
+    blurb: 'onboarding.preset.gentle.blurb',
     hours: { stale: 24, hidden: 60, archive: 96 },
   },
   {
     id: 'balanced',
-    name: 'Balanced',
-    blurb: 'A good default for most work.',
+    name: 'onboarding.preset.balanced',
+    blurb: 'onboarding.preset.balanced.blurb',
     hours: { stale: 12, hidden: 36, archive: 60 },
   },
   {
     id: 'aggressive',
-    name: 'Aggressive',
-    blurb: "Keep only what you're using today.",
+    name: 'onboarding.preset.aggressive',
+    blurb: 'onboarding.preset.aggressive.blurb',
     hours: { stale: 8, hidden: 24, archive: 40 },
   },
 ];
@@ -51,11 +56,13 @@ export function rowState(b: DetectedBrowser): RowState {
 export function rowDetail(b: DetectedBrowser): string {
   switch (rowState(b)) {
     case 'connected':
-      return b.profiles > 1 ? `${b.profiles} profiles connected` : 'Extension connected';
+      return b.profiles > 1
+        ? t('onboarding.row.profiles', { n: b.profiles })
+        : t('onboarding.row.connected');
     case 'install':
-      return b.hostInstalled ? 'Detected · waiting for the extension' : 'Detected';
+      return b.hostInstalled ? t('onboarding.row.waiting') : t('onboarding.row.detected');
     default:
-      return 'Not installed';
+      return t('onboarding.row.notInstalled');
   }
 }
 
@@ -72,9 +79,9 @@ export function sortRows(rows: DetectedBrowser[]): DetectedBrowser[] {
 export function hostProblem(e: unknown): string {
   const code = e && typeof e === 'object' && 'code' in e ? String(e.code) : '';
   if (code === 'NOT_FOUND') {
-    return "This copy of Decay doesn't include its browser connector, so browsers can't connect to it yet.";
+    return t('onboarding.host.missing');
   }
-  return "Decay couldn't set up its browser connector, so browsers can't connect to it yet. Restarting Decay usually fixes this.";
+  return t('onboarding.host.failed');
 }
 
 /** The step after `step` (clamped). */

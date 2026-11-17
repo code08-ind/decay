@@ -2,25 +2,26 @@ import { Button, FeatureCard, SegmentedControl } from '@decay/ui';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, type Thresholds } from '../api';
+import { type Key, t } from '../strings';
 import { BALANCED, PRESET_HOURS, paceOf, thresholdsProblem, workTime } from './model';
 import { Group, TabHeader, type TabProps } from './parts';
 
 type Pace = 'gentle' | 'balanced' | 'aggressive' | 'custom';
 
 function readThresholds(v: unknown): Thresholds {
-  const t = v as Partial<Thresholds> | null;
-  return t &&
-    typeof t.stale === 'number' &&
-    typeof t.hidden === 'number' &&
-    typeof t.archive === 'number'
-    ? { stale: t.stale, hidden: t.hidden, archive: t.archive }
+  const h = v as Partial<Thresholds> | null;
+  return h &&
+    typeof h.stale === 'number' &&
+    typeof h.hidden === 'number' &&
+    typeof h.archive === 'number'
+    ? { stale: h.stale, hidden: h.hidden, archive: h.archive }
     : BALANCED;
 }
 
-const ROWS: { key: keyof Thresholds; label: string; hint: string }[] = [
-  { key: 'stale', label: 'Mark as stale after', hint: 'Dimmed, and counted in the menu bar badge' },
-  { key: 'hidden', label: 'Hide windows after', hint: 'App windows tucked away (minimised)' },
-  { key: 'archive', label: 'Archive tabs after', hint: 'Saved safely to the Library, then closed' },
+const ROWS: { key: keyof Thresholds; label: Key; hint: Key }[] = [
+  { key: 'stale', label: 'aging.row.stale', hint: 'aging.row.stale.hint' },
+  { key: 'hidden', label: 'aging.row.hidden', hint: 'aging.row.hidden.hint' },
+  { key: 'archive', label: 'aging.row.archive', hint: 'aging.row.archive.hint' },
 ];
 
 // Aging (Designs/09): pace presets, custom thresholds in active hours, and what they mean.
@@ -38,47 +39,45 @@ export function Aging(props: TabProps) {
   const choosePace = (p: Pace) => {
     if (p === 'custom') {
       if (problem) return; // shown inline; nothing to send
-      save({ thresholds: draft }, 'Custom pace');
+      save({ thresholds: draft }, t('aging.pace.saved', { pace: 'custom' }));
       return;
     }
-    save({ preset: p }, `${p[0]?.toUpperCase()}${p.slice(1)} pace`);
+    save({ preset: p }, t('aging.pace.saved', { pace: p }));
   };
   const total = Math.max(draft.archive * 1.15, 1);
   return (
     <>
-      <TabHeader title="Aging">
-        How long things can sit unused before Decay steps in. Time counts only while you're active.
-      </TabHeader>
+      <TabHeader title={t('settings.tab.aging')}>{t('aging.subtitle')}</TabHeader>
       <div className="grid gap-4">
-        <Group title="Pace">
+        <Group title={t('aging.pace')}>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-muted">A preset for archiving tabs and windows</p>
+            <p className="text-sm text-muted">{t('aging.pace.text')}</p>
             <SegmentedControl<Pace>
-              label="Pace"
+              label={t('aging.pace')}
               value={pace}
               onChange={choosePace}
               options={[
-                { value: 'gentle', label: 'Gentle' },
-                { value: 'balanced', label: 'Balanced' },
-                { value: 'aggressive', label: 'Aggressive' },
-                { value: 'custom', label: 'Custom' },
+                { value: 'gentle', label: t('aging.pace.gentle') },
+                { value: 'balanced', label: t('aging.pace.balanced') },
+                { value: 'aggressive', label: t('aging.pace.aggressive') },
+                { value: 'custom', label: t('aging.pace.custom') },
               ]}
             />
           </div>
         </Group>
-        <Group title="Thresholds" aside="Active hours">
+        <Group title={t('aging.thresholds')} aside={t('aging.activeHours')}>
           <form
             className="grid gap-3"
             onSubmit={(e) => {
               e.preventDefault();
-              if (!problem && dirty) save({ thresholds: draft }, 'Thresholds saved');
+              if (!problem && dirty) save({ thresholds: draft }, t('aging.saved'));
             }}
           >
             {ROWS.map((r) => (
               <div key={r.key} className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
                 <label htmlFor={`t-${r.key}`}>
-                  <span className="block text-sm font-medium">{r.label}</span>
-                  <span className="block text-[13px] text-muted">{r.hint}</span>
+                  <span className="block text-sm font-medium">{t(r.label)}</span>
+                  <span className="block text-[13px] text-muted">{t(r.hint)}</span>
                 </label>
                 <span className="flex items-center gap-1.5">
                   <input
@@ -90,11 +89,11 @@ export function Aging(props: TabProps) {
                     value={Number.isFinite(draft[r.key]) ? draft[r.key] : ''}
                     onChange={(e) => setDraft({ ...draft, [r.key]: e.target.valueAsNumber })}
                     aria-describedby="t-help"
-                    className="h-8 w-20 rounded-lg border border-line bg-surface-2 px-2 text-right font-mono text-sm"
+                    className="h-8 w-20 rounded-lg border border-line bg-surface-2 px-2 text-end font-mono text-sm"
                   />
-                  <span className="text-xs text-muted">active h</span>
+                  <span className="text-xs text-muted">{t('aging.unit')}</span>
                 </span>
-                <span className="w-32 text-right text-xs text-muted">
+                <span className="w-32 text-end text-xs text-muted">
                   {Number.isFinite(draft[r.key]) ? workTime(draft[r.key]) : ''}
                 </span>
               </div>
@@ -112,10 +111,10 @@ export function Aging(props: TabProps) {
               <span className="flex-1 bg-age-3" />
             </div>
             <p className="flex justify-between font-mono text-[11px] text-muted">
-              <span>Fresh 0–{draft.stale} h</span>
-              <span>Stale</span>
-              <span>Hidden</span>
-              <span>Archived {draft.archive} h+</span>
+              <span>{t('aging.scale.fresh', { n: draft.stale })}</span>
+              <span>{t('aging.scale.stale')}</span>
+              <span>{t('aging.scale.hidden')}</span>
+              <span>{t('aging.scale.archived', { n: draft.archive })}</span>
             </p>
             <div className="flex items-center justify-between gap-3">
               <p
@@ -123,13 +122,12 @@ export function Aging(props: TabProps) {
                 role={problem ? 'alert' : undefined}
                 className={problem ? 'text-sm text-danger' : 'text-xs text-muted'}
               >
-                {problem ??
-                  'Saving sets the pace to Custom. Rules can change timing for single sites.'}
+                {problem ?? t('aging.help')}
               </p>
               <span className="flex gap-2">
                 {dirty && (
                   <Button size="sm" variant="ghost" onClick={() => setDraft(saved)}>
-                    Reset
+                    {t('aging.reset')}
                   </Button>
                 )}
                 <Button
@@ -138,7 +136,7 @@ export function Aging(props: TabProps) {
                   type="submit"
                   disabled={!dirty || problem !== null}
                 >
-                  Save thresholds
+                  {t('aging.save')}
                 </Button>
               </span>
             </div>
@@ -147,18 +145,17 @@ export function Aging(props: TabProps) {
         <FeatureCard className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold tracking-wider text-feature-sub uppercase">
-              Preview
+              {t('aging.preview')}
             </p>
-            <p className="font-serif text-xl">See what these settings would do</p>
-            <p className="text-sm text-feature-sub">
-              The Shadow review lists what Decay would archive and why.
-            </p>
+            <p className="font-serif text-xl">{t('aging.preview.title')}</p>
+            <p className="text-sm text-feature-sub">{t('aging.preview.text')}</p>
           </div>
           <Button
             variant="onFeature"
             onClick={() => api.showWindow('library', '/shadow-report').catch(props.fail)}
           >
-            Open shadow review <ArrowRight size={14} aria-hidden />
+            {t('aging.preview.open')}{' '}
+            <ArrowRight className="rtl:-scale-x-100" size={14} aria-hidden />
           </Button>
         </FeatureCard>
       </div>

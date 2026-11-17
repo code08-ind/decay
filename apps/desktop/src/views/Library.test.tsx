@@ -24,6 +24,8 @@ const api = {
   getDailySummary: vi.fn(),
   getSettings: vi.fn(),
   createRule: vi.fn(),
+  updateRule: vi.fn(),
+  listRules: vi.fn(),
   libraryStats: vi.fn(),
   search: vi.fn(),
   getItem: vi.fn(),
@@ -418,6 +420,95 @@ describe('Library', () => {
     await flush();
     expect(api.saveMetricsFile).toHaveBeenCalledWith('beta', json);
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('insights: "Always keep" on restored-most rows makes a protect rule', async () => {
+    api.getMetrics.mockResolvedValue({
+      mode: 'automatic',
+      days: [],
+      topArchived: [],
+      restoredMost: [
+        { domain: 'docs.example', count: 4 },
+        { domain: 'mail.example', count: 3 },
+        { domain: 'kept.example', count: 2 },
+      ],
+    });
+    api.listRules.mockResolvedValue([
+      { id: 'r', scope: 'domain', match: 'kept.example', action: 'protect', enabled: true },
+    ]);
+    api.createRule
+      .mockResolvedValueOnce({ rule: {}, purged: 0 })
+      .mockRejectedValueOnce({ code: 'INTERNAL', message: 'disk full' });
+    await show('/insights');
+    // Already kept: no button, just the state.
+    expect(screen.queryByRole('button', { name: 'Always keep kept.example' })).toBeNull();
+    expect(screen.getAllByText('Always kept')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep docs.example' }));
+    await flush();
+    expect(api.createRule).toHaveBeenCalledWith({
+      scope: 'domain',
+      match: 'docs.example',
+      action: 'protect',
+    });
+    expect(screen.queryByRole('button', { name: 'Always keep docs.example' })).toBeNull();
+    expect(screen.getAllByText('Always kept')).toHaveLength(2);
+    expect(screen.getByText('Decay always keeps docs.example')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep mail.example' }));
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain(
+      "Couldn't always keep mail.example: disk full",
+    );
+    const retry = screen.getByRole('button', { name: 'Always keep mail.example' });
+    expect((retry as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('insights: "Always keep" turns on a rule for the site that was turned off', async () => {
+    api.getMetrics.mockResolvedValue({
+      mode: 'automatic',
+      days: [],
+      topArchived: [],
+      restoredMost: [{ domain: 'docs.example', count: 4 }],
+    });
+    const off = {
+      id: 'r1',
+      scope: 'domain',
+      match: 'docs.example',
+      action: 'protect',
+      enabled: false,
+    };
+    api.listRules.mockResolvedValue([off]);
+    api.createRule.mockRejectedValueOnce({ code: 'CONFLICT', message: 'exists' });
+    api.updateRule.mockResolvedValueOnce({ rule: { ...off, enabled: true }, purged: 0 });
+    await show('/insights');
+    // Turned off: not kept, so the button is offered.
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep docs.example' }));
+    await flush();
+    expect(api.updateRule).toHaveBeenCalledWith('r1', {
+      scope: 'domain',
+      match: 'docs.example',
+      action: 'protect',
+      thresholdHours: undefined,
+      enabled: true,
+    });
+    expect(screen.getByText('Always kept')).toBeTruthy();
+  });
+
+  it('insights: a duplicate rule counts as already kept', async () => {
+    api.getMetrics.mockResolvedValue({
+      mode: 'automatic',
+      days: [],
+      topArchived: [],
+      restoredMost: [{ domain: 'docs.example', count: 4 }],
+    });
+    api.listRules.mockResolvedValue([]);
+    api.createRule.mockRejectedValueOnce({ code: 'CONFLICT', message: 'exists' });
+    await show('/insights');
+    fireEvent.click(screen.getByRole('button', { name: 'Always keep docs.example' }));
+    await flush();
+    expect(screen.getByText('Always kept')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('switches screens from the tab bar and shows errors', async () => {

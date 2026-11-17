@@ -25,6 +25,7 @@ import { Protection } from '../settings/Protection';
 import { type SettingsMap, useSettings } from '../settings/parts';
 import { Shortcuts } from '../settings/Shortcuts';
 import { Updates } from '../settings/Updates';
+import { t } from '../strings';
 import { useRoute, useStatus } from '../useStatus';
 
 const ICONS: Record<TabId, ReactNode> = {
@@ -95,46 +96,49 @@ export function Settings() {
     if (step === undefined && edge === undefined) return;
     e.preventDefault();
     const next = edge ?? (i + (step ?? 0) + TABS.length) % TABS.length;
-    const t = TABS[next];
-    if (!t) return;
-    go(t.id);
+    const target = TABS[next];
+    if (!target) return;
+    go(target.id);
     refs.current[next]?.focus();
   };
   const props = { settings, save, notify, fail };
   return (
     <div className="flex h-screen bg-canvas text-ink">
-      <nav aria-label="Settings" className="flex w-56 shrink-0 flex-col border-r border-line p-3">
+      <nav
+        aria-label={t('settings.title')}
+        className="flex w-56 shrink-0 flex-col border-e border-line p-3"
+      >
         <div
           role="tablist"
           aria-orientation="vertical"
-          aria-label="Settings"
+          aria-label={t('settings.title')}
           className="grid gap-0.5"
         >
-          {TABS.map((t, i) => {
-            const on = t.id === tab;
+          {TABS.map((item, i) => {
+            const on = item.id === tab;
             return (
               <button
-                key={t.id}
+                key={item.id}
                 ref={(el) => {
                   refs.current[i] = el;
                 }}
                 type="button"
                 role="tab"
-                id={`settings-tab-${t.id}`}
+                id={`settings-tab-${item.id}`}
                 aria-selected={on}
                 aria-controls="settings-panel"
                 tabIndex={on ? 0 : -1}
-                onClick={() => go(t.id)}
+                onClick={() => go(item.id)}
                 onKeyDown={(e) => onKey(e, i)}
                 className={cx(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm',
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm',
                   on
                     ? 'bg-lime font-medium text-lime-ink'
                     : 'text-muted hover:bg-surface-2 hover:text-ink',
                 )}
               >
-                <span aria-hidden>{ICONS[t.id]}</span>
-                {t.label}
+                <span aria-hidden>{ICONS[item.id]}</span>
+                {t(item.label)}
               </button>
             );
           })}
@@ -142,7 +146,7 @@ export function Settings() {
         <div className="mt-auto rounded-lg border border-line px-3 py-2">
           <StatusDot
             status={status ? 'connected' : 'down'}
-            label={status ? 'Engine running' : 'Engine not reachable'}
+            label={status ? t('settings.engine.running') : t('settings.engine.down')}
           />
         </div>
       </nav>
@@ -157,14 +161,16 @@ export function Settings() {
             <Banner
               tone="success"
               icon={<KeyRound size={16} />}
-              action={<Button onClick={() => setLicenseKey(null)}>Dismiss</Button>}
+              action={<Button onClick={() => setLicenseKey(null)}>{t('common.dismiss')}</Button>}
             >
-              Activate the license key ending in {licenseKey.slice(-4)}? Licensing arrives in a
-              later version.
+              {t('settings.license', { last4: licenseKey.slice(-4) })}
             </Banner>
           )}
           {error && (
-            <Banner tone="danger" action={<Button onClick={() => setError('')}>Dismiss</Button>}>
+            <Banner
+              tone="danger"
+              action={<Button onClick={() => setError('')}>{t('common.dismiss')}</Button>}
+            >
               {error}
             </Banner>
           )}
@@ -185,7 +191,7 @@ export function Settings() {
           </div>
         </div>
       </main>
-      <LiveRegion className="fixed right-6 bottom-6">
+      <LiveRegion className="fixed end-6 bottom-6">
         {toast && (
           <Toast key={toast.id} onDismiss={() => setToast(null)}>
             {toast.text}

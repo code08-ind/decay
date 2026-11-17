@@ -14,6 +14,7 @@ use tauri::AppHandle;
 
 use crate::commands::{Res, blocking};
 use crate::core::AppError;
+use crate::i18n::{t, tf};
 use crate::search::{PanelItem, row};
 
 /// Tells every window the rules changed (Settings reloads its lists).
@@ -22,13 +23,52 @@ pub fn announce(app: &AppHandle) {
 }
 
 pub fn refused(why: &RuleRefused) -> AppError {
-    let code = match why {
-        RuleRefused::Invalid(_) => "INVALID_INPUT",
-        RuleRefused::Duplicate => "CONFLICT",
-        RuleRefused::NotFound => "NOT_FOUND",
-        RuleRefused::Store(_) => "DB_ERROR",
-    };
-    AppError::new(code, why.to_string())
+    match why {
+        RuleRefused::Invalid(text) => AppError::new("INVALID_INPUT", invalid_text(text)),
+        RuleRefused::Duplicate => AppError::new("CONFLICT", t("refused.rule.duplicate")),
+        RuleRefused::NotFound => AppError::new("NOT_FOUND", t("refused.rule.notFound")),
+        RuleRefused::Store(_) => AppError::new("DB_ERROR", why.to_string()),
+    }
+}
+
+/// The engine's rule checks (by their English text, decay-engine `rules.rs` and
+/// decay-core `matching.rs`) as catalog keys; `None` for anything else.
+fn invalid_key(text: &str) -> Option<&'static str> {
+    Some(match text {
+        "Not a valid domain" => "refused.rule.domain",
+        "Match is required" => "refused.rule.matchRequired",
+        "Match is too long" => "refused.rule.matchLong",
+        "Use the global scope to match every URL" => "refused.rule.global",
+        "Exclude rules need a domain, URL or title pattern" => "refused.rule.exclude",
+        "Close-allowed rules apply to apps only" => "refused.rule.closeAllowed",
+        "Custom threshold rules need thresholds" => "refused.rule.thresholds",
+        "This exclude rule matches too many sites; make it more specific" => {
+            "refused.rule.tooBroad"
+        }
+        "Pattern is too long" => "refused.rule.titleLong",
+        "Inline flags are not supported" => "refused.rule.titleFlags",
+        "Invalid title pattern" => "refused.rule.titleInvalid",
+        "Back-references are not supported" => "refused.rule.titleBackrefs",
+        "Lookarounds are not supported" => "refused.rule.titleLookarounds",
+        "Repeated groups are not supported" => "refused.rule.titleRepeats",
+        "Pattern is too complex" => "refused.rule.titleComplex",
+        _ => return None,
+    })
+}
+
+/// The engine's rule checks, in the user's language (anything unknown as written).
+fn invalid_text(text: &str) -> String {
+    if let Some(key) = invalid_key(text) {
+        return t(key);
+    }
+    let suffix = text
+        .strip_prefix('“')
+        .and_then(|r| r.split_once("” is a public suffix"))
+        .map(|(host, _)| host.to_owned());
+    match suffix {
+        Some(host) => tf("refused.rule.suffix", &[("host", host.into())]),
+        None => text.to_owned(),
+    }
 }
 
 fn valid_id(id: &str) -> bool {
@@ -88,7 +128,7 @@ pub async fn create_rule(app: AppHandle, rule: RuleInput) -> Res<Saved> {
 #[tauri::command]
 pub async fn update_rule(app: AppHandle, id: String, rule: RuleInput) -> Res<Saved> {
     if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", "not a rule id"));
+        return Err(AppError::new("INVALID_INPUT", t("error.notRule")));
     }
     let handle = app.clone();
     let out = blocking(app, move |core| {
@@ -107,7 +147,7 @@ pub async fn update_rule(app: AppHandle, id: String, rule: RuleInput) -> Res<Sav
 #[tauri::command]
 pub async fn delete_rule(app: AppHandle, id: String) -> Res<Value> {
     if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", "not a rule id"));
+        return Err(AppError::new("INVALID_INPUT", t("error.notRule")));
     }
     let handle = app.clone();
     let out = blocking(app, move |core| {
@@ -186,5 +226,50 @@ mod tests {
         let json = serde_json::to_value(&out).unwrap();
         assert_eq!(json["matchesLive"], 3);
         assert_eq!(json["sample"][0]["title"], "Docs");
+    }
+}
+
+#[cfg(test)]
+mod i18n_tests {
+    use decay_core::{RuleAction, RuleScope};
+    use decay_engine::{RuleInput, validate_rule};
+
+    use super::*;
+
+    /// Every refusal the engine's checks give has a key: a change of the engine's wording
+    /// fails here instead of showing English in another language.
+    #[test]
+    fn engine_rule_refusals_are_all_translated() {
+        let input = |scope, m: &str, action| RuleInput {
+            scope,
+            pattern: m.to_owned(),
+            action,
+            threshold_hours: None,
+            enabled: None,
+        };
+        let long = "a".repeat(5000);
+        let cases = [
+            input(RuleScope::Domain, "not a domain!", RuleAction::Protect),
+            input(RuleScope::Domain, "co.uk", RuleAction::Protect),
+            input(RuleScope::Domain, "", RuleAction::Protect),
+            input(RuleScope::Domain, &long, RuleAction::Protect),
+            input(RuleScope::UrlGlob, "*", RuleAction::Protect),
+            input(RuleScope::Global, "", RuleAction::Exclude),
+            input(RuleScope::Domain, "example.com", RuleAction::CloseAllowed),
+            input(RuleScope::Domain, "example.com", RuleAction::CustomThreshold),
+            input(RuleScope::TitleRegex, "(?i)x", RuleAction::Protect),
+            input(RuleScope::TitleRegex, "(a)\\1", RuleAction::Protect),
+            input(RuleScope::TitleRegex, "a(?=b)", RuleAction::Protect),
+            input(RuleScope::TitleRegex, "(", RuleAction::Protect),
+        ];
+        let mut refused = 0;
+        for case in &cases {
+            let Err(RuleRefused::Invalid(text)) = validate_rule(case) else { continue };
+            refused += 1;
+            assert_ne!(invalid_text(&text), "", "{text}");
+            let known = invalid_key(&text).is_some() || text.contains("is a public suffix");
+            assert!(known, "no key for the engine's {text:?}");
+        }
+        assert!(refused >= 8, "the cases still reach the checks ({refused})");
     }
 }

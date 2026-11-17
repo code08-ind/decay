@@ -11,7 +11,29 @@ export {
 } from './Button';
 export { Chip, type ChipTone, ProBadge } from './Chip';
 export { cx } from './cx';
+export {
+  availableLanguages,
+  type Catalog,
+  direction,
+  formatDate,
+  formatList,
+  formatMessage,
+  formatNumber,
+  getLocale,
+  logicalArrow,
+  makeT,
+  messageParams,
+  onLocaleChange,
+  type Params,
+  parseMessage,
+  pseudo,
+  resolveLocale,
+  setLocale,
+  setSystemLocale,
+  systemLocale,
+} from './i18n';
 export { detectPlatform, formatShortcut, Kbd, type KeyPlatform, Shortcut } from './Kbd';
+export { richText } from './rich';
 export { SearchInput } from './SearchInput';
 export { type Segment, SegmentedControl } from './SegmentedControl';
 export {

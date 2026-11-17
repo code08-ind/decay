@@ -54,6 +54,7 @@ const COMMANDS: &[&str] = &[
     "get_beta_context",
     "save_metrics_file",
     "open_link",
+    "system_language",
     "whats_new",
     "whats_new_seen",
     "ui_show_whats_new",

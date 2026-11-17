@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { api } from '../api';
+import { t } from '../strings';
 import { Group, Row, TabHeader } from './parts';
 
 // About (Designs/09h, PRD F32): version, help, the changelog, feedback (a prefilled GitHub
@@ -27,7 +28,7 @@ export function About(props: { go: (tab: string) => void; fail: (e: unknown) => 
   const open = (link: 'help' | 'changelog' | 'feedback') => api.openLink(link).catch(fail);
   return (
     <>
-      <TabHeader title="About">Help, feedback and what’s changed.</TabHeader>
+      <TabHeader title={t('settings.tab.about')}>{t('about.subtitle')}</TabHeader>
       <div className="grid gap-4">
         <section className="grid justify-items-center gap-3 rounded-card border border-line bg-surface p-8 text-center shadow-sm">
           <span
@@ -38,56 +39,47 @@ export function About(props: { go: (tab: string) => void; fail: (e: unknown) => 
           </span>
           <p className="font-serif text-5xl">Decay</p>
           <p className="rounded-full bg-surface-2 px-3 py-0.5 font-mono text-sm text-muted">
-            {version ? `Version ${version}` : ' '}
+            {version ? t('about.version', { version }) : ' '}
           </p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             <Button icon={<CircleHelp size={14} />} onClick={() => open('help')}>
-              Help
+              {t('about.help')}
             </Button>
             <Button icon={<FileText size={14} />} onClick={() => open('changelog')}>
-              Changelog
+              {t('about.changelog')}
             </Button>
             <Button icon={<MessageSquare size={14} />} onClick={() => open('feedback')}>
-              Send feedback
+              {t('about.feedback')}
             </Button>
           </div>
-          <p className="max-w-md text-xs text-muted">
-            Feedback opens a new GitHub issue with your Decay version and system filled in — nothing
-            from your archive. You can edit everything before sending.
-          </p>
+          <p className="max-w-md text-xs text-muted">{t('about.feedbackNote')}</p>
         </section>
         <nav
-          aria-label="Help"
+          aria-label={t('about.links')}
           className="grid divide-y divide-line rounded-card border border-line bg-surface px-5 shadow-sm"
         >
           <LinkRow
             icon={<CircleHelp size={18} />}
-            label="Help & guides"
+            label={t('about.guides')}
             external
             onClick={() => open('help')}
           />
           <LinkRow
             icon={<Keyboard size={18} />}
-            label="Keyboard shortcuts"
+            label={t('about.shortcuts')}
             shortcut="CmdOrCtrl+/"
             onClick={() => go('shortcuts')}
           />
           <LinkRow
             icon={<Sparkles size={18} />}
-            label="What’s new in this version"
+            label={t('about.whatsNew')}
             onClick={() => api.showWhatsNew().catch(fail)}
           />
         </nav>
-        <Group title="Promises">
-          <Row
-            label="Nothing is lost"
-            description="Every archived tab can be searched and restored."
-          />
-          <Row
-            label="Local only"
-            description="Your browsing history never leaves this device; the database is encrypted."
-          />
-          <Row label="Undo anything" description="Any recent sweep can be undone in one click." />
+        <Group title={t('about.promises')}>
+          <Row label={t('about.promise.lost')} description={t('about.promise.lost.text')} />
+          <Row label={t('about.promise.local')} description={t('about.promise.local.text')} />
+          <Row label={t('about.promise.undo')} description={t('about.promise.undo.text')} />
         </Group>
       </div>
     </>
@@ -105,7 +97,7 @@ function LinkRow(props: {
     <button
       type="button"
       onClick={props.onClick}
-      className="flex items-center gap-4 py-3 text-left text-sm font-medium hover:text-accent"
+      className="flex items-center gap-4 py-3 text-start text-sm font-medium hover:text-accent"
     >
       <span
         aria-hidden
@@ -116,12 +108,12 @@ function LinkRow(props: {
       <span className="flex flex-1 items-center gap-2">
         {props.label}
         {props.shortcut && <Shortcut accelerator={props.shortcut} />}
-        {props.external && <span className="sr-only">(opens in your browser)</span>}
+        {props.external && <span className="sr-only">{t('about.opensInBrowser')}</span>}
       </span>
       {props.external ? (
-        <ExternalLink size={16} className="text-muted" aria-hidden />
+        <ExternalLink size={16} className="rtl:-scale-x-100 text-muted" aria-hidden />
       ) : (
-        <ChevronRight size={16} className="text-muted" aria-hidden />
+        <ChevronRight size={16} className="rtl:-scale-x-100 text-muted" aria-hidden />
       )}
     </button>
   );

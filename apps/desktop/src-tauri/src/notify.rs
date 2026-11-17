@@ -20,6 +20,7 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::core::Core;
+use crate::i18n::{t, tf};
 
 /// A browser disconnected this long is worth a notice (a restart reconnects sooner).
 const DISCONNECTED_NOTICE_MS: i64 = 60_000;
@@ -114,27 +115,21 @@ pub fn sweep_notice(prefs: &Prefs, tabs: u32, windows: u32) -> Option<String> {
     if !prefs.sweep || total == 0 || (prefs.sweep_big_only && total <= BIG_SWEEP) {
         return None;
     }
-    let plural = |n: u32, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
-    Some(match (tabs, windows) {
-        (t, 0) => format!("Archived {}. Undo from the menu bar.", plural(t, "tab", "tabs")),
-        (0, w) => {
-            format!("Hid {} in the Dock. Undo from the menu bar.", plural(w, "window", "windows"))
-        }
-        (t, w) => format!(
-            "Archived {} and hid {}. Undo from the menu bar.",
-            plural(t, "tab", "tabs"),
-            plural(w, "window", "windows")
-        ),
-    })
+    let key = match (tabs, windows) {
+        (_, 0) => "notify.sweepTabs",
+        (0, _) => "notify.sweepWindows",
+        _ => "notify.sweepBoth",
+    };
+    Some(tf(key, &[("tabs", tabs.into()), ("windows", windows.into())]))
 }
 
-fn browser_name(b: BrowserKind) -> &'static str {
+fn browser_name(b: BrowserKind) -> String {
     match b {
-        BrowserKind::Chrome => "Chrome",
-        BrowserKind::Edge => "Edge",
-        BrowserKind::Brave => "Brave",
-        BrowserKind::Arc => "Arc",
-        BrowserKind::Chromium | BrowserKind::Other => "Your browser",
+        BrowserKind::Chrome => "Chrome".into(),
+        BrowserKind::Edge => "Edge".into(),
+        BrowserKind::Brave => "Brave".into(),
+        BrowserKind::Arc => "Arc".into(),
+        BrowserKind::Chromium | BrowserKind::Other => t("notify.yourBrowser"),
     }
 }
 
@@ -186,7 +181,7 @@ impl Notifier {
     /// immediate notice, a revoked permission).
     pub fn on_event(&self, app: &AppHandle, event: &EngineEvent, now: i64) {
         if let Some(body) = self.note(event, now) {
-            show(app, "Decay", &body);
+            show(app, &t("notify.title"), &body);
         }
     }
 
@@ -215,10 +210,7 @@ impl Notifier {
                 let tell = s.accessibility_seen && s.prefs.permission && s.prefs.hides_windows;
                 s.accessibility_seen = false;
                 if tell && !quiet {
-                    return Some(
-                        "Accessibility was turned off: Decay can't hide windows. Turn it back on in System Settings → Privacy & Security."
-                            .to_owned(),
-                    );
+                    return Some(t("notify.axOff"));
                 }
             }
             _ => {}
@@ -257,9 +249,9 @@ impl Notifier {
             if !*told && now - *since >= DISCONNECTED_NOTICE_MS {
                 *told = true; // decided once: told, or quit (not told)
                 if running(*browser) == Some(true) {
-                    out.push(format!(
-                        "{} isn't connected to Decay: its tabs aren't tidied. Check the Decay extension in it.",
-                        browser_name(*browser)
+                    out.push(tf(
+                        "notify.disconnected",
+                        &[("browser", browser_name(*browser).into())],
                     ));
                 }
             }
@@ -294,10 +286,10 @@ pub fn start(app: &AppHandle) {
             let ms = now.as_millisecond();
             let running = |b| decay_platform::app_running(decay_engine::browser_bundle_id(b));
             for body in notifier.due_disconnects(ms, running) {
-                show(&handle, "Decay", &body);
+                show(&handle, &t("notify.title"), &body);
             }
             if let Some(body) = notifier.due_sweep_notice(ms) {
-                show(&handle, "Decay", &body);
+                show(&handle, &t("notify.title"), &body);
             }
             morning_summary(&handle, now);
         }
@@ -331,7 +323,7 @@ fn morning_summary(app: &AppHandle, now: jiff::Timestamp) {
     let Ok(Some(summary)) = summary else { return };
     notifier.lock().summary_sent_on = Some(today);
     if !summary.is_empty() {
-        show(app, "Decay · Good morning", &summary.sentence());
+        show(app, &t("notify.morning"), &summary.sentence());
         notifier.lock().summary_shown_at = Some(now.as_millisecond());
     }
 }

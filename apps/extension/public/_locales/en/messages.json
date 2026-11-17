@@ -1,0 +1,7 @@
+{
+  "extName": { "message": "Decay" },
+  "extDescription": {
+    "message": "Your tabs, gently put away. Archives stale tabs; search and restore anything."
+  },
+  "commandSearch": { "message": "Search archived tabs" }
+}

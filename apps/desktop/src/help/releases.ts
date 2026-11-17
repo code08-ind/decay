@@ -2,6 +2,7 @@
 // so they show offline right after an update. Add an entry when releasing a version with
 // something worth telling; a version without one shows nothing (the full changelog is the
 // GitHub release text).
+import { formatDate as formatLocaleDate } from '@decay/ui';
 
 export type NoteIcon = 'windows' | 'summary' | 'transfer' | 'insights' | 'meeting' | 'search';
 
@@ -53,11 +54,11 @@ export function notesFor(version: string): ReleaseNotes | undefined {
   return RELEASES.find((r) => r.version === version);
 }
 
-/** "17 November 2026" (the day as written, no time-zone shift). */
-export function formatDate(day: string, locale?: string): string {
+/** "17 November 2026" in the app's language (the day as written, no time-zone shift). */
+export function formatDate(day: string): string {
   const [y, m, d] = day.split('-').map(Number);
   if (!y || !m || !d) return day;
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(locale, {
+  return formatLocaleDate(Date.UTC(y, m - 1, d), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

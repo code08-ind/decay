@@ -1,6 +1,7 @@
 import { Leaf, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { cx } from './cx';
+import { t } from './strings';
 
 /** Default lifetime (UI Design Guidelines §7: 30 s, paused on hover). */
 export const TOAST_MS = 30_000;
@@ -71,7 +72,7 @@ export function Toast(props: {
       {action}
       <button
         type="button"
-        aria-label="Dismiss"
+        aria-label={t('toast.dismiss')}
         onClick={onDismiss}
         className="flex size-6 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
       >

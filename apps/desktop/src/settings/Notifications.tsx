@@ -1,5 +1,6 @@
 import { Switch } from '@decay/ui';
 import { useEffect, useState } from 'react';
+import { t } from '../strings';
 import { Group, Row, TabHeader, type TabProps } from './parts';
 
 type Switches = {
@@ -44,67 +45,70 @@ export function Notifications(props: TabProps) {
   };
   return (
     <>
-      <TabHeader title="Notifications">
-        Decay stays quiet. Choose the few moments it's allowed to speak.
-      </TabHeader>
+      <TabHeader title={t('settings.tab.notifications')}>{t('notifications.subtitle')}</TabHeader>
       <div className="grid gap-4">
-        <Group title="Daily summary">
+        <Group title={t('notifications.daily')}>
           <Switch
-            label="Morning summary"
-            description="What was archived yesterday, and anything worth a look. Only when something happened."
+            label={t('notifications.morning')}
+            description={t('notifications.morning.text')}
             checked={n.summary}
             onChange={(on) =>
-              set({ summary: on }, on ? 'Morning summary on' : 'Morning summary off')
+              set(
+                { summary: on },
+                on ? t('notifications.morningOn') : t('notifications.morningOff'),
+              )
             }
           />
-          <Row label="Time" description="Local time; it waits until a call or meeting ends.">
+          <Row label={t('notifications.time')} description={t('notifications.time.text')}>
             <input
               type="time"
-              aria-label="Morning summary time"
+              aria-label={t('notifications.time.label')}
               value={time}
               disabled={!n.summary}
               onChange={(e) => {
                 if (/^\d{2}:\d{2}$/.test(e.target.value)) {
-                  save({ daily_summary_time: e.target.value }, `Summary at ${e.target.value}`);
+                  save(
+                    { daily_summary_time: e.target.value },
+                    t('notifications.time.saved', { time: e.target.value }),
+                  );
                 }
               }}
               className="h-9 rounded-lg border border-line bg-surface-2 px-3 text-sm disabled:opacity-50"
             />
           </Row>
         </Group>
-        <Group title="Sweeps">
+        <Group title={t('notifications.sweeps')}>
           <Switch
-            label="Notify after each sweep"
-            description="A short note when a scheduled sweep archives tabs or hides windows."
+            label={t('notifications.sweep')}
+            description={t('notifications.sweep.text')}
             checked={n.sweep}
-            onChange={(on) => set({ sweep: on }, on ? 'Sweep notices on' : 'Sweep notices off')}
+            onChange={(on) =>
+              set({ sweep: on }, on ? t('notifications.sweepOn') : t('notifications.sweepOff'))
+            }
           />
           <Switch
-            label="Only when more than 10 items are tidied"
-            description="Skip the note for small cleanups."
+            label={t('notifications.big')}
+            description={t('notifications.big.text')}
             checked={n.sweepBigOnly}
             disabled={!n.sweep}
-            onChange={(on) => set({ sweepBigOnly: on }, 'Saved')}
+            onChange={(on) => set({ sweepBigOnly: on }, t('common.saved'))}
           />
         </Group>
-        <Group title="Health">
+        <Group title={t('notifications.health')}>
           <Switch
-            label="Tell me if a browser disconnects"
-            description="After a minute without the Decay extension (its tabs aren't tidied meanwhile)."
+            label={t('notifications.browser')}
+            description={t('notifications.browser.text')}
             checked={n.browser}
-            onChange={(on) => set({ browser: on }, 'Saved')}
+            onChange={(on) => set({ browser: on }, t('common.saved'))}
           />
           <Switch
-            label="Tell me if a permission is turned off"
-            description="If Accessibility, needed to hide windows, is revoked."
+            label={t('notifications.permission')}
+            description={t('notifications.permission.text')}
             checked={n.permission}
-            onChange={(on) => set({ permission: on }, 'Saved')}
+            onChange={(on) => set({ permission: on }, t('common.saved'))}
           />
         </Group>
-        <p className="text-xs text-muted">
-          Nothing pops up during calls and meetings, and macOS Focus / Do Not Disturb apply as for
-          any app.
-        </p>
+        <p className="text-xs text-muted">{t('notifications.quiet')}</p>
       </div>
     </>
   );

@@ -155,10 +155,12 @@ pub async fn install_native_hosts(app: AppHandle) -> Res<Value> {
 /// may take a while to start).
 #[tauri::command]
 pub async fn open_extension_store(browser: String) -> Res<Value> {
-    let known = *KNOWN
-        .iter()
-        .find(|k| kind_id(k.kind) == browser)
-        .ok_or_else(|| AppError::new("INVALID_INPUT", format!("unknown browser {browser:?}")))?;
+    let known = *KNOWN.iter().find(|k| kind_id(k.kind) == browser).ok_or_else(|| {
+        AppError::new(
+            "INVALID_INPUT",
+            crate::i18n::tf("error.unknownBrowser", &[("browser", browser.as_str().into())]),
+        )
+    })?;
     let opened = tauri::async_runtime::spawn_blocking(move || open_in(&known))
         .await
         .map_err(|e| AppError::new("INTERNAL", e.to_string()))?;
@@ -166,10 +168,7 @@ pub async fn open_extension_store(browser: String) -> Res<Value> {
         tracing::warn!(browser = %known.name, "store page: {e}");
         AppError::new(
             "NOT_FOUND",
-            format!(
-                "Decay couldn't open {}. Open the Chrome Web Store in it and search for Decay.",
-                known.name
-            ),
+            crate::i18n::tf("error.store", &[("browser", known.name.into())]),
         )
     })?;
     Ok(json!({}))
@@ -227,7 +226,7 @@ pub async fn request_accessibility(app: AppHandle) -> Res<Value> {
     if kind == "prompt" {
         if !app.state::<Core>().request_accessibility() {
             app.state::<Shell>().ax_prompted.store(false, SeqCst);
-            return Err(AppError::new("ADAPTER_UNAVAILABLE", "Decay's engine isn't running"));
+            return Err(AppError::new("ADAPTER_UNAVAILABLE", crate::i18n::t("error.engine")));
         }
     } else {
         #[cfg(target_os = "macos")]

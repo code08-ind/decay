@@ -1,4 +1,4 @@
-import { Chip, cx, detectPlatform, EmptyState, Kbd, SearchInput } from '@decay/ui';
+import { Chip, cx, detectPlatform, EmptyState, getLocale, Kbd, SearchInput } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { Archive, CircleAlert, Clock, History } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,14 +14,11 @@ import {
   searchWords,
   timeLabel,
 } from '../panel/results';
+import { t } from '../strings';
 
 type Kind = 'all' | 'tab' | 'window';
 
-const KINDS: { id: Kind; label: string; none: string }[] = [
-  { id: 'all', label: 'All', none: 'Nothing archived yet' },
-  { id: 'tab', label: 'Tabs', none: 'No tabs archived' },
-  { id: 'window', label: 'Windows', none: 'No windows archived' },
-];
+const KINDS: Kind[] = ['all', 'tab', 'window'];
 
 const TINT = {
   1: 'bg-avatar-1 text-avatar-1-ink',
@@ -141,12 +138,12 @@ export function Panel() {
           setNote({
             text:
               restored > 0
-                ? `Restored ${restored}; ${failed} couldn't be reopened.`
-                : `Couldn't reopen ${failed === 1 ? 'it' : `${failed} tabs`}. Is its browser still open?`,
+                ? t('panel.restoredSome', { n: restored, failed })
+                : t('panel.couldntReopen', { n: failed }),
             tone: 'error',
           });
         } else if (skipped > 0) {
-          setNote({ text: 'Already on its way back.', tone: 'info' });
+          setNote({ text: t('panel.already'), tone: 'info' });
         }
       },
     );
@@ -208,7 +205,11 @@ export function Panel() {
       });
   };
 
-  const groups = useMemo(() => groupResults(results.items, Date.now()), [results.items]);
+  const locale = getLocale(); // group labels are words: made again in a new language
+  const groups = useMemo(
+    () => groupResults(results.items, Date.now(), locale),
+    [results.items, locale],
+  );
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const groupOf = useMemo(() => {
     const m = new Map<string, ResultGroup>();
@@ -228,11 +229,11 @@ export function Panel() {
   }, [current]);
 
   const startRestore = (call: Promise<unknown>) => {
-    setNote({ text: 'Restoring…', tone: 'busy' });
+    setNote({ text: t('panel.restoring'), tone: 'busy' });
     if (restoring.current) clearTimeout(restoring.current);
     restoring.current = setTimeout(() => {
       restoring.current = null;
-      setNote({ text: "The browser didn't answer. Is it still open?", tone: 'error' });
+      setNote({ text: t('panel.noAnswer'), tone: 'error' });
     }, RESTORE_WAIT_MS);
     call.catch((e) => {
       if (restoring.current) clearTimeout(restoring.current);
@@ -279,7 +280,7 @@ export function Panel() {
       }
       case 'protect':
         api.protectItem(item.id).then(
-          (rule) => setNote({ text: `Always keeping ${rule.match}`, tone: 'info' }),
+          (rule) => setNote({ text: t('panel.keeping', { match: rule.match }), tone: 'info' }),
           (e) => setNote({ text: errorMessage(e), tone: 'error' }),
         );
         return;
@@ -298,7 +299,7 @@ export function Panel() {
     act(action, flat[0]);
   }, [fresh, flat]);
 
-  const emptyTitle = KINDS.find((k) => k.id === kind)?.none ?? 'Nothing archived yet';
+  const emptyTitle = t(`panel.none.${kind}`);
 
   return (
     <div className="h-screen p-4">
@@ -306,14 +307,14 @@ export function Panel() {
         ref={box}
         className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface shadow-panel"
       >
-        <h1 className="sr-only">Search your archive</h1>
-        <div className="flex items-center gap-3 border-b border-line px-2 py-3 pr-4 focus-within:border-accent">
+        <h1 className="sr-only">{t('panel.title')}</h1>
+        <div className="flex items-center gap-3 border-b border-line px-2 py-3 pe-4 focus-within:border-accent">
           <SearchInput
             large
             bare
             className="flex-1"
-            label="Search your archive"
-            placeholder="Search your archive…"
+            label={t('panel.title')}
+            placeholder={t('panel.placeholder')}
             value={query}
             onValueChange={(v) => {
               setQuery(v);
@@ -348,36 +349,39 @@ export function Panel() {
               act(action);
             }}
           />
-          <fieldset className="flex shrink-0 items-center gap-1 border-0 p-0" aria-label="Show">
+          <fieldset
+            className="flex shrink-0 items-center gap-1 border-0 p-0"
+            aria-label={t('panel.show')}
+          >
             {KINDS.map((k) => (
               <button
-                key={k.id}
+                key={k}
                 type="button"
-                aria-pressed={kind === k.id}
+                aria-pressed={kind === k}
                 onClick={() => {
-                  setKind(k.id);
+                  setKind(k);
                   focusInput(false);
                 }}
                 className={cx(
                   'rounded-full px-3 py-1 text-xs transition-colors',
-                  kind === k.id
+                  kind === k
                     ? 'bg-primary text-primary-ink'
                     : 'bg-surface-2 text-muted hover:text-ink',
                 )}
               >
-                {k.label}
+                {t(`panel.kind.${k}`)}
               </button>
             ))}
             <button
               type="button"
-              title="Only one site: type site:example.com"
+              title={t('panel.siteHint')}
               onClick={() => {
                 if (!/\bsite:/.test(query)) setQuery((q) => `${q.trim()} site:`.trimStart());
                 focusInput(false);
               }}
               className="rounded-full border border-line px-3 py-1 font-mono text-xs text-muted hover:text-ink"
             >
-              site:
+              {'site:' /* i18n-ignore: the search operator */}
             </button>
           </fieldset>
         </div>
@@ -386,7 +390,7 @@ export function Panel() {
           ref={list}
           id="results"
           role="listbox"
-          aria-label="Archived items"
+          aria-label={t('panel.results')}
           aria-busy={!fresh}
           onScroll={(e) => {
             const el = e.currentTarget;
@@ -395,17 +399,15 @@ export function Panel() {
           className="min-h-0 flex-1 overflow-y-auto px-2 py-2"
         >
           {error ? (
-            <EmptyState icon={<CircleAlert size={20} />} title="Search isn't working right now">
+            <EmptyState icon={<CircleAlert size={20} />} title={t('panel.broken')}>
               {error}
             </EmptyState>
           ) : flat.length === 0 && fresh ? (
             <EmptyState
               icon={<Archive size={20} />}
-              title={query.trim() ? 'Nothing found' : emptyTitle}
+              title={query.trim() ? t('panel.nothingFound') : emptyTitle}
             >
-              {query.trim()
-                ? 'Try fewer words, or another site: or app: filter.'
-                : 'Tabs you stop using are archived here, ready to come back.'}
+              {query.trim() ? t('panel.tryFewer') : t('panel.emptyText')}
             </EmptyState>
           ) : (
             groups.map((g, gi) => (
@@ -430,7 +432,7 @@ export function Panel() {
                       onClick={() => act('restoreGroup', g.items[0])}
                       className="flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-[11px] text-muted hover:text-ink"
                     >
-                      Restore all <span className="font-[system-ui]">{MOD}↵</span>
+                      {t('panel.restoreAll')} <span className="font-[system-ui]">{MOD}↵</span>
                     </button>
                   )}
                 </div>
@@ -456,7 +458,7 @@ export function Panel() {
                       {isSelected && (
                         <span
                           aria-hidden
-                          className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-accent"
+                          className="absolute top-1.5 bottom-1.5 start-0 w-0.5 rounded-full bg-accent"
                         />
                       )}
                       <span
@@ -470,16 +472,17 @@ export function Panel() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm text-ink">
-                          {highlight(item.title || item.url || 'Untitled', words).map((part, i) =>
-                            part.match ? (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: parts of one fixed string
-                              <mark key={i} className="rounded bg-lime px-1 text-lime-ink">
-                                {part.text}
-                              </mark>
-                            ) : (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: parts of one fixed string
-                              <Fragment key={i}>{part.text}</Fragment>
-                            ),
+                          {highlight(item.title || item.url || t('panel.untitled'), words).map(
+                            (part, i) =>
+                              part.match ? (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: parts of one fixed string
+                                <mark key={i} className="rounded bg-lime px-1 text-lime-ink">
+                                  {part.text}
+                                </mark>
+                              ) : (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: parts of one fixed string
+                                <Fragment key={i}>{part.text}</Fragment>
+                              ),
                           )}
                         </span>
                         <span className="block truncate font-mono text-xs text-muted">
@@ -495,7 +498,7 @@ export function Panel() {
                         </Chip>
                       )}
                       {item.archivedAt !== null && (
-                        <span className="w-28 shrink-0 text-right text-xs text-muted">
+                        <span className="w-28 shrink-0 text-end text-xs text-muted">
                           {timeLabel(item.archivedAt, now)}
                         </span>
                       )}
@@ -516,27 +519,27 @@ export function Panel() {
               {note.text}
             </p>
           ) : (
-            <ul className="flex flex-1 items-center gap-3" aria-label="Keyboard shortcuts">
+            <ul className="flex flex-1 items-center gap-3" aria-label={t('panel.keys')}>
               <li className="flex items-center gap-1.5">
-                <Kbd>↵</Kbd> Restore
+                <Kbd>↵</Kbd> {t('panel.key.restore')}
               </li>
               <li className="flex items-center gap-1.5">
-                <Kbd>{`${MOD}↵`}</Kbd> Restore group
+                <Kbd>{`${MOD}↵`}</Kbd> {t('panel.key.group')}
               </li>
               <li className="flex items-center gap-1.5">
-                <Kbd>{`${MOD}P`}</Kbd> Protect
+                <Kbd>{`${MOD}P`}</Kbd> {t('panel.key.protect')}
               </li>
               <li className="flex items-center gap-1.5">
-                <Kbd>{`${MOD}I`}</Kbd> Details
+                <Kbd>{`${MOD}I`}</Kbd> {t('panel.key.details')}
               </li>
               <li className="flex items-center gap-1.5">
-                <Kbd>esc</Kbd> Close
+                <Kbd>{'esc' /* i18n-ignore: a key cap */}</Kbd> {t('panel.key.close')}
               </li>
             </ul>
           )}
           <span className="flex shrink-0 items-center gap-1.5">
             <span aria-hidden className="size-1.5 rounded-full bg-accent-dot" />
-            {results.cursor ? `${flat.length}+` : flat.length} of {total} archived
+            {t(results.cursor ? 'panel.countMore' : 'panel.count', { shown: flat.length, total })}
           </span>
         </footer>
       </main>

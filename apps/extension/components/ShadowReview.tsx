@@ -1,3 +1,4 @@
+import { logicalArrow } from '@decay/ui';
 import {
   AudioLines,
   CircleAlert,
@@ -18,13 +19,15 @@ import { type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } 
 import type { Mode } from '@/lib/db/types';
 import { protectTargetFor } from '@/lib/shadow/actions';
 import type { KeptGroup, ReportItem, ShadowReport } from '@/lib/shadow/report';
+import { t } from '@/lib/strings';
 import {
   activeHours,
   avatarClass,
-  KEPT_GROUP_LABEL,
+  KEPT_GROUPS,
+  keptGroupLabel,
   minutesUntil,
-  PROTECTED_LABEL,
   percent,
+  protectedLabel,
   shortUrl,
 } from './format';
 import { PageHeader } from './PageHeader';
@@ -91,8 +94,9 @@ export function ShadowReview(props: ShadowReviewProps) {
   const onTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     const i = TABS.indexOf(tab);
     let next: TabKey | undefined;
-    if (e.key === 'ArrowRight') next = TABS[(i + 1) % TABS.length];
-    else if (e.key === 'ArrowLeft') next = TABS[(i - 1 + TABS.length) % TABS.length];
+    const key = logicalArrow(e.key);
+    if (key === 'ArrowRight') next = TABS[(i + 1) % TABS.length];
+    else if (key === 'ArrowLeft') next = TABS[(i - 1 + TABS.length) % TABS.length];
     else if (e.key === 'Home') next = TABS[0];
     else if (e.key === 'End') next = TABS[TABS.length - 1];
     if (!next) return;
@@ -108,11 +112,9 @@ export function ShadowReview(props: ShadowReviewProps) {
       <PageHeader current="review" mode={report.mode} />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-10">
-        <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">Shadow review</h1>
+        <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('review.title')}</h1>
         <p className="mt-2 text-muted">
-          {report.mode === 'shadow'
-            ? "Here's what Decay would have done. Nothing has been closed."
-            : 'What Decay would have archived during shadow mode.'}
+          {report.mode === 'shadow' ? t('review.subtitle.shadow') : t('review.subtitle')}
         </p>
 
         <Hero {...props} />
@@ -136,13 +138,13 @@ export function ShadowReview(props: ShadowReviewProps) {
 
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section
-            aria-label="Simulated decisions"
+            aria-label={t('review.decisions')}
             className="min-w-0 rounded-card border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-6"
           >
             <div className="flex flex-col gap-3 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div
                 role="tablist"
-                aria-label="Decisions"
+                aria-label={t('review.tabs')}
                 className="inline-flex self-start rounded-full bg-surface-2 p-1"
               >
                 {TABS.map((key) => (
@@ -164,24 +166,24 @@ export function ShadowReview(props: ShadowReviewProps) {
                     }`}
                   >
                     {key === 'archive'
-                      ? `Would archive (${report.wouldArchive.length})`
-                      : `Kept (${report.kept.length})`}
+                      ? t('review.tab.archive', { n: report.wouldArchive.length })
+                      : t('review.tab.kept', { n: report.kept.length })}
                   </button>
                 ))}
               </div>
               <label className="relative block sm:w-72">
-                <span className="sr-only">Filter tabs</span>
+                <span className="sr-only">{t('review.filter')}</span>
                 <Search
                   size={16}
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
+                  className="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2 text-faint"
                   aria-hidden
                 />
                 <input
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filter simulated tabs…"
-                  className="w-full rounded-full border border-line bg-canvas py-2 pr-4 pl-9 text-sm placeholder:text-faint"
+                  placeholder={t('review.filterPlaceholder')}
+                  className="w-full rounded-full border border-line bg-canvas py-2 pe-4 ps-9 text-sm placeholder:text-faint"
                 />
               </label>
             </div>
@@ -210,7 +212,7 @@ export function ShadowReview(props: ShadowReviewProps) {
               {filtered.length > 0 && (
                 <div className="flex items-center justify-between pt-4 text-sm text-muted">
                   <span>
-                    Showing {visible.length} of {filtered.length}
+                    {t('review.showing', { shown: visible.length, total: filtered.length })}
                   </span>
                   {filtered.length > PREVIEW_COUNT && (
                     <button
@@ -218,7 +220,7 @@ export function ShadowReview(props: ShadowReviewProps) {
                       onClick={() => setShowAll((v) => !v)}
                       className="text-accent-text underline underline-offset-4"
                     >
-                      {showAll ? 'Show fewer' : `View all ${filtered.length}`}
+                      {showAll ? t('review.fewer') : t('review.all', { n: filtered.length })}
                     </button>
                   )}
                 </div>
@@ -227,14 +229,10 @@ export function ShadowReview(props: ShadowReviewProps) {
           </section>
 
           <aside className="min-w-0 rounded-card border border-line bg-surface p-6 shadow-[var(--shadow-card)]">
-            <h2 className="font-serif text-2xl">Why things were kept</h2>
-            <p className="mt-2 text-sm text-muted">
-              Decay leaves a tab alone when one of your safety signals matches, even when it's old
-              enough to archive.
-            </p>
+            <h2 className="font-serif text-2xl">{t('review.why')}</h2>
+            <p className="mt-2 text-sm text-muted">{t('review.why.text')}</p>
             <ul className="mt-5 space-y-3">
-              {(Object.keys(KEPT_GROUP_LABEL) as KeptGroup[])
-                .filter((g) => g !== 'hold' || report.keptByGroup.hold > 0)
+              {KEPT_GROUPS.filter((g) => g !== 'hold' || report.keptByGroup.hold > 0)
                 .filter((g) => g !== 'other' || report.keptByGroup.other > 0)
                 .map((group) => (
                   <li
@@ -244,7 +242,7 @@ export function ShadowReview(props: ShadowReviewProps) {
                     <span className="grid size-8 place-items-center rounded-full bg-surface-3 text-muted">
                       {GROUP_ICON[group]}
                     </span>
-                    <span className="flex-1 text-sm">{KEPT_GROUP_LABEL[group]}</span>
+                    <span className="flex-1 text-sm">{keptGroupLabel(group)}</span>
                     <span className="grid min-w-7 place-items-center rounded-full border border-line-strong px-2 text-sm tabular-nums">
                       {report.keptByGroup[group]}
                     </span>
@@ -256,7 +254,7 @@ export function ShadowReview(props: ShadowReviewProps) {
               {asideNote(report.mode, report.targetDays)}
             </p>
             <p className="mt-5 flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
-              <Lock size={14} aria-hidden /> Local processing only
+              <Lock size={14} aria-hidden /> {t('review.local')}
             </p>
           </aside>
         </div>
@@ -266,13 +264,11 @@ export function ShadowReview(props: ShadowReviewProps) {
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2">
           <span className="inline-flex items-center gap-2">
             <span className="size-2 rounded-full bg-accent-dot" aria-hidden />
-            {props.liveTabs} open tabs tracked
+            {t('review.tracked', { n: props.liveTabs })}
           </span>
           {nextMin !== null && (
             <span className="text-accent-text">
-              {nextMin === 0
-                ? 'Next simulation at the next check'
-                : `Next simulation in ${nextMin}m`}
+              {nextMin === 0 ? t('review.nextCheck') : t('review.nextIn', { n: nextMin })}
             </span>
           )}
         </div>
@@ -283,11 +279,10 @@ export function ShadowReview(props: ShadowReviewProps) {
 
 function asideNote(mode: Mode, days: number): string {
   if (mode === 'shadow') {
-    return `Shadow mode keeps running until day ${days}. Nothing is closed until you turn on automatic mode.`;
+    return t('review.aside.shadow', { days });
   }
-  if (mode === 'paused')
-    return 'Decay is paused. Nothing is simulated or archived until you resume.';
-  return 'Automatic mode is on. Archived tabs can always be restored.';
+  if (mode === 'paused') return t('review.aside.paused');
+  return t('review.aside.automatic');
 }
 
 function Hero(props: ShadowReviewProps) {
@@ -302,25 +297,27 @@ function Hero(props: ShadowReviewProps) {
   }
   const regret = percent(report.regretRate);
   const flagged = report.flaggedTotal;
-  const tabs = `${flagged} ${flagged === 1 ? 'tab' : 'tabs'}`;
+  const tabs = t('review.tabsCount', { n: flagged });
 
   let title: string;
   let summary: string;
   if (report.mode === 'automatic') {
-    title = 'Automatic mode is on';
-    summary = `During shadow mode, Decay would have archived ${tabs}.`;
+    title = t('review.hero.automatic');
+    summary = t('review.hero.automatic.text', { tabs });
   } else if (report.mode === 'paused') {
-    title = 'Decay is paused';
-    summary = `Nothing is simulated while paused. So far Decay would have archived ${tabs}.`;
+    title = t('review.hero.paused');
+    summary = t('review.hero.paused.text', { tabs });
   } else {
-    title = report.ready ? "You're ready for automatic mode" : 'Decay is watching quietly';
-    summary = `Day ${report.dayNumber} of ${report.targetDays} · Decay would have archived ${tabs}.`;
+    title = report.ready ? t('review.hero.ready') : t('review.hero.watching');
+    summary = t('review.hero.day', { day: report.dayNumber, days: report.targetDays, tabs });
   }
-  if (flagged > 0) summary += ` You went back to ${report.regretTotal} of them (${regret}).`;
+  if (flagged > 0) {
+    summary = t('review.hero.regret', { summary, n: report.regretTotal, pct: regret });
+  }
 
   return (
     <section
-      aria-label="Shadow mode summary"
+      aria-label={t('review.hero.label')}
       className="mt-8 rounded-card bg-feature p-6 text-feature-ink sm:p-8"
     >
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -328,12 +325,18 @@ function Hero(props: ShadowReviewProps) {
           <h2 className="font-serif text-3xl">{title}</h2>
           <p className="mt-2 text-feature-sub">{summary}</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <Stat value={tabs} label="simulated archive" />
+            <Stat value={tabs} label={t('review.stat.simulated')} />
             <Stat
-              value={`${Math.min(report.activeDays, report.targetDays)} of ${report.targetDays}`}
-              label="active days (≥ 1 h)"
+              value={t('review.stat.days', {
+                n: Math.min(report.activeDays, report.targetDays),
+                total: report.targetDays,
+              })}
+              label={t('review.stat.days.label')}
             />
-            <Stat value={`${regret} regret`} label="used again within 24 h" />
+            <Stat
+              value={t('review.stat.regret', { pct: regret })}
+              label={t('review.stat.regret.label')}
+            />
           </div>
         </div>
         <div className="flex flex-col gap-3 lg:w-64">
@@ -344,19 +347,19 @@ function Hero(props: ShadowReviewProps) {
               disabled={props.modeBusy}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-cta px-5 py-3 font-medium text-cta-ink disabled:opacity-60"
             >
-              <Undo2 size={16} aria-hidden /> Back to shadow mode
+              <Undo2 className="rtl:-scale-x-100" size={16} aria-hidden />{' '}
+              {t('review.backToShadow')}
             </button>
           ) : !props.automaticAvailable ? (
             <p className="rounded-tile border border-feature-tile-line px-5 py-3 text-sm">
-              <Eye size={16} className="mb-1 inline" aria-hidden /> Watching · nothing is closed.
-              Automatic mode arrives in the next update.
+              <Eye size={16} className="mb-1 inline" aria-hidden /> {t('review.comingSoon')}
             </p>
           ) : confirming ? (
             <div className="rounded-tile border border-feature-tile-line p-4 text-sm">
               <p>
                 {report.ready
-                  ? 'Decay will start archiving stale tabs. You can undo every sweep.'
-                  : `This ends shadow mode before day ${report.targetDays}. Decay will start archiving stale tabs.`}
+                  ? t('review.confirm.ready')
+                  : t('review.confirm.early', { days: report.targetDays })}
               </p>
               <div className="mt-3 flex gap-2">
                 <button
@@ -365,14 +368,14 @@ function Hero(props: ShadowReviewProps) {
                   disabled={props.modeBusy}
                   className="rounded-full bg-cta px-4 py-2 font-medium text-cta-ink disabled:opacity-60"
                 >
-                  Turn on
+                  {t('review.turnOn')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
                   className="rounded-full border border-feature-tile-line px-4 py-2"
                 >
-                  Cancel
+                  {t('review.cancel')}
                 </button>
               </div>
             </div>
@@ -383,27 +386,27 @@ function Hero(props: ShadowReviewProps) {
                 onClick={() => setConfirming(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-cta px-5 py-3 font-medium text-cta-ink"
               >
-                <Zap size={16} aria-hidden /> Turn on automatic mode
+                <Zap size={16} aria-hidden /> {t('review.turnOnAutomatic')}
               </button>
               <button
                 type="button"
                 onClick={props.onKeepWatching}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-feature-tile-line px-5 py-3 font-medium"
               >
-                <Eye size={16} aria-hidden /> Keep watching
+                <Eye size={16} aria-hidden /> {t('review.keepWatching')}
               </button>
             </>
           ) : (
             <>
               <p className="inline-flex items-center justify-center gap-2 rounded-full border border-feature-tile-line px-5 py-3 text-sm">
-                <Eye size={16} aria-hidden /> Watching · nothing is closed
+                <Eye size={16} aria-hidden /> {t('review.watching')}
               </p>
               <button
                 type="button"
                 onClick={() => setConfirming(true)}
                 className="text-sm text-feature-sub underline underline-offset-4"
               >
-                Turn on automatic mode early
+                {t('review.early')}
               </button>
             </>
           )}
@@ -429,7 +432,7 @@ function Row(props: {
   busy: boolean;
 }) {
   const { item, decision } = props.entry;
-  const title = item.title || shortUrl(item.url) || 'Untitled';
+  const title = item.title || shortUrl(item.url) || t('review.untitled');
   const key = (item.domain ?? title).replace(/^www\./, '');
   const initial = key.charAt(0).toUpperCase() || '·';
   const target = protectTargetFor(item);
@@ -454,13 +457,16 @@ function Row(props: {
             <span className="max-w-full truncate font-mono text-muted">{shortUrl(item.url)}</span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-chip px-2 py-0.5 text-xs text-chip-ink">
               <span className="size-1.5 rounded-full bg-accent-dot" aria-hidden />
-              Unused {activeHours(item.activeAgeS)} active h{ruleReason ? ' · your rule' : ''}
+              {t(ruleReason ? 'review.unusedRule' : 'review.unused', {
+                n: activeHours(item.activeAgeS),
+              })}
             </span>
           </p>
         </div>
         {decision.action === 'protect' ? (
           <span className="inline-flex items-center gap-2 self-start rounded-full bg-lime px-3 py-1.5 text-sm text-lime-ink sm:self-auto">
-            <ShieldCheck size={14} aria-hidden /> Protected: {PROTECTED_LABEL[decision.reason.by]}
+            <ShieldCheck size={14} aria-hidden />{' '}
+            {t('review.protectedBy', { why: protectedLabel(decision.reason.by) })}
           </span>
         ) : (
           <button
@@ -470,8 +476,8 @@ function Row(props: {
             className="inline-flex items-center gap-2 self-start rounded-full border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50 sm:self-auto"
           >
             <Hand size={14} aria-hidden />
-            {props.busy ? 'Protecting…' : `Always keep ${target.kind}`}
-            <span className="sr-only">: {target.label}</span>
+            {props.busy ? t('review.protecting') : t('review.keep', { kind: target.kind })}
+            <span className="sr-only">{t('review.keepTarget', { target: target.label })}</span>
           </button>
         )}
       </div>
@@ -481,9 +487,9 @@ function Row(props: {
 
 function EmptyList({ tab, filtered }: { tab: TabKey; filtered: boolean }) {
   const text = filtered
-    ? 'No tabs match this filter.'
+    ? t('review.empty.filtered')
     : tab === 'archive'
-      ? 'Nothing would be archived right now. Decay is watching quietly.'
-      : 'No old tabs needed protecting.';
+      ? t('review.empty.archive')
+      : t('review.empty.kept');
   return <p className="py-12 text-center text-muted">{text}</p>;
 }

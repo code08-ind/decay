@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
+import { followLocaleSetting, Localized } from './locale';
 import { followThemeSetting } from './theme';
 import { Library } from './views/Library';
 import { Onboarding } from './views/Onboarding';
@@ -21,6 +22,7 @@ const View =
         : Library;
 if (label === 'panel') document.documentElement.classList.add('panel-window');
 followThemeSetting();
+const languageKnown = followLocaleSetting();
 
 // Errors in this window go to Decay's log (scrubbed there; at most 100 a run).
 const report = (message: string, stack?: string) => {
@@ -36,11 +38,14 @@ window.addEventListener('unhandledrejection', (e) => {
   else report(String(r));
 });
 
+// Drawn once the language is known, so the window doesn't appear in one and redraw in another.
 const root = document.getElementById('root');
 if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <View />
-    </StrictMode>,
+  void languageKnown.then(() =>
+    createRoot(root).render(
+      <StrictMode>
+        <Localized render={() => <View />} />
+      </StrictMode>,
+    ),
   );
 }

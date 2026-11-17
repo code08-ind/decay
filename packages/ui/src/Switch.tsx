@@ -41,8 +41,8 @@ export function Switch(props: {
         <span
           aria-hidden
           className={cx(
-            'absolute top-0.5 left-0.5 size-[18px] rounded-full shadow-sm transition-transform',
-            checked ? 'translate-x-4 bg-cta' : 'bg-muted',
+            'absolute top-0.5 start-0.5 size-[18px] rounded-full shadow-sm transition-transform',
+            checked ? 'translate-x-4 rtl:-translate-x-4 bg-cta' : 'bg-muted',
           )}
         />
       </button>

@@ -38,6 +38,7 @@ use tracing_subscriber::util::SubscriberInitExt as _;
 
 use crate::commands::{Res, blocking};
 use crate::core::{AppError, Core};
+use crate::i18n::{t, tf};
 
 /// Log files kept: at most this many, none older than this many days.
 const KEPT_LOGS: usize = 7;
@@ -506,14 +507,12 @@ pub async fn open_logs_folder(app: AppHandle) -> Res<()> {
     let dir = logs_dir(&app.state::<crate::shell::Shell>().support);
     tauri::async_runtime::spawn_blocking(move || {
         std::fs::create_dir_all(&dir).map_err(|e| {
-            AppError::new("IO_ERROR", format!("Couldn't open the logs folder: {e}"))
+            AppError::new("IO_ERROR", tf("error.logs", &[("error", e.to_string().into())]))
         })?;
         let opener = if cfg!(windows) { "explorer" } else { "/usr/bin/open" };
-        std::process::Command::new(opener)
-            .arg(&dir)
-            .status()
-            .map(|_| ())
-            .map_err(|e| AppError::new("IO_ERROR", format!("Couldn't open the logs folder: {e}")))
+        std::process::Command::new(opener).arg(&dir).status().map(|_| ()).map_err(|e| {
+            AppError::new("IO_ERROR", tf("error.logs", &[("error", e.to_string().into())]))
+        })
     })
     .await
     .map_err(|e| AppError::new("INTERNAL", e.to_string()))?
@@ -648,7 +647,7 @@ fn log_tail(path: &Path) -> std::io::Result<String> {
 /// The diagnostics zip: `diagnostics.json` and `logs/…`.
 pub fn build_zip(report: &Value, logs: &[PathBuf]) -> Result<Vec<u8>, AppError> {
     let fail = |e: &dyn std::fmt::Display| {
-        AppError::new("IO_ERROR", format!("Couldn't build the file: {e}"))
+        AppError::new("IO_ERROR", tf("error.zip", &[("error", e.to_string().into())]))
     };
     let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     let options = zip::write::SimpleFileOptions::default()
@@ -673,9 +672,9 @@ pub async fn export_diagnostics(app: AppHandle, window: Window) -> Res<Option<St
     let dialog = app
         .dialog()
         .file()
-        .set_title("Export diagnostics")
-        .set_file_name(format!("Decay diagnostics {today}.zip"))
-        .add_filter("Zip archive", &["zip"])
+        .set_title(t("dialog.diagnostics"))
+        .set_file_name(tf("dialog.diagnosticsFile", &[("date", today.clone().into())]))
+        .add_filter(t("dialog.zip"), &["zip"])
         .set_parent(&window);
     let support = app.state::<crate::shell::Shell>().support.clone();
     blocking(app, move |core: &Core| {

@@ -1,3 +1,4 @@
+import { setLocale } from '@decay/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { ShadowReview } from '@/components/ShadowReview';
@@ -9,6 +10,7 @@ import { settings } from '@/lib/settings/settings';
 import { protectRuleFor } from '@/lib/shadow/actions';
 import { loadShadowReport, type ReportItem, type ShadowReport } from '@/lib/shadow/report';
 import { AUTOMATIC_MODE_AVAILABLE } from '@/lib/shadow/shadow';
+import { t } from '@/lib/strings';
 import type { TabInfo } from '@/lib/tracker/tabs';
 import { faviconFor } from '@/lib/ui/favicon';
 import { applyTheme } from '@/lib/ui/theme';
@@ -17,6 +19,10 @@ const REFRESH_MS = 30_000;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function ReviewPage() {
+  // The tab's name, in the page's language (again after a change).
+  useEffect(() => {
+    document.title = t('title.review');
+  });
   const [report, setReport] = useState<ShadowReport | null>(null);
   const [liveTabs, setLiveTabs] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -36,6 +42,7 @@ export function ReviewPage() {
         loadProbeAccess(),
       ]);
       const open = tabs.filter((tab) => !tab.incognito);
+      setLocale(all.locale); // before the report: it's made of words
       const t = Date.now();
       const next = await loadShadowReport(db, all, open, t, { probes, probeAccess });
       if (seq !== loadSeq.current) return;
@@ -45,7 +52,7 @@ export function ReviewPage() {
       setNow(t);
       setError(null);
     } catch (e) {
-      if (seq === loadSeq.current) setError(`Couldn't load the review: ${message(e)}`);
+      if (seq === loadSeq.current) setError(t('load.review', { error: message(e) }));
     }
   }, []);
 
@@ -110,7 +117,7 @@ export function ReviewPage() {
   if (!report) {
     return (
       <p className="p-10 text-muted" aria-busy={!error}>
-        {error ?? 'Loading…'}
+        {error ?? t('common.loading')}
       </p>
     );
   }
