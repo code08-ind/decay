@@ -33,6 +33,8 @@
     "allow-get-diagnostics-info",
     "allow-open-logs-folder",
     "allow-export-diagnostics",
-    "allow-log-ui-error"
+    "allow-log-ui-error",
+    "allow-open-link",
+    "allow-ui-show-whats-new"
   ]
 }

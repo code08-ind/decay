@@ -33,7 +33,7 @@ How a version gets from a tag to users' Macs (P1.13, PRD F18). Workflow:
 
 ## Cutting a release
 
-1. Set the version in `apps/desktop/src-tauri/tauri.conf.json` (and `apps/desktop/package.json`, `apps/desktop/src-tauri/Cargo.toml` to keep them in step). A beta uses a pre-release version, e.g. `0.3.0-beta.1`.
+1. Set the version in `apps/desktop/src-tauri/tauri.conf.json` (and `apps/desktop/package.json`, `apps/desktop/src-tauri/Cargo.toml` to keep them in step). A beta uses a pre-release version, e.g. `0.3.0-beta.1`. If the release has something worth telling, add its **What's New** entry (exactly this version) at the top of `apps/desktop/src/help/releases.ts`: it shows once in the Library after the update. Without one, nothing is shown.
 2. Commit, then tag exactly `v<version>` and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
 3. The **Release** workflow builds a universal (Apple silicon + Intel) app and uploads a **draft** release to `decay-releases` with `Decay_<v>_universal.dmg`, `Decay.app.tar.gz`, its `.sig` and `latest.json`. **Replace the draft's text** ("RELEASE NOTES GO HERE") with the release notes: Publish copies it into `latest.json`, and that's what Settings → Updates shows. Publish refuses a draft whose text wasn't changed.
 4. Try the draft's `.dmg` on a Mac.

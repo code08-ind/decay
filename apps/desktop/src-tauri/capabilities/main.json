@@ -37,6 +37,10 @@
     "allow-log-ui-error",
     "allow-get-metrics",
     "allow-get-beta-context",
-    "allow-save-metrics-file"
+    "allow-save-metrics-file",
+    "allow-open-link",
+    "allow-ui-show-whats-new",
+    "allow-whats-new",
+    "allow-whats-new-seen"
   ]
 }

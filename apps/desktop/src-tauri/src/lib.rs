@@ -21,6 +21,7 @@ mod commands;
 mod core;
 mod deeplink;
 mod diagnostics;
+mod help;
 mod keys;
 mod library;
 mod menu;
@@ -49,6 +50,10 @@ use crate::shell::Shell;
 const BACKGROUND_ARG: &str = "--background";
 /// The app menu's Quit item.
 const APP_QUIT: &str = "app-quit";
+const HELP_DOCS: &str = "help-docs";
+const HELP_SHORTCUTS: &str = "help-shortcuts";
+const HELP_WHATS_NEW: &str = "help-whats-new";
+const HELP_FEEDBACK: &str = "help-feedback";
 /// How long a plain launch waits for a `decay://` link before opening the Library.
 const LINK_GRACE: std::time::Duration = std::time::Duration::from_millis(700);
 
@@ -279,7 +284,26 @@ fn app_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         true,
         &[&PredefinedMenuItem::minimize(app, None)?, &PredefinedMenuItem::close_window(app, None)?],
     )?;
-    Menu::with_items(app, &[&decay, &edit, &window])
+    // Help (F32). macOS adds its menu search to a submenu named "Help".
+    let help = Submenu::with_items(
+        app,
+        "Help",
+        true,
+        &[
+            &MenuItem::with_id(app, HELP_DOCS, "Decay Help", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                HELP_SHORTCUTS,
+                "Keyboard Shortcuts",
+                true,
+                Some("CmdOrCtrl+/"),
+            )?,
+            &MenuItem::with_id(app, HELP_WHATS_NEW, "What's New in Decay", true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, HELP_FEEDBACK, "Send Feedback…", true, None::<&str>)?,
+        ],
+    )?;
+    Menu::with_items(app, &[&decay, &edit, &window, &help])
 }
 
 /// Release builds follow the `launch_at_login` setting (on by default, F17) once
@@ -422,12 +446,19 @@ pub fn run() {
             metrics::record_search,
             metrics::get_beta_context,
             metrics::save_metrics_file,
+            help::open_link,
+            help::whats_new,
+            help::whats_new_seen,
+            help::ui_show_whats_new,
         ])
         .menu(app_menu)
-        .on_menu_event(|app, event| {
-            if event.id() == APP_QUIT {
-                shell::quit(app);
-            }
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            APP_QUIT => shell::quit(app),
+            HELP_DOCS => help::open_link_from_menu(app, help::Link::Help),
+            HELP_FEEDBACK => help::open_link_from_menu(app, help::Link::Feedback),
+            HELP_SHORTCUTS => shell::show_window(app, Window::Settings, "/shortcuts"),
+            HELP_WHATS_NEW => help::show_whats_new(app),
+            _ => {}
         })
         .setup(|app| setup(app.handle()))
         .on_window_event(|window, event| match event {

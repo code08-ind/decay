@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { cx } from './cx';
 
 export type ButtonVariant =
@@ -38,6 +38,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   /** Shortcut hint, e.g. "⌘↵": shown as a tooltip and announced. */
   shortcut?: string;
+  /** The button element (React 19 passes it as a prop). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 /** Pill button (Sage direction: black primary, white secondary). */

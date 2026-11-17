@@ -41,6 +41,9 @@ const api = {
   getMetrics: vi.fn(),
   getBetaContext: vi.fn(),
   saveMetricsFile: vi.fn(),
+  whatsNew: vi.fn(),
+  whatsNewSeen: vi.fn(),
+  openLink: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 
@@ -104,6 +107,9 @@ beforeEach(() => {
     accessibility: true,
     inMeeting: false,
   };
+  api.whatsNew.mockResolvedValue({ version: '0.1.0', show: false });
+  api.whatsNewSeen.mockResolvedValue(undefined);
+  api.openLink.mockResolvedValue(undefined);
   api.libraryStats.mockResolvedValue({
     archivedTotal: 2,
     archivedToday: { tabs: 1, windows: 0 },
@@ -423,5 +429,74 @@ describe('Library', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Sweeps' }));
     await flush();
     expect(screen.getByRole('heading', { name: 'Sweeps' })).toBeTruthy();
+  });
+});
+
+describe("What's New", () => {
+  afterEach(() => {
+    route = '/';
+  });
+
+  it('shows after an update: Later puts it off for this run, Got it marks it seen', async () => {
+    api.whatsNew.mockResolvedValue({ version: '0.1.0', show: true });
+    render(<Library />);
+    const dialog = await screen.findByRole('dialog', { name: /what’s new in decay/i });
+    expect(within(dialog).getByText('Updated to 0.1.0')).toBeTruthy();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Got it' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Later' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(api.whatsNewSeen.mock.calls).toEqual([[true]]);
+    cleanup();
+    render(<Library />); // the app still says show (a new run): shown again
+    const again = await screen.findByRole('dialog');
+    fireEvent.click(within(again).getByRole('button', { name: 'Got it' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(api.whatsNewSeen.mock.calls).toEqual([[true], []]);
+  });
+
+  it('marks a version without notes seen, without showing anything', async () => {
+    api.whatsNew.mockResolvedValue({ version: '9.9.9', show: true });
+    render(<Library />);
+    await vi.waitFor(() => expect(api.whatsNewSeen).toHaveBeenCalledTimes(1));
+    expect(api.whatsNewSeen).toHaveBeenCalledWith();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens from the Help menu over the current screen', async () => {
+    route = '/sweeps';
+    api.listSweeps.mockResolvedValue([]);
+    render(<Library />);
+    await screen.findByRole('tab', { name: 'Sweeps', selected: true });
+    await act(async () => listeners.get('whats-new:open')?.({ payload: {} }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/major feature/i)).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Sweeps', selected: true })).toBeTruthy();
+  });
+
+  it('opens with the window (`?whats-new`); newest notes are labelled when this version has none', async () => {
+    route = '/?whats-new';
+    api.whatsNew.mockResolvedValue({ version: '9.9.9', show: false });
+    render(<Library />);
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Latest notes · 0.1.0')).toBeTruthy();
+  });
+
+  it('keeps Escape and Tab to itself, and says when the changelog cannot open', async () => {
+    route = '/?whats-new';
+    api.openLink.mockRejectedValue({ code: 'IO_ERROR', message: 'Couldn’t open the link' });
+    const behind = vi.fn();
+    window.addEventListener('keydown', behind);
+    render(<Library />);
+    const dialog = await screen.findByRole('dialog');
+    const buttons = within(dialog).getAllByRole('button');
+    buttons.at(-1)?.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(document.activeElement).toBe(buttons[0]);
+    fireEvent.click(within(dialog).getByRole('button', { name: /full changelog/i }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(behind).not.toHaveBeenCalled();
+    window.removeEventListener('keydown', behind);
   });
 });

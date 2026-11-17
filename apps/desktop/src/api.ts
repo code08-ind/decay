@@ -282,6 +282,14 @@ export const api = {
   /** Saves the beta JSON or the daily CSV where the user picks; `null` when cancelled. */
   saveMetricsFile: (kind: 'beta' | 'csv', content: string) =>
     invoke<string | null>('save_metrics_file', { kind, content }),
+  /** Help and feedback (P2.7): opens a fixed link (no address leaves the page). */
+  openLink: (link: 'help' | 'changelog' | 'feedback') => invoke<void>('open_link', { link }),
+  /** The running version, and whether its "What's New" is still to be shown. */
+  whatsNew: () => invoke<{ version: string; show: boolean }>('whats_new'),
+  /** "Got it": not shown again for this version; `later`: only for the rest of this run. */
+  whatsNewSeen: (later = false) => invoke<void>('whats_new_seen', { later }),
+  /** Help → What's New: over the Library's current screen (opened if needed). */
+  showWhatsNew: () => invoke<void>('ui_show_whats_new'),
   protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
   showItem: (id: string) => invoke('ui_show_item', { id }),
   libraryStats: (input: { todayStart: number; weekStart: number }) =>

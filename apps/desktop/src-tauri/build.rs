@@ -53,6 +53,10 @@ const COMMANDS: &[&str] = &[
     "record_search",
     "get_beta_context",
     "save_metrics_file",
+    "open_link",
+    "whats_new",
+    "whats_new_seen",
+    "ui_show_whats_new",
 ];
 
 fn main() {

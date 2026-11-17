@@ -181,7 +181,7 @@ export function Settings() {
             {tab === 'shortcuts' && <Shortcuts {...props} />}
             {tab === 'notifications' && <Notifications {...props} />}
             {tab === 'updates' && <Updates {...props} />}
-            {tab === 'about' && <About />}
+            {tab === 'about' && <About go={go} fail={fail} />}
           </div>
         </div>
       </main>

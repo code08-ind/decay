@@ -218,6 +218,8 @@ Unique: `(scope, match, action)`.
 | `window_management` | `"hide"` (`off` \| `hide` \| `hide_and_close`) |
 | `crash_reports` | `false` |
 | `locale` | `"system"` |
+| `whats_new_seen` | none (P2.7: the version whose What's New was seen; set to the running version when none is stored, so a new install shows nothing) |
+| `beta_install_id` | none (P2.7: random, made for the beta export only; not in the settings snapshot) |
 
 ### 3.10 `metrics_daily` (on-device success metrics)
 

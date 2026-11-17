@@ -13,6 +13,8 @@ import { listen } from '@tauri-apps/api/event';
 import { Leaf, Pause, Play, RotateCcw, Settings as SettingsIcon, Wind } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, describe, type EngineStatus, errorMessage } from '../api';
+import { notesFor, RELEASES, type ReleaseNotes } from '../help/releases';
+import { WhatsNew } from '../help/WhatsNew';
 import { Archive } from '../library/Archive';
 import { Insights } from '../library/Insights';
 import { parseRoute, routeFor, type View } from '../library/model';
@@ -82,6 +84,49 @@ export function Library() {
     }
   };
   const refresh = () => setVersion((v) => v + 1);
+
+  // What's New (F32): once after an update to a version with notes (a version without
+  // any is marked seen quietly), and whenever Help → What's New asks: `whats-new:open`
+  // over the current screen, or `?whats-new` when the window opens for it.
+  const [whatsNew, setWhatsNew] = useState<{ notes: ReleaseNotes; latest: boolean } | null>(null);
+  // Asked for: this version's notes, else the newest there are (labelled so), else the
+  // changelog.
+  const showAsked = () =>
+    api
+      .whatsNew()
+      .then(({ version }) => {
+        const notes = notesFor(version);
+        if (notes) setWhatsNew({ notes, latest: false });
+        else if (RELEASES[0]) setWhatsNew({ notes: RELEASES[0], latest: true });
+        else return api.openLink('changelog');
+      })
+      .catch((e) => setError(errorMessage(e)));
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per window
+  useEffect(() => {
+    api
+      .whatsNew()
+      .then(({ version, show }) => {
+        if (!show) return;
+        const notes = notesFor(version);
+        if (notes) setWhatsNew({ notes, latest: false });
+        else api.whatsNewSeen().catch(() => {});
+      })
+      .catch(() => {});
+    const off = listen('whats-new:open', () => {
+      showAsked();
+    });
+    return () => {
+      off.then((f) => f()).catch(() => {});
+    };
+  }, []);
+  const askedWhatsNew = new URLSearchParams(route.split('?')[1] ?? '').has('whats-new');
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only when asked (go strips it)
+  useEffect(() => {
+    if (!askedWhatsNew) return;
+    go(routeFor(r));
+    showAsked();
+  }, [askedWhatsNew]);
+
   const page = { status, version, go, notify: (t: string) => notify(t), run, refresh };
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -168,6 +213,21 @@ export function Library() {
           </Toast>
         )}
       </LiveRegion>
+      {whatsNew && (
+        <WhatsNew
+          notes={whatsNew.notes}
+          latest={whatsNew.latest}
+          onLater={() => {
+            setWhatsNew(null);
+            api.whatsNewSeen(true).catch(() => {});
+          }}
+          onGotIt={() => {
+            setWhatsNew(null);
+            api.whatsNewSeen().catch(() => {});
+          }}
+          onChangelog={() => api.openLink('changelog')}
+        />
+      )}
     </div>
   );
 }

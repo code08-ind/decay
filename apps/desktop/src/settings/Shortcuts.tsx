@@ -11,6 +11,7 @@ const IN_APP: [string, string][] = [
   ['Search panel: always keep the site', 'CmdOrCtrl+P'],
   ['Search panel: show details in the Library', 'CmdOrCtrl+I'],
   ['Close the panel or a drawer', 'Escape'],
+  ['This list of shortcuts (Help menu, while a Decay window is in front)', 'CmdOrCtrl+/'],
 ];
 
 // Shortcuts (Designs/09d): record the global search shortcut; the in-app keys.

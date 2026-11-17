@@ -42,6 +42,8 @@ const api = {
   getDiagnosticsInfo: vi.fn(),
   openLogsFolder: vi.fn(),
   exportDiagnostics: vi.fn(),
+  openLink: vi.fn(),
+  showWhatsNew: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 const { Settings } = await import('./Settings');
@@ -471,6 +473,29 @@ describe('Settings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
     await flush();
     expect(api.setHotkey).toHaveBeenCalledWith('Ctrl+Alt+K');
+  });
+
+  it('about: version, help, changelog, feedback, shortcuts and what is new', async () => {
+    api.openLink.mockResolvedValue(undefined);
+    api.showWhatsNew.mockResolvedValue(undefined);
+    await show('/about');
+    expect(screen.getByText('Version 0.1.0')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^changelog/i }));
+    fireEvent.click(screen.getByRole('button', { name: /help & guides/i }));
+    expect(api.openLink.mock.calls).toEqual([['feedback'], ['changelog'], ['help']]);
+    fireEvent.click(screen.getByRole('button', { name: /what’s new/i }));
+    expect(api.showWhatsNew).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: /keyboard shortcuts/i }));
+    expect(await screen.findByRole('button', { name: 'Record a new shortcut' })).toBeTruthy();
+  });
+
+  it('about: a link that cannot open says so', async () => {
+    api.openLink.mockRejectedValue({ code: 'IO_ERROR', message: 'Couldn’t open the link' });
+    await show('/about');
+    fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+    await flush();
+    expect(screen.getByText(/couldn’t open the link/i)).toBeTruthy();
   });
 
   it('shows errors from the app', async () => {

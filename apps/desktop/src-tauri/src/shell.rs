@@ -383,6 +383,16 @@ pub fn toggle_panel(app: &AppHandle) {
     if visible { hide_panel(app) } else { show_panel(app, None) }
 }
 
+/// Brings an open window to the front, where it is (no navigation); false if it isn't open.
+pub fn focus_window(app: &AppHandle, window: Window) -> bool {
+    let Some(existing) = app.get_webview_window(window.label()) else { return false };
+    set_dock_visible(app, true);
+    let _ = existing.unminimize();
+    let _ = existing.show();
+    let _ = existing.set_focus();
+    true
+}
+
 /// Opens (or focuses) the Library, Settings or onboarding at `route`. Until onboarding is
 /// done, the Library opens the onboarding instead (first run, tray, Dock, a second launch).
 pub fn show_window(app: &AppHandle, window: Window, route: &str) {

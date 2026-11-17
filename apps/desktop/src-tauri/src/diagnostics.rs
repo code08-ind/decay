@@ -546,7 +546,7 @@ pub fn log_ui_error(window: Window, message: String, stack: Option<String>) {
 }
 
 /// The OS name and version (`macOS 15.1`).
-fn os_version() -> String {
+pub(crate) fn os_version() -> String {
     #[cfg(target_os = "macos")]
     {
         let v = std::process::Command::new("/usr/bin/sw_vers")
