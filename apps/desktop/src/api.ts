@@ -270,9 +270,18 @@ export const api = {
     cursor?: string;
     after?: number;
   }) => invoke<SearchOutput>('search', { input }),
-  restoreItems: (ids: string[], target: 'original' | 'newWindow' = 'original') =>
-    invoke('restore_items', { ids, target }),
+  restoreItems: (ids: string[], target: 'original' | 'newWindow' = 'original', searchMs?: number) =>
+    invoke('restore_items', { ids, target, searchMs: searchMs ?? null }),
   restoreBatch: (itemId: string) => invoke('restore_batch', { itemId }),
+  /** Insights (P2.7): every stored day, and the top sites since `since` (ms). */
+  getMetrics: (since: number) => invoke<MetricsReport>('get_metrics', { since }),
+  /** One search in the panel (once per opening). */
+  recordSearch: () => invoke<void>('record_search'),
+  /** What the beta export says about this installation (makes the install id). */
+  getBetaContext: () => invoke<BetaContext>('get_beta_context'),
+  /** Saves the beta JSON or the daily CSV where the user picks; `null` when cancelled. */
+  saveMetricsFile: (kind: 'beta' | 'csv', content: string) =>
+    invoke<string | null>('save_metrics_file', { kind, content }),
   protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
   showItem: (id: string) => invoke('ui_show_item', { id }),
   libraryStats: (input: { todayStart: number; weekStart: number }) =>
@@ -320,6 +329,28 @@ export const api = {
   updateSettings: (patch: Record<string, unknown>) =>
     invoke<Record<string, unknown>>('update_settings', { patch }),
 };
+
+/** `get_metrics` (P2.7): days in the shared `MetricsDay` shape. */
+export interface MetricsReport {
+  mode: 'shadow' | 'automatic' | 'paused';
+  days: import('@decay/ui/metrics').MetricsDay[];
+  topArchived: { domain: string; count: number }[];
+  restoredMost: { domain: string; count: number }[];
+}
+
+/** `get_beta_context` (P2.7). */
+export interface BetaContext {
+  installId: string;
+  appVersion: string;
+  platform: 'macos' | 'windows';
+  browsers: string[];
+  mode: 'shadow' | 'automatic' | 'paused';
+  preset: string;
+  thresholds: { stale: number; hidden: number; archive: number };
+  shadowStartedAt: number | null;
+  windowManagement: string;
+  rules: Record<string, number>;
+}
 
 export type ExportFormat = 'json' | 'html' | 'csv';
 

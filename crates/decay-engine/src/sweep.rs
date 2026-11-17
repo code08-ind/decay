@@ -261,7 +261,8 @@ fn age_adapter(
         let mut age_changed = false;
         if credit > 0 {
             if in_use.contains(&tab_id) {
-                mark_used(s, item, now)?;
+                // Being the visible tab or playing audio isn't a choice: no shadow regret.
+                mark_used(s, item, now, false)?;
             } else {
                 item.active_age_s = item.active_age_s.saturating_add(credit);
                 age_changed = true;
@@ -335,6 +336,9 @@ impl Engine {
             self.store.atomically(false, |s| age_adapter(s, a, &policy, pro, credit, now))?;
         }
         self.age_windows(credit, now)?;
+        if let Err(e) = self.note_metrics(credit, now) {
+            self.problem("metrics", &e);
+        }
         Ok(())
     }
 
@@ -345,6 +349,9 @@ impl Engine {
         }
         let days = i64::try_from(self.policy.retention_days).unwrap_or(i64::MAX / 86_400_001);
         let cutoff = now.saturating_sub(days.saturating_mul(86_400_000));
+        if let Err(e) = self.prune_metrics(now) {
+            self.problem("metrics", &e);
+        }
         let purged = self.store.purge_archived_before(cutoff)?;
         if purged > 0 {
             tracing::info!(purged, "archive retention");
@@ -765,10 +772,11 @@ impl Engine {
                     if let Some(a) = adapter.as_deref_mut() {
                         // `inUse` alone isn't a use: Chrome sets `lastAccessed` on every tab
                         // it restores at start-up, so it only defers the close.
-                        let used =
-                            a.used_while_closing.remove(tab_id) || reason == SkipReason::Active;
-                        if used {
-                            mark_used(s, &mut item, now)?;
+                        // Only a deliberate use while closing is a shadow regret; being
+                        // the active tab when the close came isn't.
+                        let used = a.used_while_closing.remove(tab_id);
+                        if used.is_some() || reason == SkipReason::Active {
+                            mark_used(s, &mut item, now, used == Some(true))?;
                         }
                         if reason == SkipReason::FormInput {
                             let url =

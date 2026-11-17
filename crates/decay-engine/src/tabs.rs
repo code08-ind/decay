@@ -109,7 +109,9 @@ fn apply_fields(a: &Adapter, item: &mut Item, info: &TabInfo, source_id: &str) -
 }
 
 /// Marks an item used: age 0, stale → active, and a sampled `used` event.
-pub(crate) fn mark_used(s: &Store, item: &mut Item, now: i64) -> Res {
+/// `deliberate`: activated, typed in, or its window focused (not audio or visibility):
+/// only such a use of a tab shadow mode flagged counts as a regret (Insights).
+pub(crate) fn mark_used(s: &Store, item: &mut Item, now: i64, deliberate: bool) -> Res {
     item.active_age_s = 0;
     item.last_used_at = now;
     if matches!(item.state, ItemState::Stale | ItemState::Hidden) {
@@ -118,6 +120,9 @@ pub(crate) fn mark_used(s: &Store, item: &mut Item, now: i64) -> Res {
     }
     s.update_item(item)?;
     s.record_used(&item.id, now)?;
+    if deliberate {
+        s.metrics_note_deliberate_use(&item.id, now)?;
+    }
     Ok(())
 }
 
@@ -358,7 +363,7 @@ fn reconcile(
     }
     let tabs = &a.tabs;
     a.probes.retain(|id, _| tabs.contains_key(id));
-    a.used_while_closing.retain(|id| tabs.contains_key(id));
+    a.used_while_closing.retain(|id, _| tabs.contains_key(id));
     a.ready = true;
     a.last_snapshot_at = now;
     settled.sort();
@@ -560,10 +565,11 @@ impl Engine {
         if item.state == ItemState::Archiving {
             // Being closed: the extension skips it (used within the last minute), and its
             // age is reset once the close is settled.
-            a.used_while_closing.insert(used.tab_id);
+            let was = a.used_while_closing.get(&used.tab_id).copied().unwrap_or(false);
+            a.used_while_closing.insert(used.tab_id, was || deliberate);
             return Ok(());
         }
-        mark_used(&self.store, item, now)
+        mark_used(&self.store, item, now, deliberate)
     }
 
     pub(crate) fn on_window_focus(&mut self, conn: ConnId, focus: WindowFocus, now: i64) -> Res {
@@ -594,6 +600,6 @@ impl Engine {
         if item.state == ItemState::Archiving {
             return Ok(());
         }
-        mark_used(&self.store, item, now)
+        mark_used(&self.store, item, now, true)
     }
 }

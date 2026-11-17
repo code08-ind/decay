@@ -38,6 +38,9 @@ const api = {
   setMode: vi.fn(),
   resume: vi.fn(),
   showWindow: vi.fn(),
+  getMetrics: vi.fn(),
+  getBetaContext: vi.fn(),
+  saveMetricsFile: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 
@@ -345,6 +348,70 @@ describe('Library', () => {
     await flush();
     expect(api.setMode).toHaveBeenCalledWith('automatic');
     expect(screen.getByRole('heading', { name: 'Library' })).toBeTruthy();
+  });
+
+  it('insights: tiles from the app metrics, and the share file shown before saving', async () => {
+    const today = new Date(NOW);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const day = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    api.getMetrics.mockResolvedValue({
+      mode: 'automatic',
+      days: [
+        {
+          day,
+          activeSeconds: 7200,
+          openTabsP50: 42,
+          openWindowsP50: 3,
+          archivedCount: 20,
+          restored24hCount: 1,
+          undoCount: 0,
+          searchCount: 3,
+          searchToRestoreMsP50: 2500,
+          autoModeOn: 1,
+          shadowFlaggedCount: 0,
+          shadowRegretCount: 0,
+          sampledHours: [9, 10],
+          openTabsSamples: [40, 44],
+          openWindowsSamples: [3, 3],
+          searchToRestoreSamples: [2500],
+        },
+      ],
+      topArchived: [{ domain: 'news.example', count: 12 }],
+      restoredMost: [{ domain: 'docs.example', count: 4 }],
+    });
+    api.getBetaContext.mockResolvedValue({
+      installId: 'abc123',
+      appVersion: '0.1.0',
+      platform: 'macos',
+      browsers: ['chrome'],
+      mode: 'automatic',
+      preset: 'balanced',
+      thresholds: { stale: 12, hidden: 36, archive: 60 },
+      shadowStartedAt: NOW - 20 * 86_400_000,
+      windowManagement: 'hide',
+      rules: { protect: 2, exclude: 1, customThreshold: 0, closeAllowed: 0 },
+    });
+    api.saveMetricsFile.mockResolvedValue('/Users/me/decay-beta-metrics.json');
+    await show('/insights');
+    expect(screen.getByRole('heading', { name: 'Insights' })).toBeTruthy();
+    expect(screen.getAllByText('42').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('5%').length).toBeGreaterThan(0); // 1 of 20 restored within a day
+    expect(screen.getAllByText('news.example').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Nothing leaves it unless you share/).textContent).toContain(
+      'this computer',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Share with beta team/ }));
+    await flush();
+    const dialog = screen.getByRole('dialog');
+    const json = within(dialog).getByText(/decay-beta-metrics/).textContent ?? '';
+    const file = JSON.parse(json);
+    expect([file.version, file.client, file.installId]).toEqual([2, 'desktop', 'abc123']);
+    expect(file.summary.archived).toBe(20);
+    expect(json).not.toMatch(/news\.example|docs\.example/);
+    fireEvent.click(within(dialog).getByRole('button', { name: /Save/ }));
+    await flush();
+    expect(api.saveMetricsFile).toHaveBeenCalledWith('beta', json);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('switches screens from the tab bar and shows errors', async () => {

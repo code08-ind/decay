@@ -179,6 +179,15 @@ describe('buildInsights', () => {
       items: [],
     });
     expect(later.openTabsChange).toBeCloseTo(-0.75);
+    const same = buildInsights({
+      now: NOW,
+      range: 30,
+      mode: 'shadow',
+      metrics: [sampled(14, 40), sampled(1, 40)],
+      items: [],
+    });
+    expect(same.openTabsChange).toBe(0);
+    expect(same.goals.find((g) => g.id === 'openTabs')?.value).toBe('0%'); // not "−0%"
   });
 
   it('finds the current unbroken run of automatic mode', () => {

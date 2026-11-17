@@ -234,6 +234,10 @@ Unique: `(scope, match, action)`.
 | search_to_restore_ms_p50 | INTEGER | |
 | auto_mode_on | INTEGER | |
 
+**As built (P2.7, migration V3, `decay-store/src/metrics.rs`):** the samples behind each median are kept (`sampled_hours`, `open_tabs_samples`, `open_windows_samples`, `search_samples`: JSON arrays, ≤ 48 each). The engine adds active seconds every tick and, once per local hour while tabs are open in a connected browser, samples open tabs and normal windows (no private windows) and whether automatic mode is on. The panel and the popup (via `metrics.searched` / `searchMs`) record searches and search → restore times (> 120 s dropped). Days are local to the system time zone (a repeated DST hour is sampled once). `archived_count`, `restored_24h_count` and `undo_count` are no longer written or read (always 0): those counts come from `metric_events` below. Kept 400 days.
+
+**`metric_events` (P2.7, V3):** `id INTEGER PK`, `kind` (`archived`, `restored_24h`, `undo`, `shadow_flagged`, `shadow_regret`), `at` (ms), `ref TEXT` (`UNIQUE(kind, ref)`: a sweep id for `undo`, once per sweep; the flag's event id for `shadow_flagged` / `shadow_regret`, once per flag), `day TEXT` (local `YYYY-MM-DD`, NULL until dated). Filled by triggers on `events` as things happen, so deleting an item (closing a tab, delete, exclude rule, retention) never changes a count: an archive; a restore or Undo within 24 h of the item's archive (on the restore's day); a tab sweep's Undo (a window-hide sweep's isn't counted); a shadow flag. Shadow regret is written by the engine when a flagged item is used **deliberately** (activated, typed in, window focused; not audio or merely being visible) within 24 h, on the flag's time. Migration V3 copies existing history the same way (not shadow regret, which history can't tell). The engine stamps `day` within a tick, in the zone of the time, so travelling later doesn't move a count; `get_metrics` sorts counts by it. Pruned after 400 days (hourly maintenance).
+
 ### 3.11 `license`
 
 | Column | Type | Notes |

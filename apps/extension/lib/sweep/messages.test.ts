@@ -11,6 +11,7 @@ describe('isDecayRequest', () => {
     expect(isDecayRequest({ type: 'decay.restoreBatch', itemId: 'a', searchMs: 0 })).toBe(true);
     expect(isDecayRequest({ type: 'decay.search', query: '' })).toBe(true);
     expect(isDecayRequest({ type: 'decay.search', query: 'site:a.com', limit: 50 })).toBe(true);
+    expect(isDecayRequest({ type: 'decay.searched' })).toBe(true);
   });
 
   it('rejects malformed ones', () => {

@@ -19,10 +19,11 @@ pub(crate) const MIGRATIONS: &[Migration] = &[
         name: "onboarded",
         sql: include_str!("../migrations/V2__onboarded.sql"),
     },
+    Migration { version: 3, name: "metrics", sql: include_str!("../migrations/V3__metrics.sql") },
 ];
 
 /// The newest schema version this build knows.
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// FNV-1a over the SQL with line endings normalised (a Windows checkout has CRLF).
 fn checksum(sql: &str) -> String {
@@ -136,7 +137,7 @@ mod tests {
             apply(&mut conn, &v1, 5).unwrap();
             conn.execute_batch(seed).unwrap();
             let rest = pending(&conn).unwrap();
-            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2]);
+            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3]);
             apply(&mut conn, &rest, 5).unwrap();
             let at: Option<String> = conn
                 .query_row("SELECT value FROM settings WHERE key = 'onboarded_at'", [], |r| {
@@ -151,6 +152,93 @@ mod tests {
             "INSERT INTO sweeps (id, started_at, trigger, is_shadow, status) VALUES ('s', 1, 'manual', 1, 'done');",
         );
         assert!(at.is_some_and(|t| t > 1_700_000_000_000), "{at:?}");
+    }
+
+    /// V3 copies what's already recorded into `metric_events`, and its triggers count
+    /// what comes next: restores within 24 h, an Undo once per tab sweep, never a
+    /// window-hide sweep's Undo.
+    #[test]
+    fn metrics_copy_the_history_and_count_what_follows() {
+        const H: i64 = 3_600_000;
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::words::register(&conn).unwrap();
+        let v12 = pending(&conn).unwrap().into_iter().filter(|m| m.version < 3).collect::<Vec<_>>();
+        apply(&mut conn, &v12, 5).unwrap();
+        let mut seed = String::from(
+            "INSERT INTO sweeps (id, started_at, trigger, status, reason) VALUES
+               ('tabs', 1, 'manual', 'undone', NULL),
+               ('hide', 1, 'manual', 'undone', '{\"kind\":\"hide\"}'),
+               ('tabs2', 1, 'manual', 'done', NULL);",
+        );
+        for i in 1..=8 {
+            use std::fmt::Write as _;
+            let _ = write!(
+                seed,
+                "INSERT INTO items (id, kind, app_id, state, first_seen_at, last_used_at,
+                   state_changed_at) VALUES ('i{i}', 'tab', 'com.google.Chrome', 'archived', 0, 0, 0);"
+            );
+        }
+        let ev = |item: u8, ty: &str, sweep: &str, at: i64| {
+            let sweep = if sweep.is_empty() { "NULL".into() } else { format!("'{sweep}'") };
+            format!(
+                "INSERT INTO events (item_id, type, sweep_id, at) VALUES ('i{item}', '{ty}', {sweep}, {at});"
+            )
+        };
+        for e in [
+            ev(1, "archived", "", 10 * H),
+            ev(1, "restored", "", 11 * H), // within a day
+            ev(2, "archived", "", 0),
+            ev(2, "restored", "", 30 * H), // too late
+            ev(3, "archived", "tabs", 12 * H),
+            ev(4, "archived", "tabs", 12 * H),
+            ev(3, "undo", "tabs", 13 * H), // one Undo of two tabs
+            ev(4, "undo", "tabs", 13 * H),
+            ev(5, "hidden", "hide", 12 * H),
+            ev(5, "undo", "hide", 13 * H), // a window shown again: not counted
+            ev(6, "shadow_would_archive", "", 14 * H),
+        ] {
+            seed.push_str(&e);
+        }
+        conn.execute_batch(&seed).unwrap();
+        let rest = pending(&conn).unwrap();
+        apply(&mut conn, &rest, 5).unwrap();
+        let counted = |conn: &Connection| -> Vec<(String, i64)> {
+            let mut stmt = conn
+                .prepare("SELECT kind, count(*) FROM metric_events GROUP BY kind ORDER BY kind")
+                .unwrap();
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+                .unwrap()
+                .collect::<rusqlite::Result<_>>()
+                .unwrap()
+        };
+        let c = |k: &str, n: i64| (k.to_owned(), n);
+        assert_eq!(
+            counted(&conn),
+            [c("archived", 4), c("restored_24h", 3), c("shadow_flagged", 1), c("undo", 1)]
+        );
+        let undo_at: i64 = conn
+            .query_row(
+                "SELECT at FROM metric_events WHERE kind = 'undo' AND ref = 'tabs'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(undo_at, 13 * H);
+        // From now on, the triggers.
+        let mut live = String::new();
+        for e in [
+            ev(7, "hidden", "hide", 20 * H),
+            ev(7, "undo", "hide", 21 * H), // a hide sweep: nothing
+            ev(8, "archived", "tabs2", 20 * H),
+            ev(8, "undo", "tabs2", 21 * H), // archived, restored within a day, one Undo
+        ] {
+            live.push_str(&e);
+        }
+        conn.execute_batch(&live).unwrap();
+        assert_eq!(
+            counted(&conn),
+            [c("archived", 5), c("restored_24h", 4), c("shadow_flagged", 1), c("undo", 2)]
+        );
     }
 
     #[test]

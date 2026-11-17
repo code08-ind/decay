@@ -3,7 +3,7 @@
 import type { SweepRow } from '../api';
 import { dayLabel } from '../panel/results';
 
-export type View = 'library' | 'sweeps' | 'shadow' | 'summary' | 'overview';
+export type View = 'library' | 'sweeps' | 'shadow' | 'summary' | 'insights' | 'overview';
 
 export interface Route {
   view: View;
@@ -44,6 +44,8 @@ export function parseRoute(route: string): Route {
       return { view: 'overview' };
     case 'summary':
       return { view: 'summary' };
+    case 'insights':
+      return { view: 'insights' };
     default:
       return { view: 'library' };
   }
@@ -60,6 +62,8 @@ export function routeFor(r: Route): string {
       return '/overview';
     case 'summary':
       return '/summary';
+    case 'insights':
+      return '/insights';
     default:
       return r.itemId ? `/item/${r.itemId}` : '/';
   }

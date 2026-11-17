@@ -21,7 +21,7 @@ import {
 } from '@/lib/bridge/protocol';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
-import { recordSearchToRestore } from '@/lib/metrics/metrics';
+import { recordSearch, recordSearchToRestore } from '@/lib/metrics/metrics';
 import { ruleMatches } from '@/lib/policy/match';
 import { probeStore, probeTab, syncProbeScripts } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
@@ -351,13 +351,20 @@ export default defineBackground(() => {
         }
         return { ok: true, restored: r.restored, failed: r.failed };
       }
+      case 'decay.searched': {
+        // Counted where the archive lives (a metrics failure never fails the popup).
+        if (adapterMode()) bridge.send(envelope(kinds.metricsSearched, {}));
+        else await recordSearch(db).catch(() => undefined);
+        return { ok: true };
+      }
       case 'decay.restore': {
         if (adapterMode()) {
+          // The app records the search time once the restore reopens something.
           const r = await askApp<RestoreSummary>(kinds.archiveRestore, {
             itemIds: message.ids,
             ...(message.intoWindowId !== undefined ? { intoWindowId: message.intoWindowId } : {}),
+            ...(message.searchMs !== undefined ? { searchMs: Math.round(message.searchMs) } : {}),
           });
-          if (r.restored) await noteSearch(message.searchMs);
           return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
         }
         const r = await tracker.restore(message.ids, { intoWindowId: message.intoWindowId });
@@ -370,8 +377,8 @@ export default defineBackground(() => {
         if (adapterMode()) {
           const r = await askApp<RestoreSummary>(kinds.archiveRestoreBatch, {
             itemId: message.itemId,
+            ...(message.searchMs !== undefined ? { searchMs: Math.round(message.searchMs) } : {}),
           });
-          if (r.restored) await noteSearch(message.searchMs);
           return { ok: true, restored: r.restored, failed: r.failed, skipped: r.skipped };
         }
         const r = await tracker.restoreBatch(message.itemId);

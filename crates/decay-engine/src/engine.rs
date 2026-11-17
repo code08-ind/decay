@@ -366,8 +366,9 @@ pub(crate) struct Adapter {
     pub last_snapshot_at: i64,
     /// Sources written in this connection.
     pub sources: HashSet<String>,
-    /// Tabs used while being closed: skipped, and their age reset afterwards.
-    pub used_while_closing: HashSet<i64>,
+    /// Tabs used while being closed (→ whether deliberately): skipped, and their age reset
+    /// afterwards.
+    pub used_while_closing: HashMap<i64, bool>,
     /// Tab id → archived item it reopens (the restore ack came before the tab was reported).
     pub restore_links: HashMap<i64, String>,
 }
@@ -516,6 +517,12 @@ pub struct Engine {
     pub(crate) next_maintenance_at: i64,
     /// The status last published (see `control`).
     pub(crate) last_status: Option<EngineStatus>,
+    /// Metrics days are local to this zone (P2.7); `None`: the system's, read each time.
+    pub(crate) time_zone: Option<jiff::tz::TimeZone>,
+    /// The local day and hour last sampled for metrics.
+    pub(crate) metrics_hour: Option<(String, u8)>,
+    /// Search → restore time for the restore being started (taken by `start_restore`).
+    pub(crate) restore_search_ms: Option<u64>,
     pub(crate) out: Vec<Output>,
 }
 
@@ -610,6 +617,9 @@ impl Engine {
             last_sweep_at,
             next_maintenance_at: now,
             last_status: None,
+            time_zone: None,
+            metrics_hour: None,
+            restore_search_ms: None,
             out: Vec::new(),
         };
         // Window handling turned off while Decay wasn't running: no window records stay.
@@ -1027,7 +1037,7 @@ impl Engine {
             resync_at: None,
             last_snapshot_at: now,
             sources: HashSet::new(),
-            used_while_closing: HashSet::new(),
+            used_while_closing: HashMap::new(),
             restore_links: HashMap::new(),
         };
         if let Some(conn) = self.conns.get_mut(&id) {
@@ -1132,6 +1142,7 @@ impl Engine {
                 tracing::warn!(conn = id, ?code, "error from the extension");
             }
             kinds::IMPORT_ARCHIVE => self.import(id, env, now),
+            kinds::METRICS_SEARCHED => self.record_search(now)?,
             kinds::ARCHIVE_SEARCH => {
                 self.on_search(id, &env.id, &request!(p::ArchiveSearch), now)?;
             }

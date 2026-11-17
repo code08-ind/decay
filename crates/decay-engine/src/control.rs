@@ -159,6 +159,21 @@ impl Engine {
         Ok(Ok(std::mem::take(&mut self.out)))
     }
 
+    /// [`Self::restore`] picked from a search: `search_ms` (first keystroke → restore) is
+    /// recorded for Insights once something reopens.
+    pub fn restore_searched(
+        &mut self,
+        ids: &[String],
+        new_window: bool,
+        search_ms: Option<u64>,
+        now: i64,
+    ) -> Res<Result<Vec<Output>, RestoreRefused>> {
+        self.restore_search_ms = search_ms;
+        let result = self.restore(ids, new_window, now);
+        self.restore_search_ms = None;
+        result
+    }
+
     /// Restores the batch `item_id` was archived with (⌘↵).
     pub fn restore_batch(
         &mut self,

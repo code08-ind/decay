@@ -49,6 +49,10 @@ const COMMANDS: &[&str] = &[
     "open_logs_folder",
     "export_diagnostics",
     "log_ui_error",
+    "get_metrics",
+    "record_search",
+    "get_beta_context",
+    "save_metrics_file",
 ];
 
 fn main() {

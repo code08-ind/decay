@@ -33,6 +33,7 @@ mod domain;
 mod engine;
 mod hide;
 mod log_limit;
+mod metrics;
 mod platform;
 mod restore;
 mod rules;
@@ -49,5 +50,6 @@ pub use engine::{
     RestoreRefused, SweepRefused, UndoRefused, browser_bundle_id, timing,
 };
 pub use hide::WindowCommand;
+pub use metrics::{MetricsReport, SiteCount};
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};
 pub use transfer::{FileImport, ImportOptions, ImportRefused};

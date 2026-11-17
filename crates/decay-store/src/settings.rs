@@ -99,7 +99,8 @@ impl Store {
         Ok(())
     }
 
-    /// Every known setting with defaults filled in, plus any stored unknown keys.
+    /// Every known setting with defaults filled in, plus any stored unknown keys (not the
+    /// beta install id).
     pub fn settings_snapshot(&self) -> Result<serde_json::Map<String, Value>> {
         let mut out = serde_json::Map::new();
         for key in KEYS {
@@ -109,7 +110,9 @@ impl Store {
         let mut rows = stmt.query([])?;
         while let Some(r) = rows.next()? {
             let key: String = r.get(0)?;
-            if !out.contains_key(&key) {
+            // The beta export's install id is only for that file (P2.7): not broadcast to
+            // every window with the settings.
+            if !out.contains_key(&key) && key != "beta_install_id" {
                 let value: String = r.get(1)?;
                 out.insert(key, serde_json::from_str(&value).unwrap_or(Value::Null));
             }

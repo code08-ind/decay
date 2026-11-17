@@ -16,6 +16,7 @@
     "allow-restore-batch",
     "allow-protect-item",
     "allow-ui-show-item",
-    "allow-log-ui-error"
+    "allow-log-ui-error",
+    "allow-record-search"
   ]
 }

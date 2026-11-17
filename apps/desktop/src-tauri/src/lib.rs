@@ -24,6 +24,7 @@ mod diagnostics;
 mod keys;
 mod library;
 mod menu;
+mod metrics;
 mod notify;
 mod onboarding;
 mod rules;
@@ -417,6 +418,10 @@ pub fn run() {
             diagnostics::open_logs_folder,
             diagnostics::export_diagnostics,
             diagnostics::log_ui_error,
+            metrics::get_metrics,
+            metrics::record_search,
+            metrics::get_beta_context,
+            metrics::save_metrics_file,
         ])
         .menu(app_menu)
         .on_menu_event(|app, event| {

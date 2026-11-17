@@ -116,6 +116,8 @@ impl Envelope {
 /// Message types (`Envelope::kind`).
 pub mod kinds {
     // Extension → core.
+    /// The popup's search was used (once per opening, while connected; P2.7 Insights).
+    pub const METRICS_SEARCHED: &str = "metrics.searched";
     pub const HELLO: &str = "hello";
     pub const SNAPSHOT: &str = "snapshot";
     pub const TAB_USED: &str = "tab.used";
@@ -634,6 +636,10 @@ pub struct ArchiveRestore {
     pub item_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub into_window_id: Option<i64>,
+    /// Picked from the popup's search this long after its first keystroke (P2.7: the
+    /// app's Insights record it once the restore reopens something).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub search_ms: Option<u64>,
 }
 
 /// `archive.restoreBatch`: reopen the batch an item was archived with (same sweep and
@@ -642,6 +648,9 @@ pub struct ArchiveRestore {
 #[serde(rename_all = "camelCase")]
 pub struct ArchiveRestoreBatch {
     pub item_id: String,
+    /// As in [`ArchiveRestore`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub search_ms: Option<u64>,
 }
 
 /// `archive.undo`: undo a sweep (the newest undoable one when `sweepId` is missing).

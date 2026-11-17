@@ -39,6 +39,8 @@ pub(crate) struct RestoreOp {
     summary: RestoreSummary,
     /// Undo of this sweep.
     undo: Option<String>,
+    /// Picked from a search this long after its first keystroke (Insights, P2.7).
+    search_ms: Option<u64>,
 }
 
 /// Where restored tabs go.
@@ -185,7 +187,10 @@ impl Engine {
             Some(w) => Placement::Window(w),
             None => Placement::Original { focus: true },
         };
-        self.start_restore(Some((conn, req)), &items, placement, None, skipped, now)
+        self.restore_search_ms = r.search_ms;
+        let started = self.start_restore(Some((conn, req)), &items, placement, None, skipped, now);
+        self.restore_search_ms = None;
+        started
     }
 
     pub(crate) fn on_restore_batch(
@@ -204,14 +209,17 @@ impl Engine {
             None if item.state == ItemState::Archived => vec![item],
             None => Vec::new(),
         };
-        self.start_restore(
+        self.restore_search_ms = r.search_ms;
+        let started = self.start_restore(
             Some((conn, req)),
             &batch,
             Placement::Original { focus: true },
             None,
             0,
             now,
-        )
+        );
+        self.restore_search_ms = None;
+        started
     }
 
     pub(crate) fn on_undo(&mut self, conn: ConnId, req: &str, u: &ArchiveUndo, now: i64) -> Res {
@@ -464,7 +472,13 @@ impl Engine {
         self.next_op += 1;
         self.restore_ops.insert(
             op_id,
-            RestoreOp { reply: reply.map(|(c, r)| (c, r.to_owned())), waiting: 0, summary, undo },
+            RestoreOp {
+                reply: reply.map(|(c, r)| (c, r.to_owned())),
+                waiting: 0,
+                summary,
+                undo,
+                search_ms: self.restore_search_ms.take(),
+            },
         );
         let mut waiting = 0;
         for (conn, items) in per_conn {
@@ -561,6 +575,12 @@ impl Engine {
 
     fn finish_restore(&mut self, op_id: u64, now: i64) -> Res {
         let Some(op) = self.restore_ops.remove(&op_id) else { return Ok(()) };
+        // A metrics write never stops the restore from being answered.
+        if let Some(ms) = op.search_ms.filter(|_| op.summary.restored > 0)
+            && let Err(e) = self.record_search_time(ms, now)
+        {
+            self.problem("metrics", &e);
+        }
         if let Some(sweep_id) = &op.undo {
             if let Some(mut sweep) = self.store.sweep(sweep_id)?
                 && sweep.status == SweepStatus::Done

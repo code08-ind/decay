@@ -572,7 +572,7 @@ fn age_tracked(
         let mut age_changed = false;
         if credit > 0 {
             if in_use {
-                mark_used(s, item, now)?;
+                mark_used(s, item, now, true)?;
             } else {
                 item.active_age_s = item.active_age_s.saturating_add(credit);
                 age_changed = true;

@@ -92,7 +92,7 @@ Each command returns `Promise<T>` and rejects with `AppError`. Access is limited
 | `library_stats` | `{ todayStart; weekStart }` (epoch ms, the UI's calendar) | `{ archivedTotal; archivedToday: { tabs; windows }; restoredWeek; openTabs; mode; shadowDay: number \| null }` | P1.11 stat cards and shadow banner. `shadowDay` counts calendar days from `shadow_started_at` in the system time zone (day 1 = the day it started). `restoredWeek` counts items restored or brought back by Undo |
 | `get_item` | `{ id }` | `Item & { events: { type: string; at: number; reason?: Reason }[] }` | Detail drawer timeline — **as built (P1.11):** the panel row (`id kind title url domain appName sourceId sourceTitle archivedAt reason batch`) plus `state pinned groupTitle firstSeenAt lastUsedAt activeHours sweepId sweepNumber restoreCount`, and `events: { type; at; label }[]` (newest first, ≤ 200; `label` = the reason in words) |
 | `get_batch` | `{ itemId }` | `{ sweepId; sourceTitle; items: Item[] }` | Items archived together from the same source |
-| `restore_items` | `{ ids: string[]; target?: 'original' \| 'newWindow' }` | `{ restored: string[]; failed: { id: string; error: AppError }[] }` | Batch restore with > 1 source requires Pro → `PRO_REQUIRED` |
+| `restore_items` | `{ ids: string[]; target?: 'original' \| 'newWindow' }` | `{ restored: string[]; failed: { id: string; error: AppError }[] }` | Batch restore with > 1 source requires Pro → `PRO_REQUIRED` — **as built (P2.7):** also `searchMs?: number` (first keystroke → this restore, from the panel's search), recorded for Insights once the restore reopens something |
 | `restore_batch` | `{ itemId }` | same as above | Pro |
 | `delete_items` | `{ ids: string[] }` | `{ deleted: number }` | Permanently removes from the archive — **as built:** 1–500 ids, only items that are `archived` and not being restored right now (others are skipped, not counted), one durable transaction; the UI asks first and reloads after |
 | `protect_item` | `{ id; scope: 'domain' \| 'app' \| 'url' }` | `Rule` | "Always protect" quick action |
@@ -160,7 +160,10 @@ interface Permissions { accessibility: 'granted' | 'denied' | 'notRequired'; not
 | `get_diagnostics_info` | — | **as built (P2.6):** `{ crashReportsAvailable: boolean; logsDir: string }` (the home folder as `~`). Settings window only |
 | `open_logs_folder` | — | **as built (P2.6):** opens `…/Decay/logs` in Finder / Explorer (created if missing). Settings window only |
 | `log_ui_error` | — | **as built (P2.6):** `{ message: string; stack?: string }` → nothing. A window's JavaScript error (`error`, `unhandledrejection`; a rejected command as `code: message`) written to the log at `error` level, scrubbed; at most 50 per window a run (then one line saying so), message ≤ 2,000 and stack ≤ 4,000 characters. Every window |
-| `get_metrics` | `{ days?: number }` | `{ regretRate; autoModeDays; openTabsTrend: { day; p50 }[]; archived; searchToRestoreP50Ms }` |
+| `get_metrics` | `{ days?: number }` | `{ regretRate; autoModeDays; openTabsTrend: { day; p50 }[]; archived; searchToRestoreP50Ms }` — **as built (P2.7):** `{ since?: number }` (ms, default 30 days ago) → `{ mode, days: MetricsDay[], topArchived: { domain; count }[], restoredMost: { domain; count }[] }`. `days`: every stored day (≤ 400, oldest first) in the extension's `MetricsDay` shape (`day`, `activeSeconds`, `openTabsP50`, `openWindowsP50`, `archivedCount`, `restored24hCount`, `undoCount`, `searchCount`, `searchToRestoreMsP50`, `autoModeOn`, `shadowFlaggedCount`, `shadowRegretCount`, `sampledHours`, `openTabsSamples`, `openWindowsSamples`, `searchToRestoreSamples`); the counts come from `metric_events`, on the local day each was stamped with. `topArchived`: sites archived most since `since`; `restoredMost`: sites restored most, all time (top 5 each; for the page only, never exported). The page computes ranges, goals and the beta file with `@decay/ui/metrics`, shared with the extension. Library window only |
+| `record_search` | — | **as built (P2.7):** one search in the panel (the panel calls it once per opening, at the first query of ≥ 2 characters). Panel window only |
+| `get_beta_context` | — | **as built (P2.7):** `{ installId, appVersion, platform, browsers, mode, preset, thresholds, shadowStartedAt, windowManagement, rules }` for the "Share with beta team" file: a random install id (made once, setting `beta_install_id`, never exported elsewhere), connected browser kinds (no profiles), enabled rules per action (no patterns). Library window only |
+| `save_metrics_file` | — | **as built (P2.7):** `{ kind: 'beta' \| 'csv'; content: string }` → the saved path, or `null` when the dialog is cancelled. Saves exactly the text the page showed (the beta JSON must have `format: "decay-beta-metrics"`, the CSV its header row; ≤ 4 MB), owner-only and atomically. Library window only |
 
 ### 2.7 Onboarding, platform and license
 
@@ -237,6 +240,7 @@ interface Envelope<T = unknown> {
 | `ack` | `{ ok: boolean; error?: { code; message }; result?: unknown }` | Reply to any command |
 | `heartbeat` | `{ at }` | Every 20 s |
 | `import.archive` | `{ items, rules, settings }` (chunked) | Phase 0 → app migration |
+| `metrics.searched` | `{}` | **P2.7:** the popup's search was used (once per opening, while connected); the app counts it for Insights. No reply. With `searchMs` on `archive.restore` / `archive.restoreBatch`, the extension leaves search metrics to the app while connected, so an app older than P2.7 doesn't count them: the app and extension ship together |
 
 ```ts
 interface TabInfo { tabId: number; windowId: number; index: number; url: string; title: string;
@@ -281,8 +285,8 @@ interface TabInfo { tabId: number; windowId: number; index: number; url: string;
 | Type | Payload | Ack `result` |
 | --- | --- | --- |
 | `archive.search` | `{ query, limit? (1–200, default 50), utcOffsetMinutes? }` | `{ items: ArchivedItem[], more, lastSweep? }`. Empty query: most recent first, plus `lastSweep { id, startedAt, finishedAt?, itemCount, remaining }` (the newest real sweep Undo can revert). Always `mode`: the app's mode, which the popup shows while connected |
-| `archive.restore` | `{ itemIds, intoWindowId? }` | `{ restored, failed, skipped }` (`skipped`: not archived any more). With `intoWindowId` the tabs open in that window, the first active |
-| `archive.restoreBatch` | `{ itemId }` | Same. The item's batch (same sweep and window) reopens in its original window (same browser session) or a new one |
+| `archive.restore` | `{ itemIds, intoWindowId?, searchMs? }` (`searchMs`: P2.7) | `{ restored, failed, skipped }` (`skipped`: not archived any more). With `intoWindowId` the tabs open in that window, the first active |
+| `archive.restoreBatch` | `{ itemId, searchMs? }` | Same. The item's batch (same sweep and window) reopens in its original window (same browser session) or a new one |
 | `archive.undo` | `{ sweepId? }` | Same; `NOT_FOUND` when the sweep can't be undone (not among the last 20 finished ones, already undone, or still closing tabs). Without `sweepId`: the newest undoable sweep |
 
 `ArchivedItem` has the extension `Item`'s fields the popup uses (`id, kind, appId, title, url, domain, faviconUrl, tabIndex, groupTitle, groupColor, pinned, state, activeAgeS, firstSeenAt, lastUsedAt, stateChangedAt, archivedAt, archiveReason, lastSweepId, restoreCount`) plus `windowKey` (`<session>:<windowId>` of its original window). The background answers the popup's `decay.search` / `decay.restore` / `decay.restoreBatch` / `decay.undoSweep` through these while connected; a Phase 0 sweep (still in the extension's IndexedDB) is undone locally as before.

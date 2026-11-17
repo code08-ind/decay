@@ -188,13 +188,14 @@ pub async fn restore_items(
     app: AppHandle,
     ids: Vec<String>,
     target: Option<RestoreTarget>,
+    search_ms: Option<u64>,
 ) -> Res<Value> {
     if ids.is_empty() || ids.len() > 500 {
         return Err(AppError::new("INVALID_INPUT", "restore 1 to 500 items"));
     }
     let new_window = target.unwrap_or_default() == RestoreTarget::NewWindow;
     blocking(app, move |core| {
-        core.ask(move |e, now| match e.restore(&ids, new_window, now) {
+        core.ask(move |e, now| match e.restore_searched(&ids, new_window, search_ms, now) {
             Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
             Ok(Err(why)) => (Err(restore_refused(&why)), Vec::new()),
             Err(err) => (Err(AppError::db(&err)), Vec::new()),

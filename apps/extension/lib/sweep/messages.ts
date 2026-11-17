@@ -23,6 +23,11 @@ export type DecayRequest =
   /** Restore the whole batch an item was archived with (PRD F6, ⌘/Ctrl+Enter). */
   | { type: 'decay.restoreBatch'; itemId: string; searchMs?: number }
   /**
+   * The popup's search was used (once per opening, P0.8). Recorded where the archive
+   * lives: this browser, or the Decay app while connected (P2.7).
+   */
+  | { type: 'decay.searched' }
+  /**
    * Link to the Decay desktop app (P1.4). Sent by the popup after the user granted
    * `nativeMessaging`: a user action, so the host may start the app.
    */
@@ -77,6 +82,7 @@ export function isDecayRequest(msg: unknown): msg is DecayRequest {
       );
     case 'decay.app.connect':
     case 'decay.app.disconnect':
+    case 'decay.searched':
       return true;
     default:
       return false;

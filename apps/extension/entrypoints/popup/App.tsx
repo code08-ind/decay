@@ -5,7 +5,6 @@ import { appSearchResult, withAppArchive } from '@/lib/bridge/archive';
 import { type AppLinkStatus, linkEnabled, readLinkStatus } from '@/lib/bridge/chrome';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
-import { recordSearch } from '@/lib/metrics/metrics';
 import { loadPopupData, type PopupData } from '@/lib/popup/data';
 import { probeAccess as loadProbeAccess, probeStore, requestProbeAccess } from '@/lib/probe/chrome';
 import { RuleError, rules } from '@/lib/rules/rules';
@@ -107,7 +106,7 @@ export function App() {
     else if (firstKeyAt.current === null) firstKeyAt.current = performance.now();
     if (q.trim().length >= 2 && !searchCounted.current) {
       searchCounted.current = true;
-      void recordSearch(db).catch(() => undefined);
+      void sendDecay({ type: 'decay.searched' }).catch(() => undefined);
     }
   };
   /**

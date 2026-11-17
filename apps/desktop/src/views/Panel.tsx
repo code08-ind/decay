@@ -70,6 +70,25 @@ export function Panel() {
   const queued = useRef<PanelAction | null>(null);
   /** A restore waiting for its result (`items:restored`). */
   const restoring = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Insights (P2.7, the popup's rules): one search per opening, and the time from its
+  // first keystroke to a restore picked from the results (sent with the restore).
+  const firstKeyAt = useRef<number | null>(null);
+  const searchCounted = useRef(false);
+  const onQueryChange = (q: string) => {
+    if (!q)
+      firstKeyAt.current = null; // cleared: the next search starts over
+    else if (firstKeyAt.current === null) firstKeyAt.current = performance.now();
+    if (q.trim().length >= 2 && !searchCounted.current) {
+      searchCounted.current = true;
+      api.recordSearch().catch(() => {});
+    }
+  };
+  /** The search time for a restore. The timer stops once a restore reopens something
+   * (`items:restored`), so a retry after a failed one still carries it. */
+  const takeSearchMs = () => {
+    const start = firstKeyAt.current;
+    return start === null ? undefined : Math.round(performance.now() - start);
+  };
 
   const wanted = keyOf(query, kind);
   const fresh = results.key === wanted;
@@ -88,6 +107,9 @@ export function Panel() {
         .takePending()
         .then((p) => {
           setQuery(p.prefill ?? '');
+          // A new opening: a new search (a prefill isn't typed, so no timer yet).
+          firstKeyAt.current = null;
+          searchCounted.current = false;
           setNote(null);
           setSelected(0);
           setResults((r) => ({ ...r, key: '' })); // what's shown is stale until the search answers
@@ -111,6 +133,7 @@ export function Panel() {
         clearTimeout(restoring.current);
         restoring.current = null;
         const { restored, failed, skipped } = e.payload;
+        if (restored > 0) firstKeyAt.current = null; // one sample per search
         if (restored > 0 && failed === 0) {
           setNote(null);
           api.hidePanel();
@@ -237,15 +260,21 @@ export function Panel() {
     if (!item) return;
     switch (action) {
       case 'restore':
-        startRestore(api.restoreItems([item.id]));
+        startRestore(api.restoreItems([item.id], 'original', takeSearchMs()));
         return;
       case 'restoreNewWindow':
-        startRestore(api.restoreItems([item.id], 'newWindow'));
+        startRestore(api.restoreItems([item.id], 'newWindow', takeSearchMs()));
         return;
       case 'restoreGroup': {
         // Exactly what the group shows (the engine puts each window's tabs in order).
         const group = groupOf.get(item.id)?.items ?? [item];
-        startRestore(api.restoreItems(group.map((i) => i.id)));
+        startRestore(
+          api.restoreItems(
+            group.map((i) => i.id),
+            'original',
+            takeSearchMs(),
+          ),
+        );
         return;
       }
       case 'protect':
@@ -289,6 +318,7 @@ export function Panel() {
             onValueChange={(v) => {
               setQuery(v);
               setNote(null);
+              onQueryChange(v);
             }}
             onEscape={() => api.hidePanel()}
             role="combobox"

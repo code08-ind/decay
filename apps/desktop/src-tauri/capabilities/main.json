@@ -34,6 +34,9 @@
     "allow-get-sweep",
     "allow-get-shadow-report",
     "allow-export-archive",
-    "allow-log-ui-error"
+    "allow-log-ui-error",
+    "allow-get-metrics",
+    "allow-get-beta-context",
+    "allow-save-metrics-file"
   ]
 }

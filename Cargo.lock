@@ -1007,6 +1007,7 @@ dependencies = [
  "decay-core",
  "decay-platform",
  "decay-store",
+ "jiff",
  "proptest",
  "psl",
  "serde",

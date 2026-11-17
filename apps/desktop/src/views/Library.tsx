@@ -14,6 +14,7 @@ import { Leaf, Pause, Play, RotateCcw, Settings as SettingsIcon, Wind } from 'lu
 import { useEffect, useState } from 'react';
 import { api, describe, type EngineStatus, errorMessage } from '../api';
 import { Archive } from '../library/Archive';
+import { Insights } from '../library/Insights';
 import { parseRoute, routeFor, type View } from '../library/model';
 import { ShadowReview } from '../library/ShadowReview';
 import { Summary } from '../library/Summary';
@@ -100,6 +101,7 @@ export function Library() {
             { id: 'sweeps', label: 'Sweeps' },
             { id: 'shadow', label: 'Shadow review' },
             { id: 'summary', label: 'Yesterday' },
+            { id: 'insights', label: 'Insights' },
             { id: 'overview', label: 'Overview' },
           ]}
         />
@@ -145,6 +147,7 @@ export function Library() {
           )}
           {r.view === 'shadow' && <ShadowReview {...page} />}
           {r.view === 'summary' && <Summary {...page} />}
+          {r.view === 'insights' && <Insights {...page} />}
           {r.view === 'overview' && <Overview status={status} run={run} />}
         </div>
       </main>

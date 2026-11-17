@@ -13,15 +13,9 @@ export const MAX_SAMPLES = 48;
 /** Longer search → restore times are an idle popup, not a search; they're not recorded. */
 export const MAX_SEARCH_TO_RESTORE_MS = 120_000;
 
-/** Median of the samples, rounded; 0 for none. */
-export function median(samples: readonly number[]): number {
-  const s = samples.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
-  if (!s.length) return 0;
-  const mid = Math.floor(s.length / 2);
-  return Math.round(
-    s.length % 2 ? (s[mid] as number) : ((s[mid - 1] as number) + (s[mid] as number)) / 2,
-  );
-}
+export { median } from '@decay/ui/metrics';
+
+import { median } from '@decay/ui/metrics';
 
 const pushSample = (list: number[] | undefined, value: number) =>
   [...(list ?? []), value].slice(-MAX_SAMPLES);

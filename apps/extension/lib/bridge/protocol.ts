@@ -35,6 +35,8 @@ export const kinds = {
   ack: 'ack',
   heartbeat: 'heartbeat',
   importArchive: 'import.archive',
+  /** The popup's search was used (once per opening; P2.7, the app's Insights count it). */
+  metricsSearched: 'metrics.searched',
   // Popup requests in adapter mode (the archive lives in the app), answered with an ack.
   archiveSearch: 'archive.search',
   archiveRestore: 'archive.restore',

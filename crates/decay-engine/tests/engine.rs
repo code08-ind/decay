@@ -258,6 +258,36 @@ fn shadow_mode_only_records_what_it_would_archive() {
 }
 
 #[test]
+fn only_a_deliberate_use_of_a_flagged_tab_is_shadow_regret() {
+    let mut h = ready_to_sweep(Mode::Shadow);
+    h.engine.set_time_zone(jiff::tz::TimeZone::UTC);
+    h.poll();
+    let probe = h.one(1, kinds::PROBE);
+    h.ack_ok(1, &probe, json!({"results": [{"tabId": 1, "dirtyForm": false, "beforeUnload": false, "uploading": false}], "missing": []}));
+    let regret = |h: &Harness| h.engine.metrics(0, h.now).unwrap().days.pop().unwrap();
+    assert_eq!(regret(&h).shadow_flagged_count, 1);
+    // The flagged tab starts playing audio while the user works in another tab: it's in
+    // use (doesn't age), but nobody chose it.
+    h.msg(1, kinds::TAB_USED, json!({"tabId": 1, "windowId": 1, "at": h.now, "signal": "audible"}));
+    h.msg(
+        1,
+        kinds::TAB_USED,
+        json!({"tabId": 2, "windowId": 1, "at": h.now, "signal": "activated"}),
+    );
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    assert_eq!(regret(&h).shadow_regret_count, 0, "audio isn't a regret");
+    // Switching to it is.
+    h.msg(
+        1,
+        kinds::TAB_USED,
+        json!({"tabId": 1, "windowId": 1, "at": h.now, "signal": "activated"}),
+    );
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    assert_eq!(regret(&h).shadow_regret_count, 1);
+}
+
+#[test]
 fn a_hold_or_pause_stops_sweeps_and_sweep_now_says_why() {
     let mut h = ready_to_sweep(Mode::Automatic);
     h.store().set_setting("hold_until", &(h.now + 3_600_000), h.now).unwrap();
@@ -1731,4 +1761,88 @@ fn imported_bookmarks_go_to_the_browser_last_used_when_none_is_connected() {
     tab.archived_at = Some(h.now);
     h.store().insert_item(&tab).unwrap();
     assert_eq!(h.engine.import_browser_app(h.now), "com.microsoft.edgemac");
+}
+
+#[test]
+fn insights_count_what_happened_today() {
+    let (mut h, _sweep) = swept();
+    h.engine.set_time_zone(jiff::tz::TimeZone::UTC);
+    let archived = archived(h.store());
+    assert_eq!(archived.len(), 2);
+    // The popup's search, then a restore picked from it 2.5 s after the first keystroke.
+    h.msg(1, kinds::METRICS_SEARCHED, json!({}));
+    let req = h.request(
+        1,
+        kinds::ARCHIVE_RESTORE,
+        json!({"itemIds": [archived[0].id], "searchMs": 2500}),
+    );
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    h.ack_ok(
+        1,
+        &restore,
+        json!({"restored": [{"itemId": archived[0].id, "tabId": 30}], "failed": []}),
+    );
+    let _ = h.reply_to(1, &req);
+    // A tick with active use samples the open tabs for this hour (none without use).
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    let idle = h.engine.metrics(0, h.now).unwrap().days.pop().unwrap();
+    h.msg(
+        1,
+        kinds::TAB_USED,
+        json!({"tabId": 2, "windowId": 1, "at": h.now, "signal": "activated"}),
+    );
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    let report = h.engine.metrics(0, h.now).unwrap();
+    let today = report.days.last().expect("a day");
+    assert_eq!(
+        (today.archived_count, today.restored_24h_count, today.search_count),
+        (2, 1, 1),
+        "{today:?}"
+    );
+    assert_eq!(today.search_to_restore_samples, [2500]);
+    assert!(idle.sampled_hours.is_empty(), "no sample without use: {idle:?}");
+    assert_eq!(today.sampled_hours.len(), 1, "sampled hourly while in use");
+    assert!(today.open_tabs_p50 > 0);
+    // A restore not picked from a search adds no time; a failed one adds none either.
+    let req = h.request(1, kinds::ARCHIVE_RESTORE, json!({"itemIds": [archived[1].id]}));
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    h.ack_ok(1, &restore, json!({"restored": [], "failed": [archived[1].id]}));
+    let _ = h.reply_to(1, &req);
+    let report = h.engine.metrics(0, h.now).unwrap();
+    assert_eq!(report.days.last().unwrap().search_to_restore_samples, [2500]);
+}
+
+#[test]
+fn insights_keep_counts_on_the_day_they_happened_after_travelling() {
+    let (mut h, _sweep) = swept();
+    // 26 hours apart: always different calendar days.
+    h.engine.set_time_zone(jiff::tz::TimeZone::get("Etc/GMT+12").unwrap());
+    let before = h.engine.metrics(0, h.now).unwrap().days;
+    let archived_on = |days: &[decay_store::MetricsDay]| {
+        days.iter().filter(|d| d.archived_count > 0).map(|d| d.day.clone()).collect::<Vec<_>>()
+    };
+    assert_eq!(archived_on(&before).len(), 1, "{before:?}");
+    h.engine.set_time_zone(jiff::tz::TimeZone::get("Pacific/Kiritimati").unwrap());
+    h.advance(decay_engine::timing::TICK_MS + 1, &[1]);
+    let after = h.engine.metrics(0, h.now).unwrap().days;
+    assert_eq!(archived_on(&after), archived_on(&before));
+}
+
+#[test]
+fn insights_count_an_undo_once_and_its_tabs_as_regret() {
+    let (mut h, _sweep) = swept();
+    h.engine.set_time_zone(jiff::tz::TimeZone::UTC);
+    let req = h.request(1, kinds::ARCHIVE_UNDO, json!({}));
+    let restore = h.one(1, kinds::TABS_RESTORE);
+    let restored: Vec<Value> = restore.payload["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+        .map(|(i, it)| json!({"itemId": it["itemId"], "tabId": 40 + i}))
+        .collect();
+    h.ack_ok(1, &restore, json!({"restored": restored, "failed": []}));
+    let _ = h.reply_to(1, &req);
+    let today = h.engine.metrics(0, h.now).unwrap().days.pop().unwrap();
+    assert_eq!((today.undo_count, today.restored_24h_count), (1, 2), "{today:?}");
 }
