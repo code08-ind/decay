@@ -1,6 +1,12 @@
 import { type DecayDB, db as defaultDb } from '../db/db';
 import type { Mode, Thresholds } from '../db/types';
-import { areValidThresholds, thresholdsProblem } from '../policy/thresholds';
+import {
+  areValidThresholds,
+  THRESHOLD_MAX_H,
+  THRESHOLD_MIN_H,
+  thresholdsProblem,
+} from '../policy/thresholds';
+import { t } from '../strings';
 
 export type Preset = 'gentle' | 'balanced' | 'aggressive' | 'custom';
 
@@ -68,29 +74,29 @@ export function normalizePatch(patch: Partial<Settings>): Partial<Settings> {
   ) as Partial<Settings>;
 
   if (out.mode !== undefined && !MODES.includes(out.mode)) {
-    throw new Error(`Unknown mode: ${String(out.mode)}`);
+    throw new Error(t('settings.unknownMode', { value: String(out.mode) }));
   }
   if (out.theme !== undefined && !THEMES.includes(out.theme)) {
-    throw new Error(`Unknown theme: ${String(out.theme)}`);
+    throw new Error(t('settings.unknownTheme', { value: String(out.theme) }));
   }
   for (const key of ['idleCutoffS', 'maxItemsPerSweep', 'retentionDays'] as const) {
     const v = out[key];
     if (v !== undefined && !(Number.isInteger(v) && v > 0)) {
-      throw new Error(`${key} must be a positive integer`);
+      throw new Error(t('settings.positiveInteger', { name: key }));
     }
   }
 
   if (out.preset !== undefined) {
     if (!PRESET_NAMES.includes(out.preset)) {
-      throw new Error(`Unknown preset: ${String(out.preset)}`);
+      throw new Error(t('settings.unknownPreset', { value: String(out.preset) }));
     }
     if (out.preset === 'custom') {
-      if (!out.thresholds) throw new Error('Custom preset needs thresholds');
+      if (!out.thresholds) throw new Error(t('settings.customNeedsThresholds'));
       assertValidThresholds(out.thresholds);
     } else {
       const named = PRESETS[out.preset];
       if (out.thresholds && !sameThresholds(out.thresholds, named)) {
-        throw new Error(`Thresholds do not match the ${out.preset} preset`);
+        throw new Error(t('settings.presetMismatch', { preset: out.preset }));
       }
       out.thresholds = { ...named };
     }
@@ -176,9 +182,10 @@ export function createSettingsStore(database: DecayDB = defaultDb) {
 
 export { THRESHOLD_MAX_H, THRESHOLD_MIN_H } from '../policy/thresholds';
 
-export function assertValidThresholds(t: Thresholds): void {
-  const problem = thresholdsProblem(t);
-  if (problem) throw new Error(problem);
+export function assertValidThresholds(thresholds: Thresholds): void {
+  if (thresholdsProblem(thresholds)) {
+    throw new Error(t('thresholds.range', { min: THRESHOLD_MIN_H, max: THRESHOLD_MAX_H }));
+  }
 }
 
 export const settings = createSettingsStore();

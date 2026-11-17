@@ -68,7 +68,7 @@ export function ruleText(english: string): string {
   const key = RULE_TEXT[english];
   if (key) return t(key);
   if (english.startsWith('Thresholds must be')) {
-    return t('rule.thresholdsRange', { min: THRESHOLD_MIN_H, max: THRESHOLD_MAX_H });
+    return t('thresholds.range', { min: THRESHOLD_MIN_H, max: THRESHOLD_MAX_H });
   }
   return english;
 }

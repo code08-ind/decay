@@ -1,6 +1,7 @@
+import { pseudo, setLocale } from '@decay/ui';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DecayDB } from '../db/db';
-import { createSettingsStore, DEFAULT_SETTINGS, PRESETS } from './settings';
+import { createSettingsStore, DEFAULT_SETTINGS, normalizePatch, PRESETS } from './settings';
 
 let n = 0;
 const open: DecayDB[] = [];
@@ -131,5 +132,20 @@ describe('settings', () => {
     ]) {
       await expect(s.setPreset('custom', bad)).rejects.toThrow();
     }
+  });
+});
+
+describe('settings errors', () => {
+  afterEach(() => setLocale('en'));
+
+  it('are in the user’s language', () => {
+    expect(() => normalizePatch({ mode: 'nope' as never })).toThrow('Unknown mode: nope');
+    expect(() => normalizePatch({ thresholds: { stale: 9, hidden: 4, archive: 8 } })).toThrow(
+      'Thresholds must be 1–720 h and ordered stale < hidden < archive',
+    );
+    setLocale('en-XA');
+    expect(() => normalizePatch({ preset: 'custom' })).toThrow(
+      pseudo('Custom preset needs thresholds'),
+    );
   });
 });

@@ -296,7 +296,6 @@ export const en = {
   'rule.exclude': 'Exclude rules need a domain, URL or title pattern',
   'rule.closeAllowed': 'Close-allowed rules apply to apps only',
   'rule.thresholds': 'Custom threshold rules need thresholds',
-  'rule.thresholdsRange': 'Thresholds must be {min}–{max} h and ordered stale < hidden < archive',
   'rule.titleLong': 'Pattern is too long',
   'rule.titleFlags': 'Inline flags are not supported',
   'rule.titleInvalid': 'Invalid title pattern',
@@ -306,6 +305,14 @@ export const en = {
   'rule.titleComplex': 'Pattern is too complex',
   'rule.duplicate': 'An identical rule already exists',
   'rule.notFound': 'Rule not found',
+  'thresholds.range': 'Thresholds must be {min}–{max} h and ordered stale < hidden < archive',
+  // Settings checks (lib/settings)
+  'settings.unknownMode': 'Unknown mode: {value}',
+  'settings.unknownTheme': 'Unknown theme: {value}',
+  'settings.positiveInteger': '{name} must be a positive integer',
+  'settings.unknownPreset': 'Unknown preset: {value}',
+  'settings.customNeedsThresholds': 'Custom preset needs thresholds',
+  'settings.presetMismatch': 'Thresholds do not match the {preset} preset',
   'error.notResponding': 'Decay is not responding. Try again in a moment.',
   'error.appManagesTabs': 'The Decay app manages tabs now',
   // Page titles (the tab's name; index.html has the English one until the page draws)

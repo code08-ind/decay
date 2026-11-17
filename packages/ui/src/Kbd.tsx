@@ -8,62 +8,46 @@ export function detectPlatform(ua: string = globalThis.navigator?.userAgent ?? '
   return /Mac|iPhone|iPad/.test(ua) ? 'mac' : 'windows';
 }
 
-const MAC: Record<string, [glyph: string, name: string]> = {
-  super: ['⌘', 'Command'],
-  cmd: ['⌘', 'Command'],
-  command: ['⌘', 'Command'],
-  cmdorctrl: ['⌘', 'Command'],
-  commandorcontrol: ['⌘', 'Command'],
-  alt: ['⌥', 'Option'],
-  option: ['⌥', 'Option'],
-  shift: ['⇧', 'Shift'],
-  ctrl: ['⌃', 'Control'],
-  control: ['⌃', 'Control'],
-  enter: ['↵', 'Return'],
-  return: ['↵', 'Return'],
-  backspace: ['⌫', 'Delete'],
-  escape: ['Esc', 'Escape'],
-  esc: ['Esc', 'Escape'],
+type KeyName = Parameters<typeof t>[0];
+
+// Each key: its cap, and its spoken name as a catalog key (read in the locale's words).
+const MAC: Record<string, [glyph: string, name: KeyName]> = {
+  super: ['⌘', 'key.command'],
+  cmd: ['⌘', 'key.command'],
+  command: ['⌘', 'key.command'],
+  cmdorctrl: ['⌘', 'key.command'],
+  commandorcontrol: ['⌘', 'key.command'],
+  alt: ['⌥', 'key.option'],
+  option: ['⌥', 'key.option'],
+  shift: ['⇧', 'key.shift'],
+  ctrl: ['⌃', 'key.control'],
+  control: ['⌃', 'key.control'],
+  enter: ['↵', 'key.return'],
+  return: ['↵', 'key.return'],
+  backspace: ['⌫', 'key.delete'],
+  escape: ['Esc', 'key.escape'],
+  esc: ['Esc', 'key.escape'],
 };
 
-const WIN: Record<string, [label: string, name: string]> = {
-  super: ['Win', 'Windows'],
-  cmd: ['Win', 'Windows'],
-  command: ['Win', 'Windows'],
-  cmdorctrl: ['Ctrl', 'Control'],
-  commandorcontrol: ['Ctrl', 'Control'],
-  alt: ['Alt', 'Alt'],
-  option: ['Alt', 'Alt'],
-  shift: ['Shift', 'Shift'],
-  ctrl: ['Ctrl', 'Control'],
-  control: ['Ctrl', 'Control'],
-  enter: ['Enter', 'Enter'],
-  return: ['Enter', 'Enter'],
-  backspace: ['Backspace', 'Backspace'],
-  escape: ['Esc', 'Escape'],
-  esc: ['Esc', 'Escape'],
+const WIN: Record<string, [label: string, name: KeyName]> = {
+  super: ['Win', 'key.windows'],
+  cmd: ['Win', 'key.windows'],
+  command: ['Win', 'key.windows'],
+  cmdorctrl: ['Ctrl', 'key.control'],
+  commandorcontrol: ['Ctrl', 'key.control'],
+  alt: ['Alt', 'key.alt'],
+  option: ['Alt', 'key.alt'],
+  shift: ['Shift', 'key.shift'],
+  ctrl: ['Ctrl', 'key.control'],
+  control: ['Ctrl', 'key.control'],
+  enter: ['Enter', 'key.enter'],
+  return: ['Enter', 'key.enter'],
+  backspace: ['Backspace', 'key.backspace'],
+  escape: ['Esc', 'key.escape'],
+  esc: ['Esc', 'key.escape'],
 };
 
 const ORDER_MAC = ['⌃', '⌥', '⇧', '⌘'];
-
-/** A key's spoken name in the locale's words (other keys are read as they are). */
-const SPOKEN: Record<string, Parameters<typeof t>[0]> = {
-  Command: 'key.command',
-  Option: 'key.option',
-  Shift: 'key.shift',
-  Control: 'key.control',
-  Return: 'key.return',
-  Delete: 'key.delete',
-  Escape: 'key.escape',
-  Windows: 'key.windows',
-  Alt: 'key.alt',
-  Enter: 'key.enter',
-  Backspace: 'key.backspace',
-};
-const spoken = (name: string) => {
-  const key = SPOKEN[name];
-  return key ? t(key) : name;
-};
 
 /**
  * An accelerator ("Alt+Super+D", "CmdOrCtrl+Enter") as keycaps for `platform`, plus a
@@ -78,11 +62,11 @@ export function formatShortcut(
     .split('+')
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => {
+    .map((p): [cap: string, spoken: string] => {
       const known = table[p.toLowerCase()];
-      if (known) return known;
-      const key = p.length === 1 ? p.toUpperCase() : p;
-      return [key, key] as [string, string];
+      if (known) return [known[0], t(known[1])];
+      const key = p.length === 1 ? p.toUpperCase() : p; // other keys are read as they are
+      return [key, key];
     });
   if (platform === 'mac') {
     const rank = (k: string) => {
@@ -91,7 +75,7 @@ export function formatShortcut(
     };
     parts.sort((a, b) => rank(a[0]) - rank(b[0]));
   }
-  return { keys: parts.map((p) => p[0]), label: parts.map((p) => spoken(p[1])).join(' ') };
+  return { keys: parts.map((p) => p[0]), label: parts.map((p) => p[1]).join(' ') };
 }
 
 /** One keycap. */
