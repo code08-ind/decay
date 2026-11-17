@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PanelItem } from '../api';
 
@@ -65,17 +65,21 @@ describe('Panel search metrics', () => {
     await screen.findByRole('option');
     expect(api.recordSearch).toHaveBeenCalledTimes(1);
 
+    // Enter before the results are current is queued: wait for each restore.
     fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(api.restoreItems).toHaveBeenCalledTimes(1));
     const first = api.restoreItems.mock.calls[0];
     expect(first?.[2]).toEqual(expect.any(Number));
     await restored({ restored: 0, failed: 1, skipped: 0 }); // the browser was closed
 
     fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(api.restoreItems).toHaveBeenCalledTimes(2));
     const retry = api.restoreItems.mock.calls[1];
     expect(retry?.[2]).toEqual(expect.any(Number)); // still timed
     await restored({ restored: 1, failed: 0, skipped: 0 });
 
     fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(api.restoreItems).toHaveBeenCalledTimes(3));
     expect(api.restoreItems.mock.calls[2]?.[2]).toBeUndefined(); // one sample per search
     expect(api.recordSearch).toHaveBeenCalledTimes(1);
   });
