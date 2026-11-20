@@ -133,6 +133,10 @@ export const en = {
   'browsers.profile.lastSeen': 'Last seen {when}',
   'browsers.profile.placeholder': 'Name this profile',
   'browsers.profile.nameOf': 'Name for {app} profile {n}',
+  'browsers.profile.forget': 'Forget',
+  'browsers.profile.forgetOf': 'Forget {name}',
+  'browsers.profile.forgetConfirm':
+    'Forget {name}? Its archived tabs stay and still reopen only there. Unused profiles are forgotten on their own after 30 days.',
   'whatsNew.updatedTo': 'Updated to {version}',
   'whatsNew.latest': 'Latest notes · {version}',
   'whatsNew.title': 'What’s new in Decay',

@@ -32,6 +32,18 @@ pub struct ProfileInfo {
 /// A rename's result: the stored name and what the engine has to send.
 pub type Renamed = Result<(Option<String>, Vec<Output>), RenameRefused>;
 
+/// Profiles unseen this long, with nothing archived, are forgotten.
+pub const FORGET_IDLE_PROFILE_MS: i64 = 30 * 86_400_000;
+
+/// Why Settings' "Forget" didn't happen.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ForgetRefused {
+    #[error("that browser profile isn't known")]
+    UnknownProfile,
+    #[error("that browser profile is connected now")]
+    Connected,
+}
+
 /// Why a rename didn't happen.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum RenameRefused {
@@ -135,5 +147,46 @@ impl Engine {
             Err(e) => return Err(e),
         }
         Ok(())
+    }
+
+    /// Hourly: connected profiles are seen now (so "last seen" stays right after a crash),
+    /// and profiles idle for 30 days with nothing archived are forgotten.
+    pub(crate) fn maintain_profiles(&mut self, now: i64) -> Res {
+        let live: Vec<(String, String)> = self
+            .conns
+            .values()
+            .filter_map(|c| Self::live_adapter(c, now))
+            .map(|a| (a.app_id.clone(), a.profile.clone()))
+            .collect();
+        for (app, profile) in &live {
+            self.store.touch_profile(app, profile, now)?;
+        }
+        let forgotten = self.store.forget_idle_profiles(now - FORGET_IDLE_PROFILE_MS)?;
+        if forgotten > 0 {
+            tracing::info!(forgotten, "idle browser profiles forgotten");
+            self.out.push(Output::Event(EngineEvent::ProfilesChanged));
+        }
+        Ok(())
+    }
+
+    /// Forgets a profile that isn't connected (Settings → Browsers "Forget").
+    pub fn forget_profile(
+        &mut self,
+        app_id: &str,
+        profile_id: &str,
+    ) -> Res<Result<Vec<Output>, ForgetRefused>> {
+        let connected = self
+            .conns
+            .values()
+            .filter_map(|c| c.adapter.as_ref())
+            .any(|a| a.app_id == app_id && a.profile == profile_id);
+        if connected {
+            return Ok(Err(ForgetRefused::Connected));
+        }
+        if !self.store.forget_profile(app_id, profile_id)? {
+            return Ok(Err(ForgetRefused::UnknownProfile));
+        }
+        self.out.push(Output::Event(EngineEvent::ProfilesChanged));
+        Ok(Ok(std::mem::take(&mut self.out)))
     }
 }

@@ -34,6 +34,7 @@ const api = {
   previewExclude: vi.fn(),
   detectBrowsers: vi.fn(),
   renameProfile: vi.fn(),
+  forgetProfile: vi.fn(),
   openExtensionStore: vi.fn(),
   showWindow: vi.fn(),
   getUpdateState: vi.fn(),
@@ -534,6 +535,14 @@ describe('Settings', () => {
       ['com.google.Chrome', 'a', 'Personal'],
       ['com.google.Chrome', 'b', null],
     ]);
+    // Only a disconnected profile can be forgotten, after a confirm.
+    expect(screen.getAllByRole('button', { name: /^Forget / })).toHaveLength(1);
+    api.forgetProfile.mockResolvedValue(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Forget Google Chrome · Work' }));
+    expect(api.forgetProfile).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Forget' }));
+    await flush();
+    expect(api.forgetProfile).toHaveBeenCalledWith('com.google.Chrome', 'b');
     profiles = null;
   });
 

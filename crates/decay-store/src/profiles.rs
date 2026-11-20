@@ -134,6 +134,32 @@ impl Store {
             .collect())
     }
 
+    /// Forgets a profile (Settings → Browsers "Forget"). Its items keep their windows and
+    /// still reopen only there; they're just shown under their browser. It comes back,
+    /// numbered last, if it connects again. `false`: it wasn't known.
+    pub fn forget_profile(&self, app_id: &str, profile: &str) -> Result<bool> {
+        let n = self
+            .conn
+            .prepare_cached("DELETE FROM profiles WHERE app_id = ?1 AND profile = ?2")?
+            .execute(params![app_id, profile])?;
+        Ok(n > 0)
+    }
+
+    /// Forgets profiles not seen since `before` that have nothing archived any more (a
+    /// profile deleted in the browser, an old install), so they stop numbering the
+    /// others. Returns how many.
+    pub fn forget_idle_profiles(&self, before: i64) -> Result<usize> {
+        Ok(self
+            .conn
+            .prepare_cached(
+                "DELETE FROM profiles WHERE last_seen_at < ?1 AND NOT EXISTS (
+                   SELECT 1 FROM sources s JOIN items i ON i.source_id = s.id
+                   WHERE s.app_id = profiles.app_id AND s.profile = profiles.profile
+                     AND i.state = 'archived')",
+            )?
+            .execute([before])?)
+    }
+
     /// Names a profile (`None` or blank: unnamed again). Returns the name as stored.
     /// Fails with `NotFound` for a profile never seen.
     pub fn rename_profile(
@@ -219,6 +245,38 @@ mod tests {
         let long = "é".repeat(60);
         let stored = store.rename_profile(CHROME, "a", Some(&long)).unwrap().unwrap();
         assert_eq!(stored.chars().count(), MAX_PROFILE_NAME);
+    }
+
+    #[test]
+    fn idle_profiles_are_forgotten_unless_something_is_archived() {
+        let (store, _dir) = store();
+        apps(&store);
+        for (p, seen) in [("old-empty", NOW - 100), ("old-kept", NOW - 100), ("recent", NOW)] {
+            store.touch_profile(CHROME, p, seen).unwrap();
+        }
+        store
+            .upsert_source(&crate::Source {
+                id: "w".into(),
+                app_id: CHROME.into(),
+                profile: Some("old-kept".into()),
+                external_id: None,
+                title: None,
+                first_seen_at: NOW,
+                last_seen_at: NOW,
+                closed_at: None,
+            })
+            .unwrap();
+        let mut item = crate::Item::new_live("i".into(), decay_core::ItemKind::Tab, CHROME, NOW);
+        item.source_id = Some("w".into());
+        item.state = decay_core::ItemState::Archived;
+        item.archived_at = Some(NOW);
+        store.insert_item(&item).unwrap();
+        assert_eq!(store.forget_idle_profiles(NOW - 50).unwrap(), 1);
+        let left: Vec<_> = store.profiles().unwrap().into_iter().map(|p| p.profile).collect();
+        assert_eq!(left, ["old-kept", "recent"]);
+        assert!(store.forget_profile(CHROME, "recent").unwrap());
+        assert!(!store.forget_profile(CHROME, "recent").unwrap());
+        assert_eq!(store.profiles().unwrap()[0].label(), ProfileLabel::Only);
     }
 
     #[test]

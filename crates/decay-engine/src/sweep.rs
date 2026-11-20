@@ -356,6 +356,9 @@ impl Engine {
         if purged > 0 {
             tracing::info!(purged, "archive retention");
         }
+        if let Err(e) = self.maintain_profiles(now) {
+            self.problem("profiles", &e);
+        }
         Ok(())
     }
 

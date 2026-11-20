@@ -18,6 +18,7 @@
   "profile.numbered": "Profile {n}",
   "profile.appWith": "{app} · {profile}",
   "error.profileName": "that profile name is too long",
+  "error.profileConnected": "that browser profile is connected: close it first",
   "error.profileUnknown": "that browser profile isn't known",
   "error.noUpdate": "no update to install; check first",
   "error.notItem": "not an item id",

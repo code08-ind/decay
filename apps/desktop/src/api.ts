@@ -384,6 +384,9 @@ export const api = {
   /** Names a profile (null or blank: unnamed); returns the name as stored. */
   renameProfile: (appId: string, profileId: string, name: string | null) =>
     invoke<string | null>('rename_profile', { appId, profileId, name }),
+  /** Forgets a profile that isn't connected (P2.8). */
+  forgetProfile: (appId: string, profileId: string) =>
+    invoke<void>('forget_profile', { appId, profileId }),
   protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
   showItem: (id: string) => invoke('ui_show_item', { id }),
   libraryStats: (input: { todayStart: number; weekStart: number }) =>

@@ -2,7 +2,14 @@ import { Banner, Button, StatusDot } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { ExternalLink, Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api, type DetectedBrowser, errorMessage, type ProfileInfo, profileName } from '../api';
+import {
+  api,
+  type DetectedBrowser,
+  errorMessage,
+  type ProfileInfo,
+  profileLabel,
+  profileName,
+} from '../api';
 import { rowDetail, rowState, sortRows } from '../onboarding/model';
 import { timeLabel } from '../panel/results';
 import { t } from '../strings';
@@ -91,6 +98,7 @@ function ProfileRow(props: { profile: ProfileInfo; fail: (e: unknown) => void })
   const p = props.profile;
   const [draft, setDraft] = useState(p.name ?? '');
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   // The name as last stored here: `p.name` catches up only once `profiles:changed` lands.
   const [stored, setStored] = useState(p.name ?? '');
   useEffect(() => {
@@ -148,7 +156,44 @@ function ProfileRow(props: { profile: ProfileInfo; fail: (e: unknown) => void })
         }}
         className="h-9 w-44 rounded-lg border border-line bg-surface-2 px-3 text-sm"
       />
-      {p.connected && <StatusDot status="connected" />}
+      {p.connected ? (
+        <StatusDot status="connected" />
+      ) : confirming ? (
+        <span className="flex basis-full flex-wrap items-center gap-2 text-xs text-muted">
+          <span className="min-w-0 flex-1">
+            {t('browsers.profile.forgetConfirm', { name: profileLabel(p) })}
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            size="sm"
+            loading={saving}
+            onClick={() => {
+              setSaving(true);
+              api
+                .forgetProfile(p.appId, p.profileId)
+                .catch(props.fail)
+                .finally(() => {
+                  setSaving(false);
+                  setConfirming(false);
+                });
+            }}
+          >
+            {t('browsers.profile.forget')}
+          </Button>
+        </span>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={saving}
+          aria-label={t('browsers.profile.forgetOf', { name: profileLabel(p) })}
+          onClick={() => setConfirming(true)}
+        >
+          {t('browsers.profile.forget')}
+        </Button>
+      )}
     </div>
   );
 }

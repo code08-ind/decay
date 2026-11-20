@@ -1374,6 +1374,77 @@ fn a_refused_restore_names_its_profile_and_can_go_elsewhere_on_request() {
     assert_eq!(h.engine.unreachable_home(&[], h.now).unwrap(), None);
 }
 
+/// P2.8: a popup's restore puts each tab back in the profile it came from: its own
+/// window for its own tabs, the other profile's window when that's open, and a refusal
+/// naming the profile when it isn't. Nothing lands in the wrong profile.
+#[test]
+fn a_popup_restores_into_the_tabs_own_profile() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    h.connect(2, "s2");
+    h.msg(2, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    // Profile 1 still open: from profile 2's popup they go back to profile 1.
+    let req = h.request(2, kinds::ARCHIVE_RESTORE, json!({"itemIds": ids, "intoWindowId": 5}));
+    assert_eq!(h.take(2, kinds::TABS_RESTORE).len(), 0);
+    let cmd = h.one(1, kinds::TABS_RESTORE);
+    assert!(
+        cmd.payload["items"].as_array().unwrap().iter().all(|i| i["windowKey"] != "profile2|s2:5")
+    );
+    let _ = req;
+    // Profile 1 closed: refused, and the message names it.
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    h.connect(2, "s2");
+    h.msg(2, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    let req = h.request(2, kinds::ARCHIVE_RESTORE, json!({"itemIds": ids, "intoWindowId": 5}));
+    let reply = h.reply_to(2, &req);
+    assert_eq!(reply.payload["ok"], false);
+    let msg = reply.payload["error"]["message"].as_str().unwrap();
+    assert!(msg.starts_with("Open Google Chrome · Profile 1 to restore this"), "{msg}");
+    assert_eq!(h.take(2, kinds::TABS_RESTORE).len(), 0);
+    let req = h.request(2, kinds::ARCHIVE_RESTORE_BATCH, json!({"itemId": ids[0]}));
+    assert_eq!(h.reply_to(2, &req).payload["ok"], false);
+    assert_eq!(h.take(2, kinds::TABS_RESTORE).len(), 0);
+    // Its own popup puts them in its window.
+    h.connect_as(3, "profile1", "s3", "0.1.0");
+    h.msg(3, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    h.request(3, kinds::ARCHIVE_RESTORE, json!({"itemIds": ids, "intoWindowId": 7}));
+    let cmd = h.one(3, kinds::TABS_RESTORE);
+    let items = cmd.payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), ids.len());
+    assert!(
+        items.iter().all(|i| i["windowKey"].as_str().is_some_and(|k| k.ends_with(":7"))),
+        "{items:?}"
+    );
+}
+
+/// P2.8: Settings' "Forget" drops a profile that isn't connected (never a connected one).
+#[test]
+fn forgetting_a_profile() {
+    let mut h = Harness::new();
+    h.connect(1, "s1");
+    h.connect(2, "s2");
+    let app = h.engine.profiles(h.now).unwrap()[0].app_id.clone();
+    assert_eq!(
+        h.engine.forget_profile(&app, "profile1").unwrap().unwrap_err(),
+        decay_engine::ForgetRefused::Connected
+    );
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    let out = h.engine.forget_profile(&app, "profile1").unwrap().unwrap();
+    h.collect(out);
+    assert!(h.events.contains(&EngineEvent::ProfilesChanged));
+    let left: Vec<_> =
+        h.engine.profiles(h.now).unwrap().into_iter().map(|p| p.profile_id).collect();
+    assert_eq!(left, ["profile2"]);
+    assert_eq!(
+        h.engine.forget_profile(&app, "profile1").unwrap().unwrap_err(),
+        decay_engine::ForgetRefused::UnknownProfile
+    );
+}
+
 #[test]
 fn restoring_needs_a_connected_browser() {
     let (mut h, sweep) = swept();

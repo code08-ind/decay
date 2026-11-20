@@ -43,6 +43,17 @@ pub(crate) struct RestoreOp {
     search_ms: Option<u64>,
 }
 
+/// Where one item goes, once its connection is known.
+#[derive(Debug, Clone, Copy)]
+enum Mode {
+    /// Into this window of that connection.
+    Win(i64),
+    /// Its original window (a new one when it's gone); `true`: focused.
+    Orig(bool),
+    /// A new window.
+    New,
+}
+
 /// Where restored tabs go.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Placement {
@@ -187,6 +198,10 @@ impl Engine {
                 _ => skipped += 1,
             }
         }
+        if let Some(why) = self.popup_refusal(conn, &items, now)? {
+            self.reply_err(conn, req, ErrorCode::NotFound, &why);
+            return Ok(());
+        }
         let placement = match r.into_window_id {
             Some(w) => Placement::Window(w),
             None => Placement::Original { focus: true },
@@ -213,6 +228,10 @@ impl Engine {
             None if item.state == ItemState::Archived => vec![item],
             None => Vec::new(),
         };
+        if let Some(why) = self.popup_refusal(conn, &batch, now)? {
+            self.reply_err(conn, req, ErrorCode::NotFound, &why);
+            return Ok(());
+        }
         self.restore_search_ms = r.search_ms;
         let started = self.start_restore(
             Some((conn, req)),
@@ -453,6 +472,79 @@ impl Engine {
         }))
     }
 
+    /// The browser profile `(app id, profile id)` an item came from, when known.
+    fn known_profile(&self, item: &Item) -> Res<Option<(String, String)>> {
+        let Some(source) = item.source_id.as_deref() else { return Ok(None) };
+        Ok(self.store.source(source)?.and_then(|s| s.profile).map(|p| (item.app_id.clone(), p)))
+    }
+
+    /// Connection `conn` speaks for this browser profile.
+    fn conn_is(&self, conn: ConnId, (app, profile): &(String, String)) -> bool {
+        self.conns
+            .get(&conn)
+            .and_then(|c| c.adapter.as_ref())
+            .is_some_and(|a| &a.app_id == app && &a.profile == profile)
+    }
+
+    /// A popup's restore that can't reopen anything because the items' profiles aren't
+    /// open: the refusal naming the first one ("Open Google Chrome · Work …").
+    fn popup_refusal(&self, conn: ConnId, items: &[Item], now: i64) -> Res<Option<String>> {
+        let mut first_closed = None;
+        for item in items {
+            match self.known_profile(item)? {
+                None => return Ok(None),
+                Some(home) if self.conn_is(conn, &home) => return Ok(None),
+                Some(home) => {
+                    if self.home_conn(item, now)?.is_some() {
+                        return Ok(None);
+                    }
+                    first_closed.get_or_insert(home);
+                }
+            }
+        }
+        let Some((app, profile)) = first_closed else { return Ok(None) };
+        let app_name = self.store.app(&app)?.map_or_else(|| app.clone(), |a| a.name);
+        let found =
+            self.store.profiles()?.into_iter().find(|p| p.app_id == app && p.profile == profile);
+        let label = match found.map(|p| p.label()) {
+            Some(decay_store::ProfileLabel::Named(n)) => format!("{app_name} · {n}"),
+            Some(decay_store::ProfileLabel::Numbered(n)) => format!("{app_name} · Profile {n}"),
+            _ => app_name,
+        };
+        Ok(Some(format!(
+            "Open {label} to restore this: tabs reopen only in the browser profile they came from"
+        )))
+    }
+
+    /// Where one item goes: the browser profile it came from (any session of it). The app
+    /// never sends a tab to another browser or profile (other cookies, other accounts)
+    /// unless the user picked one (`Into`): such items get no connection, fail and stay
+    /// archived. A popup's own profile takes what came from it, and what has no known
+    /// profile.
+    fn target_of(
+        &self,
+        item: &Item,
+        placement: Placement,
+        popup: Option<ConnId>,
+        now: i64,
+    ) -> Res<(Option<ConnId>, Mode)> {
+        let known = self.known_profile(item)?;
+        Ok(match placement {
+            Placement::Into(c) => (Some(c), Mode::New),
+            Placement::Window(w) => match &known {
+                None => (popup, Mode::Win(w)),
+                Some(home) if popup.is_some_and(|c| self.conn_is(c, home)) => (popup, Mode::Win(w)),
+                // From another profile: back into that profile, if it's open.
+                Some(_) => (self.home_conn(item, now)?, Mode::Orig(true)),
+            },
+            Placement::Original { focus } => {
+                let home = self.home_conn(item, now)?;
+                (home.or(if known.is_none() { popup } else { None }), Mode::Orig(focus))
+            }
+            Placement::NewWindow => (self.home_conn(item, now)?, Mode::New),
+        })
+    }
+
     fn start_restore(
         &mut self,
         reply: Option<(ConnId, &str)>,
@@ -475,22 +567,13 @@ impl Engine {
                 summary.failed += 1;
                 continue;
             };
-            // The browser profile it came from (any session of it); else the requesting
-            // popup's own browser. The app never sends a tab to another browser or profile
-            // (other cookies, other accounts): such items fail and stay archived.
-            let conn = match placement {
-                Placement::Window(_) => reply.map(|(c, _)| c),
-                Placement::Into(c) => Some(c),
-                Placement::Original { .. } | Placement::NewWindow => {
-                    self.home_conn(item, now)?.or_else(|| reply.map(|(c, _)| c))
-                }
-            };
+            let (conn, mode) = self.target_of(item, placement, reply.map(|(c, _)| c), now)?;
             let Some(conn) = conn else {
-                summary.failed += 1; // the app asked, and its browser isn't connected
+                summary.failed += 1; // its profile isn't connected
                 continue;
             };
-            let (window_key, index, active) = match placement {
-                Placement::Window(w) => {
+            let (window_key, index, active) = match mode {
+                Mode::Win(w) => {
                     let key = self
                         .conns
                         .get(&conn)
@@ -498,7 +581,7 @@ impl Engine {
                         .map(|a| a.window_key(w));
                     (key, None, true)
                 }
-                Placement::Original { focus } => {
+                Mode::Orig(focus) => {
                     let key = match &item.source_id {
                         Some(id) => {
                             if let Some(k) = window_keys.get(id) {
@@ -513,7 +596,7 @@ impl Engine {
                     };
                     (key, item.tab_index, focus)
                 }
-                Placement::NewWindow | Placement::Into(_) => (None, None, true),
+                Mode::New => (None, None, true),
             };
             let group = item.group_title.clone().map(|title| RestoreGroup {
                 title,

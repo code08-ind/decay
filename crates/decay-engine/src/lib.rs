@@ -52,6 +52,6 @@ pub use engine::{
 };
 pub use hide::WindowCommand;
 pub use metrics::{MetricsReport, SiteCount, SourceProfile, SourceTotal};
-pub use profiles::{ProfileInfo, RenameRefused};
+pub use profiles::{FORGET_IDLE_PROFILE_MS, ForgetRefused, ProfileInfo, RenameRefused};
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};
 pub use transfer::{FileImport, ImportOptions, ImportRefused};

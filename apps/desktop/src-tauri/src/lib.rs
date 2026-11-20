@@ -455,6 +455,7 @@ pub fn run() {
             update::install_update,
             profiles::list_profiles,
             profiles::rename_profile,
+            profiles::forget_profile,
             search::search,
             search::restore_items,
             search::restore_batch,
