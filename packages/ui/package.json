@@ -6,6 +6,7 @@
   "description": "Decay design system (Sage direction): tokens, theme and React components shared by the desktop app and the extension",
   "exports": {
     ".": "./src/index.ts",
+    "./i18n": "./src/i18n.ts",
     "./tokens.css": "./tokens.css",
     "./theme.css": "./theme.css",
     "./metrics": "./src/metrics/index.ts"

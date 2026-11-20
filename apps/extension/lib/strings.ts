@@ -1,7 +1,8 @@
 // The extension's English strings (P2.7, F31). Keys: `area.what`. Message syntax: see
 // @decay/ui i18n.ts. Shared component and Insights strings live in @decay/ui; the store
 // listing's name and description in public/_locales.
-import { makeT } from '@decay/ui';
+// The i18n entry point, not the whole UI kit: Node scripts (bridge fixtures) load this.
+import { makeT } from '@decay/ui/i18n';
 
 export const en = {
   'protected.pinned': 'pinned',

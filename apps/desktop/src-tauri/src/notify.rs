@@ -28,6 +28,8 @@ const DISCONNECTED_NOTICE_MS: i64 = 60_000;
 /// gathered this long into one notice.
 const SWEEP_GATHER_MS: i64 = 10_000;
 /// Opening Decay this soon after the morning notice shows the summary.
+// Only macOS reopens a running app (`RunEvent::Reopen`); P3.3 wires Windows' second launch.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const SUMMARY_CLICK_MS: i64 = 60 * 60_000;
 /// "Only when more than 10 items are archived".
 const BIG_SWEEP: u32 = 10;
@@ -261,6 +263,7 @@ impl Notifier {
 
     /// Whether opening Decay now should show the summary (the morning notice was clicked,
     /// most likely). Asked once.
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub fn take_summary_click(&self, now: i64) -> bool {
         let mut s = self.lock();
         let recent = s.summary_shown_at.is_some_and(|t| now - t < SUMMARY_CLICK_MS);
