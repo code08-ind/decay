@@ -53,4 +53,5 @@ jobs:
           tool: cargo-nextest,cargo-llvm-cov
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo llvm-cov nextest --workspace --fail-under-lines 80
+      # Every failure in one run (a Windows round trip takes ~15 min).
+      - run: cargo llvm-cov nextest --workspace --no-fail-fast --fail-under-lines 80

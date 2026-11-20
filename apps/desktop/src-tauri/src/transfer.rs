@@ -225,6 +225,11 @@ pub fn import_kind(path: &Path, text: &str) -> Option<ImportKind> {
 /// size can change after a check, and a pipe or device has none).
 fn read_limited(path: &Path) -> Result<String, AppError> {
     let too_large = || AppError::new("INVALID_INPUT", t("file.tooLarge"));
+    // A folder first: Windows refuses to open one as a file ("access denied"), which
+    // would read as a permission problem.
+    if std::fs::metadata(path).is_ok_and(|m| m.is_dir()) {
+        return Err(AppError::new("INVALID_INPUT", t("file.pick")));
+    }
     let file = std::fs::File::open(path).map_err(|e| io("file.cantOpen", &e))?;
     let meta = file.metadata().map_err(|e| io("file.cantOpen", &e))?;
     if !meta.is_file() {
