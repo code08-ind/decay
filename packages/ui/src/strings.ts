@@ -69,6 +69,12 @@ export const en = {
   'insights.protected': 'Always kept',
   'insights.protectSite': 'Always keep {site}',
   'insights.tabs': '{n, plural, one {# tab} other {# tabs}}',
+  'insights.windows': '{n, plural, one {# window} other {# windows}}',
+  'insights.tabsAndWindows':
+    '{tabs, plural, one {# tab} other {# tabs}}, {windows, plural, one {# window} other {# windows}}',
+  'insights.topSources': 'Top sources',
+  'insights.topSources.sub': 'Where archived tabs and windows came from, last {n} days',
+  'insights.sourceShare': '{what} · {pct}%',
   'insights.restores': '{n, plural, one {# restore} other {# restores}}',
   'insights.chart.title': 'Open tabs, last {n} days',
   'insights.chart.sub': 'Median open tabs per day, counted hourly',

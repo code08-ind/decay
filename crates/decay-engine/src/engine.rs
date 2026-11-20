@@ -140,6 +140,8 @@ pub enum EngineEvent {
         browser: BrowserKind,
         profile_id: String,
     },
+    /// A browser profile was named or renamed (`profiles:changed`).
+    ProfilesChanged,
     /// "Sweep now" found nothing to archive (no sweep was recorded).
     NothingToSweep {
         shadow: bool,
@@ -996,6 +998,8 @@ impl Engine {
         let (app_id, app_name) = browser_app(hello.browser, self.config.platform);
         if let Err(e) = self.ensure_app(app_id, app_name) {
             self.problem("registering the browser", &e);
+        } else if let Err(e) = self.store.touch_profile(app_id, &hello.profile_id, now) {
+            self.problem("recording the profile", &e);
         }
         // One connection per browser profile: a newer one (worker restart) replaces it.
         let stale: Vec<ConnId> = self
@@ -1153,6 +1157,9 @@ impl Engine {
                 self.on_restore_batch(id, &env.id, &request!(p::ArchiveRestoreBatch), now)?;
             }
             kinds::ARCHIVE_UNDO => self.on_undo(id, &env.id, &request!(p::ArchiveUndo), now)?,
+            kinds::PROFILE_RENAME => {
+                self.on_profile_rename(id, &env.id, &request!(p::ProfileRename))?;
+            }
             other => tracing::debug!(conn = id, kind = other, "ignored message"),
         }
         Ok(())
@@ -1270,6 +1277,9 @@ impl Engine {
                 .collect();
             if let Err(e) = self.store.set_active_ages(&ages) {
                 self.problem("saving ages", &e);
+            }
+            if let Err(e) = self.store.touch_profile(&a.app_id, &a.profile, now) {
+                self.problem("recording the profile", &e);
             }
             self.out.push(Output::Event(EngineEvent::AdapterDisconnected {
                 browser: a.browser,

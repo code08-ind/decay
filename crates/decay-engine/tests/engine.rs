@@ -455,6 +455,64 @@ fn two_profiles_of_one_browser_keep_their_tabs_apart() {
     assert!(h.item_for_url("https://one.example/").state.is_live());
 }
 
+/// P2.8: profiles are recorded on connect, listed with their tabs while connected, and
+/// can be named (blank: unnamed again); an unknown one is refused.
+#[test]
+fn profiles_are_listed_and_named() {
+    let mut h = Harness::new();
+    h.connect(1, "s1");
+    h.now += 1_000;
+    h.connect(2, "s2");
+    h.msg(
+        1,
+        kinds::SNAPSHOT,
+        serde_json::to_value(snapshot(vec![tab(1, 1, "https://one.example/")])).unwrap(),
+    );
+    h.msg(2, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    let list = h.engine.profiles(h.now).unwrap();
+    let got: Vec<_> =
+        list.iter().map(|p| (p.profile_id.as_str(), p.ordinal, p.connected, p.tabs)).collect();
+    assert_eq!(got, [("profile1", 1, true, 1), ("profile2", 2, true, 0)]);
+    assert!(list.iter().all(|p| p.has_siblings && p.app_name == "Google Chrome"));
+    let app = list[0].app_id.clone();
+    let (name, out) = h.engine.rename_profile(&app, "profile2", Some(" Work ")).unwrap().unwrap();
+    assert_eq!(name.as_deref(), Some("Work"));
+    h.collect(out);
+    assert!(h.events.contains(&EngineEvent::ProfilesChanged));
+    assert_eq!(h.engine.profiles(h.now).unwrap()[1].name.as_deref(), Some("Work"));
+    assert_eq!(
+        h.engine.rename_profile(&app, "nope", Some("x")).unwrap().unwrap_err(),
+        decay_engine::RenameRefused::UnknownProfile
+    );
+    // Disconnected: still listed, not connected, seen until then.
+    h.now += 5_000;
+    let out = h.engine.handle(decay_engine::Input::Disconnected(1), h.now);
+    h.collect(out);
+    let p1 = &h.engine.profiles(h.now).unwrap()[0];
+    assert!(!p1.connected);
+    assert_eq!(p1.last_seen_at, h.now);
+}
+
+/// P2.8: the popup sees its own profile in a search and can name it.
+#[test]
+fn the_popup_names_its_own_profile() {
+    let mut h = Harness::new();
+    h.connect(1, "s1");
+    h.msg(1, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    let req = h.request(1, kinds::ARCHIVE_SEARCH, json!({"query": ""}));
+    let reply = h.reply_to(1, &req);
+    assert_eq!(reply.payload["result"]["profile"], json!({"ordinal": 1, "hasSiblings": false}));
+    let req = h.request(1, kinds::PROFILE_RENAME, json!({"name": "  Home  "}));
+    let reply = h.reply_to(1, &req);
+    assert_eq!(reply.payload["result"], json!({"name": "Home"}));
+    assert!(h.events.contains(&EngineEvent::ProfilesChanged));
+    let req = h.request(1, kinds::ARCHIVE_SEARCH, json!({"query": ""}));
+    let reply = h.reply_to(1, &req);
+    assert_eq!(reply.payload["result"]["profile"]["name"], "Home");
+    let req = h.request(1, kinds::PROFILE_RENAME, json!({"name": null}));
+    assert_eq!(h.reply_to(1, &req).payload["result"], json!({"name": null}));
+}
+
 #[test]
 fn a_newer_connection_for_the_same_profile_replaces_the_old_one() {
     let mut h = Harness::new();
@@ -1283,6 +1341,37 @@ fn the_app_restores_into_a_new_window_or_a_whole_batch() {
     h.collect(out);
     let batch = h.one(1, kinds::TABS_RESTORE);
     assert_eq!(batch.payload["items"].as_array().unwrap().len(), ids.len());
+}
+
+/// P2.8: a refused restore names the profile the tabs came from, and the user can send
+/// them to another connected profile instead (a new window there), only when asked.
+#[test]
+fn a_refused_restore_names_its_profile_and_can_go_elsewhere_on_request() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let out = h.engine.handle(Input::Disconnected(1), h.now);
+    h.collect(out);
+    let app = h.item_for_url("https://old.example/page").app_id;
+    assert_eq!(
+        h.engine.unreachable_home(&ids, h.now).unwrap(),
+        Some((app.clone(), "profile1".to_owned()))
+    );
+    // Not connected: refused.
+    assert_eq!(
+        h.engine.restore_into(&ids, &app, "other-profile", h.now).unwrap(),
+        Err(decay_engine::RestoreRefused::NoBrowser)
+    );
+    h.connect_as(2, "other-profile", "s2", "0.1.0");
+    h.msg(2, kinds::SNAPSHOT, serde_json::to_value(snapshot(vec![])).unwrap());
+    let out = h.engine.restore_into(&ids, &app, "other-profile", h.now).unwrap().unwrap();
+    h.collect(out);
+    let cmd = h.one(2, kinds::TABS_RESTORE);
+    let items = cmd.payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), ids.len());
+    assert!(items.iter().all(|i| i["windowKey"].is_null()), "a new window: {items:?}");
+    assert_eq!(items.iter().filter(|i| i["active"] == true).count(), 1);
+    // Once they're on their way, nothing is unreachable any more.
+    assert_eq!(h.engine.unreachable_home(&[], h.now).unwrap(), None);
 }
 
 #[test]

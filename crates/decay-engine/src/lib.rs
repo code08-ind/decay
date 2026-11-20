@@ -35,6 +35,7 @@ mod hide;
 mod log_limit;
 mod metrics;
 mod platform;
+mod profiles;
 mod restore;
 mod rules;
 pub mod runtime;
@@ -50,6 +51,7 @@ pub use engine::{
     RestoreRefused, SweepRefused, UndoRefused, browser_bundle_id, timing,
 };
 pub use hide::WindowCommand;
-pub use metrics::{MetricsReport, SiteCount};
+pub use metrics::{MetricsReport, SiteCount, SourceProfile, SourceTotal};
+pub use profiles::{ProfileInfo, RenameRefused};
 pub use rules::{RuleInput, RuleRefused, RuleTest, normalize_domain, validate_rule};
 pub use transfer::{FileImport, ImportOptions, ImportRefused};

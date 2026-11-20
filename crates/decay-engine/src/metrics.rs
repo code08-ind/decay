@@ -32,6 +32,30 @@ pub struct MetricsReport {
     pub top_archived: Vec<SiteCount>,
     /// Sites restored most (all time, Undo included).
     pub restored_most: Vec<SiteCount>,
+    /// What was archived since the range's first day, by app and browser profile (P2.8).
+    pub top_sources: Vec<SourceTotal>,
+    /// Everything archived since then (the top sources' shares are of this).
+    pub archived_total: u32,
+}
+
+/// Archived tabs and windows of one app and browser profile.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceTotal {
+    pub app_id: String,
+    pub app_name: String,
+    /// Its profile when there's one to name (named, or one of its browser's several).
+    pub profile: Option<SourceProfile>,
+    pub tabs: u32,
+    pub windows: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceProfile {
+    pub id: String,
+    pub name: Option<String>,
+    pub ordinal: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -139,11 +163,50 @@ impl Engine {
             *n = n.saturating_add(1);
         }
         let (archived, restored) = self.store.metrics_top_sites(since, 5)?;
+        let profiles = self.store.profile_map()?;
+        let mut names = std::collections::HashMap::new();
+        let mut top_sources = Vec::new();
+        for c in self.store.metrics_top_sources(since, 6)? {
+            if !names.contains_key(&c.app_id) {
+                let n = self.store.app(&c.app_id)?.map_or_else(|| c.app_id.clone(), |a| a.name);
+                names.insert(c.app_id.clone(), n);
+            }
+            let profile = c
+                .profile
+                .and_then(|p| profiles.get(&(c.app_id.clone(), p)))
+                .filter(|p| p.name.is_some() || p.has_siblings)
+                .map(|p| SourceProfile {
+                    id: p.profile.clone(),
+                    name: p.name.clone(),
+                    ordinal: p.ordinal,
+                });
+            // A browser's only, unnamed profile and its items without a known profile
+            // read the same ("Google Chrome"): one row.
+            if profile.is_none()
+                && let Some(same) = top_sources
+                    .iter_mut()
+                    .find(|s: &&mut SourceTotal| s.app_id == c.app_id && s.profile.is_none())
+            {
+                same.tabs = same.tabs.saturating_add(c.tabs);
+                same.windows = same.windows.saturating_add(c.windows);
+                continue;
+            }
+            top_sources.push(SourceTotal {
+                app_name: names[&c.app_id].clone(),
+                app_id: c.app_id,
+                profile,
+                tabs: c.tabs,
+                windows: c.windows,
+            });
+        }
+        top_sources.sort_by_key(|s| std::cmp::Reverse(s.tabs.saturating_add(s.windows)));
         Ok(MetricsReport {
             mode: self.policy.mode,
             days: days.into_values().collect(),
             top_archived: sites(archived),
             restored_most: sites(restored),
+            top_sources,
+            archived_total: self.store.metrics_archived_since(since)?,
         })
     }
 

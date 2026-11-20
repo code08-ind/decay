@@ -15,7 +15,14 @@ import {
   toCsv,
 } from '@decay/ui/metrics';
 import { useEffect, useRef, useState } from 'react';
-import { api, type BetaContext, errorMessage, type MetricsReport, type Rule } from '../api';
+import {
+  api,
+  appWithProfile,
+  type BetaContext,
+  errorMessage,
+  type MetricsReport,
+  type Rule,
+} from '../api';
 import { t } from '../strings';
 import type { PageProps } from './Archive';
 
@@ -267,6 +274,13 @@ export function Insights(props: PageProps) {
       onShareCancel={() => setPreview(null)}
       onProtectSite={onProtectSite}
       protectedSites={protectedSites}
+      topSources={(report.topSources ?? []).map((src) => ({
+        id: `${src.appId}|${src.profile?.id ?? ''}`,
+        label: appWithProfile(src.appName, src.profile),
+        tabs: src.tabs,
+        windows: src.windows,
+      }))}
+      topSourcesTotal={report.archivedTotal}
       error={error}
     />
   );

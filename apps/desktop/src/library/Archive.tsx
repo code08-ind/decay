@@ -24,11 +24,21 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { api, type EngineStatus, errorMessage, exportSummary, type PanelItem } from '../api';
+import {
+  api,
+  appWithProfile,
+  type EngineStatus,
+  errorMessage,
+  exportSummary,
+  type PanelItem,
+  profileLabel,
+  restoreChoices,
+} from '../api';
 import { displayUrl, timeLabel } from '../panel/results';
 import { t } from '../strings';
+import { useProfiles } from '../useStatus';
 import { eventText, firstDayOfWeek, shadowDaysLeft, startOfDay, startOfWeek } from './model';
-import { ItemTile, Stat, useLoad } from './parts';
+import { ItemTile, RestoreElsewhere, Stat, useLoad } from './parts';
 
 type Kind = 'all' | 'tab' | 'window';
 type Period = 'today' | 'week' | 'all';
@@ -71,6 +81,9 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
   const [kind, setKind] = useState<Kind>('all');
   const [period, setPeriod] = useState<Period>('all');
   const [query, setQuery] = useState('');
+  // The browser filter (P2.8): `${appId}|${profileId}`, or '' for everything.
+  const [source, setSource] = useState('');
+  const profiles = useProfiles();
   const [items, setItems] = useState<PanelItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -90,6 +103,9 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
         query,
         kind: kind === 'all' ? undefined : kind,
         after,
+        ...(source
+          ? { app: source.split('|')[0], profile: source.split('|').slice(1).join('|') }
+          : {}),
         limit: PAGE,
         cursor: more ? (cursor ?? undefined) : undefined,
       })
@@ -113,10 +129,10 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
   useEffect(() => {
     const timer = setTimeout(() => load(false), query ? 120 : 0);
     return () => clearTimeout(timer);
-  }, [query, kind, period, version, today]);
+  }, [query, kind, period, source, version, today]);
 
   const s = stats.data;
-  const filtered = query !== '' || kind !== 'all' || period !== 'all';
+  const filtered = query !== '' || kind !== 'all' || period !== 'all' || source !== '';
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -220,6 +236,21 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
                 { value: 'all', label: t('archive.period.all') },
               ]}
             />
+            {profiles && profiles.length > 1 && (
+              <select
+                aria-label={t('archive.browser')}
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="h-8 rounded-lg border border-line bg-surface-2 px-2 text-[13px]"
+              >
+                <option value="">{t('archive.browser.all')}</option>
+                {profiles.map((p) => (
+                  <option key={`${p.appId}|${p.profileId}`} value={`${p.appId}|${p.profileId}`}>
+                    {profileLabel(p)}
+                  </option>
+                ))}
+              </select>
+            )}
             <SearchInput
               className="ms-auto min-w-48 flex-1"
               label={t('archive.search')}
@@ -299,8 +330,11 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
                       </td>
                       <td className="hidden truncate px-2 text-muted md:table-cell">
                         {item.sourceTitle
-                          ? t('archive.source', { app: item.appName, source: item.sourceTitle })
-                          : item.appName}
+                          ? t('archive.source', {
+                              app: appWithProfile(item.appName, item.profile),
+                              source: item.sourceTitle,
+                            })
+                          : appWithProfile(item.appName, item.profile)}
                       </td>
                       <td
                         className={cx(
@@ -336,6 +370,7 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
                     setQuery('');
                     setKind('all');
                     setPeriod('all');
+                    setSource('');
                   }}
                 >
                   {t('archive.clear')}
@@ -406,6 +441,7 @@ export function ItemDrawer(props: {
 }) {
   const item = useLoad(() => api.getItem(props.id), [props.id, props.version]);
   const [error, setError] = useState('');
+  const [choices, setChoices] = useState<ReturnType<typeof restoreChoices>>(null);
   const [busy, setBusy] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -426,9 +462,13 @@ export function ItemDrawer(props: {
   const act = (what: string, action: () => Promise<unknown>, done?: string) => {
     setBusy(what);
     setError('');
+    setChoices(null);
     action()
       .then(() => done && props.notify(done))
-      .catch((e) => setError(errorMessage(e)))
+      .catch((e) => {
+        setError(errorMessage(e));
+        setChoices(restoreChoices(e));
+      })
       .finally(() => setBusy(''));
   };
   const d = item.data;
@@ -483,8 +523,11 @@ export function ItemDrawer(props: {
             <dt className="text-feature-sub">{t('drawer.from')}</dt>
             <dd>
               {d.sourceTitle
-                ? t('archive.source', { app: d.appName, source: d.sourceTitle })
-                : d.appName}
+                ? t('archive.source', {
+                    app: appWithProfile(d.appName, d.profile),
+                    source: d.sourceTitle,
+                  })
+                : appWithProfile(d.appName, d.profile)}
             </dd>
             {d.groupTitle && (
               <>
@@ -545,9 +588,20 @@ export function ItemDrawer(props: {
             </p>
           )}
           {error && (
-            <p role="alert" className="rounded-xl bg-surface p-3 text-sm text-danger">
-              {error}
-            </p>
+            <div role="alert" className="grid gap-2 rounded-xl bg-surface p-3 text-sm">
+              <p className="text-danger">{error}</p>
+              {choices && (
+                <RestoreElsewhere
+                  choices={choices}
+                  busy={busy.startsWith('into:') ? busy.slice(5) : undefined}
+                  onPick={(c) =>
+                    act(`into:${c.profileId}`, () =>
+                      api.restoreItemsIn(choices.itemIds, c.appId, c.profileId),
+                    )
+                  }
+                />
+              )}
+            </div>
           )}
           <div className="flex flex-wrap gap-2">
             {archived && (

@@ -2,7 +2,7 @@ import { Chip, cx, detectPlatform, EmptyState, getLocale, Kbd, SearchInput } fro
 import { listen } from '@tauri-apps/api/event';
 import { Archive, CircleAlert, Clock, History } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, errorMessage, type PanelItem } from '../api';
+import { api, errorMessage, type PanelItem, restoreChoices } from '../api';
 import {
   displayUrl,
   groupResults,
@@ -43,7 +43,8 @@ interface Results {
   cursor: string | null;
 }
 
-type Note = { text: string; tone: 'info' | 'error' | 'busy' };
+type Note = { text: string; tone: 'info' | 'error' | 'busy'; choices?: RestoreChoices };
+type RestoreChoices = NonNullable<ReturnType<typeof restoreChoices>>;
 
 const keyOf = (query: string, kind: Kind) => `${kind}\u0000${query}`;
 
@@ -238,7 +239,7 @@ export function Panel() {
     call.catch((e) => {
       if (restoring.current) clearTimeout(restoring.current);
       restoring.current = null;
-      setNote({ text: errorMessage(e), tone: 'error' });
+      setNote({ text: errorMessage(e), tone: 'error', choices: restoreChoices(e) ?? undefined });
     });
   };
 
@@ -512,12 +513,31 @@ export function Panel() {
 
         <footer className="flex items-center gap-4 border-t border-line px-4 py-2.5 text-xs text-muted">
           {note ? (
-            <p
-              role={note.tone === 'error' ? 'alert' : 'status'}
-              className={cx('flex-1 truncate', note.tone === 'error' && 'text-danger')}
-            >
-              {note.text}
-            </p>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <p
+                role={note.tone === 'error' ? 'alert' : 'status'}
+                className={cx(
+                  'min-w-0 flex-1 truncate',
+                  note.choices && 'basis-full',
+                  note.tone === 'error' && 'text-danger',
+                )}
+              >
+                {note.text}
+              </p>
+              {note.choices?.alternatives.map((c) => (
+                <button
+                  key={`${c.appId}|${c.profileId}`}
+                  type="button"
+                  className="max-w-full truncate rounded-full border border-line px-2.5 py-1 text-ink hover:bg-surface-2"
+                  onClick={() => {
+                    const ids = note.choices?.itemIds ?? [];
+                    startRestore(api.restoreItemsIn(ids, c.appId, c.profileId));
+                  }}
+                >
+                  {t('restore.openIn', { browser: c.label })}
+                </button>
+              ))}
+            </div>
           ) : (
             <ul className="flex flex-1 items-center gap-3" aria-label={t('panel.keys')}>
               <li className="flex items-center gap-1.5">

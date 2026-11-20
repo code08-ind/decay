@@ -3,15 +3,17 @@
 import { listen } from '@tauri-apps/api/event';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Rule, UpdateState } from '../api';
+import type { ProfileInfo, Rule, UpdateState } from '../api';
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => {}) }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(async () => '0.1.0') }));
 let route = '/general';
+let profiles: ProfileInfo[] | null = null;
 vi.mock('../useStatus', async () => {
   const { useState } = await import('react');
   return {
     useStatus: () => ({ mode: 'shadow', browsers: [], liveTabs: 0 }),
+    useProfiles: () => profiles,
     useRoute: () => useState(route),
   };
 });
@@ -31,6 +33,7 @@ const api = {
   testRule: vi.fn(),
   previewExclude: vi.fn(),
   detectBrowsers: vi.fn(),
+  renameProfile: vi.fn(),
   openExtensionStore: vi.fn(),
   showWindow: vi.fn(),
   getUpdateState: vi.fn(),
@@ -496,6 +499,42 @@ describe('Settings', () => {
     fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
     await flush();
     expect(screen.getByText(/couldn’t open the link/i)).toBeTruthy();
+  });
+
+  it('browsers: names a profile, clears a name, and Escape keeps the old one', async () => {
+    const base = {
+      appId: 'com.google.Chrome',
+      appName: 'Google Chrome',
+      hasSiblings: true,
+      firstSeenAt: 0,
+      lastSeenAt: Date.now(),
+    };
+    profiles = [
+      { ...base, profileId: 'a', name: null, ordinal: 1, connected: true, tabs: 3 },
+      { ...base, profileId: 'b', name: 'Work', ordinal: 2, connected: false, tabs: 0 },
+    ];
+    api.renameProfile.mockImplementation(async (_a: string, _p: string, n: string | null) => n);
+    await show('/browsers');
+    expect(screen.getByText('Connected · 3 tabs')).toBeTruthy();
+    expect(screen.getByText(/^Last seen /)).toBeTruthy();
+    const first = screen.getByLabelText('Name for Google Chrome profile 1') as HTMLInputElement;
+    expect(first.placeholder).toBe('Profile 1');
+    fireEvent.change(first, { target: { value: '  Personal ' } });
+    fireEvent.blur(first);
+    await flush();
+    const second = screen.getByLabelText('Name for Google Chrome profile 2') as HTMLInputElement;
+    expect(second.value).toBe('Work');
+    fireEvent.change(second, { target: { value: 'Oops' } });
+    fireEvent.keyDown(second, { key: 'Escape' });
+    expect(second.value).toBe('Work');
+    fireEvent.change(second, { target: { value: '' } });
+    fireEvent.blur(second);
+    await flush();
+    expect(api.renameProfile.mock.calls).toEqual([
+      ['com.google.Chrome', 'a', 'Personal'],
+      ['com.google.Chrome', 'b', null],
+    ]);
+    profiles = null;
   });
 
   it('shows errors from the app', async () => {

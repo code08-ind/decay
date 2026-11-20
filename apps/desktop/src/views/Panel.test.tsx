@@ -16,6 +16,7 @@ const api = {
   search: vi.fn(),
   recordSearch: vi.fn(),
   restoreItems: vi.fn(),
+  restoreItemsIn: vi.fn(),
   hidePanel: vi.fn(),
   protectItem: vi.fn(),
   showItem: vi.fn(),
@@ -82,5 +83,30 @@ describe('Panel search metrics', () => {
     await waitFor(() => expect(api.restoreItems).toHaveBeenCalledTimes(3));
     expect(api.restoreItems.mock.calls[2]?.[2]).toBeUndefined(); // one sample per search
     expect(api.recordSearch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Panel restore elsewhere', () => {
+  it('names the missing profile and opens it in another one only when asked', async () => {
+    api.restoreItems.mockRejectedValue({
+      code: 'ADAPTER_UNAVAILABLE',
+      message: 'Open Google Chrome · Work to restore this',
+      details: {
+        itemIds: ['a'],
+        home: { appId: 'c', profileId: 'w', label: 'Google Chrome · Work' },
+        alternatives: [{ appId: 'arc', profileId: 'p', label: 'Arc' }],
+      },
+    });
+    api.restoreItemsIn.mockResolvedValue({ started: true });
+    render(<Panel />);
+    const input = await screen.findByRole('combobox');
+    await screen.findByRole('option');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Open Google Chrome · Work to restore this',
+    );
+    expect(api.restoreItemsIn).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Arc instead' }));
+    expect(api.restoreItemsIn).toHaveBeenCalledWith(['a'], 'arc', 'p');
   });
 });

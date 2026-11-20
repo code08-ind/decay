@@ -34,7 +34,9 @@ export type DecayRequest =
    */
   | { type: 'decay.app.connect' }
   /** The user turned the link off: back to standalone mode. */
-  | { type: 'decay.app.disconnect' };
+  | { type: 'decay.app.disconnect' }
+  /** Names this browser profile in the app (P2.8; `null`: unnamed). App mode only. */
+  | { type: 'decay.profile.rename'; name: string | null };
 
 export type DecayResponse =
   | {
@@ -48,6 +50,8 @@ export type DecayResponse =
       simulated?: number;
       /** `decay.search`: the app's results. */
       search?: ArchiveSearchResult;
+      /** `decay.profile.rename`: the name as the app stored it. */
+      name?: string | null;
     }
   | { ok: false; error: string };
 
@@ -81,6 +85,8 @@ export function isDecayRequest(msg: unknown): msg is DecayRequest {
         (m.limit === undefined ||
           (Number.isInteger(m.limit) && (m.limit as number) >= 1 && (m.limit as number) <= 200))
       );
+    case 'decay.profile.rename':
+      return m.name === null || (typeof m.name === 'string' && m.name.length <= 200);
     case 'decay.app.connect':
     case 'decay.app.disconnect':
     case 'decay.searched':

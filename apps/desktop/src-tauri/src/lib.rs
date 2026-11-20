@@ -29,6 +29,7 @@ mod menu;
 mod metrics;
 mod notify;
 mod onboarding;
+mod profiles;
 mod rules;
 mod search;
 mod shell;
@@ -106,6 +107,9 @@ fn forward(app: &AppHandle, event: EngineEvent) {
                 "items:restored",
                 json!({ "restored": restored, "failed": failed, "skipped": skipped }),
             );
+        }
+        EngineEvent::ProfilesChanged => {
+            let _ = app.emit("profiles:changed", json!({}));
         }
         EngineEvent::SettingsChanged(settings) => commands::broadcast_settings(app, &settings),
         EngineEvent::Problem(what) => tracing::warn!("engine: {what}"),
@@ -449,9 +453,12 @@ pub fn run() {
             summary::get_daily_summary,
             update::check_for_updates,
             update::install_update,
+            profiles::list_profiles,
+            profiles::rename_profile,
             search::search,
             search::restore_items,
             search::restore_batch,
+            search::restore_items_in,
             search::protect_item,
             search::ui_show_item,
             commands::update_settings,

@@ -11,12 +11,12 @@ import {
 } from '@decay/ui';
 import { Ghost, RotateCcw, Undo2, Wind, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { api, errorMessage, type SweepRow } from '../api';
+import { api, errorMessage, restoreChoices, type SweepRow } from '../api';
 import { timeLabel } from '../panel/results';
 import { t } from '../strings';
 import type { PageProps } from './Archive';
 import { entryState, groupByDay, sweepAction, sweepHeadline, triggerText } from './model';
-import { ItemTile, useLoad } from './parts';
+import { ItemTile, type RestoreChoices, RestoreElsewhere, useLoad } from './parts';
 
 const time = (at: number) => formatDate(at, { hour: 'numeric', minute: '2-digit' });
 
@@ -198,15 +198,24 @@ function SweepDrawer(props: {
       return next;
     });
   const [restoring, setRestoring] = useState(false);
-  const restoreSelected = () => {
+  const [choices, setChoices] = useState<RestoreChoices | null>(null);
+  const [into, setInto] = useState<string>();
+  const restoreWith = (call: () => Promise<unknown>) => {
     setError('');
+    setChoices(null);
     setRestoring(true);
-    api
-      .restoreItems([...selected])
+    call()
       .then(() => setSelected(new Set()))
-      .catch((e) => setError(errorMessage(e)))
-      .finally(() => setRestoring(false));
+      .catch((e) => {
+        setError(errorMessage(e));
+        setChoices(restoreChoices(e));
+      })
+      .finally(() => {
+        setRestoring(false);
+        setInto(undefined);
+      });
   };
+  const restoreSelected = () => restoreWith(() => api.restoreItems([...selected]));
   // Escape closes the drawer.
   // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe once per drawer
   useEffect(() => {
@@ -290,9 +299,19 @@ function SweepDrawer(props: {
           </section>
           {!d.isShadow && <p className="text-xs text-feature-sub">{t('sweeps.drawer.saved')}</p>}
           {error && (
-            <p role="alert" className="rounded-xl bg-surface p-3 text-sm text-danger">
-              {error}
-            </p>
+            <div role="alert" className="grid gap-2 rounded-xl bg-surface p-3 text-sm">
+              <p className="text-danger">{error}</p>
+              {choices && (
+                <RestoreElsewhere
+                  choices={choices}
+                  busy={into}
+                  onPick={(c) => {
+                    setInto(c.profileId);
+                    restoreWith(() => api.restoreItemsIn(choices.itemIds, c.appId, c.profileId));
+                  }}
+                />
+              )}
+            </div>
           )}
           {!d.isShadow && (
             <div className="flex flex-wrap gap-2">

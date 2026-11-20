@@ -51,6 +51,15 @@ pub struct MetricsDay {
 /// `(site, count)` rows, most first.
 pub type SiteCounts = Vec<(String, u32)>;
 
+/// Archived items of one app and browser profile ([`Store::metrics_top_sources`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceCount {
+    pub app_id: String,
+    pub profile: Option<String>,
+    pub tabs: u32,
+    pub windows: u32,
+}
+
 /// Median of the samples, rounded; 0 for none.
 pub fn median(samples: &[u32]) -> u32 {
     let mut s = samples.to_vec();
@@ -280,6 +289,39 @@ impl Store {
         Ok((archived, restored))
     }
 
+    /// What was archived since `since` by app and browser profile (P2.8, Insights' top
+    /// sources): `(app id, profile id, tabs, windows)`, most first. Items without a known
+    /// profile count under their app (`None`).
+    pub fn metrics_top_sources(&self, since: i64, limit: u32) -> Result<Vec<SourceCount>> {
+        let mut stmt = self.conn.prepare_cached(
+            "SELECT i.app_id, s.profile, sum(i.kind = 'tab'), sum(i.kind = 'window'), count(*) AS n
+             FROM items i LEFT JOIN sources s ON s.id = i.source_id
+             WHERE i.archived_at >= ?1
+             GROUP BY i.app_id, s.profile ORDER BY n DESC, i.app_id, s.profile LIMIT ?2",
+        )?;
+        let out = stmt
+            .query_map(params![since, limit], |r| {
+                Ok(SourceCount {
+                    app_id: r.get(0)?,
+                    profile: r.get(1)?,
+                    tabs: count(r.get(2)?),
+                    windows: count(r.get(3)?),
+                })
+            })?
+            .collect::<rusqlite::Result<_>>()?;
+        Ok(out)
+    }
+
+    /// Everything archived since `since` (Insights' top-source shares are of this).
+    pub fn metrics_archived_since(&self, since: i64) -> Result<u32> {
+        let n: i64 = self.conn.query_row(
+            "SELECT count(*) FROM items WHERE archived_at >= ?1",
+            [since],
+            |r| r.get(0),
+        )?;
+        Ok(count(n))
+    }
+
     /// A random id for the beta export, made once on this installation.
     pub fn beta_install_id(&self, now: i64) -> Result<String> {
         let stored: Option<String> = self
@@ -386,6 +428,37 @@ mod tests {
         assert_eq!(flag_at, t0 + H, "on the flag's day");
         store.metrics_prune(NOW + 1, "9999-01-01").unwrap();
         assert_eq!(store.metric_events_since(0).unwrap(), vec![]);
+    }
+
+    #[test]
+    fn top_sources_by_app_and_profile() {
+        let (store, _dir) = store();
+        let chrome = "com.google.Chrome";
+        for (src, profile) in [("s1", "pa"), ("s2", "pb")] {
+            store
+                .upsert_source(&crate::Source {
+                    id: src.into(),
+                    app_id: chrome.into(),
+                    profile: Some(profile.into()),
+                    external_id: None,
+                    title: None,
+                    first_seen_at: NOW,
+                    last_seen_at: NOW,
+                    closed_at: None,
+                })
+                .unwrap();
+        }
+        let rows = [("s1", NOW), ("s1", NOW), ("s2", NOW), ("", NOW), ("s2", NOW - 10)];
+        for (i, (src, at)) in rows.iter().enumerate() {
+            let mut item = Item::new_live(format!("t{i}"), ItemKind::Tab, chrome, NOW);
+            item.source_id = (!src.is_empty()).then(|| (*src).to_owned());
+            item.state = decay_core::ItemState::Archived;
+            item.archived_at = Some(*at);
+            store.insert_item(&item).unwrap();
+        }
+        let got = store.metrics_top_sources(NOW - 1, 5).unwrap();
+        let got: Vec<_> = got.iter().map(|c| (c.profile.as_deref(), c.tabs, c.windows)).collect();
+        assert_eq!(got, [(Some("pa"), 2, 0), (None, 1, 0), (Some("pb"), 1, 0)]);
     }
 
     #[test]

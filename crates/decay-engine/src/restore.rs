@@ -53,6 +53,9 @@ enum Placement {
     Original { focus: bool },
     /// All together in one new window (the panel's ⌥↵), the first tab active.
     NewWindow,
+    /// All into one new window of this browser profile, chosen by the user when the
+    /// profile they came from isn't connected (P2.8), the first tab active.
+    Into(ConnId),
 }
 
 fn archived_item(item: &Item, window_key: Option<String>) -> ArchivedItem {
@@ -159,6 +162,7 @@ impl Engine {
             more: page.next_offset.is_some(),
             last_sweep,
             mode: Some(self.store.mode()?),
+            profile: self.popup_profile(conn)?,
         };
         self.reply_ok(conn, req, &result);
         Ok(())
@@ -323,21 +327,80 @@ impl Engine {
         Ok(Ok(()))
     }
 
+    /// The browser profile `(app id, profile id)` the first of `ids` that can't be reached
+    /// came from: what a refused restore names (P2.8). `None` when all can be reached, or
+    /// the item has no known profile.
+    pub fn unreachable_home(&self, ids: &[String], now: i64) -> Res<Option<(String, String)>> {
+        for id in ids.iter().take(500) {
+            let Some(item) = self.store.item(id)? else { continue };
+            if item.state != ItemState::Archived || self.home_conn(&item, now)?.is_some() {
+                continue;
+            }
+            let profile = match item.source_id.as_deref() {
+                Some(s) => self.store.source(s)?.and_then(|s| s.profile),
+                None => None,
+            };
+            if let Some(profile) = profile {
+                return Ok(Some((item.app_id, profile)));
+            }
+        }
+        Ok(None)
+    }
+
+    /// The ids ⌘↵ restores for `item_id`: the batch it was archived with (same sweep, same
+    /// window), or the item alone.
+    pub fn restore_ids(&self, item_id: &str) -> Res<Vec<String>> {
+        let Some(item) = self.store.item(item_id)? else { return Ok(Vec::new()) };
+        let batch = match &item.last_sweep_id {
+            Some(sweep) => self.store.archived_batch(sweep, item.source_id.as_deref())?,
+            None if item.state == ItemState::Archived => vec![item],
+            None => Vec::new(),
+        };
+        Ok(batch.into_iter().map(|i| i.id).collect())
+    }
+
+    /// Restores archived items into a new window of another connected browser profile,
+    /// chosen by the user because theirs isn't connected (P2.8). Only ever on that choice.
+    pub(crate) fn restore_into_from_app(
+        &mut self,
+        ids: &[String],
+        app_id: &str,
+        profile_id: &str,
+        now: i64,
+    ) -> Res<Result<(), RestoreRefused>> {
+        let Some(conn) = self.conns.iter().find_map(|(id, c)| {
+            Self::live_adapter(c, now)
+                .filter(|a| a.app_id == app_id && a.profile == profile_id)
+                .map(|_| *id)
+        }) else {
+            return Ok(Err(RestoreRefused::NoBrowser));
+        };
+        let mut items = Vec::new();
+        let mut skipped = 0u32;
+        let mut seen = std::collections::HashSet::new();
+        for id in ids.iter().take(500).filter(|id| seen.insert(id.as_str())) {
+            match self.store.item(id)? {
+                Some(item) if item.state == ItemState::Archived => items.push(item),
+                _ => skipped += 1,
+            }
+        }
+        if items.is_empty() {
+            return Ok(Err(RestoreRefused::NothingToRestore));
+        }
+        items.sort_by(|a, b| {
+            (a.source_id.as_deref(), a.tab_index).cmp(&(b.source_id.as_deref(), b.tab_index))
+        });
+        self.start_restore(None, &items, Placement::Into(conn), None, skipped, now)?;
+        Ok(Ok(()))
+    }
+
     /// Restores the batch an item was archived with (same sweep, same window), in order.
     pub(crate) fn restore_batch_from_app(
         &mut self,
         item_id: &str,
         now: i64,
     ) -> Res<Result<(), RestoreRefused>> {
-        let Some(item) = self.store.item(item_id)? else {
-            return Ok(Err(RestoreRefused::NothingToRestore));
-        };
-        let batch = match &item.last_sweep_id {
-            Some(sweep) => self.store.archived_batch(sweep, item.source_id.as_deref())?,
-            None if item.state == ItemState::Archived => vec![item],
-            None => Vec::new(),
-        };
-        let ids: Vec<String> = batch.into_iter().map(|i| i.id).collect();
+        let ids = self.restore_ids(item_id)?;
         if ids.is_empty() {
             return Ok(Err(RestoreRefused::NothingToRestore));
         }
@@ -417,6 +480,7 @@ impl Engine {
             // (other cookies, other accounts): such items fail and stay archived.
             let conn = match placement {
                 Placement::Window(_) => reply.map(|(c, _)| c),
+                Placement::Into(c) => Some(c),
                 Placement::Original { .. } | Placement::NewWindow => {
                     self.home_conn(item, now)?.or_else(|| reply.map(|(c, _)| c))
                 }
@@ -449,7 +513,7 @@ impl Engine {
                     };
                     (key, item.tab_index, focus)
                 }
-                Placement::NewWindow => (None, None, true),
+                Placement::NewWindow | Placement::Into(_) => (None, None, true),
             };
             let group = item.group_title.clone().map(|title| RestoreGroup {
                 title,

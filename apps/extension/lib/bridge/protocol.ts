@@ -42,6 +42,8 @@ export const kinds = {
   archiveRestore: 'archive.restore',
   archiveRestoreBatch: 'archive.restoreBatch',
   archiveUndo: 'archive.undo',
+  /** The popup names this browser profile (P2.8), answered with `ack { name }`. */
+  profileRename: 'profile.rename',
   // Core → extension.
   welcome: 'welcome',
   probe: 'probe',
@@ -226,6 +228,15 @@ export interface ArchiveSearchResult {
   lastSweep?: LastSweep;
   /** The app's mode: it decides while connected. */
   mode?: 'shadow' | 'automatic' | 'paused';
+  /** This browser profile as the app names it (P2.8). */
+  profile?: PopupProfile;
+}
+
+/** This browser profile: its name, else "Profile {ordinal}" when its browser has several. */
+export interface PopupProfile {
+  name?: string;
+  ordinal: number;
+  hasSiblings: boolean;
 }
 
 /** `archive.restore` / `archive.restoreBatch` / `archive.undo` ack result. */

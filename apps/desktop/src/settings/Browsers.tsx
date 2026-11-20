@@ -2,9 +2,11 @@ import { Banner, Button, StatusDot } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { ExternalLink, Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api, type DetectedBrowser, errorMessage } from '../api';
+import { api, type DetectedBrowser, errorMessage, type ProfileInfo, profileName } from '../api';
 import { rowDetail, rowState, sortRows } from '../onboarding/model';
+import { timeLabel } from '../panel/results';
 import { t } from '../strings';
+import { useProfiles } from '../useStatus';
 import { Group, TabHeader, type TabProps } from './parts';
 
 // Browsers (Designs/09e): which browsers are found and connected, and installing the
@@ -66,6 +68,87 @@ export function Browsers(props: TabProps) {
             );
           })}
       </Group>
+      <Profiles fail={props.fail} />
     </>
+  );
+}
+
+// Profiles (P2.8, Designs/09e "Profiles: Work, Personal"): every browser profile seen,
+// named here so the Library, search and Insights can tell them apart.
+function Profiles(props: { fail: (e: unknown) => void }) {
+  const profiles = useProfiles();
+  if (!profiles?.length) return null;
+  return (
+    <Group title={t('browsers.profiles')} aside={t('browsers.profiles.hint')}>
+      {profiles.map((p) => (
+        <ProfileRow key={`${p.appId}|${p.profileId}`} profile={p} fail={props.fail} />
+      ))}
+    </Group>
+  );
+}
+
+function ProfileRow(props: { profile: ProfileInfo; fail: (e: unknown) => void }) {
+  const p = props.profile;
+  const [draft, setDraft] = useState(p.name ?? '');
+  const [saving, setSaving] = useState(false);
+  // The name as last stored here: `p.name` catches up only once `profiles:changed` lands.
+  const [stored, setStored] = useState(p.name ?? '');
+  useEffect(() => {
+    setDraft(p.name ?? '');
+    setStored(p.name ?? '');
+  }, [p.name]);
+  const save = () => {
+    const name = draft.trim();
+    if (name === stored) {
+      setDraft(stored);
+      return;
+    }
+    setSaving(true);
+    api
+      .renameProfile(p.appId, p.profileId, name || null)
+      .then((saved) => {
+        setDraft(saved ?? '');
+        setStored(saved ?? '');
+      })
+      .catch((e) => {
+        setDraft(stored);
+        props.fail(e);
+      })
+      .finally(() => setSaving(false));
+  };
+  const fallback = profileName({ name: null, ordinal: p.ordinal }, p.hasSiblings);
+  const inputId = `profile-${p.appId}-${p.profileId}`;
+  return (
+    <div className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <span className="min-w-0 flex-1">
+        <label htmlFor={inputId} className="block text-sm font-medium">
+          {p.appName}
+        </label>
+        <span className="block text-xs text-muted">
+          {p.connected
+            ? t('browsers.profile.connected', { n: p.tabs })
+            : t('browsers.profile.lastSeen', { when: timeLabel(p.lastSeenAt, Date.now()) })}
+        </span>
+      </span>
+      <input
+        id={inputId}
+        value={draft}
+        maxLength={40}
+        disabled={saving}
+        placeholder={fallback ?? t('browsers.profile.placeholder')}
+        aria-label={t('browsers.profile.nameOf', { app: p.appName, n: p.ordinal })}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          if (e.key === 'Escape') {
+            setDraft(stored);
+            e.stopPropagation();
+          }
+        }}
+        className="h-9 w-44 rounded-lg border border-line bg-surface-2 px-3 text-sm"
+      />
+      {p.connected && <StatusDot status="connected" />}
+    </div>
   );
 }

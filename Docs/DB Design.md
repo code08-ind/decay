@@ -72,6 +72,19 @@ A source window (a browser window or an app window) that items belong to. Used f
 | last_seen_at | INTEGER | NOT NULL | |
 | closed_at | INTEGER | NULL | |
 
+### 3.2a `profiles` (as built, P2.8, migration V4)
+The browser profiles Decay has seen, so the UI can tell them apart (F35). Items reach their profile through `sources.profile` (the extension's random `profileId`, not Chrome's folder name).
+
+| Column | Type | Constraints | Notes |
+| --- | --- | --- | --- |
+| app_id | TEXT | PK (with profile), FK → apps.id | |
+| profile | TEXT | PK (with app_id) | The extension's random `profileId` |
+| name | TEXT | NULL, 1–40 chars | What the user called it (Settings → Browsers, or the extension popup) |
+| first_seen_at | INTEGER | NOT NULL | Orders "Profile 1, 2…" per browser |
+| last_seen_at | INTEGER | NOT NULL | Updated on connect and disconnect |
+
+Shown as: the name; else "Profile N" (by first sighting) when its browser has several; else just the browser. V4 fills it from the profiles already in `sources`.
+
 ### 3.3 `items` (core)
 
 | Column | Type | Constraints | Notes |

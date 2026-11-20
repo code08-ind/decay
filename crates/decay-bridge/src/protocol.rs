@@ -135,6 +135,8 @@ pub mod kinds {
     pub const ARCHIVE_RESTORE: &str = "archive.restore";
     pub const ARCHIVE_RESTORE_BATCH: &str = "archive.restoreBatch";
     pub const ARCHIVE_UNDO: &str = "archive.undo";
+    /// The popup names this browser profile (P2.8), answered with `ack { name }`.
+    pub const PROFILE_RENAME: &str = "profile.rename";
     // Core → extension.
     pub const WELCOME: &str = "welcome";
     pub const PROBE: &str = "probe";
@@ -626,6 +628,28 @@ pub struct ArchiveSearchResult {
     /// The app's mode (it decides while connected; the popup shows this one).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<decay_core::Mode>,
+    /// The asking browser profile as the app names it (P2.8; the popup can rename it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<PopupProfile>,
+}
+
+/// The popup's own browser profile: its name, else "Profile {ordinal}" when its browser
+/// has several.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PopupProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub ordinal: u32,
+    pub has_siblings: bool,
+}
+
+/// `profile.rename`: names the asking browser profile (`null` or blank: unnamed).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileRename {
+    #[serde(default)]
+    pub name: Option<String>,
 }
 
 /// `archive.restore`: reopen archived items; with `intoWindowId` they open in that window

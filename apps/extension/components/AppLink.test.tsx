@@ -45,4 +45,44 @@ describe('AppLink', () => {
     );
     expect(screen.getByText(/Update this extension/)).toBeTruthy();
   });
+
+  it('names this browser profile while connected (Enter saves, Escape keeps it)', () => {
+    const onRename = vi.fn();
+    const props = {
+      status: { state: 'connected' as const, at: 1 },
+      enabled: true,
+      onConnect: vi.fn(),
+      onDisconnect: vi.fn(),
+      onRename,
+    };
+    const { rerender } = render(<AppLink {...props} profile={{ ordinal: 2, hasSiblings: true }} />);
+    expect(screen.getByText('This profile: Profile 2')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    const input = screen.getByRole('textbox', { name: 'Name for this browser profile' });
+    fireEvent.change(input, { target: { value: ' Work ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenLastCalledWith('Work');
+    rerender(<AppLink {...props} profile={{ name: 'Work', ordinal: 2, hasSiblings: true }} />);
+    expect(screen.getByText('This profile: Work')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    const again = screen.getByRole('textbox', { name: 'Name for this browser profile' });
+    fireEvent.change(again, { target: { value: 'Oops' } });
+    fireEvent.keyDown(again, { key: 'Escape' });
+    expect(onRename).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    const cleared = screen.getByRole('textbox', { name: 'Name for this browser profile' });
+    fireEvent.change(cleared, { target: { value: '' } });
+    fireEvent.blur(cleared);
+    expect(onRename).toHaveBeenLastCalledWith(null);
+    // Not connected: no profile line.
+    rerender(
+      <AppLink
+        {...props}
+        status={null}
+        enabled={false}
+        profile={{ ordinal: 1, hasSiblings: false }}
+      />,
+    );
+    expect(screen.queryByText(/This profile/)).toBeNull();
+  });
 });

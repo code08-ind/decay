@@ -20,10 +20,11 @@ pub(crate) const MIGRATIONS: &[Migration] = &[
         sql: include_str!("../migrations/V2__onboarded.sql"),
     },
     Migration { version: 3, name: "metrics", sql: include_str!("../migrations/V3__metrics.sql") },
+    Migration { version: 4, name: "profiles", sql: include_str!("../migrations/V4__profiles.sql") },
 ];
 
 /// The newest schema version this build knows.
-pub const SCHEMA_VERSION: u32 = 3;
+pub const SCHEMA_VERSION: u32 = 4;
 
 /// FNV-1a over the SQL with line endings normalised (a Windows checkout has CRLF).
 fn checksum(sql: &str) -> String {
@@ -137,7 +138,7 @@ mod tests {
             apply(&mut conn, &v1, 5).unwrap();
             conn.execute_batch(seed).unwrap();
             let rest = pending(&conn).unwrap();
-            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3]);
+            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3, 4]);
             apply(&mut conn, &rest, 5).unwrap();
             let at: Option<String> = conn
                 .query_row("SELECT value FROM settings WHERE key = 'onboarded_at'", [], |r| {
@@ -152,6 +153,33 @@ mod tests {
             "INSERT INTO sweeps (id, started_at, trigger, is_shadow, status) VALUES ('s', 1, 'manual', 1, 'done');",
         );
         assert!(at.is_some_and(|t| t > 1_700_000_000_000), "{at:?}");
+    }
+
+    /// V4 lists the profiles already known from their windows, first sighting kept.
+    #[test]
+    fn profiles_come_from_known_windows() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        crate::words::register(&conn).unwrap();
+        let v123 =
+            pending(&conn).unwrap().into_iter().filter(|m| m.version < 4).collect::<Vec<_>>();
+        apply(&mut conn, &v123, 5).unwrap();
+        conn.execute_batch(
+            "INSERT INTO apps (id, name, platform, kind) VALUES ('c', 'Chrome', 'macos', 'browser');
+             INSERT INTO sources (id, app_id, profile, first_seen_at, last_seen_at) VALUES
+               ('s1', 'c', 'p1', 30, 40), ('s2', 'c', 'p1', 10, 90),
+               ('s3', 'c', 'p2', 20, 20), ('s4', 'c', NULL, 1, 1), ('s5', 'c', '', 1, 1);",
+        )
+        .unwrap();
+        let rest = pending(&conn).unwrap();
+        apply(&mut conn, &rest, 5).unwrap();
+        let rows: Vec<(String, i64, i64)> = conn
+            .prepare("SELECT profile, first_seen_at, last_seen_at FROM profiles ORDER BY profile")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(rows, [("p1".into(), 10, 90), ("p2".into(), 20, 20)]);
     }
 
     /// V3 copies what's already recorded into `metric_events`, and its triggers count

@@ -24,6 +24,9 @@ pub struct SearchFilters {
     pub before: Option<i64>,
     pub kind: Option<ItemKind>,
     pub source_id: Option<String>,
+    /// A browser profile (P2.8): its id, part of its name, or its number ("2" for an
+    /// unnamed "Profile 2") — `profile:work`.
+    pub profile: Option<String>,
 }
 
 /// One search request.
@@ -122,7 +125,7 @@ fn parse_when(value: &str, now: i64, offset_min: i32) -> Option<i64> {
         .then(|| local_midnight(days_from_civil(y, m, d)))
 }
 
-/// Splits typed text into search words and inline operators: `app:`, `site:`,
+/// Splits typed text into search words and inline operators: `app:`, `profile:`, `site:`,
 /// `before:` / `after:` (see [`parse_when`]) and `in:window` / `in:tab`. An operator with a
 /// value it can't use stays a search word.
 pub fn parse_query(text: &str, now: i64, utc_offset_minutes: i32) -> (String, SearchFilters) {
@@ -134,8 +137,10 @@ pub fn parse_query(text: &str, now: i64, utc_offset_minutes: i32) -> (String, Se
             continue;
         };
         // An operator still being typed (`site:` alone) filters nothing and isn't a word.
-        let known =
-            matches!(op.to_ascii_lowercase().as_str(), "app" | "site" | "before" | "after" | "in");
+        let known = matches!(
+            op.to_ascii_lowercase().as_str(),
+            "app" | "profile" | "site" | "before" | "after" | "in"
+        );
         if known && value.is_empty() {
             continue;
         }
@@ -143,6 +148,10 @@ pub fn parse_query(text: &str, now: i64, utc_offset_minutes: i32) -> (String, Se
             && match op.to_ascii_lowercase().as_str() {
                 "app" => {
                     f.app = Some(value.to_owned());
+                    true
+                }
+                "profile" => {
+                    f.profile = Some(value.to_owned());
                     true
                 }
                 "site" => {
@@ -184,13 +193,18 @@ impl Store {
     /// Searches archived items.
     pub fn search(&self, q: &SearchQuery) -> Result<SearchPage> {
         let (words, inline) = parse_query(&q.text, q.now, q.utc_offset_minutes);
+        // A picked app or profile (the Library's filter) and a typed one both apply.
+        let apps: Vec<String> = q.filters.app.iter().chain(&inline.app).cloned().collect();
+        let profiles: Vec<String> =
+            q.filters.profile.iter().chain(&inline.profile).cloned().collect();
         let f = SearchFilters {
-            app: q.filters.app.clone().or(inline.app),
+            app: None,
             domain: q.filters.domain.as_deref().map(str::to_lowercase).or(inline.domain),
             after: q.filters.after.or(inline.after),
             before: q.filters.before.or(inline.before),
             kind: q.filters.kind.or(inline.kind),
             source_id: q.filters.source_id.clone().or(inline.source_id),
+            profile: None,
         };
         let limit = if q.limit == 0 { 50 } else { q.limit.min(200) };
 
@@ -224,7 +238,7 @@ impl Store {
             args.push(value);
             sql.push_str(&clause.replace('?', &format!("?{}", args.len())));
         };
-        if let Some(app) = f.app {
+        for app in apps {
             let pattern = format!("%{}%", like_escape(&app));
             push(" AND (i.app_id = ?", Value::Text(app));
             push(
@@ -248,6 +262,25 @@ impl Store {
         }
         if let Some(source) = f.source_id {
             push(" AND i.source_id = ?", Value::Text(source));
+        }
+        for profile in profiles {
+            // Its number among its browser's profiles, by first sighting (as listed).
+            let ordinal = profile.parse::<i64>().ok().filter(|n| *n > 0).unwrap_or(0);
+            let pattern = format!("%{}%", like_escape(&profile));
+            push(
+                " AND i.source_id IN (SELECT s.id FROM sources s JOIN profiles p
+                   ON p.app_id = s.app_id AND p.profile = s.profile
+                   WHERE p.profile = ?",
+                Value::Text(profile),
+            );
+            push(" OR p.name LIKE ? ESCAPE '\\'", Value::Text(pattern));
+            push(
+                " OR (p.name IS NULL
+                   AND (SELECT count(*) FROM profiles q WHERE q.app_id = p.app_id) > 1
+                   AND (SELECT count(*) FROM profiles q WHERE q.app_id = p.app_id
+                   AND (q.first_seen_at, q.profile) <= (p.first_seen_at, p.profile)) = ?))",
+                Value::Integer(ordinal),
+            );
         }
         let int = |n: usize| Value::Integer(i64::try_from(n).unwrap_or(i64::MAX));
         push(" ORDER BY score DESC, i.archived_at DESC LIMIT ?", int(limit + 1));
@@ -321,6 +354,49 @@ mod tests {
         // Same age: the title match wins. Two months old (boost 1 / (1 + 60/7) ≈ 0.1), a
         // title match drops below yesterday's URL match.
         assert_eq!(titles(&store, "roadmap"), ["Roadmap", "Notes", "Roadmap (old)"]);
+    }
+
+    /// P2.8: `profile:` matches a profile's id, part of its name, or an unnamed one's
+    /// number; items without a known profile never match.
+    #[test]
+    fn filters_by_profile() {
+        let (store, _dir) = store();
+        let chrome = "com.google.Chrome";
+        for (src, profile, at) in [("s1", "pa", NOW), ("s2", "pb", NOW + 1)] {
+            store
+                .upsert_source(&crate::Source {
+                    id: src.into(),
+                    app_id: chrome.into(),
+                    profile: Some(profile.into()),
+                    external_id: None,
+                    title: None,
+                    first_seen_at: at,
+                    last_seen_at: at,
+                    closed_at: None,
+                })
+                .unwrap();
+            store.touch_profile(chrome, profile, at).unwrap();
+        }
+        store.rename_profile(chrome, "pb", Some("Work_stuff")).unwrap();
+        for (title, src) in [("Home page", Some("s1")), ("Work page", Some("s2")), ("Loose", None)]
+        {
+            let mut item = archived(&store, title, "https://x.example/", "x.example", 1);
+            item.source_id = src.map(str::to_owned);
+            store.update_item(&item).unwrap();
+        }
+        assert_eq!(titles(&store, "profile:work"), ["Work page"]);
+        assert_eq!(titles(&store, "profile:pa"), ["Home page"]);
+        assert_eq!(titles(&store, "profile:1"), ["Home page"]);
+        assert_eq!(titles(&store, "profile:2").len(), 0, "a named profile isn't its number");
+        assert_eq!(titles(&store, "profile:_"), ["Work page"], "LIKE wildcards are literal");
+        assert_eq!(titles(&store, "page profile:%").len(), 0);
+        let mut q = query("");
+        q.filters.profile = Some("pb".into());
+        let hits = store.search(&q).unwrap().hits;
+        assert_eq!(hits.iter().map(|h| h.item.title.as_str()).collect::<Vec<_>>(), ["Work page"]);
+        // Picked and typed: both apply (nothing is both "pb" and "Profile 1").
+        q.text = "profile:1".into();
+        assert_eq!(store.search(&q).unwrap().hits.len(), 0);
     }
 
     #[test]

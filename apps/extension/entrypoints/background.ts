@@ -313,6 +313,13 @@ export default defineBackground(() => {
         });
         return { ok: true, search };
       }
+      case 'decay.profile.rename': {
+        if (!adapterMode()) return { ok: false, error: t('app.notConnected') };
+        const r = await askApp<{ name: string | null }>(kinds.profileRename, {
+          name: message.name,
+        });
+        return { ok: true, name: r.name };
+      }
       case 'decay.app.connect':
         await turnLinkOn();
         return { ok: true };

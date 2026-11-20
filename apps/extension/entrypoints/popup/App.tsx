@@ -4,6 +4,7 @@ import { browser } from 'wxt/browser';
 import { Popup } from '@/components/Popup';
 import { appSearchResult, withAppArchive } from '@/lib/bridge/archive';
 import { type AppLinkStatus, linkEnabled, readLinkStatus } from '@/lib/bridge/chrome';
+import type { PopupProfile } from '@/lib/bridge/protocol';
 import { db } from '@/lib/db/db';
 import type { Item } from '@/lib/db/types';
 import { loadPopupData, type PopupData } from '@/lib/popup/data';
@@ -34,6 +35,7 @@ export function App() {
   });
   /** The app is connected and answered: search, restore and Undo go through it (P1.5). */
   const [viaApp, setViaApp] = useState(false);
+  const [appProfile, setAppProfile] = useState<PopupProfile | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -65,6 +67,7 @@ export function App() {
           if (r.search) {
             popup = withAppArchive(popup, r.search);
             app = true;
+            setAppProfile(r.search.profile ?? null);
           }
         } catch {
           // The link just dropped: the local copy is shown instead.
@@ -177,6 +180,11 @@ export function App() {
       await sendDecay({ type: 'decay.app.connect' });
       return null;
     });
+  const onRenameProfile = (name: string | null) =>
+    act(async () => {
+      const r = await sendDecay({ type: 'decay.profile.rename', name });
+      return r.name ? t('app.profile.renamed', { name: r.name }) : t('app.profile.cleared');
+    });
   const onDisconnectApp = () =>
     act(async () => {
       await sendDecay({ type: 'decay.app.disconnect' });
@@ -254,6 +262,8 @@ export function App() {
       appLink={appLink}
       onConnectApp={onConnectApp}
       onDisconnectApp={onDisconnectApp}
+      appProfile={viaApp ? appProfile : null}
+      onRenameProfile={(name) => void onRenameProfile(name)}
       onAllowProbe={onAllowProbe}
       onClose={() => window.close()}
       busy={busy}

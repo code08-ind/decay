@@ -4,8 +4,6 @@
 //! "Keep longer"). Shown in the Library (`get_daily_summary`) and, as a morning
 //! notification, by `notify`.
 
-use std::collections::HashMap;
-
 use decay_core::{EventType, RuleAction, RuleScope};
 use decay_store::Store;
 use serde::{Deserialize, Serialize};
@@ -120,7 +118,7 @@ pub fn summary_for(store: &Store, from: i64, to: i64, now: i64) -> Res<DailySumm
             hints.push(Hint { kind: HintKind::KeepLonger, domain, count });
         }
     }
-    let mut names = HashMap::new();
+    let mut names = crate::search::RowCache::default();
     let items = store
         .archived_between(from, to, ITEMS)
         .map_err(db)?

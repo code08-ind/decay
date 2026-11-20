@@ -7,7 +7,7 @@
 
 #![allow(clippy::needless_pass_by_value, reason = "Tauri commands take their arguments by value")]
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use decay_core::{
     EventType, ItemKind, ItemState, Mode, ProtectedBy, Reason, SweepAction, SweepItemResult,
@@ -195,7 +195,7 @@ pub fn item_detail(store: &Store, id: &str) -> Res<ItemDetail> {
         sweep_number,
         restore_count: item.restore_count,
         events,
-        row: row(store, item, &mut HashMap::new()),
+        row: row(store, item, &mut crate::search::RowCache::default()),
     })
 }
 
@@ -403,7 +403,7 @@ pub fn sweep_detail(store: &Store, id: &str, undo_ids: &HashSet<String>) -> Res<
         .ok_or_else(|| AppError::new("NOT_FOUND", t("error.sweepGone")))?;
     let items = sweep_items(store, &sweep)?;
     let row_info = sweep_row(store, &sweep, &items, undo_ids)?;
-    let mut names = HashMap::new();
+    let mut names = crate::search::RowCache::default();
     let entries = items
         .into_iter()
         .map(|(item, reason)| {
@@ -498,7 +498,7 @@ pub fn shadow_report(
     let first = store
         .first_events_since(EventType::ShadowWouldArchive, started.unwrap_or(0))
         .map_err(db)?;
-    let mut names = HashMap::new();
+    let mut names = crate::search::RowCache::default();
     let mut would = Vec::new();
     for (id, at, reason) in first {
         let Some(item) = store.item(&id).map_err(db)? else { continue };

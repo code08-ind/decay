@@ -12,6 +12,8 @@ describe('isDecayRequest', () => {
     expect(isDecayRequest({ type: 'decay.search', query: '' })).toBe(true);
     expect(isDecayRequest({ type: 'decay.search', query: 'site:a.com', limit: 50 })).toBe(true);
     expect(isDecayRequest({ type: 'decay.searched' })).toBe(true);
+    expect(isDecayRequest({ type: 'decay.profile.rename', name: 'Work' })).toBe(true);
+    expect(isDecayRequest({ type: 'decay.profile.rename', name: null })).toBe(true);
   });
 
   it('rejects malformed ones', () => {
@@ -34,6 +36,9 @@ describe('isDecayRequest', () => {
       { type: 'decay.search', query: 'a', limit: 0 },
       { type: 'decay.search', query: 'a', limit: 201 },
       { type: 'decay.search', query: 'a', limit: 1.5 },
+      { type: 'decay.profile.rename' },
+      { type: 'decay.profile.rename', name: 5 },
+      { type: 'decay.profile.rename', name: 'x'.repeat(201) },
     ]) {
       expect(isDecayRequest(bad)).toBe(false);
     }

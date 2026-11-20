@@ -29,12 +29,92 @@ export interface EngineStatus {
 export interface AppError {
   code: string;
   message: string;
+  /** What the window can offer about it (a refused restore's other profiles). */
+  details?: unknown;
+}
+
+/** A connected browser profile a refused restore can go to instead (P2.8). */
+export interface RestoreChoice {
+  appId: string;
+  profileId: string;
+  label: string;
+}
+
+/**
+ * A restore refused because the profile its tabs came from isn't connected: the items and
+ * the connected profiles "Open in … instead" offers (at most three). `null` otherwise.
+ */
+export function restoreChoices(
+  e: unknown,
+): { itemIds: string[]; alternatives: RestoreChoice[] } | null {
+  if (!e || typeof e !== 'object' || (e as AppError).code !== 'ADAPTER_UNAVAILABLE') return null;
+  const d = (e as AppError).details as
+    | { itemIds?: unknown; alternatives?: unknown }
+    | null
+    | undefined;
+  if (!d || !Array.isArray(d.itemIds) || !Array.isArray(d.alternatives)) return null;
+  const alternatives = (d.alternatives as RestoreChoice[]).filter(
+    (c) =>
+      c &&
+      typeof c.appId === 'string' &&
+      typeof c.profileId === 'string' &&
+      typeof c.label === 'string',
+  );
+  const itemIds = (d.itemIds as unknown[]).filter((id): id is string => typeof id === 'string');
+  if (!alternatives.length || !itemIds.length) return null;
+  return { itemIds, alternatives: alternatives.slice(0, 3) };
 }
 
 /** Data waiting for this window (`ui_take_pending`). */
 export interface Pending {
   prefill: string | null;
   licenseKey: string | null;
+}
+
+/** A row's browser profile (P2.8): absent for a browser's only, unnamed profile. */
+export interface ProfileTag {
+  id: string;
+  name: string | null;
+  /** 1-based by first sighting: "Profile {ordinal}" when unnamed. */
+  ordinal: number;
+}
+
+/** A browser profile Decay has seen (`list_profiles`). */
+export interface ProfileInfo {
+  appId: string;
+  appName: string;
+  profileId: string;
+  name: string | null;
+  ordinal: number;
+  /** Its browser has other profiles: unnamed, it shows as "Profile N". */
+  hasSiblings: boolean;
+  connected: boolean;
+  tabs: number;
+  firstSeenAt: number;
+  lastSeenAt: number;
+}
+
+/** The profile's own words: its name, "Profile N" when it has siblings, else null. */
+export function profileName(
+  p: { name: string | null; ordinal: number },
+  hasSiblings = true,
+): string | null {
+  if (p.name) return p.name;
+  return hasSiblings ? t('profile.numbered', { n: p.ordinal }) : null;
+}
+
+/** "Google Chrome · Work" (or just the app when there's no profile to name). */
+export function appWithProfile(appName: string, profile: ProfileTag | null | undefined): string {
+  const name = profile ? profileName(profile) : null;
+  return name ? t('profile.appWith', { app: appName, profile: name }) : appName;
+}
+
+/** How a known profile is named next to its app ("Google Chrome · Work"). */
+export function profileLabel(p: ProfileInfo): string {
+  return appWithProfile(
+    p.appName,
+    p.name || p.hasSiblings ? { id: p.profileId, name: p.name, ordinal: p.ordinal } : null,
+  );
 }
 
 export interface PanelItem {
@@ -46,6 +126,7 @@ export interface PanelItem {
   appName: string;
   sourceId: string | null;
   sourceTitle: string | null;
+  profile?: ProfileTag | null;
   archivedAt: number | null;
   reason: string | null;
   batch: boolean;
@@ -272,10 +353,16 @@ export const api = {
     limit?: number;
     cursor?: string;
     after?: number;
+    /** Only this app and browser profile (ids): the Library's browser filter. */
+    app?: string;
+    profile?: string;
   }) => invoke<SearchOutput>('search', { input }),
   restoreItems: (ids: string[], target: 'original' | 'newWindow' = 'original', searchMs?: number) =>
     invoke('restore_items', { ids, target, searchMs: searchMs ?? null }),
   restoreBatch: (itemId: string) => invoke('restore_batch', { itemId }),
+  /** "Open in … instead": into a new window of another connected profile (P2.8). */
+  restoreItemsIn: (ids: string[], appId: string, profileId: string) =>
+    invoke('restore_items_in', { ids, appId, profileId }),
   /** Insights (P2.7): every stored day, and the top sites since `since` (ms). */
   getMetrics: (since: number) => invoke<MetricsReport>('get_metrics', { since }),
   /** One search in the panel (once per opening). */
@@ -293,6 +380,10 @@ export const api = {
   whatsNewSeen: (later = false) => invoke<void>('whats_new_seen', { later }),
   /** Help → What's New: over the Library's current screen (opened if needed). */
   showWhatsNew: () => invoke<void>('ui_show_whats_new'),
+  listProfiles: () => invoke<ProfileInfo[]>('list_profiles'),
+  /** Names a profile (null or blank: unnamed); returns the name as stored. */
+  renameProfile: (appId: string, profileId: string, name: string | null) =>
+    invoke<string | null>('rename_profile', { appId, profileId, name }),
   protectItem: (id: string) => invoke<{ match: string }>('protect_item', { id }),
   showItem: (id: string) => invoke('ui_show_item', { id }),
   libraryStats: (input: { todayStart: number; weekStart: number }) =>
@@ -349,6 +440,16 @@ export interface MetricsReport {
   days: import('@decay/ui/metrics').MetricsDay[];
   topArchived: { domain: string; count: number }[];
   restoredMost: { domain: string; count: number }[];
+  /** Archived since the range's first day by app and browser profile (P2.8). */
+  topSources?: {
+    appId: string;
+    appName: string;
+    profile: ProfileTag | null;
+    tabs: number;
+    windows: number;
+  }[];
+  /** Everything archived since the range's first day (the shares are of this). */
+  archivedTotal?: number;
 }
 
 /** `get_beta_context` (P2.7). */

@@ -1,9 +1,10 @@
 // Small pieces the Library screens share.
-import { cx } from '@decay/ui';
+import { Button, cx } from '@decay/ui';
 import { AppWindow } from 'lucide-react';
 import { type DependencyList, type ReactNode, useEffect, useState } from 'react';
-import { errorMessage, type PanelItem } from '../api';
+import { errorMessage, type PanelItem, type RestoreChoice, type restoreChoices } from '../api';
 import { monogram } from '../panel/results';
+import { t } from '../strings';
 
 const TINT = {
   1: 'bg-avatar-1 text-avatar-1-ink',
@@ -93,4 +94,30 @@ export function useLoad<T>(load: () => Promise<T>, deps: DependencyList): Loaded
     };
   }, [key]);
   return state;
+}
+
+/** A refused restore's choices (P2.8): the items and the connected profiles. */
+export type RestoreChoices = NonNullable<ReturnType<typeof restoreChoices>>;
+
+/** "Open in … instead" buttons after a restore was refused (its profile isn't open). */
+export function RestoreElsewhere(props: {
+  choices: RestoreChoices;
+  /** The profile being opened into now. */
+  busy?: string;
+  onPick: (choice: RestoreChoice) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {props.choices.alternatives.map((c) => (
+        <Button
+          key={`${c.appId}|${c.profileId}`}
+          size="sm"
+          loading={props.busy === c.profileId}
+          onClick={() => props.onPick(c)}
+        >
+          {t('restore.openIn', { browser: c.label })}
+        </Button>
+      ))}
+    </div>
+  );
 }

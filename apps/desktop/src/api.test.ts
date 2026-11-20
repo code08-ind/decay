@@ -1,5 +1,14 @@
 import { expect, it, describe as suite } from 'vitest';
-import { describe, type EngineStatus, errorMessage, exportSummary, importSummary } from './api';
+import {
+  appWithProfile,
+  describe,
+  type EngineStatus,
+  errorMessage,
+  exportSummary,
+  importSummary,
+  profileLabel,
+  restoreChoices,
+} from './api';
 
 const base: EngineStatus = {
   mode: 'automatic',
@@ -94,5 +103,52 @@ suite('export / import summaries', () => {
     expect(exportSummary({ path: 'C:\\Users\\me\\a.csv', count: 1 })).toBe(
       'Exported 1 item to a.csv',
     );
+  });
+});
+
+suite('profile labels', () => {
+  it('names the profile next to its app, or just the app', () => {
+    expect(appWithProfile('Google Chrome', null)).toBe('Google Chrome');
+    expect(appWithProfile('Google Chrome', { id: 'a', name: 'Work', ordinal: 2 })).toBe(
+      'Google Chrome · Work',
+    );
+    expect(appWithProfile('Arc', { id: 'a', name: null, ordinal: 2 })).toBe('Arc · Profile 2');
+    const p = {
+      appId: 'c',
+      appName: 'Brave',
+      profileId: 'x',
+      name: null,
+      ordinal: 1,
+      hasSiblings: false,
+      connected: true,
+      tabs: 0,
+      firstSeenAt: 0,
+      lastSeenAt: 0,
+    };
+    expect(profileLabel(p)).toBe('Brave');
+    expect(profileLabel({ ...p, hasSiblings: true })).toBe('Brave · Profile 1');
+    expect(profileLabel({ ...p, name: 'Home' })).toBe('Brave · Home');
+  });
+});
+
+suite('restoreChoices', () => {
+  const alt = { appId: 'arc', profileId: 'p', label: 'Arc' };
+  it('reads a refusal that offers other profiles, and nothing else', () => {
+    const e = {
+      code: 'ADAPTER_UNAVAILABLE',
+      message: 'm',
+      details: { itemIds: ['a'], home: null, alternatives: [alt] },
+    };
+    expect(restoreChoices(e)).toEqual({ itemIds: ['a'], alternatives: [alt] });
+    expect(restoreChoices({ ...e, code: 'NOT_FOUND' })).toBeNull();
+    expect(restoreChoices({ ...e, details: { itemIds: ['a'], alternatives: [] } })).toBeNull();
+    expect(restoreChoices({ ...e, details: { itemIds: [], alternatives: [alt] } })).toBeNull();
+    expect(restoreChoices({ code: 'ADAPTER_UNAVAILABLE', message: 'm' })).toBeNull();
+    expect(restoreChoices('boom')).toBeNull();
+    const many = {
+      ...e,
+      details: { itemIds: ['a'], alternatives: [alt, alt, alt, alt, { bad: 1 }] },
+    };
+    expect(restoreChoices(many)?.alternatives).toHaveLength(3);
   });
 });

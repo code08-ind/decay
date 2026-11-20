@@ -1,11 +1,12 @@
 import { Banner, Button, richText } from '@decay/ui';
 import { AppWindow, History, PanelsTopLeft, RotateCcw, ShieldCheck, Timer } from 'lucide-react';
-import { api, type DailySummary } from '../api';
+import { useState } from 'react';
+import { api, type DailySummary, restoreChoices } from '../api';
 import { displayUrl } from '../panel/results';
 import { t } from '../strings';
 import type { PageProps } from './Archive';
 import { yesterday } from './model';
-import { ItemTile, Stat, useLoad } from './parts';
+import { ItemTile, type RestoreChoices, RestoreElsewhere, Stat, useLoad } from './parts';
 
 type Hours = { stale: number; hidden: number; archive: number };
 const MAX_H = 720;
@@ -24,6 +25,19 @@ export function longerHours(t: Hours): Hours | null {
 // with a one-click restore. The morning notification says the same in one line.
 export function Summary(props: PageProps) {
   const { version, run, notify, refresh } = props;
+  // A refused restore (its profile isn't open) offers the connected ones (P2.8).
+  const [choices, setChoices] = useState<RestoreChoices | null>(null);
+  const restore = (call: () => Promise<unknown>) =>
+    run(async () => {
+      setChoices(null);
+      try {
+        await call();
+      } catch (e) {
+        setChoices(restoreChoices(e));
+        throw e;
+      }
+      notify(t('summary.restoring'));
+    });
   const [from, to] = yesterday(Date.now());
   const summary = useLoad(() => api.getDailySummary(from, to), [version, from]);
   const settings = useLoad(() => api.getSettings(), [version]);
@@ -44,6 +58,12 @@ export function Summary(props: PageProps) {
         <p className="text-sm text-muted">{t('summary.subtitle')}</p>
       </div>
       {summary.error && <Banner tone="danger">{summary.error}</Banner>}
+      {choices && (
+        <RestoreElsewhere
+          choices={choices}
+          onPick={(c) => restore(() => api.restoreItemsIn(choices.itemIds, c.appId, c.profileId))}
+        />
+      )}
       {s && (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -154,12 +174,7 @@ export function Summary(props: PageProps) {
                       size="sm"
                       icon={<RotateCcw className="rtl:-scale-x-100" size={14} aria-hidden />}
                       aria-label={t('summary.restoreItem', { title: i.title || displayUrl(i.url) })}
-                      onClick={() =>
-                        run(async () => {
-                          await api.restoreItems([i.id]);
-                          notify(t('summary.restoring'));
-                        })
-                      }
+                      onClick={() => restore(() => api.restoreItems([i.id]))}
                     >
                       {t('summary.restore')}
                     </Button>

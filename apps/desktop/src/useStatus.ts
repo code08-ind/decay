@@ -1,6 +1,6 @@
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
-import { api, type EngineStatus } from './api';
+import { api, type EngineStatus, type ProfileInfo } from './api';
 
 /** The engine's status, kept current by `status:changed`. */
 export function useStatus(): EngineStatus | null {
@@ -30,4 +30,24 @@ export function useRoute(): [string, (route: string) => void] {
     };
   }, []);
   return [route, setRoute];
+}
+
+/** Every browser profile seen, reloaded when one is renamed or a browser comes or goes. */
+export function useProfiles(): ProfileInfo[] | null {
+  const [profiles, setProfiles] = useState<ProfileInfo[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    const load = () =>
+      api
+        .listProfiles()
+        .then((p) => live && setProfiles(p))
+        .catch(() => {});
+    load();
+    const offs = [listen('profiles:changed', load), listen('adapter:health', load)];
+    return () => {
+      live = false;
+      for (const off of offs) off.then((f) => f()).catch(() => {});
+    };
+  }, []);
+  return profiles;
 }

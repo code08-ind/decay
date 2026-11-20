@@ -2,7 +2,7 @@
 // monograms and keyboard actions.
 
 import { getLocale, logicalArrow } from '@decay/ui';
-import type { PanelItem } from '../api';
+import { appWithProfile, type PanelItem } from '../api';
 import { t } from '../strings';
 
 export interface ResultGroup {
@@ -62,7 +62,8 @@ export function groupResults(items: PanelItem[], now: number, locale?: string): 
     const key = `${day}|${item.sourceId ?? `app:${item.appName}`}`;
     let g = groups.get(key);
     if (!g) {
-      const source = item.sourceTitle ? `${item.appName} — ${item.sourceTitle}` : item.appName;
+      const app = appWithProfile(item.appName, item.profile);
+      const source = item.sourceTitle ? `${app} — ${item.sourceTitle}` : app;
       g = { key, label: `${dayLabel(at, now, locale)} · ${source}`, items: [], batch: false };
       groups.set(key, g);
     }

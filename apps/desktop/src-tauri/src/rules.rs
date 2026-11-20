@@ -3,8 +3,6 @@
 
 #![allow(clippy::needless_pass_by_value, reason = "Tauri commands take their arguments by value")]
 
-use std::collections::HashMap;
-
 use decay_core::Rule;
 use decay_engine::{RuleInput, RuleRefused, RuleTest};
 use decay_store::Store;
@@ -93,7 +91,7 @@ pub struct TestOutput {
 }
 
 pub fn test_output(store: &Store, t: RuleTest) -> TestOutput {
-    let mut names = HashMap::new();
+    let mut names = crate::search::RowCache::default();
     TestOutput {
         matches_live: t.matches_live,
         matches_archived: t.matches_archived,

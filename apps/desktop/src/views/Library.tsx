@@ -12,7 +12,7 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import { Leaf, Pause, Play, RotateCcw, Settings as SettingsIcon, Wind } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api, describe, type EngineStatus, errorMessage } from '../api';
+import { api, describe, type EngineStatus, errorMessage, profileLabel } from '../api';
 import { notesFor, RELEASES, type ReleaseNotes } from '../help/releases';
 import { WhatsNew } from '../help/WhatsNew';
 import { Archive } from '../library/Archive';
@@ -22,7 +22,7 @@ import { ShadowReview } from '../library/ShadowReview';
 import { Summary } from '../library/Summary';
 import { Sweeps } from '../library/Sweeps';
 import { t } from '../strings';
-import { useRoute, useStatus } from '../useStatus';
+import { useProfiles, useRoute, useStatus } from '../useStatus';
 
 const MODE_TEXT = {
   shadow: 'mode.shadow',
@@ -74,6 +74,9 @@ export function Library() {
       listen('settings:changed', bump),
       listen('archive:changed', bump),
       listen('rules:changed', bump), // Insights' "Always kept" rows
+      // Rows carry their profile's name: a rename, or a second profile, changes labels.
+      listen('profiles:changed', bump),
+      listen('adapter:health', bump),
     ];
     return () => {
       for (const off of offs) off.then((f) => f()).catch(() => {});
@@ -249,6 +252,7 @@ function Overview(props: {
   run: (a: () => Promise<unknown>) => void;
 }) {
   const { status, run } = props;
+  const profiles = useProfiles();
   const paused = status?.mode === 'paused';
   return (
     <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
@@ -283,12 +287,19 @@ function Overview(props: {
       <Card as="section" className="grid content-start gap-3">
         <h2 className="font-serif text-lg">{t('overview.browsers')}</h2>
         {status?.browsers.length ? (
-          status.browsers.map((b) => (
-            <div key={b.profileId} className="flex items-center justify-between text-sm">
-              <span className="capitalize">{b.browser}</span>
-              <StatusDot status="connected" label={t('overview.tabs', { n: b.tabs })} />
-            </div>
-          ))
+          status.browsers.map((b) => {
+            const known = profiles?.find((p) => p.profileId === b.profileId);
+            return (
+              <div key={b.profileId} className="flex items-center justify-between text-sm">
+                {known ? (
+                  <span>{profileLabel(known)}</span>
+                ) : (
+                  <span className="capitalize">{b.browser}</span>
+                )}
+                <StatusDot status="connected" label={t('overview.tabs', { n: b.tabs })} />
+              </div>
+            );
+          })
         ) : (
           <StatusDot status="down" />
         )}

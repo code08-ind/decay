@@ -174,6 +174,21 @@ impl Engine {
         result
     }
 
+    /// Restores items into a new window of the given connected browser profile: the
+    /// user's choice when the profile they came from isn't connected (P2.8).
+    pub fn restore_into(
+        &mut self,
+        ids: &[String],
+        app_id: &str,
+        profile_id: &str,
+        now: i64,
+    ) -> Res<Result<Vec<Output>, RestoreRefused>> {
+        if let Err(why) = self.restore_into_from_app(ids, app_id, profile_id, now)? {
+            return Ok(Err(why));
+        }
+        Ok(Ok(std::mem::take(&mut self.out)))
+    }
+
     /// Restores the batch `item_id` was archived with (⌘↵).
     pub fn restore_batch(
         &mut self,

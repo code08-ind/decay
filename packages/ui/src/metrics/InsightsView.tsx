@@ -64,6 +64,11 @@ export interface InsightsProps {
   onProtectSite?: (domain: string) => Promise<void>;
   /** Sites already always kept (an enabled protect rule for the domain). */
   protectedSites?: ReadonlySet<string>;
+  /** What was archived by browser profile or app (the app only; Designs/14 "Top
+   * sources"). Without it, no card. */
+  topSources?: readonly { id: string; label: string; tabs: number; windows: number }[];
+  /** Everything archived in the range (shares are of this; default: the rows' sum). */
+  topSourcesTotal?: number;
 }
 
 const fmt = (n: number) => formatNumber(n);
@@ -222,6 +227,13 @@ export function InsightsView(props: InsightsProps) {
                 onProtect={props.onProtectSite}
                 protectedSites={props.protectedSites}
               />
+              {props.topSources && (
+                <TopSources
+                  rows={props.topSources}
+                  total={props.topSourcesTotal}
+                  range={data.range}
+                />
+              )}
             </div>
           </div>
         </main>
@@ -585,6 +597,49 @@ function DomainList(props: {
               </li>
             );
           })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Where archived tabs and windows came from: each browser profile or app, its share. */
+function TopSources(props: {
+  rows: readonly { id: string; label: string; tabs: number; windows: number }[];
+  total?: number;
+  range: number;
+}) {
+  const shown = props.rows.reduce((n, r) => n + r.tabs + r.windows, 0);
+  const total = Math.max(props.total ?? 0, shown);
+  const share = (r: { tabs: number; windows: number }) =>
+    total ? Math.round(((r.tabs + r.windows) / total) * 100) : 0;
+  const what = (r: { tabs: number; windows: number }) =>
+    r.windows === 0
+      ? t('insights.tabs', { n: r.tabs })
+      : r.tabs === 0
+        ? t('insights.windows', { n: r.windows })
+        : t('insights.tabsAndWindows', { tabs: r.tabs, windows: r.windows });
+  return (
+    <section className="rounded-card border border-line bg-surface p-5 shadow-[var(--shadow-card)] sm:col-span-2 sm:p-6">
+      <h2 className="font-serif text-2xl">{t('insights.topSources')}</h2>
+      <p className="text-sm text-muted">{t('insights.topSources.sub', { n: props.range })}</p>
+      {props.rows.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">{t('insights.archivedMost.empty')}</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {props.rows.map((r) => (
+            <li key={r.id}>
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate">{r.label}</span>
+                <span className="ms-auto shrink-0 font-mono text-muted">
+                  {t('insights.sourceShare', { what: what(r), pct: share(r) })}
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-surface-2" aria-hidden>
+                <div className="h-full rounded-full bg-chart" style={{ width: `${share(r)}%` }} />
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </section>

@@ -19,6 +19,7 @@ import {
   useState,
 } from 'react';
 import type { AppLinkStatus } from '@/lib/bridge/chrome';
+import type { PopupProfile } from '@/lib/bridge/protocol';
 import type { Item } from '@/lib/db/types';
 import { type PopupData, RECENT_COUNT } from '@/lib/popup/data';
 import {
@@ -61,6 +62,9 @@ export interface PopupProps {
   onAllowProbe?: () => void;
   /** The link to the Decay desktop app (P1.4); hidden when not given. */
   appLink?: { status: AppLinkStatus | null; enabled: boolean };
+  /** This browser profile as the app names it, and renaming it (P2.8). */
+  appProfile?: PopupProfile | null;
+  onRenameProfile?: (name: string | null) => void;
   onConnectApp?: () => void;
   onDisconnectApp?: () => void;
   onClose: () => void;
@@ -295,6 +299,8 @@ export function Popup(props: PopupProps) {
           busy={props.busy}
           onConnect={props.onConnectApp}
           onDisconnect={props.onDisconnectApp}
+          profile={props.appProfile}
+          onRename={props.onRenameProfile}
         />
       )}
 

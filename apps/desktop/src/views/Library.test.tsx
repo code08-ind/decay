@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EngineStatus, PanelItem, SweepRow } from '../api';
+import type { EngineStatus, PanelItem, ProfileInfo, SweepRow } from '../api';
 
 const listeners = new Map<string, (e: { payload: unknown }) => void>();
 vi.mock('@tauri-apps/api/event', () => ({
@@ -12,10 +12,12 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 let status: EngineStatus | null = null;
 let route = '/';
+let profiles: ProfileInfo[] | null = null;
 vi.mock('../useStatus', async () => {
   const { useState } = await import('react');
   return {
     useStatus: () => status,
+    useProfiles: () => profiles,
     useRoute: () => useState(route),
   };
 });
@@ -185,6 +187,38 @@ describe('Library', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Windows' }));
     await flush();
     expect(api.search).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'window' }));
+  });
+
+  it('filters by browser profile and shows where items came from', async () => {
+    const base = {
+      appId: 'com.google.Chrome',
+      appName: 'Google Chrome',
+      hasSiblings: true,
+      connected: true,
+      tabs: 1,
+      firstSeenAt: 0,
+      lastSeenAt: 0,
+    };
+    profiles = [
+      { ...base, profileId: 'a', name: null, ordinal: 1 },
+      { ...base, profileId: 'b', name: 'Work', ordinal: 2 },
+    ];
+    await show('/');
+    const select = screen.getByRole('combobox', { name: 'Browser' }) as HTMLSelectElement;
+    expect([...select.options].map((o) => o.text)).toEqual([
+      'All browsers',
+      'Google Chrome · Profile 1',
+      'Google Chrome · Work',
+    ]);
+    fireEvent.change(select, { target: { value: 'com.google.Chrome|b' } });
+    await flush();
+    expect(api.search).toHaveBeenLastCalledWith(
+      expect.objectContaining({ app: 'com.google.Chrome', profile: 'b' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    await flush();
+    expect(api.search.mock.lastCall?.[0]).not.toHaveProperty('profile');
+    profiles = null;
   });
 
   it('opens an item, restores it, keeps its site and deletes it after confirming', async () => {
@@ -386,6 +420,16 @@ describe('Library', () => {
       ],
       topArchived: [{ domain: 'news.example', count: 12 }],
       restoredMost: [{ domain: 'docs.example', count: 4 }],
+      topSources: [
+        {
+          appId: 'com.google.Chrome',
+          appName: 'Google Chrome',
+          profile: { id: 'w', name: 'Work', ordinal: 2 },
+          tabs: 3,
+          windows: 0,
+        },
+        { appId: 'com.apple.finder', appName: 'Finder', profile: null, tabs: 0, windows: 1 },
+      ],
     });
     api.getBetaContext.mockResolvedValue({
       installId: 'abc123',
@@ -404,6 +448,10 @@ describe('Library', () => {
     expect(screen.getByRole('heading', { name: 'Insights' })).toBeTruthy();
     expect(screen.getAllByText('42').length).toBeGreaterThan(0);
     expect(screen.getAllByText('5%').length).toBeGreaterThan(0); // 1 of 20 restored within a day
+    expect(screen.getByRole('heading', { name: 'Top sources' })).toBeTruthy();
+    expect(screen.getByText('Google Chrome · Work')).toBeTruthy();
+    expect(screen.getByText('3 tabs · 75%')).toBeTruthy();
+    expect(screen.getByText('1 window · 25%')).toBeTruthy();
     expect(screen.getAllByText('news.example').length).toBeGreaterThan(0);
     expect(screen.getByText(/Nothing leaves it unless you share/).textContent).toContain(
       'this computer',

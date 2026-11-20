@@ -66,11 +66,20 @@ const CALL_TIMEOUT: Duration = Duration::from_secs(5);
 pub struct AppError {
     pub code: &'static str,
     pub message: String,
+    /// What the window can offer about it (a refused restore's other profiles, P2.8).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
 }
 
 impl AppError {
     pub fn new(code: &'static str, message: impl Into<String>) -> Self {
-        Self { code, message: message.into() }
+        Self { code, message: message.into(), details: None }
+    }
+
+    #[must_use]
+    pub fn with_details(mut self, details: serde_json::Value) -> Self {
+        self.details = Some(details);
+        self
     }
 
     pub fn db(e: &dyn std::fmt::Display) -> Self {

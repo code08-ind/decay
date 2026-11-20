@@ -16,6 +16,7 @@ mod library;
 mod metrics;
 pub use library::ItemTarget;
 mod migrate;
+mod profiles;
 mod rules;
 mod search;
 mod settings;
@@ -36,8 +37,9 @@ pub use export::{MAX_BOOKMARKS, bookmarks_to_items};
 pub use import::{FileOptions, ImportReport, catalog_app_id};
 pub use items::{App, Item, Platform, RestoreKind};
 pub use key::DbKey;
-pub use metrics::MetricsDay;
+pub use metrics::{MetricsDay, SourceCount};
 pub use migrate::SCHEMA_VERSION;
+pub use profiles::{MAX_PROFILE_NAME, Profile, ProfileLabel, clean_profile_name};
 pub use search::{SearchFilters, SearchHit, SearchPage, SearchQuery, parse_query};
 pub use settings::default_setting;
 pub use sources::Source;
@@ -422,7 +424,7 @@ mod tests {
         let paths = StorePaths::in_dir(dir.path());
         let (store, report) = Store::open(paths.clone(), key(), NOW).unwrap();
         assert!(report.created);
-        assert_eq!(report.applied_migrations, vec![1, 2, 3]);
+        assert_eq!(report.applied_migrations, vec![1, 2, 3, 4]);
         assert_eq!(report.pre_migration_backup, None);
         let journal: String =
             store.conn.query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();
