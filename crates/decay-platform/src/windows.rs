@@ -91,7 +91,11 @@ pub fn window_actor() -> Box<dyn WindowActor> {
     {
         Box::new(crate::mac_windows::MacWindowActor)
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        Box::new(crate::win_windows::WinWindowActor)
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         Box::new(NullWindowActor)
     }
@@ -113,7 +117,11 @@ pub fn window_lister() -> Box<dyn WindowLister> {
     {
         Box::new(crate::mac_windows::MacWindowLister::new())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        Box::new(crate::win_windows::WinWindowLister::new())
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         Box::new(NullWindowLister)
     }

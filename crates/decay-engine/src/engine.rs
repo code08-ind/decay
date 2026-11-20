@@ -545,9 +545,11 @@ pub(crate) fn version_at_least(version: &str, min: &str) -> bool {
     parts(version) >= parts(min)
 }
 
-/// The browser's app id on macOS (its bundle id), for "is it still running?".
+/// The browser's app id on this platform (macOS bundle id, Windows executable name), for
+/// "is it still running?".
 pub fn browser_bundle_id(kind: BrowserKind) -> &'static str {
-    browser_app(kind, Platform::MacOs).0
+    let platform = if cfg!(windows) { Platform::Windows } else { Platform::MacOs };
+    browser_app(kind, platform).0
 }
 
 /// The browser's catalog app id and name on this platform (matches the import mapping).

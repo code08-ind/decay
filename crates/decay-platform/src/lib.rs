@@ -25,12 +25,19 @@
 //! problem to show, not a reason to stop sweeping tabs.
 //!
 //! macOS reads everything without Screen Recording (no window titles are touched). Windows
-//! comes with its own implementation later; until then [`NullPlatform`] is used there.
+//! (P3.1, `win.rs`) needs no permission at all; other systems get [`NullPlatform`].
 
 #[cfg(target_os = "macos")]
 mod mac;
 #[cfg(target_os = "macos")]
 mod mac_windows;
+#[cfg(windows)]
+mod win;
+#[cfg(windows)]
+mod win_windows;
+// The Windows layer's decisions, compiled (and tested) everywhere.
+#[cfg_attr(not(windows), allow(dead_code))]
+mod win_logic;
 pub mod windows;
 
 /// Whether an app (by bundle id) is running; `None` where it can't be told.
@@ -39,7 +46,11 @@ pub fn app_running(bundle_id: &str) -> Option<bool> {
     {
         mac_windows::app_running(bundle_id)
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        win_windows::app_running(bundle_id)
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         let _ = bundle_id;
         None
@@ -53,6 +64,8 @@ pub use windows::{
 
 #[cfg(target_os = "macos")]
 pub use mac::MacPlatform;
+#[cfg(windows)]
+pub use win::WinPlatform;
 
 /// The app in front.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +130,11 @@ pub fn native() -> Box<dyn Platform> {
     {
         Box::new(MacPlatform::new())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        Box::new(WinPlatform::new())
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         Box::new(NullPlatform)
     }

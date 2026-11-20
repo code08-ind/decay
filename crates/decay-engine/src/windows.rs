@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use decay_core::{
     Decision, EventType, FormInput, ItemKind, ItemState, SaveState, Signals, evaluate,
 };
-use decay_platform::{AppWindow, WindowList};
+use decay_platform::{AppWindow, AppWindows, WindowList};
 use decay_store::{App, Item, Platform, RestoreKind, Store, new_id};
 
 use crate::control::WindowManagement;
@@ -99,7 +99,22 @@ pub(crate) fn is_browser(bundle_id: &str) -> bool {
             | "company.thebrowser.Browser"
             | "org.chromium.Chromium"
             | "com.vivaldi.Vivaldi"
+            // Windows (P3.1): the executable's lower-cased file name.
+            | "chrome.exe"
+            | "msedge.exe"
+            | "brave.exe"
+            | "arc.exe"
+            | "chromium.exe"
+            | "vivaldi.exe"
     )
+}
+
+/// Windows Decay never tracks: browsers' (their tabs are) and its own, by bundle id or by
+/// process (Windows has no bundle ids).
+fn not_tracked(app: &AppWindows) -> bool {
+    app.bundle_id == SELF_BUNDLE
+        || u32::try_from(app.pid).is_ok_and(|p| p == std::process::id())
+        || is_browser(&app.bundle_id)
 }
 
 /// The save state a window reports (Docs/Spikes.md §2).
@@ -386,7 +401,7 @@ impl Engine {
         let mut deleted: Vec<String> = Vec::new();
         let mut used: Vec<String> = Vec::new();
         for app in list.apps {
-            if app.bundle_id == SELF_BUNDLE || is_browser(&app.bundle_id) {
+            if not_tracked(&app) {
                 continue;
             }
             present
@@ -651,5 +666,7 @@ mod tests {
     fn browsers_are_left_to_their_extension() {
         assert!(is_browser("com.google.Chrome") && is_browser("company.thebrowser.Browser"));
         assert!(!is_browser("com.apple.TextEdit"));
+        assert!(is_browser("chrome.exe") && is_browser("msedge.exe"));
+        assert!(!is_browser("notepad.exe"));
     }
 }

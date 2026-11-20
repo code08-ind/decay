@@ -118,6 +118,13 @@ fn browsers_decay_itself_and_window_handling_off_are_never_tracked() {
     h.windows(vec![
         app(10, "com.google.Chrome", vec![window(1, "Inbox", None)]),
         app(11, "com.decay.app", vec![window(2, "Library", None)]),
+        // Windows (P3.1): browsers by executable, Decay by its own process.
+        app(12, "msedge.exe", vec![window(4, "News", None)]),
+        app(
+            i32::try_from(std::process::id()).unwrap(),
+            "decay.exe",
+            vec![window(5, "Settings", None)],
+        ),
     ]);
     assert_eq!(h.window_items(), []);
     // Off: nothing tracked, and live window records already kept are dropped.
