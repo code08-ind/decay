@@ -134,12 +134,16 @@ describe('Insights', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText(/install id is random/)).toBeTruthy();
     const save = within(dialog).getByRole('button', { name: /Save file/ });
-    const close = within(dialog).getByRole('button', { name: 'Close' });
     expect(document.activeElement).toBe(save);
+    // Tab wraps from the last button to the first (Close) and back.
+    const buttons = within(dialog).getAllByRole('button');
+    const [first, last] = [buttons[0], buttons[buttons.length - 1]];
+    expect(first).toBe(within(dialog).getByRole('button', { name: 'Close' }));
+    last?.focus();
     fireEvent.keyDown(window, { key: 'Tab' });
-    expect(document.activeElement).toBe(close);
+    expect(document.activeElement).toBe(first);
     fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
-    expect(document.activeElement).toBe(save);
+    expect(document.activeElement).toBe(last);
   });
 
   it('explains an empty chart', () => {

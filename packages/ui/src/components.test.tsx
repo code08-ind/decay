@@ -6,6 +6,7 @@ import {
   Banner,
   Button,
   Chip,
+  DialogActions,
   EmptyState,
   IconButton,
   LiveRegion,
@@ -46,6 +47,26 @@ function EmptyField() {
   const [q, setQ] = useState('');
   return <SearchInput label="Search" value={q} onValueChange={setQ} />;
 }
+
+describe('DialogActions', () => {
+  const order = (platform: 'mac' | 'windows') => {
+    render(
+      <DialogActions
+        platform={platform}
+        action={<Button variant="primary">Save</Button>}
+        cancel={<Button>Cancel</Button>}
+      />,
+    );
+    const names = screen.getAllByRole('button').map((b) => b.textContent);
+    cleanup();
+    return names;
+  };
+
+  it('puts the action on the right on macOS and first on Windows', () => {
+    expect(order('mac')).toEqual(['Cancel', 'Save']);
+    expect(order('windows')).toEqual(['Save', 'Cancel']);
+  });
+});
 
 describe('Button', () => {
   it('is busy and disabled while loading, and announces its shortcut', () => {

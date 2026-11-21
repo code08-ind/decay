@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { DialogActions } from '../DialogActions';
 import { formatDate, formatNumber, logicalArrow } from '../i18n';
 import { t } from '../strings';
 import { type Goal, type Insights, percent, RANGES, type RangeDays } from './insights';
@@ -714,23 +715,28 @@ function ShareDialog(props: {
         <pre className="mt-4 min-h-0 flex-1 overflow-auto rounded-tile bg-surface-2 p-4 font-mono text-xs">
           {props.json}
         </pre>
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={props.onCancel}
-            className="rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
-          >
-            {t('insights.share.cancel')}
-          </button>
-          <button
-            ref={downloadRef}
-            type="button"
-            onClick={props.onDownload}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
-          >
-            <Download size={16} aria-hidden /> {t('insights.share.save')}
-          </button>
-        </div>
+        <DialogActions
+          className="mt-4 justify-end"
+          action={
+            <button
+              ref={downloadRef}
+              type="button"
+              onClick={props.onDownload}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
+            >
+              <Download size={16} aria-hidden /> {t('insights.share.save')}
+            </button>
+          }
+          cancel={
+            <button
+              type="button"
+              onClick={props.onCancel}
+              className="rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
+            >
+              {t('insights.share.cancel')}
+            </button>
+          }
+        />
       </div>
     </div>
   );

@@ -1,4 +1,13 @@
-import { Banner, Button, Chip, cx, IconButton, SegmentedControl, Switch } from '@decay/ui';
+import {
+  Banner,
+  Button,
+  Chip,
+  cx,
+  DialogActions,
+  IconButton,
+  SegmentedControl,
+  Switch,
+} from '@decay/ui';
 import { Filter, Info, Pencil, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -136,23 +145,28 @@ export function Protection(props: TabProps & { version: number; changed: () => v
                     />
                   )}
                   {confirmDelete === r.id ? (
-                    <span className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        autoFocus
-                        onClick={() =>
-                          run(api.deleteRule(r.id), t('protection.deleted')).then(() =>
-                            setConfirmDelete(null),
-                          )
-                        }
-                      >
-                        {t('protection.delete')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>
-                        {t('common.cancel')}
-                      </Button>
-                    </span>
+                    <DialogActions
+                      className="gap-1"
+                      action={
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          autoFocus
+                          onClick={() =>
+                            run(api.deleteRule(r.id), t('protection.deleted')).then(() =>
+                              setConfirmDelete(null),
+                            )
+                          }
+                        >
+                          {t('protection.delete')}
+                        </Button>
+                      }
+                      cancel={
+                        <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>
+                          {t('common.cancel')}
+                        </Button>
+                      }
+                    />
                   ) : (
                     <IconButton
                       label={t('protection.deleteFor', { match: r.match })}
@@ -372,17 +386,20 @@ export function RuleEditor(props: {
             </ul>
           </div>
         )}
-        <div className="flex justify-end gap-2">
-          <Button onClick={props.onClose}>{t('common.cancel')}</Button>
-          <Button
-            type="submit"
-            variant="primary"
-            loading={saving}
-            disabled={!match.trim() || problem !== ''}
-          >
-            {r ? t('editor.save') : t('editor.add')}
-          </Button>
-        </div>
+        <DialogActions
+          className="justify-end"
+          action={
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving}
+              disabled={!match.trim() || problem !== ''}
+            >
+              {r ? t('editor.save') : t('editor.add')}
+            </Button>
+          }
+          cancel={<Button onClick={props.onClose}>{t('common.cancel')}</Button>}
+        />
       </form>
     </section>
   );

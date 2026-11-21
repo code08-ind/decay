@@ -3,6 +3,7 @@ import {
   Button,
   Chip,
   cx,
+  DialogActions,
   EmptyState,
   FeatureCard,
   IconButton,
@@ -632,30 +633,34 @@ export function ItemDrawer(props: {
             )}
             {archived &&
               (confirmDelete ? (
-                <span className="flex gap-2">
-                  <Button
-                    variant="danger"
-                    icon={<Trash2 size={14} />}
-                    loading={busy === 'delete'}
-                    autoFocus
-                    onClick={() =>
-                      act('delete', () =>
-                        api.deleteItems([d.id]).then((r) => {
-                          props.notify(
-                            r.deleted > 0 ? t('drawer.deleted') : t('drawer.notDeleted'),
-                          );
-                          props.onDeleted();
-                          props.onClose();
-                        }),
-                      )
-                    }
-                  >
-                    {t('drawer.deleteForGood')}
-                  </Button>
-                  <Button variant="onFeatureOutline" onClick={() => setConfirmDelete(false)}>
-                    {t('common.cancel')}
-                  </Button>
-                </span>
+                <DialogActions
+                  action={
+                    <Button
+                      variant="danger"
+                      icon={<Trash2 size={14} />}
+                      loading={busy === 'delete'}
+                      autoFocus
+                      onClick={() =>
+                        act('delete', () =>
+                          api.deleteItems([d.id]).then((r) => {
+                            props.notify(
+                              r.deleted > 0 ? t('drawer.deleted') : t('drawer.notDeleted'),
+                            );
+                            props.onDeleted();
+                            props.onClose();
+                          }),
+                        )
+                      }
+                    >
+                      {t('drawer.deleteForGood')}
+                    </Button>
+                  }
+                  cancel={
+                    <Button variant="onFeatureOutline" onClick={() => setConfirmDelete(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                  }
+                />
               ) : (
                 <IconButton
                   onFeature

@@ -1,4 +1,4 @@
-import { Banner, Button, IconButton, SegmentedControl, Switch } from '@decay/ui';
+import { Banner, Button, DialogActions, IconButton, SegmentedControl, Switch } from '@decay/ui';
 import { Download, EyeOff, Lock, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -242,14 +242,18 @@ function Transfer(props: { notify: (text: string) => void; changed: () => void }
           <Banner
             tone="warning"
             action={
-              <span className="flex gap-2">
-                <Button size="sm" variant="danger" autoFocus onClick={() => answer(true)}>
-                  {t('transfer.confirm', { n: waiting.purge })}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => answer(false)}>
-                  {t('common.cancel')}
-                </Button>
-              </span>
+              <DialogActions
+                action={
+                  <Button size="sm" variant="danger" autoFocus onClick={() => answer(true)}>
+                    {t('transfer.confirm', { n: waiting.purge })}
+                  </Button>
+                }
+                cancel={
+                  <Button size="sm" variant="ghost" onClick={() => answer(false)}>
+                    {t('common.cancel')}
+                  </Button>
+                }
+              />
             }
           >
             {t('transfer.confirm.text', { file: waiting.fileName, n: waiting.purge })}
@@ -371,19 +375,23 @@ function AddExclude(props: { onAdded: (text: string) => void }) {
         <Banner
           tone={confirm > 0 ? 'warning' : 'info'}
           action={
-            <span className="flex gap-2">
-              <Button
-                size="sm"
-                variant={confirm > 0 ? 'danger' : 'primary'}
-                autoFocus
-                onClick={add}
-              >
-                {confirm > 0 ? t('exclude.confirm', { n: confirm }) : t('exclude.add')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setConfirm(null)}>
-                {t('common.cancel')}
-              </Button>
-            </span>
+            <DialogActions
+              action={
+                <Button
+                  size="sm"
+                  variant={confirm > 0 ? 'danger' : 'primary'}
+                  autoFocus
+                  onClick={add}
+                >
+                  {confirm > 0 ? t('exclude.confirm', { n: confirm }) : t('exclude.add')}
+                </Button>
+              }
+              cancel={
+                <Button size="sm" variant="ghost" onClick={() => setConfirm(null)}>
+                  {t('common.cancel')}
+                </Button>
+              }
+            />
           }
         >
           {confirm > 0 ? t('exclude.matches', { n: confirm }) : t('exclude.nothing')}

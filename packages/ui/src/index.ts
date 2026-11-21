@@ -11,6 +11,7 @@ export {
 } from './Button';
 export { Chip, type ChipTone, ProBadge } from './Chip';
 export { cx } from './cx';
+export { DialogActions, type DialogActionsProps } from './DialogActions';
 export {
   availableLanguages,
   type Catalog,

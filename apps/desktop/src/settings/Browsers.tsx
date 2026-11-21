@@ -1,4 +1,4 @@
-import { Banner, Button, StatusDot } from '@decay/ui';
+import { Banner, Button, DialogActions, StatusDot } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
 import { ExternalLink, Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -163,25 +163,31 @@ function ProfileRow(props: { profile: ProfileInfo; fail: (e: unknown) => void })
           <span className="min-w-0 flex-1">
             {t('browsers.profile.forgetConfirm', { name: profileLabel(p) })}
           </span>
-          <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            size="sm"
-            loading={saving}
-            onClick={() => {
-              setSaving(true);
-              api
-                .forgetProfile(p.appId, p.profileId)
-                .catch(props.fail)
-                .finally(() => {
-                  setSaving(false);
-                  setConfirming(false);
-                });
-            }}
-          >
-            {t('browsers.profile.forget')}
-          </Button>
+          <DialogActions
+            action={
+              <Button
+                size="sm"
+                loading={saving}
+                onClick={() => {
+                  setSaving(true);
+                  api
+                    .forgetProfile(p.appId, p.profileId)
+                    .catch(props.fail)
+                    .finally(() => {
+                      setSaving(false);
+                      setConfirming(false);
+                    });
+                }}
+              >
+                {t('browsers.profile.forget')}
+              </Button>
+            }
+            cancel={
+              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+                {t('common.cancel')}
+              </Button>
+            }
+          />
         </span>
       ) : (
         <Button
