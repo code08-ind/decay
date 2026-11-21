@@ -239,7 +239,7 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
         Chrome::Custom { mica } => backdrop(builder.decorations(false), mica, Effect::Mica),
         Chrome::Panel { acrylic } => backdrop(builder, acrylic, Effect::Acrylic),
     };
-    match window {
+    let built = match window {
         // Windows (macOS uses `mac_panel`): an undecorated, always-on-top window.
         Window::Panel => builder
             .inner_size(panel_size(chrome).0, panel_size(chrome).1)
@@ -253,15 +253,20 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
             .resizable(false)
             .visible(false)
             .center()
-            .build(),
+            .build()?,
         // A sidebar beside the tab (Designs/09); taller tabs scroll.
-        Window::Settings => builder.min_inner_size(820.0, 520.0).center().build(),
+        Window::Settings => builder.min_inner_size(820.0, 520.0).center().build()?,
         Window::Onboarding => {
-            builder.resizable(false).maximizable(false).minimizable(false).center().build()
+            builder.resizable(false).maximizable(false).minimizable(false).center().build()?
         }
         // UI Design Guidelines: Library minimum 860×560.
-        Window::Library => builder.min_inner_size(860.0, 560.0).center().build(),
+        Window::Library => builder.min_inner_size(860.0, 560.0).center().build()?,
+    };
+    #[cfg(windows)]
+    if chrome != Chrome::Native {
+        round_corners(&built);
     }
+    Ok(built)
 }
 
 /// A window over a system backdrop (transparent, so the backdrop shows), or as it was.
@@ -274,6 +279,15 @@ pub fn backdrop(
         builder.transparent(true).effects(EffectsBuilder::new().effect(effect).build())
     } else {
         builder
+    }
+}
+
+/// Windows 11: rounded corners for a window Decay frames itself (see
+/// `decay_platform::round_corners`).
+#[cfg(windows)]
+pub fn round_corners(window: &WebviewWindow) {
+    if let Ok(hwnd) = window.hwnd() {
+        decay_platform::round_corners(hwnd.0 as isize);
     }
 }
 

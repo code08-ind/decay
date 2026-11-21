@@ -296,6 +296,27 @@ pub fn app_running(exe: &str) -> Option<bool> {
     }
 }
 
+/// Asks the window manager for rounded corners on a window of Decay's own (Windows 11:
+/// frameless windows that can't be resized are otherwise left square). `hwnd` is the
+/// window's handle as a number. False where it isn't supported (Windows 10).
+pub fn round_corners(hwnd: isize) -> bool {
+    use ::windows::Win32::Graphics::Dwm::{
+        DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND, DwmSetWindowAttribute,
+    };
+    let preference = DWMWCP_ROUND;
+    // SAFETY: the attribute is a `DWM_WINDOW_CORNER_PREFERENCE` passed by pointer with its
+    // size; an invalid or foreign `hwnd` only makes the call fail.
+    unsafe {
+        DwmSetWindowAttribute(
+            HWND(hwnd as *mut core::ffi::c_void),
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            (&raw const preference).cast(),
+            size_of_val(&preference) as u32,
+        )
+        .is_ok()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -83,7 +83,12 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         // The system's shadow and (Windows 11) rounded corners frame it.
         .shadow(true)
         .visible(false);
-    shell::backdrop(builder, !page_query(build).is_empty(), tauri::window::Effect::Mica).build()
+    let popover =
+        shell::backdrop(builder, !page_query(build).is_empty(), tauri::window::Effect::Mica)
+            .build()?;
+    #[cfg(windows)]
+    shell::round_corners(&popover);
+    Ok(popover)
 }
 
 /// A left click on the tray icon at `icon` (physical px): shows the popover there, or
@@ -123,6 +128,7 @@ pub fn toggle(app: &AppHandle, icon: Rect) {
         let (x, y) = origin(icon, work, size, GAP * scale);
         let _ = popover.set_position(tauri::PhysicalPosition::new(x, y));
     }
+    tracing::info!(?icon, "tray popover shown");
     let _ = popover.emit("popover:open", ());
     let _ = popover.show();
     let _ = popover.set_focus();

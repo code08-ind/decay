@@ -54,6 +54,33 @@ public static class W {
     return list;
   }
 
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, out int v, int size);
+  /// An int DWM attribute (38 backdrop type, 33 corner preference); -1 when unreadable.
+  public static int DwmInt(IntPtr h, int a) {
+    int v; return DwmGetWindowAttribute(h, a, out v, 4) == 0 ? v : -1;
+  }
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  public struct DEVMODE {
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+    public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra;
+    public int dmFields, dmPositionX, dmPositionY, dmDisplayOrientation, dmDisplayFixedOutput;
+    public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+    public short dmLogPixels;
+    public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
+    public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2, dmPanningWidth, dmPanningHeight;
+  }
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplaySettings(string d, int mode, ref DEVMODE m);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int ChangeDisplaySettings(ref DEVMODE m, int flags);
+  public static int SetResolution(int w, int h) {
+    var m = new DEVMODE(); m.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+    if (!EnumDisplaySettings(null, -1, ref m)) return -100;
+    m.dmPelsWidth = w; m.dmPelsHeight = h; m.dmFields = 0x80000 | 0x100000;
+    return ChangeDisplaySettings(ref m, 0);
+  }
+
   public static string Title(IntPtr h) {
     var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString();
   }
@@ -132,6 +159,9 @@ function ListWindows([string] $when) {
   foreach ($h in [W]::Visible([uint32]$decay)) { Note ("${when}: '{0}' {1}" -f [W]::Title($h), (Size ([W]::Bounds($h)))) }
 }
 
+# A bigger desktop than the runner's 1024x768, so half-screen Snap fits Settings (min 820).
+Note ("display change: {0}" -f [W]::SetResolution(1920, 1080))
+Start-Sleep -Seconds 2
 $build = [int](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuildNumber
 $screen = [System.Windows.Forms.Screen]::PrimaryScreen
 Note ("Windows build $build; screen {0}x{1}; work area {2}" -f $screen.Bounds.Width, $screen.Bounds.Height, $screen.WorkingArea)
@@ -148,15 +178,39 @@ function SetTheme([int] $light) {
   Start-Sleep -Seconds 2
 }
 SetTheme 1
+if (-not $eleven) {
+  # Windows 10 shell: show every notification icon on the taskbar (no overflow).
+  Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer' EnableAutoTray 0 -Type DWord
+  Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 4
+  if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer; Start-Sleep -Seconds 4 }
+}
+
+# Debug builds have a console window: out of the way.
+function HideConsole {
+  $decay = DecayPid
+  if (-not $decay) { return }
+  foreach ($h in [W]::Visible([uint32]$decay)) {
+    if ([W]::Title($h) -like '*decay.exe*') { [W]::ShowWindow($h, 6) | Out-Null }
+  }
+}
+function Backdrop([string] $what, [IntPtr] $h, [int] $expect) {
+  if (-not $eleven) { return }
+  $type = [W]::DwmInt($h, 38); $corner = [W]::DwmInt($h, 33)
+  Check "$what has its backdrop (DWMWA_SYSTEMBACKDROP_TYPE = $expect)" ($type -eq $expect) "read $type"
+  Check "$what asks for rounded corners (DWMWA_WINDOW_CORNER_PREFERENCE = 2)" ($corner -eq 2) "read $corner"
+}
 
 try {
   # --- 1. A plain first launch: onboarding (fixed size, Close only).
   $proc = Start-Process -FilePath $Exe -PassThru
   $onb = WaitWindow { param($t, $r) $t -like '*Setup*' } 60
+  HideConsole
   Check 'onboarding window opens' ($onb -ne [IntPtr]::Zero)
   Start-Sleep -Seconds 3
   Shot '01-onboarding-light'
   if ($onb -ne [IntPtr]::Zero) {
+    Backdrop 'onboarding' $onb 2
     $r = [W]::Bounds($onb)
     Note "onboarding: $(Size $r)"
     Drag ($r.L + 300) ($r.T + 16) -80 40
@@ -174,6 +228,7 @@ try {
   if ($set -eq [IntPtr]::Zero) { ListWindows 'no settings'; throw 'no settings window' }
   Start-Sleep -Seconds 3
   Shot '02-settings-light'
+  Backdrop 'settings' $set 2
   $r = [W]::Bounds($set); Note "settings: $(Size $r)"
 
   # Move: drag the title bar.
@@ -181,18 +236,19 @@ try {
   $m = [W]::Bounds($set)
   Check 'settings moves by its title bar' (($m.L -eq $r.L + 30) -and ($m.T -eq $r.T + 20)) "$(Size $r) -> $(Size $m)"
 
-  # Resize: the right edge, the bottom edge, the bottom-right corner (within 2 px of the edge).
+  # Resize: like any Windows window, the left, right and bottom borders are just outside the
+  # visible frame (the shadow's invisible border); the top one is inside it.
   $w0 = $m.R - $m.L; $h0 = $m.B - $m.T
-  Drag ($m.R - 2) (($m.T + $m.B) / 2) -60 0
+  Drag ($m.R + 3) (($m.T + $m.B) / 2) -60 0
   $a = [W]::Bounds($set)
   Check 'right edge resizes' ([math]::Abs(($a.R - $a.L) - ($w0 - 60)) -le 2) "width $w0 -> $($a.R - $a.L)"
-  Drag (($a.L + $a.R) / 2) ($a.B - 2) 0 -40
+  Drag (($a.L + $a.R) / 2) ($a.B + 3) 0 -40
   $b = [W]::Bounds($set)
   Check 'bottom edge resizes' ([math]::Abs(($b.B - $b.T) - ($h0 - 40)) -le 2) "height $h0 -> $($b.B - $b.T)"
-  Drag ($b.R - 2) ($b.B - 2) 30 20
+  Drag ($b.R + 3) ($b.B + 3) 30 20
   $c = [W]::Bounds($set)
   Check 'corner resizes both ways' ((($c.R - $c.L) -gt ($b.R - $b.L)) -and (($c.B - $c.T) -gt ($b.B - $b.T))) "$(Size $b) -> $(Size $c)"
-  Drag ($c.L + 1) (($c.T + $c.B) / 2) 25 0
+  Drag ($c.L - 3) (($c.T + $c.B) / 2) 25 0
   $d = [W]::Bounds($set)
   Check 'left edge resizes' (($d.L -gt $c.L) -and ($d.R -eq $c.R)) "$(Size $c) -> $(Size $d)"
   Drag (($d.L + $d.R) / 2) ($d.T + 1) 0 20
@@ -253,6 +309,7 @@ try {
   Start-Sleep -Seconds 2
   Shot '07-panel-dark'
   if ($panel -ne [IntPtr]::Zero) {
+    Backdrop 'panel' $panel 3
     $p = [W]::Bounds($panel); Note "panel: $(Size $p)"
     $expect = if ($eleven) { 680 } else { 712 }
     Check "panel is $expect px wide" ([math]::Abs(($p.R - $p.L) - $expect) -le 2) (Size $p)
@@ -270,7 +327,8 @@ try {
     $root = [System.Windows.Automation.AutomationElement]::RootElement
     $cond = New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::ControlTypeProperty), ([System.Windows.Automation.ControlType]::Button)
     foreach ($el in $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)) {
-      if ($el.Current.Name -like '*Decay*' -and $el.Current.ProcessId -ne (DecayPid)) { return $el }
+      $n = $el.Current.Name
+      if ($n -like 'Decay*' -and $n -notlike '*running window*' -and $el.Current.ProcessId -ne (DecayPid)) { return $el }
     }
     return $null
   }
@@ -303,8 +361,10 @@ try {
     Click $ix $iy
     $pop = WaitWindow { param($t, $r) $t -eq 'Decay' -and ($r.R - $r.L) -lt 500 } 10
     Check 'left click opens the popover' ($pop -ne [IntPtr]::Zero)
+    if ($pop -eq [IntPtr]::Zero) { Shot '10-popover-missing'; ListWindows 'after the tray click' }
     Start-Sleep -Seconds 2
     Shot '10-popover-light'
+    if ($pop -ne [IntPtr]::Zero) { Backdrop 'popover' $pop 2 }
     if ($pop -ne [IntPtr]::Zero) {
       $q = [W]::Bounds($pop); Note "popover: $(Size $q)"
       $wa = [System.Windows.Forms.Screen]::FromPoint((New-Object System.Drawing.Point $ix, $iy)).WorkingArea

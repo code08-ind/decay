@@ -66,6 +66,8 @@ pub use windows::{
 pub use mac::MacPlatform;
 #[cfg(windows)]
 pub use win::WinPlatform;
+#[cfg(windows)]
+pub use win_windows::round_corners;
 
 /// The app in front.
 #[derive(Debug, Clone, PartialEq, Eq)]
