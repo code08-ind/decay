@@ -303,10 +303,10 @@ export function Panel() {
   const emptyTitle = t(`panel.none.${kind}`);
 
   return (
-    <div className="h-screen p-4">
+    <div className="panel-frame h-screen p-4">
       <main
         ref={box}
-        className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface shadow-panel"
+        className="panel-card flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface shadow-panel"
       >
         <h1 className="sr-only">{t('panel.title')}</h1>
         <div className="flex items-center gap-3 border-b border-line px-2 py-3 pe-4 focus-within:border-accent">

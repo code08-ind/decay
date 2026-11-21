@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
 import { followLocaleSetting, Localized } from './locale';
+import { applyChrome, chromeFlags, TitleBar } from './TitleBar';
 import { followThemeSetting } from './theme';
 import { Library } from './views/Library';
 import { Onboarding } from './views/Onboarding';
@@ -21,6 +22,9 @@ const View =
         ? Onboarding
         : Library;
 if (label === 'panel') document.documentElement.classList.add('panel-window');
+// Windows: the frame and backdrop Rust gave this window (`shell::page_query`).
+const chrome = chromeFlags(window.location.search);
+applyChrome(chrome);
 followThemeSetting();
 const languageKnown = followLocaleSetting();
 
@@ -44,7 +48,20 @@ if (root) {
   void languageKnown.then(() =>
     createRoot(root).render(
       <StrictMode>
-        <Localized render={() => <View />} />
+        <Localized
+          render={() =>
+            chrome.custom ? (
+              <div className="flex h-screen flex-col">
+                <TitleBar resizable={label !== 'onboarding'} />
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <View />
+                </div>
+              </div>
+            ) : (
+              <View />
+            )
+          }
+        />
       </StrictMode>,
     ),
   );

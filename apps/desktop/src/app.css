@@ -6,3 +6,33 @@ html.panel-window,
 html.panel-window body {
   background: transparent;
 }
+
+/* The height a view fills: the window, less the Windows title bar (TitleBar.tsx). */
+:root {
+  --view-h: 100vh;
+}
+html[data-chrome="custom"] {
+  --view-h: calc(100vh - 2rem);
+}
+
+/* Windows 11: the window is transparent over a system backdrop, so the page lets it
+   through (shell::page_query). Mica: the title bar sits on the backdrop itself and the
+   page's canvas is slightly translucent. */
+html[data-backdrop],
+html[data-backdrop] body {
+  background: transparent;
+}
+html[data-backdrop="mica"] .bg-canvas {
+  background-color: color-mix(in srgb, var(--canvas) 84%, transparent);
+}
+
+/* Acrylic: the window is the panel card (the system rounds and shadows it). */
+html[data-backdrop="acrylic"] .panel-frame {
+  padding: 0;
+}
+html[data-backdrop="acrylic"] .panel-card {
+  border-width: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: color-mix(in srgb, var(--surface) 76%, transparent);
+}

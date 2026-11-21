@@ -109,7 +109,7 @@ export function Onboarding() {
         : { label: t('onboarding.continue'), onClick: () => go(next(step)) };
 
   return (
-    <main className="flex h-screen gap-4 bg-canvas p-4 text-ink">
+    <main className="flex h-(--view-h) gap-4 bg-canvas p-4 text-ink">
       <Sidebar step={step} />
       <section
         aria-labelledby="step-title"

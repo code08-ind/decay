@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use serde_json::json;
+use tauri::window::{Effect, EffectsBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
@@ -155,21 +156,98 @@ fn spec(window: Window) -> (String, f64, f64) {
     }
 }
 
+/// How a window is framed (UI Design Guidelines §8).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Chrome {
+    /// The system's title bar (macOS; the macOS panel is an `NSPanel`).
+    Native,
+    /// Windows: no system frame; the page draws the title bar and caption buttons. `mica`
+    /// on Windows 11, where the window is transparent over the Mica backdrop (Windows 10
+    /// has none, so its window stays opaque).
+    Custom { mica: bool },
+    /// The search panel on Windows: frameless; `acrylic` on Windows 11 (the window is the
+    /// card, over an Acrylic backdrop), else a transparent window with the card drawn in it.
+    Panel { acrylic: bool },
+}
+
+/// The first Windows 11 build (Mica and Acrylic backdrops, rounded corners).
+const WINDOWS_11: u32 = 22_000;
+
+/// The chrome for `window`, given the Windows build number (`None`: not Windows).
+pub fn chrome(window: Window, windows_build: Option<u32>) -> Chrome {
+    let Some(build) = windows_build else { return Chrome::Native };
+    let eleven = build >= WINDOWS_11;
+    match window {
+        Window::Panel => Chrome::Panel { acrylic: eleven },
+        Window::Library | Window::Settings | Window::Onboarding => Chrome::Custom { mica: eleven },
+    }
+}
+
+/// The page's query string: tells the page which chrome it is in (`chrome=custom`: draw
+/// the title bar; `backdrop=mica|acrylic`: let the backdrop show through).
+pub fn page_query(chrome: Chrome) -> &'static str {
+    match chrome {
+        Chrome::Native | Chrome::Panel { acrylic: false } => "",
+        Chrome::Custom { mica: false } => "?chrome=custom",
+        Chrome::Custom { mica: true } => "?chrome=custom&backdrop=mica",
+        Chrome::Panel { acrylic: true } => "?backdrop=acrylic",
+    }
+}
+
+/// The panel window's size: with the margin for the card's own shadow, or (Acrylic) the
+/// card alone, which the system frames and shadows.
+pub fn panel_size(chrome: Chrome) -> (f64, f64) {
+    match chrome {
+        Chrome::Panel { acrylic: true } => (PANEL_SIZE.0 - 32.0, PANEL_SIZE.1 - 32.0),
+        _ => PANEL_SIZE,
+    }
+}
+
+/// The Windows build number (`CurrentBuildNumber`), read once; `None` elsewhere.
+pub fn windows_build() -> Option<u32> {
+    #[cfg(windows)]
+    {
+        static BUILD: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+        *BUILD.get_or_init(|| {
+            use winreg::RegKey;
+            use winreg::enums::HKEY_LOCAL_MACHINE;
+            RegKey::predef(HKEY_LOCAL_MACHINE)
+                .open_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+                .and_then(|k| k.get_value::<String, _>("CurrentBuildNumber"))
+                .ok()
+                .and_then(|b| b.trim().parse().ok())
+                // Unreadable: Windows all the same (the plain variants work everywhere).
+                .or(Some(0))
+        })
+    }
+    #[cfg(not(windows))]
+    None
+}
+
 fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewWindow> {
     let (title, w, h) = spec(window);
-    let url = WebviewUrl::App(format!("index.html#{route}").into());
+    let chrome = chrome(window, windows_build());
+    let url = WebviewUrl::App(format!("index.html{}#{route}", page_query(chrome)).into());
     let theme =
         *app.state::<Shell>().theme.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let builder = WebviewWindowBuilder::new(app, window.label(), url)
         .title(title)
         .inner_size(w, h)
         .theme(theme);
+    let builder = match chrome {
+        Chrome::Native => builder,
+        Chrome::Custom { mica } => framed(builder.decorations(false), mica, Effect::Mica),
+        Chrome::Panel { acrylic } => framed(builder, acrylic, Effect::Acrylic),
+    };
     match window {
-        // Windows (macOS uses `mac_panel`): an undecorated, transparent, always-on-top window.
+        // Windows (macOS uses `mac_panel`): an undecorated, always-on-top window.
         Window::Panel => builder
-            .inner_size(PANEL_SIZE.0, PANEL_SIZE.1)
+            .inner_size(panel_size(chrome).0, panel_size(chrome).1)
             .transparent(true)
             .decorations(false)
+            // The system shadow and rounded corners frame the Acrylic card; the plain
+            // window draws its own card and shadow inside a transparent margin.
+            .shadow(matches!(chrome, Chrome::Panel { acrylic: true }))
             .always_on_top(true)
             .skip_taskbar(true)
             .resizable(false)
@@ -183,6 +261,19 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
         }
         // UI Design Guidelines: Library minimum 860×560.
         Window::Library => builder.min_inner_size(860.0, 560.0).center().build(),
+    }
+}
+
+/// A window over a system backdrop (transparent, so the backdrop shows), or as it was.
+fn framed(
+    builder: WebviewWindowBuilder<'_, tauri::Wry, AppHandle>,
+    backdrop: bool,
+    effect: Effect,
+) -> WebviewWindowBuilder<'_, tauri::Wry, AppHandle> {
+    if backdrop {
+        builder.transparent(true).effects(EffectsBuilder::new().effect(effect).build())
+    } else {
+        builder
     }
 }
 
@@ -244,7 +335,8 @@ fn place_panel(app: &AppHandle, panel: &WebviewWindow) {
     let scale = m.scale_factor();
     let pos = m.position().to_logical::<f64>(scale);
     let size = m.size().to_logical::<f64>(scale);
-    let (x, y) = panel_origin((pos.x, pos.y, size.width, size.height), PANEL_SIZE);
+    let panel_size = panel_size(chrome(Window::Panel, windows_build()));
+    let (x, y) = panel_origin((pos.x, pos.y, size.width, size.height), panel_size);
     let _ = panel.set_position(tauri::LogicalPosition::new(x, y));
 }
 
@@ -581,6 +673,31 @@ mod tests {
         );
         // A panel taller than the screen stays on it.
         assert_eq!(panel_origin((0.0, 0.0, 800.0, 400.0), (712.0, 512.0)), (44.0, 0.0));
+    }
+
+    #[test]
+    fn windows_draws_its_own_chrome_with_backdrops_on_windows_11() {
+        // macOS: the system's.
+        for w in [Window::Library, Window::Settings, Window::Onboarding, Window::Panel] {
+            assert_eq!(chrome(w, None), Chrome::Native);
+        }
+        assert_eq!(page_query(Chrome::Native), "");
+        // Windows 10 (19045): a custom title bar over an opaque page; the plain panel.
+        assert_eq!(chrome(Window::Library, Some(19_045)), Chrome::Custom { mica: false });
+        assert_eq!(chrome(Window::Panel, Some(19_045)), Chrome::Panel { acrylic: false });
+        assert_eq!(page_query(Chrome::Custom { mica: false }), "?chrome=custom");
+        assert_eq!(page_query(Chrome::Panel { acrylic: false }), "");
+        assert_eq!(panel_size(Chrome::Panel { acrylic: false }), PANEL_SIZE);
+        // Windows 11: Mica windows, an Acrylic panel that is just the card.
+        for w in [Window::Library, Window::Settings, Window::Onboarding] {
+            assert_eq!(chrome(w, Some(22_000)), Chrome::Custom { mica: true });
+        }
+        assert_eq!(chrome(Window::Panel, Some(26_100)), Chrome::Panel { acrylic: true });
+        assert_eq!(page_query(Chrome::Custom { mica: true }), "?chrome=custom&backdrop=mica");
+        assert_eq!(page_query(Chrome::Panel { acrylic: true }), "?backdrop=acrylic");
+        assert_eq!(panel_size(Chrome::Panel { acrylic: true }), (680.0, 480.0));
+        // An unreadable build number (0) gets the plain variants.
+        assert_eq!(chrome(Window::Settings, Some(0)), Chrome::Custom { mica: false });
     }
 
     #[test]

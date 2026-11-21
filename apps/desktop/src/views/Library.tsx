@@ -142,9 +142,10 @@ export function Library() {
 
   const page = { status, version, go, notify: (t: string) => notify(t), run, refresh };
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-(--view-h) bg-canvas text-ink">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-3">
-        <div className="flex items-center gap-2">
+        {/* Windows shows the leaf and name in its title bar. */}
+        <div className="flex items-center gap-2 in-data-[chrome=custom]:hidden">
           <Leaf size={20} className="text-accent" aria-hidden />
           <span className="font-serif text-xl">Decay</span>
         </div>

@@ -103,7 +103,7 @@ export function Settings() {
   };
   const props = { settings, save, notify, fail };
   return (
-    <div className="flex h-screen bg-canvas text-ink">
+    <div className="flex h-(--view-h) bg-canvas text-ink">
       <nav
         aria-label={t('settings.title')}
         className="flex w-56 shrink-0 flex-col border-e border-line p-3"
