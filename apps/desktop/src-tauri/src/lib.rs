@@ -29,6 +29,9 @@ mod menu;
 mod metrics;
 mod notify;
 mod onboarding;
+// The tray popover is Windows-only; its placement is tested everywhere.
+#[cfg_attr(not(windows), allow(dead_code))]
+mod popover;
 mod profiles;
 mod rules;
 mod search;
@@ -430,6 +433,7 @@ pub fn run() {
         .manage(Core::default())
         .manage(Shell::new(support))
         .manage(tray::TrayState::default())
+        .manage(popover::PopoverState::default())
         .manage(update::Updates::default())
         .manage(notify::Notifier::default())
         .manage(transfer::PendingImport::default())
@@ -450,6 +454,8 @@ pub fn run() {
             onboarding::complete_onboarding,
             commands::ui_show_window,
             commands::ui_hide_panel,
+            commands::ui_open_search,
+            commands::ui_quit,
             commands::ui_take_pending,
             commands::get_settings,
             update::get_update_state,
@@ -508,6 +514,9 @@ pub fn run() {
         .on_window_event(|window, event| match event {
             WindowEvent::Focused(false) if window.label() == Window::Panel.label() => {
                 let _ = window.hide();
+            }
+            WindowEvent::Focused(false) if window.label() == popover::LABEL => {
+                popover::blurred(window.app_handle());
             }
             WindowEvent::Destroyed => shell::window_closed(window.app_handle(), window.label()),
             _ => {}

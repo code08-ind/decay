@@ -428,6 +428,21 @@ pub fn ui_hide_panel(app: AppHandle) -> Value {
     json!({})
 }
 
+/// The tray popover's search box: the search panel instead of the popover.
+#[tauri::command]
+pub fn ui_open_search(app: AppHandle) -> Value {
+    crate::popover::hide(&app);
+    shell::show_panel(&app, None);
+    json!({})
+}
+
+/// The tray popover's Quit (the tray menu's, from a page).
+#[tauri::command]
+pub fn ui_quit(app: AppHandle) -> Value {
+    shell::quit(&app);
+    json!({})
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,23 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "popover",
+  "description": "The Windows tray popover: status, the last sweep and its undo, holds, opening the other windows and the search panel, quitting",
+  "windows": ["popover"],
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-hide",
+    "core:app:allow-version",
+    "allow-get-status",
+    "allow-get-settings",
+    "allow-system-language",
+    "allow-list-sweeps",
+    "allow-undo-sweep",
+    "allow-hold",
+    "allow-release-hold",
+    "allow-resume",
+    "allow-ui-show-window",
+    "allow-ui-open-search",
+    "allow-ui-quit",
+    "allow-log-ui-error"
+  ]
+}

@@ -9,6 +9,7 @@ import { followThemeSetting } from './theme';
 import { Library } from './views/Library';
 import { Onboarding } from './views/Onboarding';
 import { Panel } from './views/Panel';
+import { Popover } from './views/Popover';
 import { Settings } from './views/Settings';
 
 // One bundle for every window; the window's label picks the view.
@@ -16,11 +17,13 @@ const label = getCurrentWindow().label;
 const View =
   label === 'panel'
     ? Panel
-    : label === 'settings'
-      ? Settings
-      : label === 'onboarding'
-        ? Onboarding
-        : Library;
+    : label === 'popover'
+      ? Popover
+      : label === 'settings'
+        ? Settings
+        : label === 'onboarding'
+          ? Onboarding
+          : Library;
 if (label === 'panel') document.documentElement.classList.add('panel-window');
 // Windows: the frame and backdrop Rust gave this window (`shell::page_query`).
 const chrome = chromeFlags(window.location.search);

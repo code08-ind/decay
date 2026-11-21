@@ -14,6 +14,8 @@ const COMMANDS: &[&str] = &[
     "request_accessibility",
     "ui_show_window",
     "ui_hide_panel",
+    "ui_open_search",
+    "ui_quit",
     "ui_take_pending",
     "get_settings",
     "update_settings",

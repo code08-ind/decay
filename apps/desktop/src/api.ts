@@ -346,6 +346,9 @@ export const api = {
   showWindow: (window: 'library' | 'settings' | 'onboarding', route?: string) =>
     invoke('ui_show_window', { window, route }),
   hidePanel: () => invoke('ui_hide_panel'),
+  /** The tray popover's search box: the search panel instead. */
+  openSearch: () => invoke('ui_open_search'),
+  quit: () => invoke('ui_quit'),
   takePending: () => invoke<Pending>('ui_take_pending'),
   search: (input: {
     query: string;

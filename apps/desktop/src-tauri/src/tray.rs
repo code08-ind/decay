@@ -91,7 +91,10 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
         .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("Decay")
         .menu(&menu)
-        .show_menu_on_left_click(true)
+        // Windows: a left click shows the popover, a right click the menu (UI Design
+        // Guidelines §8); macOS: the menu on either.
+        .show_menu_on_left_click(cfg!(not(windows)))
+        .on_tray_icon_event(|tray, event| on_icon(tray.app_handle(), &event))
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))
         .build(app)?;
     *lock(&app.state::<TrayState>().shown) = Some((entries, status_item));
@@ -116,6 +119,26 @@ fn light_taskbar() -> bool {
         .and_then(|k| k.get_value::<u32, _>("SystemUsesLightTheme"))
         .is_ok_and(|v| v != 0)
 }
+
+/// Windows: a left click (on release) toggles the popover beside the icon.
+#[cfg(windows)]
+fn on_icon(app: &AppHandle, event: &tauri::tray::TrayIconEvent) {
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
+    if let TrayIconEvent::Click {
+        button: MouseButton::Left,
+        button_state: MouseButtonState::Up,
+        rect,
+        ..
+    } = event
+    {
+        let pos = rect.position.to_physical::<f64>(1.0);
+        let size = rect.size.to_physical::<f64>(1.0);
+        crate::popover::toggle(app, (pos.x, pos.y, size.width, size.height));
+    }
+}
+
+#[cfg(not(windows))]
+fn on_icon(_: &AppHandle, _: &tauri::tray::TrayIconEvent) {}
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)

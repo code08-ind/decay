@@ -236,8 +236,8 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
         .theme(theme);
     let builder = match chrome {
         Chrome::Native => builder,
-        Chrome::Custom { mica } => framed(builder.decorations(false), mica, Effect::Mica),
-        Chrome::Panel { acrylic } => framed(builder, acrylic, Effect::Acrylic),
+        Chrome::Custom { mica } => backdrop(builder.decorations(false), mica, Effect::Mica),
+        Chrome::Panel { acrylic } => backdrop(builder, acrylic, Effect::Acrylic),
     };
     match window {
         // Windows (macOS uses `mac_panel`): an undecorated, always-on-top window.
@@ -265,7 +265,7 @@ fn build(app: &AppHandle, window: Window, route: &str) -> tauri::Result<WebviewW
 }
 
 /// A window over a system backdrop (transparent, so the backdrop shows), or as it was.
-fn framed(
+pub fn backdrop(
     builder: WebviewWindowBuilder<'_, tauri::Wry, AppHandle>,
     backdrop: bool,
     effect: Effect,
