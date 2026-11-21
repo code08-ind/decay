@@ -15,6 +15,8 @@ use crate::menu::{self, Entry, id};
 use crate::shell::{self, Shell};
 
 const TRAY: &str = "decay";
+/// The glyph (a template image: black on transparent; macOS tints it).
+const TEMPLATE: &[u8] = include_bytes!("../icons/tray/44x44.png");
 const HOLD_MS: i64 = 3_600_000;
 
 /// The entries on screen and the status item (relabelled in place).
@@ -24,6 +26,9 @@ type Shown = (Vec<Entry>, Option<MenuItem<Wry>>);
 #[derive(Default)]
 pub struct TrayState {
     shown: Mutex<Option<Shown>>,
+    /// Windows: the icon on screen (light taskbar, badge), redrawn only when it changes.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    drawn: Mutex<Option<(bool, Option<String>)>>,
 }
 
 impl std::fmt::Debug for TrayState {
@@ -75,12 +80,15 @@ fn build_menu(
 
 /// Creates the menu bar item.
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
-    let icon = Image::from_bytes(include_bytes!("../icons/tray/44x44.png"))?;
+    let icon = Image::from_bytes(TEMPLATE)?;
     let entries = current_entries(app);
     let (menu, status_item) = build_menu(app, &entries)?;
+    // Windows: the glyph in the taskbar's colour; `refresh` adds the count.
+    #[cfg(windows)]
+    let icon = windows_icon(&icon, light_taskbar(), None);
     TrayIconBuilder::with_id(TRAY)
         .icon(icon)
-        .icon_as_template(true)
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("Decay")
         .menu(&menu)
         .show_menu_on_left_click(true)
@@ -88,6 +96,25 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
         .build(app)?;
     *lock(&app.state::<TrayState>().shown) = Some((entries, status_item));
     Ok(())
+}
+
+/// Windows: the notification-area icon for a taskbar (see `tray_icon`).
+#[cfg(windows)]
+fn windows_icon(template: &Image<'_>, light: bool, badge: Option<&str>) -> Image<'static> {
+    let img = crate::tray_icon::render(template.rgba(), template.width(), light, badge);
+    Image::new_owned(img.pixels, img.side, img.side)
+}
+
+/// Windows: whether the taskbar is light (`SystemUsesLightTheme`; dark when unset, as on
+/// Windows 10's default). Read at each refresh, so a theme switch shows at the next update.
+#[cfg(windows)]
+fn light_taskbar() -> bool {
+    use winreg::RegKey;
+    use winreg::enums::HKEY_CURRENT_USER;
+    RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+        .and_then(|k| k.get_value::<u32, _>("SystemUsesLightTheme"))
+        .is_ok_and(|v| v != 0)
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -103,8 +130,19 @@ pub fn refresh(app: &AppHandle) {
     let badge = if failed { Some("!".to_owned()) } else { menu::badge(status.as_ref()) };
     #[cfg(target_os = "macos")]
     let _ = tray.set_title(badge.as_deref());
-    #[cfg(not(target_os = "macos"))]
-    let _ = &badge; // Windows: the count is in the tooltip (an icon overlay comes later).
+    #[cfg(windows)]
+    {
+        let now = (light_taskbar(), badge.clone());
+        let mut drawn = lock(&app.state::<TrayState>().drawn);
+        if drawn.as_ref() != Some(&now)
+            && let Ok(template) = Image::from_bytes(TEMPLATE)
+        {
+            let _ = tray.set_icon(Some(windows_icon(&template, now.0, now.1.as_deref())));
+            *drawn = Some(now);
+        }
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
+    let _ = &badge;
     let _ = tray.set_tooltip(Some(menu::tooltip(status.as_ref(), &offset_at)));
 
     let entries = current_entries(app);

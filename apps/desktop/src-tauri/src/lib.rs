@@ -36,6 +36,9 @@ mod shell;
 mod summary;
 mod transfer;
 mod tray;
+// Only the Windows tray draws its icon; the drawing is tested everywhere.
+#[cfg_attr(not(windows), allow(dead_code))]
+mod tray_icon;
 mod update;
 
 use decay_engine::EngineEvent;
