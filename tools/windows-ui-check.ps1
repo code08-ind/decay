@@ -288,11 +288,12 @@ try {
   # Snap by dragging the title bar to the screen's left edge.
   Keys @(0x5B, 0x28)  # Win+Down: back to normal
   $r = [W]::Bounds($set)
-  Drag ($r.L + 200) ($r.T + 16) (-($r.L + 200) + 1) 100
+  # To the very edge (x = 0) at mid-height, away from the corner (quarter) zones.
+  Drag ($r.L + 200) ($r.T + 16) (-($r.L + 200)) ([int]($wa.Height / 2) - ($r.T + 16))
   Start-Sleep -Seconds 1
   $s2 = [W]::Bounds($set)
   Shot '05-settings-drag-snapped'
-  Check 'dragging to the left edge snaps' (([math]::Abs($s2.L - $wa.Left) -le 8) -and (($s2.B - $s2.T) -ge $wa.Height - 16)) (Size $s2)
+  Check 'dragging to the left edge snaps to the left half' (([math]::Abs($s2.L - $wa.Left) -le 8) -and ([math]::Abs(($s2.R - $s2.L) - $half) -le 16) -and (($s2.B - $s2.T) -ge $wa.Height - 16)) (Size $s2)
   Keys @(0x5B, 0x28)
   # Snap layouts (hovering Maximise) needs the system caption button: a custom one has none.
   Note 'Snap layouts flyout on hovering Maximise: not offered by a page-drawn caption button (known)'

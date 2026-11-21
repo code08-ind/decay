@@ -19,11 +19,30 @@ const GAP: f64 = 12.0;
 /// A click on the icon within this long after a focus loss hid the popover is the click
 /// that caused the loss: it closes the popover rather than showing it again.
 const REOPEN_GRACE: Duration = Duration::from_millis(350);
+/// The taskbar takes the focus back as the click that opened the popover completes: a
+/// focus loss this soon after showing is that, not the user leaving (seen on Windows
+/// Server 2022 / 2025 desktops), so the popover takes the focus back, once.
+const FOCUS_GRACE: Duration = Duration::from_millis(500);
 
-/// When the popover last hid because it lost focus.
+/// When the popover last hid because it lost focus, and when it was last shown.
 #[derive(Debug, Default)]
 pub struct PopoverState {
     hidden_at: Mutex<Option<Instant>>,
+    shown_at: Mutex<Option<Instant>>,
+}
+
+/// What to do when the popover loses focus, given when it was shown (taken: once).
+#[derive(Debug, PartialEq, Eq)]
+enum OnBlur {
+    Refocus,
+    Hide,
+}
+
+fn on_blur(shown_at: Option<Instant>, now: Instant) -> OnBlur {
+    match shown_at {
+        Some(at) if now.saturating_duration_since(at) < FOCUS_GRACE => OnBlur::Refocus,
+        _ => OnBlur::Hide,
+    }
 }
 
 /// A rectangle: x, y, width, height (one unit throughout: physical px).
@@ -132,6 +151,7 @@ pub fn toggle(app: &AppHandle, icon: Rect) {
     let _ = popover.emit("popover:open", ());
     let _ = popover.show();
     let _ = popover.set_focus();
+    *lock(&app.state::<PopoverState>().shown_at) = Some(Instant::now());
 }
 
 /// The popover lost focus: hide it (and remember when, for `toggle`).
@@ -139,6 +159,15 @@ pub fn blurred(app: &AppHandle) {
     if let Some(w) = app.get_webview_window(LABEL)
         && w.is_visible().unwrap_or(false)
     {
+        let shown_at = lock(&app.state::<PopoverState>().shown_at).take();
+        if on_blur(shown_at, Instant::now()) == OnBlur::Refocus {
+            tracing::info!("tray popover lost the focus as it opened; taking it back");
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(80));
+                let _ = w.set_focus();
+            });
+            return;
+        }
         let _ = w.hide();
         *lock(&app.state::<PopoverState>().hidden_at) = Some(Instant::now());
     }
@@ -201,6 +230,16 @@ mod tests {
     fn a_second_monitor_at_negative_coordinates() {
         let work = (-1920.0, 0.0, 1920.0, 1032.0);
         assert_eq!(origin((-200.0, 1040.0, 32.0, 32.0), work, SIZE, 12.0), (-372.0, 520.0));
+    }
+
+    #[test]
+    fn a_focus_loss_right_after_opening_takes_the_focus_back_once() {
+        let now = Instant::now();
+        let shown = now.checked_sub(Duration::from_millis(100));
+        assert_eq!(on_blur(shown, now), OnBlur::Refocus);
+        // Later, or a second loss (the time was taken): the user left; hide.
+        assert_eq!(on_blur(now.checked_sub(Duration::from_secs(2)), now), OnBlur::Hide);
+        assert_eq!(on_blur(None, now), OnBlur::Hide);
     }
 
     #[test]
