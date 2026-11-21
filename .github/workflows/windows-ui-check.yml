@@ -1,0 +1,41 @@
+name: Windows UI check
+
+# On demand: builds a debug Decay and drives it on hosted Windows desktops
+# (tools/windows-ui-check.ps1): the frameless windows' move / resize / maximise / Snap,
+# light and dark, the search panel and the tray popover. windows-2025 (build 26100) takes
+# the Windows 11 path (Mica, Acrylic); windows-2022 (build 20348) the Windows 10 one.
+# Screenshots and results.txt are uploaded as an artifact per runner.
+on:
+  workflow_dispatch:
+
+jobs:
+  ui:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ui-check
+      # A debug build with the pages embedded (no dev server); no installer.
+      - run: pnpm --filter @decay/desktop tauri build --debug --no-bundle
+      - name: Drive the app
+        timeout-minutes: 15
+        shell: pwsh
+        run: ./tools/windows-ui-check.ps1 -Exe target/debug/decay.exe -Out ui-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-check-${{ matrix.os }}
+          path: ui-check
