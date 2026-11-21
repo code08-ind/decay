@@ -133,7 +133,8 @@ pub fn refresh(app: &AppHandle) {
     #[cfg(windows)]
     {
         let now = (light_taskbar(), badge.clone());
-        let mut drawn = lock(&app.state::<TrayState>().drawn);
+        let state = app.state::<TrayState>();
+        let mut drawn = lock(&state.drawn);
         if drawn.as_ref() != Some(&now)
             && let Ok(template) = Image::from_bytes(TEMPLATE)
         {
