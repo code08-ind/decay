@@ -1,0 +1,43 @@
+name: Windows installer check
+
+# On demand: builds Decay's NSIS installer (release profile, unsigned, no updater files)
+# and checks install, the bundled native host, reinstall over a running host and
+# uninstall on a clean hosted Windows machine (tools/windows-installer-check.ps1).
+# The installer and results.txt are uploaded as an artifact.
+on:
+  workflow_dispatch:
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: installer-check
+      - run: pnpm --filter @decay/desktop tauri build --target x86_64-pc-windows-msvc
+      - name: Find the installer
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          "INSTALLER=$($exe.FullName)" >> $env:GITHUB_ENV
+          "{0}: {1:N1} MB" -f $exe.Name, ($exe.Length / 1MB)
+      - name: Install, reinstall, uninstall
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./tools/windows-installer-check.ps1 -Installer $env:INSTALLER -Out installer-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installer-check
+          path: |
+            installer-check
+            target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe

@@ -387,8 +387,12 @@ async fn fetch(channel: &str, app: &AppHandle) -> Result<Option<Update>, String>
         .filter(|_| cfg!(debug_assertions))
         .unwrap_or_else(|| endpoint(channel).to_owned());
     let url = url::Url::parse(&url).map_err(|e| e.to_string())?;
+    let handle = app.clone();
     let checker = app
         .updater_builder()
+        // Windows: installing starts the installer and ends this process at once
+        // (`std::process::exit`); the engine closes the database first.
+        .on_before_exit(move || handle.state::<crate::core::Core>().stop())
         .endpoints(vec![url])
         .and_then(|b| b.timeout(Duration::from_secs(30)).build())
         .map_err(|e| e.to_string())?;
@@ -456,10 +460,17 @@ pub async fn download(app: &AppHandle) {
 }
 
 /// Installs the downloaded update and starts the new version. Returns only on failure.
+/// Windows: the installer (passive: a progress bar only) replaces the app after it has
+/// exited and starts the new version itself; `install` doesn't return when it worked.
 fn install_and_restart(app: &AppHandle) {
     let Some((update, bytes)) = with(app, Slot::take_install) else { return };
     if let Err(e) = update.install(bytes) {
         tracing::warn!("update not installed: {e}");
+        // Windows: the installer couldn't be started after the engine was stopped for
+        // it. Start again rather than run on without the engine.
+        if !app.state::<crate::core::Core>().is_running() {
+            app.restart();
+        }
         with(app, |s| s.install_failed(e.to_string()));
         publish(app);
         return;
@@ -472,6 +483,8 @@ fn install_and_restart(app: &AppHandle) {
 /// At quit: installs a downloaded update when "Install on quit" was chosen.
 pub fn install_on_quit(app: &AppHandle) {
     let Some((update, bytes)) = with(app, Slot::take_quit_install) else { return };
+    // Windows: the installer must not start Decay again: the user quit it.
+    let update = update.restart_after_install(false);
     match update.install(bytes) {
         Ok(()) => tracing::info!(version = %update.version, "update installed at quit"),
         Err(e) => tracing::warn!("update not installed at quit: {e}"),

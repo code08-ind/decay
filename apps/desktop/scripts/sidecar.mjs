@@ -3,8 +3,13 @@
 // executable (Contents/MacOS/decay-host: the app installs the browser manifests that
 // point there, Software Design §4.8). Runs as Tauri's `beforeBundleCommand`.
 //
+// Windows: src-tauri/windows/installer-hooks.nsh puts it next to Decay.exe.
+//
 // macOS: the host is signed before bundling, with $APPLE_SIGNING_IDENTITY when set
 // (Developer ID, hardened runtime, timestamp: needed for notarization), else ad hoc.
+// Windows: signed with Azure Trusted Signing when $TRUSTED_SIGNING_ACCOUNT is set (the
+// release workflow sets it with the same account the installer is signed with), else
+// left unsigned.
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -56,6 +61,20 @@ if (triple.includes('apple-darwin')) {
     ...(real ? ['--timestamp'] : []),
     '--sign',
     identity,
+    out,
+  ]);
+}
+if (windows && process.env.TRUSTED_SIGNING_ACCOUNT) {
+  const env = process.env;
+  run('trusted-signing-cli', [
+    '-e',
+    env.TRUSTED_SIGNING_ENDPOINT,
+    '-a',
+    env.TRUSTED_SIGNING_ACCOUNT,
+    '-c',
+    env.TRUSTED_SIGNING_PROFILE,
+    '-d',
+    'Decay',
     out,
   ]);
 }

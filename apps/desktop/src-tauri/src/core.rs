@@ -164,6 +164,11 @@ impl Core {
         }
     }
 
+    /// Whether the engine runs (started and not stopped).
+    pub fn is_running(&self) -> bool {
+        self.runtime.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_some()
+    }
+
     /// Remembers the latest status (the engine thread calls it before the tray updates).
     pub fn set_status(&self, status: EngineStatus) {
         *self.status.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(status);
@@ -392,5 +397,19 @@ mod tests {
         assert!(!ran.load(SeqCst));
         core.stop();
         let _ = std::fs::remove_dir_all(&support);
+    }
+
+    /// The Windows uninstaller removes the host's registry entry for every browser the
+    /// app registers it with (`windows/installer-hooks.nsh`).
+    #[test]
+    fn the_uninstaller_forgets_every_browser_the_host_is_registered_with() {
+        let hooks = include_str!("../windows/installer-hooks.nsh");
+        for target in decay_host::install::TARGETS {
+            let Some(key) = target.win_key else { continue };
+            let entry = format!(
+                r#"DeleteRegKey HKCU "Software\{key}\NativeMessagingHosts\com.decay.host""#
+            );
+            assert!(hooks.contains(&entry), "{} missing from the uninstaller", target.name);
+        }
     }
 }

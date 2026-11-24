@@ -13,7 +13,12 @@ name: Release
 # required). Optional, for Developer ID signing + notarization (unsigned without them):
 # APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
 # APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID.
-# Windows builds join in Phase 3 (P3.4: installer, signing, the bundled host).
+#
+# Windows (build-windows, after build-macos so both land in the same draft and one
+# latest.json): an x64 NSIS installer, per user. Optional, for Azure Trusted Signing
+# (unsigned without them; SmartScreen warns): AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,
+# AZURE_TENANT_ID, and the repository variables TRUSTED_SIGNING_ENDPOINT,
+# TRUSTED_SIGNING_ACCOUNT, TRUSTED_SIGNING_PROFILE.
 
 on:
   push:
@@ -131,6 +136,75 @@ jobs:
           # and copies the draft's text into latest.json (the notes shown in the app).
           releaseBody: RELEASE NOTES GO HERE
           # The releases repo's own branch (this repo's commits don't exist there).
+          releaseCommitish: main
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          includeUpdaterJson: true
+
+  build-windows:
+    if: github.event_name == 'push'
+    # After macOS: tauri-action then finds the draft it made and merges this platform
+    # into its latest.json (two jobs at once would race to create both).
+    needs: build-macos
+    runs-on: windows-latest
+    env:
+      HAS_TRUSTED_SIGNING: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_TENANT_ID != '' && vars.TRUSTED_SIGNING_ACCOUNT != '' && vars.TRUSTED_SIGNING_ENDPOINT != '' && vars.TRUSTED_SIGNING_PROFILE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+
+      # Trusted Signing: the installer, the uninstaller and Decay.exe through Tauri's
+      # signCommand; decay-host.exe by scripts/sidecar.mjs (same account and profile).
+      - name: Signing settings
+        shell: bash
+        env:
+          ENDPOINT: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
+          PROFILE: ${{ vars.TRUSTED_SIGNING_PROFILE }}
+        run: |
+          if [ "$HAS_TRUSTED_SIGNING" != true ]; then
+            echo "::warning::No Trusted Signing settings: the Windows installer is unsigned (SmartScreen will warn)"
+            echo '{}' > apps/desktop/src-tauri/tauri.signing.conf.json
+            exit 0
+          fi
+          cargo install trusted-signing-cli --locked
+          {
+            printf 'TRUSTED_SIGNING_ENDPOINT=%s\n' "$ENDPOINT"
+            printf 'TRUSTED_SIGNING_ACCOUNT=%s\n' "$ACCOUNT"
+            printf 'TRUSTED_SIGNING_PROFILE=%s\n' "$PROFILE"
+          } >> "$GITHUB_ENV"
+          node -e '
+            const [e, a, p] = process.argv.slice(1);
+            const cmd = { cmd: "trusted-signing-cli", args: ["-e", e, "-a", a, "-c", p, "-d", "Decay", "%1"] };
+            require("fs").writeFileSync("apps/desktop/src-tauri/tauri.signing.conf.json",
+              JSON.stringify({ bundle: { windows: { signCommand: cmd } } }));' \
+            "$ENDPOINT" "$ACCOUNT" "$PROFILE"
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          DECAY_SENTRY_DSN: ${{ secrets.DECAY_SENTRY_DSN }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          args: --target x86_64-pc-windows-msvc --config src-tauri/tauri.release.conf.json --config src-tauri/tauri.signing.conf.json
+          owner: code08-ind
+          repo: decay-releases
+          tagName: ${{ github.ref_name }}
+          releaseName: Decay __VERSION__
+          releaseBody: RELEASE NOTES GO HERE
           releaseCommitish: main
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, '-') }}

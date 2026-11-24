@@ -1,7 +1,7 @@
 # Releasing Decay (desktop)
 
-How a version gets from a tag to users' Macs (P1.13, PRD F18). Workflow:
-`.github/workflows/release.yml`.
+How a version gets from a tag to users' Macs and Windows PCs (P1.13, P3.4, PRD F18).
+Workflow: `.github/workflows/release.yml`.
 
 ## How it works
 
@@ -31,12 +31,25 @@ How a version gets from a tag to users' Macs (P1.13, PRD F18). Workflow:
    The workflow then signs with hardened runtime and notarizes automatically. Nothing else changes.
 5. **Crash reports (optional):** create a Sentry project (platform: Rust) and save its DSN as the secret `DECAY_SENTRY_DSN`. It's compiled into release builds; users still have to turn crash reports on (Settings → Privacy & data → Diagnostics). Without it (or if it doesn't parse), the switch says the build can't send them. The client starts at launch either way but drops every event while the setting is off; after a user turns reports on, the first report may carry a count of events dropped before (a number only). In Sentry, also turn off IP address storage (Project → Settings → Security & Privacy → *Prevent Storing of IP Addresses*): the app sends no user data, but Sentry records the sender's IP unless told not to.
 
+6. **Windows signing (optional, Azure Trusted Signing):** without it the installer is unsigned and SmartScreen shows "Windows protected your PC" (More info → Run anyway) until the download builds reputation. Trusted Signing needs an Azure subscription and a validated identity (Microsoft has limited individual developers to some countries: check eligibility first; an OV/EV certificate is the alternative). Once you have an account and a certificate profile:
+   - an app registration (service principal) with the *Trusted Signing Certificate Profile Signer* role on the account; secrets `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`;
+   - repository **variables** (not secrets) `TRUSTED_SIGNING_ENDPOINT` (e.g. `https://eus.codesigning.azure.net`), `TRUSTED_SIGNING_ACCOUNT`, `TRUSTED_SIGNING_PROFILE`.
+
+   The Windows job then signs `decay-host.exe`, `Decay.exe`, the installer and the uninstaller. Nothing else changes.
+
+## Windows
+
+- **Installer:** one x64 NSIS installer, `Decay_<v>_x64-setup.exe`, **per user** (`%LOCALAPPDATA%\Decay`, no administrator prompt; matches the per-user data, pipe and native-host registry entries). No MSI for now: it installs per machine, which needs an administrator, and the updater would then need one too. WebView2 is fetched by a small bootstrapper when missing (Windows 11 and up-to-date Windows 10 have it).
+- **The native host:** `decay-host.exe` sits next to `Decay.exe`, added by `apps/desktop/src-tauri/windows/installer-hooks.nsh` from what `scripts/sidecar.mjs` staged. The installer ends a running `decay-host.exe` first (a browser keeps one per connected extension; the extension reconnects). Uninstalling removes the host's registry entries for Chrome, Chromium, Edge and Brave, and Windows' login item; ticking *Delete the application data* also removes `%APPDATA%\Decay` (the database key stays in Credential Manager as `com.decay.app` and is useless without it). An update keeps all of these.
+- **Updates:** the same `latest.json` lists `windows-x86_64` (the installer and its `.sig`). *Restart to update* stops the engine, runs the installer with a progress bar only (passive) and the installer starts the new version. *Install on quit* runs it at quit without starting Decay again.
+- **Checking an installer:** Actions → *Windows installer check* → Run workflow builds an unsigned installer and checks install, the host, reinstall over a running host and uninstall on a clean machine (`tools/windows-installer-check.ps1`; results in the run's artifact).
+
 ## Cutting a release
 
 1. Set the version in `apps/desktop/src-tauri/tauri.conf.json` (and `apps/desktop/package.json`, `apps/desktop/src-tauri/Cargo.toml` to keep them in step). A beta uses a pre-release version, e.g. `0.3.0-beta.1`. If the release has something worth telling, add its **What's New** entry (exactly this version) at the top of `apps/desktop/src/help/releases.ts`: it shows once in the Library after the update. Without one, nothing is shown.
 2. Commit, then tag exactly `v<version>` and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
-3. The **Release** workflow builds a universal (Apple silicon + Intel) app and uploads a **draft** release to `decay-releases` with `Decay_<v>_universal.dmg`, `Decay.app.tar.gz`, its `.sig` and `latest.json`. **Replace the draft's text** ("RELEASE NOTES GO HERE") with the release notes: Publish copies it into `latest.json`, and that's what Settings → Updates shows. Publish refuses a draft whose text wasn't changed.
-4. Try the draft's `.dmg` on a Mac.
+3. The **Release** workflow builds a universal (Apple silicon + Intel) app and uploads a **draft** release to `decay-releases` with `Decay_<v>_universal.dmg`, `Decay.app.tar.gz`, its `.sig` and `latest.json`; then the Windows job adds `Decay_<v>_x64-setup.exe`, its `.sig` and the Windows entry in `latest.json`. **Replace the draft's text** ("RELEASE NOTES GO HERE") with the release notes: Publish copies it into `latest.json`, and that's what Settings → Updates shows. Publish refuses a draft whose text wasn't changed.
+4. Try the draft's `.dmg` on a Mac and its `-setup.exe` on a Windows PC.
 5. **Publish:** Actions → Release → *Run workflow* with the tag. That writes the notes into `latest.json`, publishes the draft (a pre-release for beta tags, "Latest" for stable) and refreshes the beta manifest, unless the beta manifest already holds a newer version (e.g. a stable hotfix published after a newer beta): then it's left alone. From then on, installed copies find it within a day, or at once with *Check now*.
 
 To withdraw a bad release: mark it as a draft again (stable users stop seeing it), and re-run *Publish* for the previous good tag with **force_beta** ticked to point the beta manifest back at it. Installed copies never downgrade; ship a fixed, higher version.
