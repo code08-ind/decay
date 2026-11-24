@@ -11,14 +11,15 @@ export const TABS = [
   { id: 'privacy', label: 'settings.tab.privacy' },
   { id: 'shortcuts', label: 'settings.tab.shortcuts' },
   { id: 'notifications', label: 'settings.tab.notifications' },
+  { id: 'license', label: 'settings.tab.license' },
   { id: 'updates', label: 'settings.tab.updates' },
   { id: 'about', label: 'settings.tab.about' },
 ] as const satisfies readonly { id: string; label: Key }[];
 
 export type TabId = (typeof TABS)[number]['id'];
 
-/** The tab a route opens (`/aging`, deep links `decay://settings/{tab}`). Tabs not built
- * yet (license) open General. */
+/** The tab a route opens (`/aging`, deep links `decay://settings/{tab}`); anything else
+ * opens General. */
 export function tabFor(route: string): TabId {
   const name = route.replace(/^\//, '').split(/[/?]/)[0] ?? '';
   return (TABS.find((t) => t.id === name)?.id as TabId | undefined) ?? 'general';

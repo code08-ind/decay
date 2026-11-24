@@ -37,6 +37,10 @@ const api = {
   forgetProfile: vi.fn(),
   openExtensionStore: vi.fn(),
   showWindow: vi.fn(),
+  getLicense: vi.fn(),
+  activateLicense: vi.fn(),
+  deactivateLicense: vi.fn(),
+  startTrial: vi.fn(),
   getUpdateState: vi.fn(),
   checkForUpdates: vi.fn(),
   installUpdate: vi.fn(),
@@ -106,6 +110,7 @@ beforeEach(() => {
   api.previewExclude.mockResolvedValue({ count: 3 });
   api.detectBrowsers.mockResolvedValue([]);
   api.getUpdateState.mockResolvedValue(update({}));
+  api.getLicense.mockResolvedValue({ tier: 'free', trialAvailable: true });
   api.checkForUpdates.mockResolvedValue(update({ checkedAt: Date.now() }));
   api.installUpdate.mockResolvedValue(update({ phase: 'ready', installOnQuit: true }));
 });
@@ -138,6 +143,54 @@ describe('Settings', () => {
     expect(api.setMode).toHaveBeenCalledWith('automatic');
     fireEvent.click(screen.getByRole('switch', { name: 'Launch Decay at login' }));
     expect(api.setLaunchAtLogin).toHaveBeenCalledWith(false);
+  });
+
+  it('license: a key from a link is prefilled; activating, the trial and deactivating', async () => {
+    api.takePending.mockResolvedValue({ prefill: null, licenseKey: 'DECAY-ABCDE-12345' });
+    api.activateLicense.mockResolvedValue({ tier: 'pro', trialAvailable: true, email: 'me@x.com' });
+    await show('/general');
+    await flush();
+    expect(screen.getByText('You’re using Decay Free.')).toBeTruthy();
+    const field = screen.getByRole('textbox', { name: 'License key' }) as HTMLTextAreaElement;
+    expect(field.value).toBe('DECAY-ABCDE-12345');
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
+    await flush();
+    expect(api.activateLicense).toHaveBeenCalledWith('DECAY-ABCDE-12345');
+    expect(screen.getByText('Decay Pro is active.')).toBeTruthy();
+    expect(screen.getByText('Licensed to me@x.com.')).toBeTruthy();
+    api.deactivateLicense.mockResolvedValue({ tier: 'free', trialAvailable: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Deactivate on this computer' }));
+    await flush();
+    expect(api.deactivateLicense).toHaveBeenCalled();
+    api.startTrial.mockResolvedValue({ tier: 'trial', trialDaysLeft: 14, trialAvailable: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Start free trial' }));
+    await flush();
+    expect(screen.getByText('Pro trial: 14 days left.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Start free trial' })).toBeNull();
+  });
+
+  it('license: a refused key shows why; a Pro refusal elsewhere offers the Pro tab', async () => {
+    api.activateLicense.mockRejectedValue({
+      code: 'INVALID_INPUT',
+      message: 'This license key isn’t valid.',
+    });
+    await show('/license');
+    fireEvent.change(screen.getByRole('textbox', { name: 'License key' }), {
+      target: { value: 'DECAY-X' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
+    await flush();
+    expect(screen.getByText('This license key isn’t valid.')).toBeTruthy();
+    api.updateSettings.mockRejectedValue({ code: 'PRO_REQUIRED', message: 'needs Pro' });
+    cleanup();
+    await show('/general');
+    fireEvent.click(screen.getByRole('radio', { name: 'Dark' }));
+    await flush();
+    fireEvent.click(screen.getByRole('button', { name: 'See Decay Pro' }));
+    await flush();
+    expect(screen.getByRole('tab', { name: 'Decay Pro' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
   });
 
   it('switches tabs with the arrow keys', async () => {

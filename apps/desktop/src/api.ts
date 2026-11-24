@@ -26,6 +26,20 @@ export interface EngineStatus {
   inMeeting: boolean;
 }
 
+/** The license (P4.2, `get_license` / `license:changed`). */
+export interface License {
+  tier: 'free' | 'trial' | 'pro';
+  trialDaysLeft?: number;
+  trialEndsAt?: number;
+  trialAvailable: boolean;
+  email?: string;
+}
+
+/** A refusal because the feature needs Pro (`PRO_REQUIRED`). */
+export function isProRequired(e: unknown): boolean {
+  return !!e && typeof e === 'object' && (e as AppError).code === 'PRO_REQUIRED';
+}
+
 export interface AppError {
   code: string;
   message: string;
@@ -412,6 +426,10 @@ export const api = {
   systemLanguage: () => invoke<string>('system_language'),
   getDailySummary: (dayStart: number, dayEnd: number) =>
     invoke<DailySummary>('get_daily_summary', { input: { dayStart, dayEnd } }),
+  getLicense: () => invoke<License>('get_license'),
+  activateLicense: (key: string) => invoke<License>('activate_license', { key }),
+  deactivateLicense: () => invoke<License>('deactivate_license'),
+  startTrial: () => invoke<License>('start_trial'),
   getUpdateState: () => invoke<UpdateState>('get_update_state'),
   checkForUpdates: () => invoke<UpdateState>('check_for_updates'),
   installUpdate: (when: 'now' | 'onQuit') => invoke<UpdateState>('install_update', { when }),

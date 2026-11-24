@@ -12,12 +12,20 @@ import {
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
-import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
-import { api, errorMessage } from '../api';
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { api, errorMessage, isProRequired } from '../api';
 import { About } from '../settings/About';
 import { Aging } from '../settings/Aging';
 import { Browsers } from '../settings/Browsers';
 import { General } from '../settings/General';
+import { License } from '../settings/License';
 import { TABS, type TabId, tabFor } from '../settings/model';
 import { Notifications } from '../settings/Notifications';
 import { Privacy } from '../settings/Privacy';
@@ -36,6 +44,7 @@ const ICONS: Record<TabId, ReactNode> = {
   privacy: <Lock size={16} />,
   shortcuts: <Keyboard size={16} />,
   notifications: <Bell size={16} />,
+  license: <KeyRound size={16} />,
   updates: <RefreshCw size={16} />,
   about: <Info size={16} />,
 };
@@ -47,11 +56,17 @@ export function Settings() {
   const tab = tabFor(route);
   const status = useStatus();
   const [error, setError] = useState('');
+  // The error was a Pro refusal: it offers the Pro tab.
+  const [errorPro, setErrorPro] = useState(false);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const [licenseKey, setLicenseKey] = useState<string | null>(null);
+  const keyTaken = useCallback(() => setLicenseKey(null), []);
   // Bumped when rules change here: lists reload.
   const [version, setVersion] = useState(0);
-  const fail = (e: unknown) => setError(errorMessage(e));
+  const fail = (e: unknown) => {
+    setError(errorMessage(e));
+    setErrorPro(isProRequired(e));
+  };
   const notify = (text: string) => {
     setError('');
     setToast({ id: Date.now() + Math.random(), text });
@@ -63,12 +78,29 @@ export function Settings() {
       .then(() => done && notify(done))
       .catch(fail);
   };
+  const go = useCallback(
+    (id: string) => {
+      setError('');
+      setRoute(`/${id}`);
+      try {
+        history.replaceState(null, '', `#/${id}`);
+      } catch {
+        // not available (tests)
+      }
+    },
+    [setRoute],
+  );
   useEffect(() => {
     // A license key from decay://license/activate waits here to be confirmed.
     const take = () =>
       api
         .takePending()
-        .then((p) => p.licenseKey && setLicenseKey(p.licenseKey))
+        .then((p) => {
+          if (p.licenseKey) {
+            setLicenseKey(p.licenseKey);
+            go('license');
+          }
+        })
         .catch(() => {});
     take();
     const off = listen('pending', take);
@@ -78,16 +110,7 @@ export function Settings() {
       off.then((f) => f()).catch(() => {});
       offRules.then((f) => f()).catch(() => {});
     };
-  }, []);
-  const go = (id: string) => {
-    setError('');
-    setRoute(`/${id}`);
-    try {
-      history.replaceState(null, '', `#/${id}`);
-    } catch {
-      // not available (tests)
-    }
-  };
+  }, [go]);
   // The sidebar is a vertical tab list: arrow keys move, Home / End jump.
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const onKey = (e: KeyboardEvent, i: number) => {
@@ -157,19 +180,24 @@ export function Settings() {
           aria-labelledby={`settings-tab-${tab}`}
           className="mx-auto grid max-w-3xl gap-4 p-6"
         >
-          {licenseKey && (
-            <Banner
-              tone="success"
-              icon={<KeyRound size={16} />}
-              action={<Button onClick={() => setLicenseKey(null)}>{t('common.dismiss')}</Button>}
-            >
-              {t('settings.license', { last4: licenseKey.slice(-4) })}
-            </Banner>
-          )}
           {error && (
             <Banner
               tone="danger"
-              action={<Button onClick={() => setError('')}>{t('common.dismiss')}</Button>}
+              action={
+                <div className="flex gap-2">
+                  {errorPro && (
+                    <Button
+                      onClick={() => {
+                        setError('');
+                        go('license');
+                      }}
+                    >
+                      {t('settings.seePro')}
+                    </Button>
+                  )}
+                  <Button onClick={() => setError('')}>{t('common.dismiss')}</Button>
+                </div>
+              }
             >
               {error}
             </Banner>
@@ -186,6 +214,9 @@ export function Settings() {
             )}
             {tab === 'shortcuts' && <Shortcuts {...props} />}
             {tab === 'notifications' && <Notifications {...props} />}
+            {tab === 'license' && (
+              <License pendingKey={licenseKey} keyTaken={keyTaken} notify={notify} />
+            )}
             {tab === 'updates' && <Updates {...props} />}
             {tab === 'about' && <About go={go} fail={fail} />}
           </div>

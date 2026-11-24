@@ -37,6 +37,12 @@ Workflow: `.github/workflows/release.yml`.
 
    The Windows job then signs `decay-host.exe`, `Decay.exe`, the installer and the uninstaller. Nothing else changes.
 
+## Licenses (Decay Pro, P4.2)
+
+- **Signing key:** generated on 24 Nov 2026 at `~/.decay/license-signing.key` (32 private bytes as hex, mode 0600). Its public half is compiled into the app (`crates/decay-license/src/public_key.in`). **Back the file up** (a password manager): without it no new key can be issued that existing installations accept, and replacing it means a new public key in a new release, after which old keys stop working.
+- **Issuing by hand** (support, testers): `cargo run -p decay-license --bin decay-license-tool -- issue ~/.decay/license-signing.key someone@example.com [license-id]`; `… -- verify <key>` checks one. P4.3's purchase webhook issues keys the same way (`decay_license::issue`).
+- **Activation link:** `decay://license/activate?key=<key>` opens Settings → Decay Pro with the key filled in (nothing is activated without a click).
+
 ## Windows
 
 - **Installer:** one x64 NSIS installer, `Decay_<v>_x64-setup.exe`, **per user** (`%LOCALAPPDATA%\Decay`, no administrator prompt; matches the per-user data, pipe and native-host registry entries). No MSI for now: it installs per machine, which needs an administrator, and the updater would then need one too. WebView2 is fetched by a small bootstrapper when missing (Windows 11 and up-to-date Windows 10 have it).

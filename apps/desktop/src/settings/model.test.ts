@@ -35,7 +35,7 @@ describe('settings model', () => {
   it('maps routes to tabs', () => {
     expect(tabFor('/aging')).toBe('aging');
     expect(tabFor('/protection?x')).toBe('protection');
-    expect(tabFor('/license?activate')).toBe('general');
+    expect(tabFor('/license?activate')).toBe('license');
     expect(tabFor('/')).toBe('general');
   });
 
