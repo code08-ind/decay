@@ -392,7 +392,8 @@ export const api = {
   saveMetricsFile: (kind: 'beta' | 'csv', content: string) =>
     invoke<string | null>('save_metrics_file', { kind, content }),
   /** Help and feedback (P2.7): opens a fixed link (no address leaves the page). */
-  openLink: (link: 'help' | 'changelog' | 'feedback') => invoke<void>('open_link', { link }),
+  openLink: (link: 'help' | 'changelog' | 'feedback' | 'buy') =>
+    invoke<void>('open_link', { link }),
   /** The running version, and whether its "What's New" is still to be shown. */
   whatsNew: () => invoke<{ version: string; show: boolean }>('whats_new'),
   /** "Got it": not shown again for this version; `later`: only for the rest of this run. */

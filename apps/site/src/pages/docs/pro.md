@@ -14,6 +14,8 @@ Decay is free. **Decay Pro** is a one-time purchase ($24, no subscription) that 
 - **Unlimited custom timing rules** (three without Pro).
 - **Batch names** made on your computer (Settings → Privacy & data): Apple's on-device model on Macs with Apple Intelligence, the words the tabs share elsewhere.
 
+[**Buy Decay Pro — $24**](/buy) (checkout by Paddle, our merchant of record).
+
 ## Trial
 
 Settings → Decay Pro → **Start free trial**: 14 days of Pro, once per computer, no account.

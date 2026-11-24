@@ -136,6 +136,15 @@ export function License(props: {
               >
                 {t('license.activate')}
               </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setError('');
+                  api.openLink('buy').catch((e) => setError(errorMessage(e)));
+                }}
+              >
+                {t('license.buy')}
+              </Button>
               {license?.trialAvailable && (
                 <Button
                   disabled={busy}

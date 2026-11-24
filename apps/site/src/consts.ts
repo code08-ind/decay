@@ -19,3 +19,14 @@ export const DOCS = [
   { href: '/docs/privacy', title: 'Privacy and your data' },
   { href: '/docs/troubleshooting', title: 'Troubleshooting' },
 ] as const;
+
+/**
+ * Paddle (merchant of record for Decay Pro, P4.3). The client-side token and the price id
+ * are public by design (they can only open a checkout). Sandbox until Paddle approves the
+ * live account; then switch all three to the live values (Docs/Release.md "Selling Decay Pro").
+ */
+export const PADDLE = {
+  environment: 'sandbox' as 'sandbox' | 'production',
+  clientToken: 'test_3aa89cb8d041d5bf6cafdfc0973',
+  priceId: 'pri_01m878svs4bgc3z7wq69kpp85z',
+};

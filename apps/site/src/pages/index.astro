@@ -187,7 +187,10 @@ const faq = [
         <h3 class="font-serif text-2xl">Decay Pro</h3>
         <p class="text-sm text-muted"><span class="font-serif text-3xl text-ink">$24</span> one-time · 14-day free trial · no account</p>
         <ul class="mt-5 grid gap-2 text-sm">{pro.map((f) => <li>✓ {f}</li>)}</ul>
-        <a href="/docs/pro" class="mt-8 inline-block rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink">About Decay Pro</a>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="/buy" class="inline-block rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink">Buy Decay Pro — $24</a>
+          <a href="/docs/pro" class="text-sm underline">About Decay Pro</a>
+        </div>
       </article>
     </div>
   </section>

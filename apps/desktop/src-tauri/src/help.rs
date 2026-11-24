@@ -25,6 +25,8 @@ use crate::i18n::{t, tf};
 const RELEASES_REPO: &str = "https://github.com/code08-ind/decay-releases";
 /// Help: the website's docs (P4.4, apps/site; the one place to change).
 pub const HELP_URL: &str = "https://decay.aryangarg.com/docs";
+/// Buying Decay Pro: the website's checkout page.
+pub const BUY_URL: &str = "https://decay.aryangarg.com/buy";
 /// Every release with its notes.
 pub const CHANGELOG_URL: &str = "https://github.com/code08-ind/decay-releases/releases";
 
@@ -47,6 +49,8 @@ pub enum Link {
     Help,
     Changelog,
     Feedback,
+    /// Buying Decay Pro (P4.3): the website's checkout page (Paddle).
+    Buy,
 }
 
 /// The new-issue page, prefilled: a title to replace, questions, and version / OS.
@@ -66,6 +70,7 @@ pub fn link_url(link: Link, version: &str, os: &str) -> String {
         Link::Help => HELP_URL.to_owned(),
         Link::Changelog => CHANGELOG_URL.to_owned(),
         Link::Feedback => feedback_url(version, os),
+        Link::Buy => BUY_URL.to_owned(),
     }
 }
 
@@ -315,6 +320,7 @@ mod tests {
         );
         assert_eq!(q.len(), 2);
         assert_eq!(link_url(Link::Help, "1", "x"), HELP_URL);
+        assert_eq!(link_url(Link::Buy, "1", "x"), BUY_URL);
         assert_eq!(link_url(Link::Changelog, "1", "x"), CHANGELOG_URL);
     }
 

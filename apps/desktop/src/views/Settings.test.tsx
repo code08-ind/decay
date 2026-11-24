@@ -151,6 +151,9 @@ describe('Settings', () => {
     await show('/general');
     await flush();
     expect(screen.getByText('You’re using Decay Free.')).toBeTruthy();
+    api.openLink.mockResolvedValue(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Buy Decay Pro — $24' }));
+    expect(api.openLink).toHaveBeenCalledWith('buy');
     const field = screen.getByRole('textbox', { name: 'License key' }) as HTMLTextAreaElement;
     expect(field.value).toBe('DECAY-ABCDE-12345');
     fireEvent.click(screen.getByRole('button', { name: 'Activate' }));

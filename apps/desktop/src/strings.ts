@@ -76,6 +76,7 @@ export const en = {
   'license.keyPlaceholder': 'DECAY-…',
   'license.keyHint': 'Paste the key from your purchase email.',
   'license.activate': 'Activate',
+  'license.buy': 'Buy Decay Pro — $24',
   'license.activated': 'Decay Pro is active',
   'license.startTrial': 'Start free trial',
   'license.trialStarted': 'Your 14-day Pro trial has started',
