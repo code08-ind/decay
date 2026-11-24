@@ -14,7 +14,7 @@ The desktop app (macOS and Windows) does the archiving the extension does, for y
 - **Crash reports, only if you turn them on** (Settings → Privacy & data, off by default): when the app crashes, a report goes to Sentry, a crash-reporting service. Before it's sent, Decay removes the computer's name, any user information, file paths and addresses, and keeps only the error and where it happened in Decay's code. Decay's Sentry project is set not to store IP addresses.
 - **Nothing else.** No account, no analytics, no advertising.
 
-**Decay Pro.** Your license key is checked on your computer; it's never sent anywhere. If you buy Pro, the purchase is handled by Lemon Squeezy (the merchant of record) under its own privacy policy, and your license key is emailed to you; Decay itself receives your email address only as part of the key you paste in.
+**Decay Pro.** Your license key is checked on your computer; it's never sent anywhere. If you buy Pro, the purchase is handled by Paddle (the merchant of record) under its own privacy policy, and your license key is emailed to you; Decay itself receives your email address only as part of the key you paste in.
 
 **Batch names (Pro, off by default).** If you turn on *Name archived batches on this computer*, Decay names each group of archived tabs. On Macs with Apple Intelligence it uses Apple's on-device model, which runs on your Mac (Decay sends it the titles and sites of that group only); elsewhere it uses the words the titles share. The names are stored with your archive and nothing is sent anywhere. Turning the setting off deletes every name.
 

@@ -1,5 +1,5 @@
-// The license email (P4.3), sent through Resend's HTTP API. The same order always sends
-// the same key; Resend's idempotency key keeps a retried webhook from sending it twice.
+// The license email (P4.3), sent through Resend's HTTP API. The same purchase always
+// sends the same key; Resend's idempotency key keeps a retried webhook from sending it twice.
 
 export interface Mail {
   from: string;

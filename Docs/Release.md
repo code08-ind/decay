@@ -57,19 +57,19 @@ Every push to `main` then redeploys it. Local preview: `pnpm --filter @decay/sit
 
 ## Selling Decay Pro (P4.3)
 
-Keys are issued by `services/license-webhook`, a Cloudflare Worker that Lemon Squeezy calls on every order. One-time setup:
+Decay Pro ($24, one-time) is sold through **Paddle** (merchant of record: payment, tax, VAT, refunds). Lemon Squeezy, the first choice, closed to new stores in 2026, and Stripe Managed Payments doesn't accept India-based sellers. Keys are issued by `services/license-webhook`, a Cloudflare Worker that Paddle notifies on every completed transaction. One-time setup:
 
-1. **Lemon Squeezy:** create the store and a *Decay Pro* product (single payment). Note its **variant id** (Products → the variant → its id).
-2. **Resend:** add and verify the sending domain (DNS records), create an API key with *sending* access only.
-3. **Worker:** in `services/license-webhook/wrangler.toml` set `EMAIL_FROM` (an address on the verified domain) and `LS_VARIANT_IDS` (the variant id). Then, logged in with `npx wrangler login`, from that folder:
+1. **Paddle (sandbox first):** sign up at sandbox-vendors.paddle.com (test) and vendors.paddle.com (live; Paddle reviews the seller and the website: decay.aryangarg.com has pricing, [Terms](https://decay.aryangarg.com/terms) naming Paddle as merchant of record, a [Refund Policy](https://decay.aryangarg.com/refunds) and the privacy page). Create the product **Decay Pro** with a one-time price of **$24 USD**; note its **price id** (`pri_…`). Create a **hosted checkout** (Checkout → Hosted checkouts) for that price: its link is the Buy button. Create an **API key** with permission to read customers.
+2. **Resend:** the sending domain `aryangarg.com` (aryangarg.com's contact form may already use it), and an API key with sending access only.
+3. **Worker:** in `services/license-webhook/wrangler.toml` set `PADDLE_PRICE_IDS` (the price id) and `PADDLE_ENV` (`sandbox` while testing, then `production`); `EMAIL_FROM` is `Decay <licenses@aryangarg.com>`. Then, logged in with `npx wrangler login`, from that folder:
    - `npx wrangler secret put LICENSE_SIGNING_KEY < ~/.decay/license-signing.key` (read from the file: the key is never typed or shown)
+   - `npx wrangler secret put PADDLE_API_KEY`
    - `npx wrangler secret put RESEND_API_KEY`
-   - `npx wrangler secret put LS_SIGNING_SECRET` (any long random string; the same one goes into step 4)
    - `npx wrangler deploy` → note the Worker's URL.
-4. **Lemon Squeezy webhook:** Settings → Webhooks → add `https://<worker URL>/webhooks/purchase`, the signing secret from step 3, event **order_created**.
-5. **Test:** set `ALLOW_TEST_MODE = "1"`, deploy, buy in Lemon Squeezy's test mode with your own address, activate the emailed key in Decay (Settings → Decay Pro). Then set it back to `"0"` and deploy.
+4. **Paddle notifications:** Developer tools → Notifications → New destination: URL `https://<worker URL>/webhooks/purchase`, event **transaction.completed**. Copy the destination's **secret key** and `npx wrangler secret put PADDLE_WEBHOOK_SECRET`.
+5. **Test:** buy through the sandbox checkout with Paddle's test card and your own address; activate the emailed key in Decay (Settings → Decay Pro). Then repeat steps 1, 3 and 4 against the live account with `PADDLE_ENV = "production"`.
 
-Notes: an order always produces the same key (a retried webhook resends it at most once, through Resend's idempotency key). A refund doesn't revoke the key: offline keys can't be. To resend a key by hand, `decay-license-tool issue` (above) with the buyer's address and `ls-<order id>`. The price and a Buy button in the app wait for the price decision.
+Notes: a transaction always produces the same key (`pd-<txn id>`; a retried notification resends it at most once, through Resend's idempotency key). A refund doesn't revoke the key: offline keys can't be. To resend a key by hand, `decay-license-tool issue` (above) with the buyer's address and `pd-<txn id>`.
 
 ## Windows
 
