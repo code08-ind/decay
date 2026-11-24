@@ -21,6 +21,7 @@ use core_foundation::url::CFURL;
 
 use crate::windows::{
     AppWindow, AppWindows, WindowActor, WindowList, WindowLister, WindowOp, app_bundle_path,
+    file_url_path,
 };
 
 /// Seconds an app may take to answer one Accessibility call.
@@ -239,6 +240,15 @@ fn read_window(w: &Element, focused: Option<&Element>) -> Option<AppWindow> {
     })
 }
 
+/// A folder window has no unsaved state: one showing an existing folder is "saved"
+/// (Finder's close button reports no edited flag, which would leave it unknown).
+fn mark_folder_saved(w: &mut AppWindow) {
+    let folder = w.document.as_deref().and_then(file_url_path).is_some_and(|p| p.is_dir());
+    if folder && w.edited.is_none() {
+        w.edited = Some(false);
+    }
+}
+
 /// Lists windows through Accessibility (nothing without the permission).
 #[derive(Debug, Default)]
 pub struct MacWindowLister {
@@ -282,13 +292,16 @@ impl WindowLister for MacWindowLister {
             let Some(app) = Element::app(pid) else { continue };
             let focused = app.child("AXFocusedWindow");
             let started = std::time::Instant::now();
-            let windows: Vec<AppWindow> = app
+            let mut windows: Vec<AppWindow> = app
                 .elements("AXWindows")
                 .iter()
                 .take_while(|_| started.elapsed() < APP_BUDGET)
                 .filter_map(|w| read_window(w, focused.as_ref()))
                 .take(MAX_WINDOWS_PER_APP)
                 .collect();
+            if bundle_id == FINDER {
+                windows.iter_mut().for_each(mark_folder_saved);
+            }
             // Listed even when Accessibility returned nothing (a slow app, windows on
             // other Spaces): its window numbers say its windows still exist.
             apps.push(AppWindows { pid, bundle_id, name, windows, all_window_ids });
@@ -389,6 +402,7 @@ impl WindowActor for MacWindowActor {
                     Err(set.err().unwrap_or_else(|| "the window didn't minimise".into()))
                 }
             }
+            WindowOp::Close => close_folder_window(pid, window_id, &window),
             WindowOp::Restore => {
                 if window.flag("AXMinimized") == Some(true) {
                     window.set_flag("AXMinimized", false)?;
@@ -407,9 +421,61 @@ impl WindowActor for MacWindowActor {
     }
 }
 
+/// The file manager whose folder windows may be closed (P4.1).
+const FINDER: &str = "com.apple.finder";
+
+/// Closes a Finder folder window (its close button), once it's confirmed to show an
+/// existing folder with nothing unsaved, and waits until it's gone.
+fn close_folder_window(pid: i32, window_id: u32, window: &Element) -> Result<(), String> {
+    if bundle_id(pid).as_deref() != Some(FINDER) {
+        return Err("only Finder's folder windows are closed".into());
+    }
+    let is_folder =
+        window.string("AXDocument").and_then(|d| file_url_path(&d)).is_some_and(|p| p.is_dir());
+    if !is_folder {
+        return Err("the window doesn't show a folder that can be reopened".into());
+    }
+    let button = window.child("AXCloseButton").ok_or("the window has no close button")?;
+    if button.flag("AXEdited") == Some(true) {
+        return Err("the window has unsaved changes".into());
+    }
+    button.perform("AXPress")?;
+    let deadline = std::time::Instant::now() + CLOSE_SETTLE;
+    loop {
+        let open = apps_with_windows().get(&pid).is_some_and(|(_, ids)| ids.contains(&window_id));
+        if !open {
+            return Ok(());
+        }
+        if std::time::Instant::now() >= deadline {
+            return Err("the window didn't close".into());
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+}
+
+/// How long a window may take to close.
+const CLOSE_SETTLE: std::time::Duration = std::time::Duration::from_millis(1500);
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn folder_windows_count_as_saved() {
+        let dir = std::env::temp_dir();
+        let url = format!("file://{}", dir.display());
+        let mut w = AppWindow { document: Some(url.clone()), ..AppWindow::default() };
+        mark_folder_saved(&mut w);
+        assert_eq!(w.edited, Some(false));
+        let mut gone =
+            AppWindow { document: Some("file:///no/such/folder".into()), ..AppWindow::default() };
+        mark_folder_saved(&mut gone);
+        assert_eq!(gone.edited, None, "not a folder on disk: unknown");
+        let mut edited =
+            AppWindow { document: Some(url), edited: Some(true), ..AppWindow::default() };
+        mark_folder_saved(&mut edited);
+        assert_eq!(edited.edited, Some(true), "never overrides what the window says");
+    }
 
     #[test]
     fn the_window_server_and_bundles_answer_without_permissions() {

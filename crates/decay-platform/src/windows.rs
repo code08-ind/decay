@@ -65,13 +65,18 @@ pub enum WindowOp {
     Hide,
     /// Un-minimise it, raise it and bring its app to the front.
     Restore,
+    /// Close it (P4.1, PRD F11): only a folder window of the file manager (Finder,
+    /// Explorer), which has no unsaved state and reopens with [`reopen_folder`]. Anything
+    /// else is refused.
+    Close,
 }
 
 /// Acts on single windows. Each call checks what it can before acting (a standard
 /// window, with an enabled minimise button, not full screen) and confirms the result by
 /// reading it back; anything unexpected is an error and nothing is changed.
 pub trait WindowActor: Send {
-    /// `Ok(())` once the window is minimised (`Hide`) or back on screen (`Restore`).
+    /// `Ok(())` once the window is minimised (`Hide`), back on screen (`Restore`) or
+    /// gone (`Close`).
     fn act(&mut self, op: WindowOp, pid: i32, window_id: u32) -> Result<(), String>;
 }
 
@@ -127,6 +132,67 @@ pub fn window_lister() -> Box<dyn WindowLister> {
     }
 }
 
+/// The local path of a `file://` URL (percent-decoded; `file:///C:/x` → `C:/x` on
+/// Windows); `None` for anything else.
+pub fn file_url_path(url: &str) -> Option<PathBuf> {
+    let rest = url.strip_prefix("file://")?;
+    let rest = rest.strip_prefix("localhost").unwrap_or(rest);
+    let mut out = Vec::with_capacity(rest.len());
+    let bytes = rest.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| (b as char).to_digit(16);
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && let (Some(h), Some(l)) = (hex(bytes[i + 1]), hex(bytes[i + 2]))
+        {
+            out.push(u8::try_from(h * 16 + l).ok()?);
+            i += 3;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    let path = String::from_utf8(out).ok()?;
+    // `/C:/Users/…` (a drive letter after the slash) is a Windows path.
+    let path = match path.as_bytes() {
+        [b'/', d, b':', ..] if d.is_ascii_alphabetic() => path[1..].to_owned(),
+        _ => path,
+    };
+    (!path.is_empty()).then(|| PathBuf::from(path))
+}
+
+/// Opens a folder in the file manager again (restoring a closed folder window, P4.1).
+/// Refused unless `path` is an existing folder.
+pub fn reopen_folder(path: &Path) -> Result<(), String> {
+    if !path.is_dir() {
+        return Err("the folder no longer exists".into());
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let status = std::process::Command::new("/usr/bin/open")
+            .arg(path)
+            .status()
+            .map_err(|e| e.to_string())?;
+        if status.success() { Ok(()) } else { Err(format!("open failed ({status})")) }
+    }
+    #[cfg(windows)]
+    {
+        // Explorer's exit code means nothing (it hands the folder to the running shell).
+        let windir =
+            std::env::var_os("WINDIR").map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
+        std::process::Command::new(windir.join("explorer.exe"))
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
+    {
+        Err("folders can't be opened on this platform".into())
+    }
+}
+
 /// The app bundle an executable belongs to: the innermost `*.app` folder on its path
 /// (an app shipped inside another, like Simulator inside Xcode, is its own app; the
 /// processes that own windows are apps' main executables, not their helpers). `None`
@@ -176,6 +242,30 @@ mod tests {
         );
         assert_eq!(p("/usr/bin/vim"), None);
         assert_eq!(p("/Users/me/.app/bin/tool"), None, "a bare `.app` isn't a bundle name");
+    }
+
+    #[test]
+    fn file_urls_become_paths() {
+        let p = |u: &str| file_url_path(u);
+        assert_eq!(p("file:///Users/me/My%20Folder/"), Some(PathBuf::from("/Users/me/My Folder/")));
+        assert_eq!(p("file://localhost/tmp/x"), Some(PathBuf::from("/tmp/x")));
+        assert_eq!(
+            p("file:///C:/Users/me/Downloads"),
+            Some(PathBuf::from("C:/Users/me/Downloads"))
+        );
+        assert_eq!(p("file:///Users/me/Caf%C3%A9"), Some(PathBuf::from("/Users/me/Café")));
+        assert_eq!(p("https://example.com/"), None);
+        assert_eq!(p("file://"), None);
+        assert_eq!(p("file:///bad%FF"), None, "not UTF-8");
+    }
+
+    #[test]
+    fn only_existing_folders_reopen() {
+        assert!(reopen_folder(Path::new("/definitely/not/here")).is_err());
+        let file = std::env::temp_dir().join(format!("decay-reopen-{}", std::process::id()));
+        std::fs::write(&file, b"x").unwrap();
+        assert!(reopen_folder(&file).is_err(), "a file isn't a folder");
+        let _ = std::fs::remove_file(&file);
     }
 
     #[test]

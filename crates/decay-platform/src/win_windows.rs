@@ -6,32 +6,82 @@
 //! `all_window_ids` so the engine doesn't take them for closed (like macOS Spaces). The
 //! app id is the executable's lower-cased file name (`chrome.exe`). Windows can't say
 //! whether a window has unsaved changes or which document it shows: both stay unknown, so
-//! such windows are only ever minimised, never closed. Window numbers are `HWND`s, which
-//! are 32-bit values on 32- and 64-bit Windows alike.
+//! such windows are only ever minimised, never closed. The exception (P4.1) is Explorer:
+//! the Shell names the folder each of its windows shows, and a folder has nothing to save,
+//! so a one-tab folder window may be closed (`WindowOp::Close`) and reopened. Window
+//! numbers are `HWND`s, which are 32-bit values on 32- and 64-bit Windows alike.
 
 #![allow(unsafe_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use ::windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, RECT};
+use ::windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, RECT, WPARAM};
 use ::windows::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
 use ::windows::Win32::Graphics::Gdi::{
     GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow,
 };
+use ::windows::Win32::System::Com::{
+    CLSCTX_ALL, COINIT_MULTITHREADED, CoCreateInstance, CoInitializeEx,
+};
 use ::windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
 };
+use ::windows::Win32::System::Variant::VARIANT;
+use ::windows::Win32::UI::Shell::{IShellWindows, IWebBrowser2, ShellWindows};
 use ::windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GW_OWNER, GWL_EXSTYLE, GWL_STYLE, GetForegroundWindow, GetWindow, GetWindowLongW,
-    GetWindowRect, GetWindowTextLengthW, GetWindowTextW, IsIconic, IsWindow, SW_RESTORE,
-    SW_SHOWMINNOACTIVE, SetForegroundWindow, ShowWindowAsync,
+    GetWindowRect, GetWindowTextLengthW, GetWindowTextW, IsIconic, IsWindow, PostMessageW,
+    SW_RESTORE, SW_SHOWMINNOACTIVE, SetForegroundWindow, ShowWindowAsync, WM_CLOSE,
 };
-use ::windows::core::BOOL;
+use ::windows::core::{BOOL, Interface};
 
 use crate::win::{process_path, window_pid};
-use crate::win_logic::{TopLevel, can_minimize, covers_monitor, exe_app, is_app_window};
-use crate::windows::{AppWindow, AppWindows, WindowActor, WindowList, WindowLister, WindowOp};
+use crate::win_logic::{
+    TopLevel, can_minimize, covers_monitor, exe_app, explorer_folders, is_app_window,
+};
+use crate::windows::{
+    AppWindow, AppWindows, WindowActor, WindowList, WindowLister, WindowOp, file_url_path,
+};
+
+/// Explorer's executable (its app id): the only app whose windows may be closed (P4.1).
+const EXPLORER: &str = "explorer.exe";
+/// How long a window may take to close.
+const CLOSE_SETTLE: Duration = Duration::from_millis(1500);
+
+/// The folder each Explorer window shows (`file://` URL), by window; see
+/// [`explorer_folders`]. Empty when the Shell can't be asked.
+fn shell_folders() -> HashMap<isize, Option<String>> {
+    // SAFETY: COM for this thread (a second call on the same thread is harmless).
+    let _ = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+    // SAFETY: a COM object created and released by its smart pointer.
+    let Ok(shell) =
+        (unsafe { CoCreateInstance::<_, IShellWindows>(&ShellWindows, None, CLSCTX_ALL) })
+    else {
+        return HashMap::new();
+    };
+    let mut tabs = Vec::new();
+    // SAFETY: calls on a live COM object; every result is checked.
+    unsafe {
+        for i in 0..shell.Count().unwrap_or(0) {
+            let Ok(item) = shell.Item(&VARIANT::from(i)) else { continue };
+            let Ok(browser) = item.cast::<IWebBrowser2>() else { continue };
+            let Ok(hwnd) = browser.HWND() else { continue };
+            let url = browser.LocationURL().map(|u| u.to_string()).unwrap_or_default();
+            tabs.push((hwnd.0, url));
+        }
+    }
+    explorer_folders(&tabs)
+}
+
+/// An Explorer window's folder, when it shows exactly one that exists.
+fn folder_url(folders: &HashMap<isize, Option<String>>, hwnd: HWND) -> Option<String> {
+    folders
+        .get(&(hwnd.0 as isize))
+        .cloned()
+        .flatten()
+        .filter(|u| file_url_path(u).is_some_and(|p| p.is_dir()))
+}
 
 /// How long a minimise or restore may take to show (the app's own thread does it).
 const SETTLE: Duration = Duration::from_millis(800);
@@ -145,6 +195,8 @@ impl WindowLister for WinWindowLister {
         let mut by_pid: HashMap<u32, AppWindows> = HashMap::new();
         let mut order: Vec<u32> = Vec::new();
         let mut live = std::collections::HashSet::new();
+        // Asked once per list, and only when an Explorer window is listed.
+        let mut folders: Option<HashMap<isize, Option<String>>> = None;
         for hwnd in top_level() {
             let Some(seen) = read(hwnd) else { continue };
             let Some(id) = id_of(seen.hwnd) else { continue };
@@ -180,11 +232,16 @@ impl WindowLister for WinWindowLister {
                 || (front_pid(front) != Some(seen.pid)
                     && !is_min
                     && entry.windows.iter().all(|w| !w.focused && w.minimized));
+            // An Explorer folder window: its folder, and nothing unsaved (P4.1).
+            let folder = (entry.bundle_id == EXPLORER)
+                .then(|| folder_url(folders.get_or_insert_with(shell_folders), seen.hwnd))
+                .flatten();
+            let edited = folder.is_some().then_some(false);
             entry.windows.push(AppWindow {
                 window_id: Some(id),
                 title: seen.title,
-                document: None,
-                edited: None,
+                document: folder,
+                edited,
                 minimized: is_min,
                 full_screen: !is_min && full_screen(seen.hwnd),
                 can_minimize: can_minimize(seen.top.style),
@@ -219,8 +276,33 @@ impl WindowActor for WinWindowActor {
         match op {
             WindowOp::Hide => hide(hwnd),
             WindowOp::Restore => restore(hwnd),
+            WindowOp::Close => close_folder(hwnd),
         }
     }
+}
+
+/// Closes an Explorer window showing one existing folder (nothing else), and waits until
+/// it's gone.
+fn close_folder(hwnd: HWND) -> Result<(), String> {
+    let app = window_pid(hwnd).and_then(process_path).and_then(|p| exe_app(&p));
+    if app.map(|(id, _)| id).as_deref() != Some(EXPLORER) {
+        return Err("only Explorer's folder windows are closed".into());
+    }
+    if folder_url(&shell_folders(), hwnd).is_none() {
+        return Err("the window doesn't show one folder that can be reopened".into());
+    }
+    // SAFETY: posting a message to a window; any handle value is safe to pass.
+    unsafe { PostMessageW(Some(hwnd), WM_CLOSE, WPARAM(0), LPARAM(0)) }
+        .map_err(|e| e.to_string())?;
+    let start = Instant::now();
+    // SAFETY: a plain query.
+    while unsafe { IsWindow(Some(hwnd)) }.as_bool() {
+        if start.elapsed() >= CLOSE_SETTLE {
+            return Err("the window didn't close".into());
+        }
+        std::thread::sleep(Duration::from_millis(30));
+    }
+    Ok(())
 }
 
 fn hide(hwnd: HWND) -> Result<(), String> {
@@ -337,6 +419,21 @@ mod tests {
         let mut actor = WinWindowActor;
         assert_eq!(actor.act(WindowOp::Hide, 1, 0), Err("the window is gone".into()));
         assert_eq!(actor.act(WindowOp::Restore, 1, 0x7fff_fff0), Err("the window is gone".into()));
+        assert_eq!(actor.act(WindowOp::Close, 1, 0), Err("the window is gone".into()));
+        // Explorer folders: whatever the Shell lists (a service session: maybe nothing) is
+        // one entry per window; a window that isn't Explorer's is never closed.
+        let folders = shell_folders();
+        assert!(folders.values().flatten().all(|u| u.starts_with("file:///")), "{folders:?}");
+        assert_eq!(folder_url(&folders, HWND::default()), None);
+        let not_explorer = top_level().into_iter().find(|h| {
+            window_pid(*h)
+                .and_then(process_path)
+                .and_then(|p| exe_app(&p))
+                .is_some_and(|(id, _)| id != EXPLORER)
+        });
+        if let Some(h) = not_explorer {
+            assert_eq!(close_folder(h), Err("only Explorer's folder windows are closed".into()));
+        }
         let me = std::env::current_exe().unwrap();
         let exe = me.file_name().unwrap().to_string_lossy().into_owned();
         assert_eq!(app_running(&exe), Some(true));

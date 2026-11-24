@@ -149,6 +149,23 @@ pub fn device_in_use(uses: &[DeviceUse], now: u64, running: impl Fn(&str) -> Opt
     })
 }
 
+/// The folder each Explorer window shows, from the Shell's list of browser windows
+/// (`(window, location URL)`, one per tab on Windows 11): a window with one tab on a
+/// `file://` folder gets its URL; a window with several tabs, or showing something that
+/// isn't a folder on disk (This PC, Home, a search), gets `None`: closing it couldn't be
+/// undone by reopening one folder.
+pub fn explorer_folders(
+    tabs: &[(isize, String)],
+) -> std::collections::HashMap<isize, Option<String>> {
+    let mut out: std::collections::HashMap<isize, Option<String>> =
+        std::collections::HashMap::new();
+    for (hwnd, url) in tabs {
+        let folder = url.starts_with("file:///").then(|| url.clone());
+        out.entry(*hwnd).and_modify(|f| *f = None).or_insert(folder);
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,5 +289,22 @@ mod tests {
         // One open record among closed ones is enough.
         let mixed = [app(NOW - 9 * MIN, NOW - 8 * MIN, None), app(NOW - MIN, 0, Some("teams.exe"))];
         assert!(device_in_use(&mixed, NOW, all_running));
+    }
+
+    #[test]
+    fn explorer_windows_with_one_folder_tab_name_it() {
+        let tabs = [
+            (1, "file:///C:/Users/me/Downloads".to_owned()),
+            (2, "file:///C:/a".to_owned()),
+            (2, "file:///C:/b".to_owned()),
+            (3, String::new()),
+            (4, "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}".to_owned()),
+        ];
+        let f = explorer_folders(&tabs);
+        assert_eq!(f[&1].as_deref(), Some("file:///C:/Users/me/Downloads"));
+        assert_eq!(f[&2], None, "two tabs");
+        assert_eq!(f[&3], None, "Home");
+        assert_eq!(f[&4], None, "This PC");
+        assert!(!f.contains_key(&5));
     }
 }
