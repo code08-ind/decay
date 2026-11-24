@@ -67,7 +67,7 @@ decay/
 └─ .github/workflows/
 ```
 
-**Licensing split (open core):** `crates/decay-core`, `decay-store`, `decay-bridge`, `decay-host` and `apps/extension` are MIT/Apache-2.0. `decay-license`, Pro features and the app shell are proprietary (or source-available).
+**Licensing split (open core):** `crates/decay-core`, `decay-store`, `decay-bridge`, `decay-host` and `apps/extension` are MIT/Apache-2.0. `decay-license`, Pro features and the app shell are proprietary (or source-available). **As built (P4.5):** one public repository; MIT OR Apache-2.0 for the core crates (`decay-core`, `-store`, `-bridge`, `-host`, `-platform`, `-engine`), the extension and the shared packages; the desktop app (`apps/desktop`), `decay-license` and the purchase webhook are source-available under FSL-1.1-ALv2 (no competing commercial use; each version becomes Apache-2.0 after two years). Root `LICENSE.md` maps folders to licenses; `tools/check-licenses.mjs` (CI) checks every package's declaration. Hiding the source wouldn't protect offline Pro checks (they can be bypassed in any local app); the license is what stops a resold copy.
 
 ## 4. Components
 

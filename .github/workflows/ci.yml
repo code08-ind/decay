@@ -17,6 +17,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      # Every package declares the license LICENSE.md gives its folder (P4.5).
+      - run: node tools/check-licenses.mjs
       - run: pnpm typecheck
       - run: pnpm test
       # Line coverage ≥ 80 % (thresholds in apps/extension/vitest.config.ts).

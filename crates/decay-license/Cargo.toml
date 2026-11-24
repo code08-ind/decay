@@ -5,8 +5,8 @@ description = "Decay Pro licenses: offline Ed25519 key verification, the 14-day 
 edition.workspace = true
 rust-version.workspace = true
 repository.workspace = true
-# Pro licensing is proprietary (Software Design §3, open-core split).
-license = "LicenseRef-Proprietary"
+# Source-available (FSL), like the rest of the desktop app: LICENSE.md.
+license = "FSL-1.1-ALv2"
 publish = false
 
 [lints]

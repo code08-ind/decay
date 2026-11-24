@@ -2,6 +2,7 @@
   "name": "@decay/desktop",
   "version": "0.1.0",
   "private": true,
+  "license": "FSL-1.1-ALv2",
   "type": "module",
   "description": "Decay desktop app (Tauri 2): menu bar agent, search panel, Library, Settings",
   "scripts": {

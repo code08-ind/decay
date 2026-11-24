@@ -5,8 +5,8 @@ description = "Decay desktop app: the Tauri shell around the engine (tray, hotke
 edition.workspace = true
 rust-version.workspace = true
 repository.workspace = true
-# The app shell is proprietary (Software Design §3, open-core split).
-license = "LicenseRef-Proprietary"
+# Source-available (FSL), like the rest of the desktop app: LICENSE.md.
+license = "FSL-1.1-ALv2"
 publish = false
 default-run = "decay"
 
