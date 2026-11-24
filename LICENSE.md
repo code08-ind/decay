@@ -6,7 +6,7 @@ open source; the desktop app's shell and Decay Pro's licensing are source-availa
 | Path | License |
 | --- | --- |
 | `crates/decay-core`, `crates/decay-store`, `crates/decay-bridge`, `crates/decay-host`, `crates/decay-platform`, `crates/decay-engine` | [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option |
-| `apps/extension` (the browser extension), `packages/ui`, `packages/config` | [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option |
+| `apps/extension` (the browser extension), `apps/site` (the website), `packages/ui`, `packages/config` | [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option |
 | `apps/desktop` (the desktop app), `crates/decay-license`, `services/license-webhook` | [Functional Source License 1.1, Apache-2.0 future license](apps/desktop/LICENSE.md) (`FSL-1.1-ALv2`) |
 | Everything else (docs, designs, tools, workflows) | [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option |
 

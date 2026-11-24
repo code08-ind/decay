@@ -23,8 +23,8 @@ use crate::i18n::{t, tf};
 
 /// The public releases repo (Docs/Release.md).
 const RELEASES_REPO: &str = "https://github.com/code08-ind/decay-releases";
-/// Help: the releases repo's README until a docs site exists (the one place to change).
-pub const HELP_URL: &str = "https://github.com/code08-ind/decay-releases#readme";
+/// Help: the website's docs (P4.4, apps/site; the one place to change).
+pub const HELP_URL: &str = "https://decay.aryangarg.com/docs";
 /// Every release with its notes.
 pub const CHANGELOG_URL: &str = "https://github.com/code08-ind/decay-releases/releases";
 

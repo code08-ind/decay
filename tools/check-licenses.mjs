@@ -17,6 +17,7 @@ const EXPECTED = {
   'apps/desktop/src-tauri': FSL,
   'apps/desktop': FSL,
   'apps/extension': OPEN,
+  'apps/site': OPEN,
   'packages/ui': OPEN,
   'packages/config': OPEN,
   'services/license-webhook': FSL,

@@ -1,0 +1,66 @@
+/* The app's own theme (tokens, bundled fonts, light / dark): the site looks like Decay. */
+@import "tailwindcss";
+@import "@decay/ui/theme.css";
+
+@source "../";
+
+.prose h1 {
+  font-family: var(--font-serif, "Newsreader", serif);
+  font-size: 2.25rem;
+  line-height: 1.15;
+  margin: 0 0 1rem;
+}
+.prose h2 {
+  font-family: var(--font-serif, "Newsreader", serif);
+  font-size: 1.5rem;
+  margin: 2rem 0 0.5rem;
+}
+.prose h3 {
+  font-weight: 600;
+  margin: 1.5rem 0 0.25rem;
+}
+.prose p,
+.prose li {
+  line-height: 1.65;
+  color: var(--text);
+}
+.prose p {
+  margin: 0.75rem 0;
+}
+.prose ul,
+.prose ol {
+  margin: 0.75rem 0;
+  padding-inline-start: 1.25rem;
+}
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose code,
+.prose kbd {
+  font-family: var(--font-mono, "DM Mono", monospace);
+  font-size: 0.9em;
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.prose th,
+.prose td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem;
+  text-align: start;
+  vertical-align: top;
+}

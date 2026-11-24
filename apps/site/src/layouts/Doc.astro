@@ -1,0 +1,38 @@
+---
+import { DOCS } from '../consts';
+import Base from './Base.astro';
+
+const { frontmatter } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/docs';
+const at = DOCS.findIndex((d) => d.href === path);
+const prev = at > 0 ? DOCS[at - 1] : undefined;
+const next = at >= 0 && at < DOCS.length - 1 ? DOCS[at + 1] : undefined;
+---
+
+<Base title={frontmatter.title} description={frontmatter.description}>
+  <div class="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[14rem_1fr]">
+    <nav aria-label="Docs" class="text-sm">
+      <p class="mb-3 text-xs font-semibold tracking-wider text-faint uppercase">Docs</p>
+      <ul class="grid gap-1">
+        {DOCS.map((d) => (
+          <li>
+            <a
+              href={d.href}
+              aria-current={d.href === path ? 'page' : undefined}
+              class:list={['block rounded-lg px-3 py-1.5', d.href === path ? 'bg-lime font-medium text-lime-ink' : 'text-muted hover:bg-surface-2 hover:text-ink']}
+            >
+              {d.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <article class="prose max-w-2xl">
+      <slot />
+      <div class="mt-12 flex justify-between gap-4 border-t border-line pt-6 text-sm">
+        {prev ? <a href={prev.href}>← {prev.title}</a> : <span />}
+        {next ? <a href={next.href}>{next.title} →</a> : <span />}
+      </div>
+    </article>
+  </div>
+</Base>

@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import { PRIVACY, REPO } from '../consts';
+---
+
+<Base title="Privacy" description="What Decay records, where it stays, and the little it sends over the network.">
+  <section class="prose mx-auto max-w-3xl px-5 pt-10">
+    <h1>Privacy</h1>
+    <p>
+      Decay is built to tidy your tabs without knowing anything about you. The full policy is
+      <a href={PRIVACY}>here</a>; in short:
+    </p>
+    <ul>
+      <li><strong>Everything stays on your computer.</strong> The addresses, titles and sites of your tabs, your app windows’ titles, when you used them, your rules and settings: in an encrypted database on your computer. Decay never reads what’s on a page or in a document.</li>
+      <li><strong>No account, no analytics, no advertising.</strong></li>
+      <li><strong>The network:</strong> a daily check for updates (from GitHub), and crash reports only if you turn them on, with your computer’s name, file paths and addresses removed first.</li>
+      <li><strong>Decay Pro</strong> is checked on your computer: your license key is never sent anywhere. Batch names are made on your computer too.</li>
+      <li><strong>Open core:</strong> the parts that touch your data are open source, so you can <a href={REPO}>check them</a>.</li>
+    </ul>
+    <p>More detail, including what each permission is for: <a href="/docs/privacy">Privacy and your data</a>.</p>
+  </section>
+</Base>

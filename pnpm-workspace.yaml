@@ -4,3 +4,5 @@ packages:
   - "services/*"
 allowBuilds:
   esbuild: true
+  # Astro's image optimiser (apps/site doesn't use it): no native download.
+  sharp: false

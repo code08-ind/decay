@@ -43,6 +43,16 @@ Workflow: `.github/workflows/release.yml`.
 - **Issuing by hand** (support, testers): `cargo run -p decay-license --bin decay-license-tool -- issue ~/.decay/license-signing.key someone@example.com [license-id]`; `… -- verify <key>` checks one. P4.3's purchase webhook issues keys the same way (`decay_license::issue`).
 - **Activation link:** `decay://license/activate?key=<key>` opens Settings → Decay Pro with the key filled in (nothing is activated without a click).
 
+## Website (P4.4)
+
+https://decay.aryangarg.com is `apps/site`, a static Astro site. One-time setup (your accounts):
+
+1. **Vercel:** New Project → import `code08-ind/decay` → **Root Directory** `apps/site` (Vercel reads `apps/site/vercel.json`: install from the repo root with pnpm, build `pnpm run build`, output `dist`, clean URLs). Deploy.
+2. **Domain:** in the project's Settings → Domains add `decay.aryangarg.com`; Vercel shows the record to create.
+3. **Cloudflare DNS** (aryangarg.com's zone): add a `CNAME` named `decay` with the target Vercel gives (usually `cname.vercel-dns.com`), **DNS only** (grey cloud), so Vercel can issue the certificate.
+
+Every push to `main` then redeploys it. Local preview: `pnpm --filter @decay/site dev`.
+
 ## Selling Decay Pro (P4.3)
 
 Keys are issued by `services/license-webhook`, a Cloudflare Worker that Lemon Squeezy calls on every order. One-time setup:

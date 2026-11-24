@@ -12,6 +12,8 @@
       "!Docs",
       "!**/.output",
       "!**/.wxt",
+      "!**/.astro",
+      "!**/*.astro",
       "!**/*.md",
       "!**/target",
       "!crates/**/fixtures"
