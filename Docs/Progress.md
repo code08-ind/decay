@@ -1,10 +1,21 @@
 # Decay — Progress Tracker
 
+## ▶ Start here next (paused 24 Nov 2026, resume 25 Nov 2026)
+
+Finish selling Decay Pro through Paddle (P4.3). Everything before this is built, pushed and live (https://decay.aryangarg.com, `/buy` opens Paddle's sandbox checkout).
+
+1. **Test the sandbox checkout:** open https://decay.aryangarg.com/buy and pay with Paddle's sandbox test card (e.g. `4242 4242 4242 4242`, any future expiry, any CVC). Check it appears under **Transactions** in the Paddle sandbox.
+2. **Cloudflare login:** in Claude Code run `! npx wrangler login` and approve it in the browser.
+3. **Paddle sandbox API key:** Developer tools → Authentication → API keys, permission to **read customers**. Don't paste it in chat: wrangler asks for it in a hidden prompt.
+4. **Resend:** check whether `aryangarg.com` is already a verified domain (aryangarg.com's contact form uses Resend), and have a sending-only Resend API key ready.
+
+Then Claude deploys the license webhook (`services/license-webhook`, Docs/Release.md "Selling Decay Pro" steps 3–5), sets up Paddle's notification destination (`transaction.completed`), and we run one sandbox purchase end to end: payment → license email → activate in Decay. After that: Paddle's live account review, then switch the site and webhook to live values.
+
 | | |
 | --- | --- |
-| **Last updated** | 7 Nov 2026 (P0.7 done) |
+| **Last updated** | 24 Nov 2026 (Phases 3–5 built; website live; Paddle sandbox checkout live) |
 | **Legend (design)** | ✅ = approved (all Stitch designs in `Designs/`, 7 Nov 2026) |
-| **Current phase** | Phase 0 — Extension validation (designs approved) |
+| **Current phase** | Phase 4 — Pro and public launch: selling Decay Pro (P4.3, Paddle) |
 | **Capacity assumption** | ~15 h/week |
 | **Legend** | ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked · ⏭️ Skipped |
 
