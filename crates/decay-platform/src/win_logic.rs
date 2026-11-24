@@ -115,6 +115,40 @@ pub fn display_asleep(state: u32) -> Option<bool> {
     }
 }
 
+/// One app's record under `HKCU\…\CapabilityAccessManager\ConsentStore\<microphone |
+/// webcam>`: when it last started and stopped using the device (`FILETIME`s; a stop of
+/// 0 while it uses it). `exe` is the lower-cased file name of a desktop app (its key sits
+/// under `NonPackaged`, named after its path with `#` for `\`); `None` for a Store app.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeviceUse {
+    pub start: u64,
+    pub stop: u64,
+    pub exe: Option<String>,
+}
+
+/// A use that started longer ago than this no longer counts: an app that keeps the mic
+/// open for days (dictation, noise filters) or a record that was never closed would
+/// otherwise hold sweeps forever (`FILETIME` units of 100 ns: 12 h).
+pub const STALE_USE: u64 = 12 * 60 * 60 * 10_000_000;
+
+/// `C:#Program Files#Zoom#bin#Zoom.exe` (a `NonPackaged` key) → `zoom.exe`.
+pub fn nonpackaged_exe(key: &str) -> Option<String> {
+    exe_app(&key.replace('#', "\\")).map(|(id, _)| id)
+}
+
+/// Some app uses the device now: it started and hasn't stopped, within [`STALE_USE`] of
+/// `now` (a `FILETIME`), and, for a desktop app, its process still runs (one that crashed
+/// mid-call never records its stop). `running` answers by executable name; `None` (can't
+/// tell) counts as running: the cautious direction.
+pub fn device_in_use(uses: &[DeviceUse], now: u64, running: impl Fn(&str) -> Option<bool>) -> bool {
+    uses.iter().any(|u| {
+        u.start != 0
+            && u.stop == 0
+            && now.saturating_sub(u.start) < STALE_USE
+            && u.exe.as_deref().is_none_or(|exe| running(exe) != Some(false))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -195,5 +229,48 @@ mod tests {
         assert_eq!(display_asleep(1), Some(false));
         assert_eq!(display_asleep(2), Some(false), "dimmed");
         assert_eq!(display_asleep(9), None);
+    }
+
+    #[test]
+    fn desktop_apps_are_named_by_their_path() {
+        assert_eq!(
+            nonpackaged_exe("C:#Program Files#Zoom#bin#Zoom.exe").as_deref(),
+            Some("zoom.exe")
+        );
+        assert_eq!(
+            nonpackaged_exe("C:#Users#me#AppData#Local#Discord#app-1.0#Discord.exe").as_deref(),
+            Some("discord.exe")
+        );
+        assert_eq!(nonpackaged_exe(""), None);
+    }
+
+    #[test]
+    fn a_device_is_in_use_while_a_live_app_holds_it() {
+        const NOW: u64 = 134_000_000_000_000_000;
+        const MIN: u64 = 60 * 10_000_000;
+        let app =
+            |start, stop, exe: Option<&str>| DeviceUse { start, stop, exe: exe.map(Into::into) };
+        let all_running = |_: &str| Some(true);
+        assert!(!device_in_use(&[], NOW, all_running), "nothing ever used it");
+        assert!(device_in_use(&[app(NOW - MIN, 0, Some("zoom.exe"))], NOW, all_running));
+        assert!(device_in_use(&[app(NOW - MIN, 0, None)], NOW, all_running), "a Store app");
+        assert!(
+            !device_in_use(&[app(NOW - 5 * MIN, NOW - MIN, Some("zoom.exe"))], NOW, all_running),
+            "stopped"
+        );
+        assert!(!device_in_use(&[app(0, 0, Some("zoom.exe"))], NOW, all_running), "never started");
+        assert!(
+            !device_in_use(&[app(NOW - STALE_USE, 0, None)], NOW, all_running),
+            "started 12 h ago: stale"
+        );
+        // A desktop app that crashed mid-call: its record stays open.
+        let gone = |exe: &str| Some(exe != "zoom.exe");
+        assert!(!device_in_use(&[app(NOW - MIN, 0, Some("zoom.exe"))], NOW, gone));
+        assert!(device_in_use(&[app(NOW - MIN, 0, Some("teams.exe"))], NOW, gone));
+        // Can't tell whether it runs: counts as in use.
+        assert!(device_in_use(&[app(NOW - MIN, 0, Some("zoom.exe"))], NOW, |_| None));
+        // One open record among closed ones is enough.
+        let mixed = [app(NOW - 9 * MIN, NOW - 8 * MIN, None), app(NOW - MIN, 0, Some("teams.exe"))];
+        assert!(device_in_use(&mixed, NOW, all_running));
     }
 }

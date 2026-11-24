@@ -1,6 +1,12 @@
 //! Windows (P3.1): idle time (`GetLastInputInfo`), the session lock (WTS), the displays'
 //! power state (a power-setting notification), the window in front, audio sessions on the
-//! default output device, and a clock that runs through sleep (`GetTickCount64`).
+//! default output device, a clock that runs through sleep (`GetTickCount64`), and (P3.5)
+//! whether some app uses a microphone or camera.
+//!
+//! Microphone / camera: Windows records each app's use of them for its privacy settings
+//! and the taskbar's indicator, under `HKCU\…\CapabilityAccessManager\ConsentStore`
+//! (no permission needed, nothing about the call itself). A use with no stop time is
+//! live; [`device_in_use`] drops crashed desktop apps and stale records.
 //!
 //! Everything but the display state is polled from the engine's sampling thread. The
 //! display state only arrives as a window message, so one hidden message-only window on
@@ -28,11 +34,15 @@ use ::windows::Win32::System::Com::{
 };
 use ::windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use ::windows::Win32::System::Power::{POWERBROADCAST_SETTING, RegisterPowerSettingNotification};
+use ::windows::Win32::System::Registry::{
+    HKEY, HKEY_CURRENT_USER, KEY_READ, RRF_RT_REG_QWORD, RegCloseKey, RegEnumKeyExW, RegGetValueW,
+    RegOpenKeyExW,
+};
 use ::windows::Win32::System::RemoteDesktop::{
     ProcessIdToSessionId, WTS_CURRENT_SESSION, WTSFreeMemory, WTSGetActiveConsoleSessionId,
     WTSINFOEXW, WTSQuerySessionInformationW, WTSSessionInfoEx,
 };
-use ::windows::Win32::System::SystemInformation::GetTickCount64;
+use ::windows::Win32::System::SystemInformation::{GetSystemTimeAsFileTime, GetTickCount64};
 use ::windows::Win32::System::SystemServices::GUID_CONSOLE_DISPLAY_STATE;
 use ::windows::Win32::System::Threading::{
     GetCurrentProcessId, OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
@@ -45,9 +55,11 @@ use ::windows::Win32::UI::WindowsAndMessaging::{
     PBT_POWERSETTINGCHANGE, RegisterClassW, WINDOW_EX_STYLE, WINDOW_STYLE, WM_POWERBROADCAST,
     WNDCLASSW,
 };
-use ::windows::core::{PWSTR, w};
+use ::windows::core::{HSTRING, PWSTR, w};
 
-use crate::win_logic::{display_asleep, exe_app, idle_secs, session_locked};
+use crate::win_logic::{
+    DeviceUse, device_in_use, display_asleep, exe_app, idle_secs, nonpackaged_exe, session_locked,
+};
 use crate::{FrontApp, Platform, PlatformSample};
 
 /// The last `GUID_CONSOLE_DISPLAY_STATE` value (`UNKNOWN` until the first notification).
@@ -81,9 +93,8 @@ impl Platform for WinPlatform {
             locked: locked(),
             display_asleep: display_asleep(DISPLAY_STATE.load(Ordering::Relaxed)),
             audio_playing: audio_playing(),
-            // P3.5 (CapabilityAccessManager).
-            mic_in_use: None,
-            camera_in_use: None,
+            mic_in_use: device_used(&format!(r"{CONSENT_STORE}\microphone")),
+            camera_in_use: device_used(&format!(r"{CONSENT_STORE}\webcam")),
             frontmost: front_app(),
             accessibility: Some(true),
             continuous_ms: Some(now_ms()),
@@ -93,6 +104,116 @@ impl Platform for WinPlatform {
     fn request_accessibility(&mut self) -> bool {
         true
     }
+}
+
+/// Where Windows records apps' use of a device (under `HKCU`), one key per device kind.
+const CONSENT_STORE: &str =
+    r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore";
+
+/// Whether some app uses the device whose consent key is `path` (under `HKCU`); `None`
+/// when it can't be read.
+fn device_used(path: &str) -> Option<bool> {
+    let uses = device_uses(path)?;
+    // SAFETY: a pure query with no arguments.
+    let now = unsafe { GetSystemTimeAsFileTime() };
+    let now = (u64::from(now.dwHighDateTime) << 32) | u64::from(now.dwLowDateTime);
+    Some(device_in_use(&uses, now, crate::win_windows::app_running))
+}
+
+/// An open registry key, closed on drop.
+struct Key(HKEY);
+
+impl Key {
+    /// `None` when it doesn't exist; `Err` when it can't be opened.
+    fn open(parent: HKEY, path: &str) -> Result<Option<Self>, ()> {
+        let mut key = HKEY::default();
+        // SAFETY: `key` is a valid out-pointer; closed on drop.
+        let err =
+            unsafe { RegOpenKeyExW(parent, &HSTRING::from(path), None, KEY_READ, &raw mut key) };
+        match err.0 {
+            0 => Ok(Some(Self(key))),
+            2 | 3 => Ok(None), // ERROR_FILE_NOT_FOUND / ERROR_PATH_NOT_FOUND
+            _ => Err(()),
+        }
+    }
+
+    /// The names of its subkeys.
+    fn subkeys(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        let mut buf = [0u16; 512];
+        for index in 0.. {
+            let mut len = buf.len() as u32;
+            // SAFETY: `buf` holds `len` UTF-16 units; the other outputs aren't wanted.
+            let err = unsafe {
+                RegEnumKeyExW(
+                    self.0,
+                    index,
+                    Some(PWSTR(buf.as_mut_ptr())),
+                    &raw mut len,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            };
+            if err.0 != 0 {
+                break; // ERROR_NO_MORE_ITEMS (or a name too long: skip the rest)
+            }
+            names.push(String::from_utf16_lossy(&buf[..len as usize]));
+        }
+        names
+    }
+
+    /// A `REG_QWORD` value of a subkey; 0 when missing.
+    fn qword(&self, subkey: &str, value: &str) -> u64 {
+        let mut data = 0u64;
+        let mut size = size_of::<u64>() as u32;
+        // SAFETY: `data` holds `size` bytes; the type is restricted to REG_QWORD.
+        let err = unsafe {
+            RegGetValueW(
+                self.0,
+                &HSTRING::from(subkey),
+                &HSTRING::from(value),
+                RRF_RT_REG_QWORD,
+                None,
+                Some((&raw mut data).cast()),
+                Some(&raw mut size),
+            )
+        };
+        if err.0 == 0 { data } else { 0 }
+    }
+}
+
+impl Drop for Key {
+    fn drop(&mut self) {
+        // SAFETY: a key this struct opened, closed once.
+        let _ = unsafe { RegCloseKey(self.0) };
+    }
+}
+
+/// Every app's record of using the device: Store apps' keys directly under `path`,
+/// desktop apps' under `path\NonPackaged`. An empty list when nothing ever used it.
+pub(crate) fn device_uses(path: &str) -> Option<Vec<DeviceUse>> {
+    let Some(root) = Key::open(HKEY_CURRENT_USER, path).ok()? else { return Some(Vec::new()) };
+    let record = |key: &Key, name: &str, exe: Option<String>| DeviceUse {
+        start: key.qword(name, "LastUsedTimeStart"),
+        stop: key.qword(name, "LastUsedTimeStop"),
+        exe,
+    };
+    let mut uses = Vec::new();
+    for name in root.subkeys() {
+        if name.eq_ignore_ascii_case("NonPackaged") {
+            if let Ok(Some(desktop)) = Key::open(root.0, &name) {
+                for app in desktop.subkeys() {
+                    let exe = nonpackaged_exe(&app);
+                    uses.push(record(&desktop, &app, exe));
+                }
+            }
+        } else {
+            uses.push(record(&root, &name, None));
+        }
+    }
+    Some(uses)
 }
 
 /// Milliseconds since boot, sleep included; never moved by wall-clock changes.
@@ -339,5 +460,46 @@ mod tests {
         assert_eq!(process_path(0), None, "the idle process has no image");
         // The watch thread started once; a second platform doesn't start another.
         let _ = <WinPlatform as Default>::default();
+        // The real consent store is readable (a runner may have no records at all).
+        assert!(s.mic_in_use.is_some() && s.camera_in_use.is_some(), "{s:?}");
+    }
+
+    /// A consent store built under a scratch key: a desktop app that's in a call (this
+    /// test's own process), one that crashed mid-call, one that stopped, and a Store app.
+    #[test]
+    fn reads_device_use_from_the_registry() {
+        let root = format!(r"Software\DecayTest-{}\microphone", std::process::id());
+        let add = |key: &str, start: u64, stop: u64| {
+            for (name, v) in [("LastUsedTimeStart", start), ("LastUsedTimeStop", stop)] {
+                let ok = std::process::Command::new("reg")
+                    .args(["add", &format!(r"HKCU\{root}\{key}"), "/v", name, "/t", "REG_QWORD"])
+                    .args(["/d", &v.to_string(), "/f"])
+                    .output()
+                    .is_ok_and(|o| o.status.success());
+                assert!(ok, "reg add {key}");
+            }
+        };
+        // SAFETY: a pure query.
+        let now = unsafe { GetSystemTimeAsFileTime() };
+        let now = (u64::from(now.dwHighDateTime) << 32) | u64::from(now.dwLowDateTime);
+        let minute = 60 * 10_000_000;
+        // SAFETY: a pure query.
+        let me = process_path(unsafe { GetCurrentProcessId() }).expect("our own path");
+        let me_key = me.replace('\\', "#");
+
+        assert_eq!(device_uses(&root), Some(vec![]), "no key: nothing ever used it");
+        add(r"NonPackaged\C:#Apps#Stopped.exe", now - 5 * minute, now - minute);
+        add(r"NonPackaged\C:#Apps#Crashed-decay-test.exe", now - minute, 0);
+        assert_eq!(device_used(&root), Some(false), "stopped, and a crashed app's open record");
+        add(&format!(r"NonPackaged\{me_key}"), now - minute, 0);
+        let uses = device_uses(&root).expect("readable");
+        assert_eq!(uses.len(), 3, "{uses:?}");
+        assert_eq!(device_used(&root), Some(true), "our own process holds it");
+        add("Microsoft.WindowsSoundRecorder_8wekyb3d8bbwe", now - minute, now);
+        assert_eq!(device_uses(&root).map(|u| u.len()), Some(4));
+
+        let _ = std::process::Command::new("reg")
+            .args(["delete", &format!(r"HKCU\Software\DecayTest-{}", std::process::id()), "/f"])
+            .output();
     }
 }
