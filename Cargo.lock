@@ -975,6 +975,7 @@ dependencies = [
  "decay-core",
  "decay-engine",
  "decay-host",
+ "decay-license",
  "decay-platform",
  "decay-store",
  "jiff",

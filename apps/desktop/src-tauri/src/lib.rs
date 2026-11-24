@@ -25,6 +25,7 @@ mod help;
 mod i18n;
 mod keys;
 mod library;
+mod license;
 mod menu;
 mod metrics;
 mod notify;
@@ -155,6 +156,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         update::start(app);
         notify::start(app);
+        license::start(app);
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {
@@ -464,6 +466,10 @@ pub fn run() {
             commands::ui_quit,
             commands::ui_take_pending,
             commands::get_settings,
+            license::get_license,
+            license::activate_license,
+            license::deactivate_license,
+            license::start_trial,
             update::get_update_state,
             summary::get_daily_summary,
             update::check_for_updates,

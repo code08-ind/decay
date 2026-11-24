@@ -26,6 +26,7 @@ decay-bridge = { path = "../../../crates/decay-bridge" }
 decay-core = { path = "../../../crates/decay-core" }
 decay-engine = { path = "../../../crates/decay-engine" }
 decay-host = { path = "../../../crates/decay-host" }
+decay-license = { version = "0.1.0", path = "../../../crates/decay-license" }
 decay-platform = { path = "../../../crates/decay-platform" }
 decay-store = { path = "../../../crates/decay-store" }
 jiff = "0.2.43"

@@ -25,6 +25,7 @@ pub fn refused(why: &RuleRefused) -> AppError {
         RuleRefused::Invalid(text) => AppError::new("INVALID_INPUT", invalid_text(text)),
         RuleRefused::Duplicate => AppError::new("CONFLICT", t("refused.rule.duplicate")),
         RuleRefused::NotFound => AppError::new("NOT_FOUND", t("refused.rule.notFound")),
+        RuleRefused::ProRequired => AppError::new("PRO_REQUIRED", t("refused.rule.proRequired")),
         RuleRefused::Store(_) => AppError::new("DB_ERROR", why.to_string()),
     }
 }

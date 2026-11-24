@@ -335,6 +335,21 @@ pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Va
 }
 
 /// Saves `changes` on the engine thread and broadcasts the result from there.
+/// Without Pro, retention can't be raised past 90 days (a longer one set before is kept
+/// until it's lowered: P4.2).
+fn retention_allowed(e: &decay_engine::Engine, changes: &[(String, Value)]) -> Res<()> {
+    let Some(days) =
+        changes.iter().find(|(k, _)| k == "retention_days").and_then(|(_, v)| v.as_u64())
+    else {
+        return Ok(());
+    };
+    let current = e.store().setting::<u64>("retention_days").ok().flatten().unwrap_or(90);
+    if e.is_pro() || days <= 90 || days <= current {
+        return Ok(());
+    }
+    Err(AppError::new("PRO_REQUIRED", crate::i18n::t("refused.retention.proRequired")))
+}
+
 async fn save_settings(
     app: AppHandle,
     changes: Vec<(String, Value)>,
@@ -342,6 +357,9 @@ async fn save_settings(
     let handle = app.clone();
     blocking(app, move |core| {
         core.ask(move |e, now| {
+            if let Err(err) = retention_allowed(e, &changes) {
+                return (Err(err), Vec::new());
+            }
             let saved = e
                 .store_mut()
                 .atomically(false, |s| {

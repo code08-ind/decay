@@ -236,6 +236,7 @@ fn restore_refused(why: &RestoreRefused) -> AppError {
     let (code, key) = match why {
         RestoreRefused::NothingToRestore => ("NOT_FOUND", "refused.restore.nothing"),
         RestoreRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", "refused.restore.noBrowser"),
+        RestoreRefused::ProRequired => ("PRO_REQUIRED", "refused.restore.proRequired"),
     };
     AppError::new(code, t(key))
 }
