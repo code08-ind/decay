@@ -78,7 +78,8 @@ const wanted = (origins: string[]) =>
     ...s,
     matches: origins,
     allFrames: true,
-    matchOriginAsFallback: true,
+    // Chromium only (Firefox refuses properties it doesn't know).
+    ...(import.meta.env.FIREFOX ? {} : { matchOriginAsFallback: true }),
     runAt: 'document_start' as const,
     persistAcrossSessions: true,
   }));

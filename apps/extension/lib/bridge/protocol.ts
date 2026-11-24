@@ -69,7 +69,7 @@ export interface ErrorPayload {
   message?: string;
 }
 
-export type BrowserKind = 'chrome' | 'edge' | 'brave' | 'arc' | 'chromium';
+export type BrowserKind = 'chrome' | 'edge' | 'brave' | 'arc' | 'chromium' | 'firefox';
 
 export interface Hello {
   extVersion: string;

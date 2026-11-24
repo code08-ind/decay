@@ -64,6 +64,7 @@ export const currentSession = () => session ?? '';
 export function browserKind(appId: string): BrowserKind {
   if (appId === 'com.microsoft.Edge') return 'edge';
   if (appId === 'com.brave.Browser') return 'brave';
+  if (appId === 'org.mozilla.firefox') return 'firefox';
   return 'chrome'; // Arc and Chromium report themselves as Chrome
 }
 

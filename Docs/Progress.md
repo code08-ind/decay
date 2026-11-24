@@ -177,7 +177,9 @@ Build → run a **code-review agent** and a **manual-QA agent** in parallel → 
 
 ## Phase 5 — Post-MVP
 
-- ⬜ F13 Safari Web Extension · ⬜ F14 Firefox · ⬜ F15 Local AI batch labels
+- ⬜ F13 Safari Web Extension · 🟨 F14 Firefox · ⬜ F15 Local AI batch labels
+
+**F14 Firefox (2026-11-24, user's pick of the three):** one extension source, two builds (`pnpm --filter @decay/extension build:firefox` / `zip:firefox`: WXT `-b firefox --mv3`; CI builds it). Firefox manifest: fixed id `decay@decay-app` (`browser_specific_settings.gecko`, Firefox 128+ for MV3 content scripts in the page's world), no `favicon` / `tabGroups` (Chromium only; tab groups were already feature-checked), no `matchOriginAsFallback` on the probe's content scripts (Firefox rejects unknown properties), no favicons (Firefox has no local cache: the letter is shown), the app id `org.mozilla.firefox` / kind `firefox`. Host: Firefox's own manifest (`allowed_extensions`: that id only) in `~/Library/Application Support/Mozilla/NativeMessagingHosts/` or `HKCU\Software\Mozilla\NativeMessagingHosts\com.decay.host` → `<support>\host\com.decay.host.firefox.json`; installed once Firefox has a profile (`Firefox/profiles.ini`; Windows `Software\Mozilla\Firefox`); the host accepts Firefox's arguments (manifest path, then the id); the uninstaller removes the entry. Engine / import / onboarding: Firefox's app ids (`org.mozilla.firefox`, Developer Edition, Nightly; `firefox.exe`), its add-ons site (a search until listed). Tests: caller check, manifests on macOS and Windows, the real host binary started Firefox-style, the extension's two manifests. Pending: trying it in a real Firefox (tab events, sweeps, restore, the probe, 30 s alarms), an addons.mozilla.org listing (signing is required for release Firefox), the listing's URL in onboarding |
 
 ---
 

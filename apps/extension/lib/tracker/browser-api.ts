@@ -95,8 +95,9 @@ export const chromeCommands: TabCommands = {
   },
 };
 
-/** Which Chromium browser we're running in, as an app id (Docs/DB Design.md §3.1). */
+/** Which browser we're running in, as an app id (Docs/DB Design.md §3.1). */
 export function detectAppId(): string {
+  if (import.meta.env.FIREFOX) return 'org.mozilla.firefox';
   const nav = navigator as Navigator & {
     brave?: unknown;
     userAgentData?: { brands?: { brand: string }[] };

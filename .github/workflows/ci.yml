@@ -24,6 +24,8 @@ jobs:
       # Line coverage ≥ 80 % (thresholds in apps/extension/vitest.config.ts).
       - run: pnpm --filter @decay/extension coverage
       - run: pnpm build
+      # The extension's Firefox build (F14): same source, MV3 with Firefox's manifest.
+      - run: pnpm --filter @decay/extension build:firefox
       # The Rust core must decide exactly like the extension's policy: the parity fixtures
       # and JS case tables have to be regenerated whenever lib/policy changes (with the
       # Node version in .nvmrc, which setup-node uses).
