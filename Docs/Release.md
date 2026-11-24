@@ -53,6 +53,8 @@ https://decay.aryangarg.com is `apps/site`, a static Astro site. One-time setup 
 
 Every push to `main` then redeploys it. Local preview: `pnpm --filter @decay/site dev`.
 
+**As set up (24 Nov 2026):** Vercel project `decay-site` (team *code08ind's projects*), linked to `code08-ind/decay`, root `apps/site`, Node 22, production branch `main`; `decay.aryangarg.com` attached (verified). DNS: `CNAME decay → 6c74f33a4eafd734.vercel-dns-017.com`, DNS only. The `*.vercel.app` addresses are behind Vercel Authentication (the project default); the custom domain is public. Note `decay-site.vercel.app` is someone else's site: this project's is `decay-site-green.vercel.app`.
+
 ## Selling Decay Pro (P4.3)
 
 Keys are issued by `services/license-webhook`, a Cloudflare Worker that Lemon Squeezy calls on every order. One-time setup:
