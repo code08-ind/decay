@@ -57,50 +57,58 @@ pub struct BetaContext {
     pub rules: serde_json::Map<String, Value>,
 }
 
+/// The beta export's context from the store and the connected browsers (makes the install
+/// id on first use).
+fn beta_context(
+    s: &decay_store::Store,
+    browsers: &[Value],
+    now: i64,
+) -> Result<BetaContext, decay_store::StoreError> {
+    let mut rules = serde_json::Map::new();
+    let all = s.rules()?;
+    for action in [
+        RuleAction::Protect,
+        RuleAction::Exclude,
+        RuleAction::CustomThreshold,
+        RuleAction::CloseAllowed,
+    ] {
+        let n = all.iter().filter(|r| r.enabled && r.action == action).count();
+        let key = serde_json::to_value(action)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_owned))
+            .unwrap_or_else(|| action.as_sql().to_owned());
+        rules.insert(key, json!(n));
+    }
+    let mut browsers = browsers.to_vec();
+    browsers.sort_by_key(ToString::to_string);
+    browsers.dedup();
+    Ok(BetaContext {
+        install_id: s.beta_install_id(now)?,
+        app_version: env!("CARGO_PKG_VERSION").to_owned(),
+        platform: if cfg!(windows) { "windows" } else { "macos" },
+        browsers,
+        mode: s.mode()?,
+        preset: s.setting::<String>("preset")?.unwrap_or_else(|| "balanced".into()),
+        thresholds: s.thresholds()?,
+        shadow_started_at: s.setting::<i64>("shadow_started_at")?,
+        window_management: s
+            .setting::<String>("window_management")?
+            .unwrap_or_else(|| "hide".into()),
+        rules,
+    })
+}
+
 /// The beta export's context (makes the install id on first use).
 #[tauri::command]
 pub async fn get_beta_context(app: AppHandle) -> Res<BetaContext> {
     blocking(app, |core| {
-        let status = core.status();
+        let browsers: Vec<Value> = core
+            .status()
+            .iter()
+            .flat_map(|st| st.browsers.iter().map(|b| json!(b.browser)))
+            .collect();
         core.ask(move |e, now| {
-            let read = || -> Result<BetaContext, decay_store::StoreError> {
-                let s = e.store();
-                let mut rules = serde_json::Map::new();
-                for action in [
-                    RuleAction::Protect,
-                    RuleAction::Exclude,
-                    RuleAction::CustomThreshold,
-                    RuleAction::CloseAllowed,
-                ] {
-                    let n = s.rules()?.iter().filter(|r| r.enabled && r.action == action).count();
-                    let key = serde_json::to_value(action)
-                        .ok()
-                        .and_then(|v| v.as_str().map(str::to_owned))
-                        .unwrap_or_else(|| action.as_sql().to_owned());
-                    rules.insert(key, json!(n));
-                }
-                let mut browsers: Vec<Value> = status
-                    .iter()
-                    .flat_map(|st| st.browsers.iter().map(|b| json!(b.browser)))
-                    .collect();
-                browsers.sort_by_key(ToString::to_string);
-                browsers.dedup();
-                Ok(BetaContext {
-                    install_id: s.beta_install_id(now)?,
-                    app_version: env!("CARGO_PKG_VERSION").to_owned(),
-                    platform: if cfg!(windows) { "windows" } else { "macos" },
-                    browsers,
-                    mode: s.mode()?,
-                    preset: s.setting::<String>("preset")?.unwrap_or_else(|| "balanced".into()),
-                    thresholds: s.thresholds()?,
-                    shadow_started_at: s.setting::<i64>("shadow_started_at")?,
-                    window_management: s
-                        .setting::<String>("window_management")?
-                        .unwrap_or_else(|| "hide".into()),
-                    rules,
-                })
-            };
-            (read().map_err(|err| AppError::db(&err)), Vec::new())
+            (beta_context(e.store(), &browsers, now).map_err(|err| AppError::db(&err)), Vec::new())
         })?
     })
     .await
@@ -188,5 +196,24 @@ mod tests {
         assert!(checked(MetricsFile::Csv, "title,url\n").is_err());
         let big = format!("day,activeMinutes,{}", "x".repeat(MAX_FILE_BYTES));
         assert!(checked(MetricsFile::Csv, &big).is_err());
+    }
+
+    #[test]
+    fn the_beta_context_counts_without_content() {
+        use crate::testing::{NOW, engine};
+        let (e, _dir) = engine();
+        e.record_search(NOW).unwrap();
+        let report = e.metrics(NOW - 86_400_000, NOW).unwrap();
+        assert!(serde_json::to_value(&report).is_ok());
+        let browsers = [json!("chrome"), json!("edge"), json!("chrome")];
+        let ctx = beta_context(e.store(), &browsers, NOW).unwrap();
+        assert_eq!(ctx.browsers, [json!("chrome"), json!("edge")], "sorted, no duplicates");
+        assert_eq!(ctx.preset, "balanced");
+        // The default rules: four protect rules and the two folder close rules.
+        assert_eq!(ctx.rules["protect"], 4);
+        assert_eq!(ctx.rules["closeAllowed"], 2);
+        assert_eq!(ctx.rules["customThreshold"], 0);
+        let again = beta_context(e.store(), &[], NOW + 1).unwrap();
+        assert_eq!(again.install_id, ctx.install_id, "made once");
     }
 }

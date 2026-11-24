@@ -7,7 +7,7 @@
 #![allow(clippy::needless_pass_by_value, reason = "Tauri commands take their arguments by value")]
 
 use decay_core::Mode;
-use decay_engine::{EngineStatus, SweepRefused, UndoRefused};
+use decay_engine::{Engine, EngineStatus, SweepRefused, UndoRefused};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Manager, State};
@@ -84,6 +84,63 @@ pub fn hold_end(duration: &HoldDuration, now: &jiff::Zoned) -> Res<i64> {
     })
 }
 
+/// What a control call answers through `Core::ask`.
+type Answer<T> = (Res<T>, Vec<decay_engine::Output>);
+
+/// An engine change that only fails on the database: `ok` on success.
+fn stored<T>(r: Result<Vec<decay_engine::Output>, decay_store::StoreError>, ok: T) -> Answer<T> {
+    match r {
+        Ok(out) => (Ok(ok), out),
+        Err(err) => (Err(AppError::db(&err)), Vec::new()),
+    }
+}
+
+fn mode_set(e: &mut Engine, now: i64, mode: Mode) -> Answer<Value> {
+    stored(e.set_mode(mode, now), json!({ "mode": mode }))
+}
+
+fn resumed(e: &mut Engine, now: i64) -> Answer<Value> {
+    let (r, out) = stored(e.resume(now), ());
+    (r.map(|()| json!({ "mode": e.status(now).mode })), out)
+}
+
+fn held(e: &mut Engine, now: i64, until: Option<i64>) -> Answer<HoldResult> {
+    stored(e.hold(until, now), HoldResult { hold_until: until })
+}
+
+fn swept(e: &mut Engine, now: i64) -> Answer<Value> {
+    match e.sweep_now(now) {
+        Ok(out) => (Ok(json!({ "started": true })), out),
+        Err(why) => (Err(sweep_refused(&why)), Vec::new()),
+    }
+}
+
+fn undo_refused(why: &UndoRefused) -> AppError {
+    let (code, key) = match why {
+        UndoRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", "refused.undo.noBrowser"),
+        UndoRefused::StillClosing => ("CONFLICT", "refused.undo.stillClosing"),
+        UndoRefused::NothingToUndo => ("NOT_FOUND", "refused.undo.nothing"),
+        UndoRefused::WindowsUnknown => ("PERMISSION_DENIED", "refused.undo.windowsUnknown"),
+    };
+    AppError::new(code, t(key))
+}
+
+fn undone(e: &mut Engine, now: i64, id: Option<&str>) -> Answer<Value> {
+    match e.undo(id, now) {
+        Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
+        Ok(Err(why)) => (Err(undo_refused(&why)), Vec::new()),
+        Err(err) => (Err(AppError::db(&err)), Vec::new()),
+    }
+}
+
+/// Runs `f` on the engine thread (off the main thread).
+async fn on_engine<T: Send + 'static>(
+    app: AppHandle,
+    f: impl FnOnce(&mut Engine, i64) -> Answer<T> + Send + 'static,
+) -> Res<T> {
+    blocking(app, move |core| core.ask(f)?).await
+}
+
 #[tauri::command]
 pub async fn get_status(app: AppHandle) -> Res<EngineStatus> {
     blocking(app, |core| core.ask(|e, now| (e.status(now), Vec::new()))).await
@@ -91,25 +148,13 @@ pub async fn get_status(app: AppHandle) -> Res<EngineStatus> {
 
 #[tauri::command]
 pub async fn set_mode(app: AppHandle, mode: Mode) -> Res<Value> {
-    blocking(app, move |core| {
-        core.ask(move |e, now| match e.set_mode(mode, now) {
-            Ok(out) => (Ok(json!({ "mode": mode })), out),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await
+    on_engine(app, move |e, now| mode_set(e, now, mode)).await
 }
 
 /// Ends a pause: back to the mode before it (`set_mode` would lose it).
 #[tauri::command]
 pub async fn resume(app: AppHandle) -> Res<Value> {
-    blocking(app, |core| {
-        core.ask(|e, now| match e.resume(now) {
-            Ok(out) => (Ok(json!({ "mode": e.status(now).mode })), out),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await
+    on_engine(app, resumed).await
 }
 
 #[derive(Debug, Serialize)]
@@ -121,22 +166,14 @@ pub struct HoldResult {
 #[tauri::command]
 pub async fn hold(app: AppHandle, duration: HoldDuration) -> Res<HoldResult> {
     let until = hold_end(&duration, &jiff::Zoned::now())?;
-    blocking(app, move |core| {
-        core.ask(move |e, now| match e.hold(Some(until), now) {
-            Ok(out) => (Ok(HoldResult { hold_until: Some(until) }), out),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await
+    on_engine(app, move |e, now| held(e, now, Some(until))).await
 }
 
 #[tauri::command]
 pub async fn release_hold(app: AppHandle) -> Res<Value> {
-    blocking(app, |core| {
-        core.ask(|e, now| match e.hold(None, now) {
-            Ok(out) => (Ok(json!({})), out),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
+    on_engine(app, |e, now| {
+        let (r, out) = held(e, now, None);
+        (r.map(|_| json!({})), out)
     })
     .await
 }
@@ -159,36 +196,13 @@ fn sweep_refused(why: &SweepRefused) -> AppError {
 /// Starts a sweep; its result comes as `sweep:completed`.
 #[tauri::command]
 pub async fn run_sweep_now(app: AppHandle) -> Res<Value> {
-    blocking(app, |core| {
-        core.ask(|e, now| match e.sweep_now(now) {
-            Ok(out) => (Ok(json!({ "started": true })), out),
-            Err(why) => (Err(sweep_refused(&why)), Vec::new()),
-        })?
-    })
-    .await
+    on_engine(app, swept).await
 }
 
 /// Starts an Undo; its result comes as `sweep:undone`.
 #[tauri::command]
 pub async fn undo_sweep(app: AppHandle, id: Option<String>) -> Res<Value> {
-    blocking(app, move |core| {
-        core.ask(move |e, now| match e.undo(id.as_deref(), now) {
-            Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
-            Ok(Err(why)) => {
-                let (code, key) = match why {
-                    UndoRefused::NoBrowser => ("ADAPTER_UNAVAILABLE", "refused.undo.noBrowser"),
-                    UndoRefused::StillClosing => ("CONFLICT", "refused.undo.stillClosing"),
-                    UndoRefused::NothingToUndo => ("NOT_FOUND", "refused.undo.nothing"),
-                    UndoRefused::WindowsUnknown => {
-                        ("PERMISSION_DENIED", "refused.undo.windowsUnknown")
-                    }
-                };
-                (Err(AppError::new(code, t(key))), Vec::new())
-            }
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await
+    on_engine(app, move |e, now| undone(e, now, id.as_deref())).await
 }
 
 /// Registers the panel hotkey and saves it (`CONFLICT` if another app holds it).
@@ -583,5 +597,37 @@ mod tests {
         assert_eq!(sweep_refused(&SweepRefused::NoBrowser).code, "ADAPTER_UNAVAILABLE");
         assert_eq!(sweep_refused(&SweepRefused::Busy).code, "CONFLICT");
         assert_eq!(sweep_refused(&SweepRefused::OnHold(1)).code, "UNSAFE");
+    }
+
+    #[test]
+    fn control_calls_on_a_real_engine() {
+        use crate::testing::{NOW, engine};
+        let (mut e, _dir) = engine();
+        assert_eq!(mode_set(&mut e, NOW, Mode::Paused).0.unwrap()["mode"], "paused");
+        assert_eq!(resumed(&mut e, NOW).0.unwrap()["mode"], "shadow", "back to the mode before");
+        let until = NOW + 3_600_000;
+        assert_eq!(held(&mut e, NOW, Some(until)).0.unwrap().hold_until, Some(until));
+        assert_eq!(held(&mut e, NOW, None).0.unwrap().hold_until, None);
+        // No browser connected: a sweep is refused, so is an Undo of nothing.
+        assert_eq!(swept(&mut e, NOW).0.unwrap_err().code, "ADAPTER_UNAVAILABLE");
+        assert_eq!(undone(&mut e, NOW, None).0.unwrap_err().code, "NOT_FOUND");
+        assert_eq!(undone(&mut e, NOW, Some("nope")).0.unwrap_err().code, "NOT_FOUND");
+    }
+
+    #[test]
+    fn undo_refusals_map_to_app_errors() {
+        let codes: Vec<&str> = [
+            UndoRefused::NoBrowser,
+            UndoRefused::StillClosing,
+            UndoRefused::NothingToUndo,
+            UndoRefused::WindowsUnknown,
+        ]
+        .iter()
+        .map(|w| undo_refused(w).code)
+        .collect();
+        assert_eq!(codes, ["ADAPTER_UNAVAILABLE", "CONFLICT", "NOT_FOUND", "PERMISSION_DENIED"]);
+        assert_eq!(sweep_refused(&SweepRefused::Busy).code, "CONFLICT");
+        assert_eq!(sweep_refused(&SweepRefused::Paused).code, "UNSAFE");
+        assert_eq!(sweep_refused(&SweepRefused::OnHold(1_800_000_000_000)).code, "UNSAFE");
     }
 }

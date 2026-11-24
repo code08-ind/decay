@@ -295,6 +295,68 @@ pub enum RestoreTarget {
     NewWindow,
 }
 
+/// What a restore call answers through `Core::ask`.
+type Answer<T> = (Res<T>, Vec<decay_engine::Output>);
+
+/// The started / refused / failed answer of a restore.
+fn started(
+    e: &Engine,
+    r: Result<Result<Vec<decay_engine::Output>, RestoreRefused>, decay_store::StoreError>,
+    refusal: impl FnOnce(&Engine, &RestoreRefused) -> AppError,
+) -> Answer<Value> {
+    match r {
+        Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
+        Ok(Err(why)) => (Err(refusal(e, &why)), Vec::new()),
+        Err(err) => (Err(AppError::db(&err)), Vec::new()),
+    }
+}
+
+/// At most 500 ids, at least one.
+fn checked_ids(ids: &[String]) -> Res<()> {
+    if ids.is_empty() || ids.len() > 500 {
+        return Err(AppError::new("INVALID_INPUT", t("error.restore")));
+    }
+    Ok(())
+}
+
+fn restore(
+    e: &mut Engine,
+    now: i64,
+    ids: &[String],
+    new_window: bool,
+    search_ms: Option<u64>,
+) -> Answer<Value> {
+    let r = e.restore_searched(ids, new_window, search_ms, now);
+    started(e, r, |e, why| refused_with_choices(e, why, ids, now))
+}
+
+fn restore_whole_batch(e: &mut Engine, now: i64, item_id: &str) -> Answer<Value> {
+    let r = e.restore_batch(item_id, now);
+    started(e, r, |e, why| {
+        let ids = e.restore_ids(item_id).unwrap_or_default();
+        refused_with_choices(e, why, &ids, now)
+    })
+}
+
+fn restore_in(
+    e: &mut Engine,
+    now: i64,
+    ids: &[String],
+    app_id: &str,
+    profile_id: &str,
+) -> Answer<Value> {
+    let r = e.restore_into(ids, app_id, profile_id, now);
+    started(e, r, |_, why| restore_refused(why))
+}
+
+fn protect(e: &mut Engine, now: i64, id: &str) -> Answer<decay_core::Rule> {
+    match e.protect_site(id, now) {
+        Ok(Some(rule)) => (Ok(rule), Vec::new()),
+        Ok(None) => (Err(AppError::new("NOT_FOUND", t("error.noSite"))), Vec::new()),
+        Err(err) => (Err(AppError::db(&err)), Vec::new()),
+    }
+}
+
 /// Restores items (↵, or ⌥↵ into a new window). Starts the restore; its result arrives as
 /// `items:restored`.
 #[tauri::command]
@@ -304,16 +366,10 @@ pub async fn restore_items(
     target: Option<RestoreTarget>,
     search_ms: Option<u64>,
 ) -> Res<Value> {
-    if ids.is_empty() || ids.len() > 500 {
-        return Err(AppError::new("INVALID_INPUT", t("error.restore")));
-    }
+    checked_ids(&ids)?;
     let new_window = target.unwrap_or_default() == RestoreTarget::NewWindow;
     blocking(app, move |core| {
-        core.ask(move |e, now| match e.restore_searched(&ids, new_window, search_ms, now) {
-            Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
-            Ok(Err(why)) => (Err(refused_with_choices(e, &why, &ids, now)), Vec::new()),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
+        core.ask(move |e, now| restore(e, now, &ids, new_window, search_ms))?
     })
     .await
 }
@@ -321,17 +377,7 @@ pub async fn restore_items(
 /// Restores the batch an item was archived with (⌘↵), in order and with its groups.
 #[tauri::command]
 pub async fn restore_batch(app: AppHandle, item_id: String) -> Res<Value> {
-    blocking(app, move |core| {
-        core.ask(move |e, now| match e.restore_batch(&item_id, now) {
-            Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
-            Ok(Err(why)) => {
-                let ids = e.restore_ids(&item_id).unwrap_or_default();
-                (Err(refused_with_choices(e, &why, &ids, now)), Vec::new())
-            }
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await
+    blocking(app, move |core| core.ask(move |e, now| restore_whole_batch(e, now, &item_id))?).await
 }
 
 /// Restores items into a new window of another connected browser profile: "Open in …
@@ -343,15 +389,9 @@ pub async fn restore_items_in(
     app_id: String,
     profile_id: String,
 ) -> Res<Value> {
-    if ids.is_empty() || ids.len() > 500 {
-        return Err(AppError::new("INVALID_INPUT", t("error.restore")));
-    }
+    checked_ids(&ids)?;
     blocking(app, move |core| {
-        core.ask(move |e, now| match e.restore_into(&ids, &app_id, &profile_id, now) {
-            Ok(Ok(out)) => (Ok(json!({ "started": true })), out),
-            Ok(Err(why)) => (Err(restore_refused(&why)), Vec::new()),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
+        core.ask(move |e, now| restore_in(e, now, &ids, &app_id, &profile_id))?
     })
     .await
 }
@@ -360,14 +400,7 @@ pub async fn restore_items_in(
 #[tauri::command]
 pub async fn protect_item(app: AppHandle, id: String) -> Res<decay_core::Rule> {
     let handle = app.clone();
-    let out = blocking(app, move |core| {
-        core.ask(move |e, now| match e.protect_site(&id, now) {
-            Ok(Some(rule)) => (Ok(rule), Vec::new()),
-            Ok(None) => (Err(AppError::new("NOT_FOUND", t("error.noSite"))), Vec::new()),
-            Err(err) => (Err(AppError::db(&err)), Vec::new()),
-        })?
-    })
-    .await;
+    let out = blocking(app, move |core| core.ask(move |e, now| protect(e, now, &id))?).await;
     if out.is_ok() {
         crate::rules::announce(&handle);
     }
@@ -549,5 +582,28 @@ mod tests {
     fn refusals_map_to_app_errors() {
         assert_eq!(restore_refused(&RestoreRefused::NoBrowser).code, "ADAPTER_UNAVAILABLE");
         assert_eq!(restore_refused(&RestoreRefused::NothingToRestore).code, "NOT_FOUND");
+    }
+
+    #[test]
+    fn restore_calls_on_a_real_engine() {
+        use crate::testing::{NOW, engine};
+        let (mut e, _dir) = engine();
+        let ids = vec!["nope".to_owned()];
+        assert!(checked_ids(&ids).is_ok());
+        assert_eq!(checked_ids(&[]).unwrap_err().code, "INVALID_INPUT");
+        assert_eq!(checked_ids(&vec![String::new(); 501]).unwrap_err().code, "INVALID_INPUT");
+        // Nothing archived: every restore is refused, nothing is started.
+        let (r, out) = restore(&mut e, NOW, &ids, false, Some(1200));
+        assert_eq!((r.unwrap_err().code, out.len()), ("NOT_FOUND", 0));
+        // Into another profile: that profile isn't connected (checked first).
+        assert_eq!(
+            restore_in(&mut e, NOW, &ids, "com.google.Chrome", "p").0.unwrap_err().code,
+            "ADAPTER_UNAVAILABLE"
+        );
+        // Batch restore is Pro: refused before anything is looked up.
+        assert_eq!(restore_whole_batch(&mut e, NOW, "nope").0.unwrap_err().code, "PRO_REQUIRED");
+        e.set_license(true, None, NOW).unwrap();
+        assert_eq!(restore_whole_batch(&mut e, NOW, "nope").0.unwrap_err().code, "NOT_FOUND");
+        assert_eq!(protect(&mut e, NOW, "nope").0.unwrap_err().code, "NOT_FOUND");
     }
 }

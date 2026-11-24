@@ -4,7 +4,7 @@
 #![allow(clippy::needless_pass_by_value, reason = "Tauri commands take their arguments by value")]
 
 use decay_core::Rule;
-use decay_engine::{RuleInput, RuleRefused, RuleTest};
+use decay_engine::{Engine, RuleInput, RuleRefused, RuleTest};
 use decay_store::Store;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -100,90 +100,85 @@ pub fn test_output(store: &Store, t: RuleTest) -> TestOutput {
     }
 }
 
+/// What a rule call answers through `Core::ask`.
+type Answer<T> = (Res<T>, Vec<decay_engine::Output>);
+
+fn saved(r: Result<(Rule, u32, Vec<decay_engine::Output>), RuleRefused>) -> Answer<Saved> {
+    match r {
+        Ok((rule, purged, out)) => (Ok(Saved { rule, purged }), out),
+        Err(why) => (Err(refused(&why)), Vec::new()),
+    }
+}
+
+fn listed(e: &Engine) -> Res<Vec<Rule>> {
+    e.rules().map_err(|err| AppError::db(&err))
+}
+
+fn deleted(e: &mut Engine, id: &str, now: i64) -> Answer<Value> {
+    match e.delete_rule(id, now) {
+        Ok(out) => (Ok(json!({})), out),
+        Err(why) => (Err(refused(&why)), Vec::new()),
+    }
+}
+
+fn tested(e: &Engine, rule: &RuleInput, now: i64) -> Res<TestOutput> {
+    e.test_rule(rule, now).map(|t| test_output(e.store(), t)).map_err(|why| refused(&why))
+}
+
+fn previewed(e: &Engine, rule: &RuleInput) -> Res<Value> {
+    e.preview_exclude(rule).map(|n| json!({ "count": n })).map_err(|why| refused(&why))
+}
+
+/// A rule id the UI may pass (what `new_id` makes: letters, digits, dashes).
+fn checked_id(id: &str) -> Res<()> {
+    if valid_id(id) { Ok(()) } else { Err(AppError::new("INVALID_INPUT", t("error.notRule"))) }
+}
+
+/// Runs a change on the engine thread; every window hears about a saved one.
+async fn change<T: Send + 'static>(
+    app: AppHandle,
+    f: impl FnOnce(&mut Engine, i64) -> Answer<T> + Send + 'static,
+) -> Res<T> {
+    let handle = app.clone();
+    let out = blocking(app, move |core| core.ask(f)?).await;
+    if out.is_ok() {
+        announce(&handle);
+    }
+    out
+}
+
 #[tauri::command]
 pub async fn list_rules(app: AppHandle) -> Res<Vec<Rule>> {
-    blocking(app, |core| {
-        core.ask(|e, _| (e.rules().map_err(|err| AppError::db(&err)), Vec::new()))?
-    })
-    .await
+    blocking(app, |core| core.ask(|e, _| (listed(e), Vec::new()))?).await
 }
 
 #[tauri::command]
 pub async fn create_rule(app: AppHandle, rule: RuleInput) -> Res<Saved> {
-    let handle = app.clone();
-    let out = blocking(app, move |core| {
-        core.ask(move |e, now| match e.create_rule(&rule, now) {
-            Ok((rule, purged, out)) => (Ok(Saved { rule, purged }), out),
-            Err(why) => (Err(refused(&why)), Vec::new()),
-        })?
-    })
-    .await;
-    if out.is_ok() {
-        announce(&handle);
-    }
-    out
+    change(app, move |e, now| saved(e.create_rule(&rule, now))).await
 }
 
 #[tauri::command]
 pub async fn update_rule(app: AppHandle, id: String, rule: RuleInput) -> Res<Saved> {
-    if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", t("error.notRule")));
-    }
-    let handle = app.clone();
-    let out = blocking(app, move |core| {
-        core.ask(move |e, now| match e.update_rule(&id, &rule, now) {
-            Ok((rule, purged, out)) => (Ok(Saved { rule, purged }), out),
-            Err(why) => (Err(refused(&why)), Vec::new()),
-        })?
-    })
-    .await;
-    if out.is_ok() {
-        announce(&handle);
-    }
-    out
+    checked_id(&id)?;
+    change(app, move |e, now| saved(e.update_rule(&id, &rule, now))).await
 }
 
 #[tauri::command]
 pub async fn delete_rule(app: AppHandle, id: String) -> Res<Value> {
-    if !valid_id(&id) {
-        return Err(AppError::new("INVALID_INPUT", t("error.notRule")));
-    }
-    let handle = app.clone();
-    let out = blocking(app, move |core| {
-        core.ask(move |e, now| match e.delete_rule(&id, now) {
-            Ok(out) => (Ok(json!({})), out),
-            Err(why) => (Err(refused(&why)), Vec::new()),
-        })?
-    })
-    .await;
-    if out.is_ok() {
-        announce(&handle);
-    }
-    out
+    checked_id(&id)?;
+    change(app, move |e, now| deleted(e, &id, now)).await
 }
 
 /// Tests a rule as it's being written (live tabs, archived items, a few examples).
 #[tauri::command]
 pub async fn test_rule(app: AppHandle, rule: RuleInput) -> Res<TestOutput> {
-    blocking(app, move |core| {
-        core.ask(move |e, now| match e.test_rule(&rule, now) {
-            Ok(t) => (Ok(test_output(e.store(), t)), Vec::new()),
-            Err(why) => (Err(refused(&why)), Vec::new()),
-        })?
-    })
-    .await
+    blocking(app, move |core| core.ask(move |e, now| (tested(e, &rule, now), Vec::new()))?).await
 }
 
 /// How many stored items saving this exclude rule would delete (to confirm first).
 #[tauri::command]
 pub async fn preview_exclude(app: AppHandle, rule: RuleInput) -> Res<Value> {
-    blocking(app, move |core| {
-        core.ask(move |e, _| match e.preview_exclude(&rule) {
-            Ok(n) => (Ok(json!({ "count": n })), Vec::new()),
-            Err(why) => (Err(refused(&why)), Vec::new()),
-        })?
-    })
-    .await
+    blocking(app, move |core| core.ask(move |e, _| (previewed(e, &rule), Vec::new()))?).await
 }
 
 #[cfg(test)]
@@ -225,6 +220,63 @@ mod tests {
         let json = serde_json::to_value(&out).unwrap();
         assert_eq!(json["matchesLive"], 3);
         assert_eq!(json["sample"][0]["title"], "Docs");
+    }
+}
+
+#[cfg(test)]
+mod engine_tests {
+    use decay_core::{RuleAction, RuleScope};
+
+    use super::*;
+    use crate::testing::{NOW, engine};
+
+    fn input(pattern: &str, action: RuleAction) -> RuleInput {
+        RuleInput {
+            scope: RuleScope::Domain,
+            pattern: pattern.into(),
+            action,
+            threshold_hours: None,
+            enabled: None,
+        }
+    }
+
+    #[test]
+    fn rules_are_created_listed_tested_updated_and_deleted() {
+        let (mut e, _dir) = engine();
+        let before = listed(&e).unwrap().len();
+        let (made, _) = saved(e.create_rule(&input("news.example", RuleAction::Protect), NOW));
+        let made = made.unwrap();
+        assert_eq!((made.rule.pattern.as_str(), made.purged), ("news.example", 0));
+        assert_eq!(listed(&e).unwrap().len(), before + 1);
+        let (dupe, out) = saved(e.create_rule(&input("news.example", RuleAction::Protect), NOW));
+        assert_eq!((dupe.unwrap_err().code, out.len()), ("CONFLICT", 0));
+        let (bad, _) = saved(e.create_rule(&input("", RuleAction::Protect), NOW));
+        assert_eq!(bad.unwrap_err().code, "INVALID_INPUT");
+
+        let test = tested(&e, &input("news.example", RuleAction::Protect), NOW).unwrap();
+        assert_eq!((test.matches_live, test.matches_archived), (0, 0));
+        assert_eq!(
+            tested(&e, &input("", RuleAction::Protect), NOW).unwrap_err().code,
+            "INVALID_INPUT"
+        );
+        assert_eq!(previewed(&e, &input("news.example", RuleAction::Exclude)).unwrap()["count"], 0);
+        assert_eq!(previewed(&e, &input("news.example", RuleAction::Protect)).unwrap()["count"], 0);
+        assert_eq!(
+            previewed(&e, &input("", RuleAction::Exclude)).unwrap_err().code,
+            "INVALID_INPUT"
+        );
+
+        let off = RuleInput { enabled: Some(false), ..input("news.example", RuleAction::Protect) };
+        let (updated, _) = saved(e.update_rule(&made.rule.id, &off, NOW));
+        assert!(!updated.unwrap().rule.enabled);
+        let (missing, _) = saved(e.update_rule("nope", &off, NOW));
+        assert_eq!(missing.unwrap_err().code, "NOT_FOUND");
+
+        assert!(deleted(&mut e, &made.rule.id, NOW).0.is_ok());
+        assert_eq!(deleted(&mut e, &made.rule.id, NOW).0.unwrap_err().code, "NOT_FOUND");
+        assert_eq!(listed(&e).unwrap().len(), before);
+        assert!(checked_id("0b7f-3a52").is_ok());
+        assert_eq!(checked_id("a b").unwrap_err().code, "INVALID_INPUT");
     }
 }
 

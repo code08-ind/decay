@@ -308,6 +308,7 @@ pub struct PendingImport {
 }
 
 /// A picked file, read and parsed.
+#[derive(Debug)]
 struct Parsed {
     doc: Value,
     file_name: String,
@@ -406,6 +407,32 @@ pub async fn import_archive(app: AppHandle, window: Window) -> Res<Option<Import
     Ok(outcome)
 }
 
+/// The waiting file imported (`proceed`) or dropped; `None` when dropped or when
+/// `token` isn't the waiting file's (nothing is imported then).
+fn confirmed(
+    core: &crate::core::Core,
+    pending: &PendingImport,
+    token: u64,
+    proceed: bool,
+) -> Res<Option<ImportOutcome>> {
+    let waiting = {
+        let mut slot = pending.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if slot.as_ref().is_none_or(|w| w.token != token) {
+            return Ok(None);
+        }
+        slot.take()
+    };
+    let Some(w) = waiting.filter(|_| proceed) else { return Ok(None) };
+    let parsed = Parsed {
+        doc: w.doc,
+        file_name: w.file_name,
+        bookmarks: w.bookmarks,
+        links_capped: w.links_capped,
+    };
+    // Exactly what was confirmed: a file that would now delete more asks again.
+    run_import(core, pending, parsed, w.purge).map(Some)
+}
+
 /// Imports the file waiting for confirmation (`proceed`), or drops it. `null` when
 /// dropped, or when `token` isn't the waiting file's (nothing is imported then).
 #[tauri::command]
@@ -416,24 +443,7 @@ pub async fn confirm_import(
 ) -> Res<Option<ImportOutcome>> {
     let (handle, emit) = (app.clone(), app.clone());
     let outcome = blocking(app, move |core| {
-        let pending = handle.state::<PendingImport>();
-        let waiting = {
-            let mut slot =
-                pending.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            if slot.as_ref().is_none_or(|w| w.token != token) {
-                return Ok(None);
-            }
-            slot.take()
-        };
-        let Some(w) = waiting.filter(|_| proceed) else { return Ok(None) };
-        let parsed = Parsed {
-            doc: w.doc,
-            file_name: w.file_name,
-            bookmarks: w.bookmarks,
-            links_capped: w.links_capped,
-        };
-        // Exactly what was confirmed: a file that would now delete more asks again.
-        run_import(core, &pending, parsed, w.purge).map(Some)
+        confirmed(core, &handle.state::<PendingImport>(), token, proceed)
     })
     .await?;
     if let Some(outcome) = &outcome {
@@ -519,5 +529,69 @@ mod tests {
         assert!(csv.starts_with(b"\xEF\xBB\xBFtitle,url"));
         let (html, _) = build(&store, ExportFormat::Html, Include::default(), 1_000, &tz).unwrap();
         assert!(html.starts_with(b"<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
+    }
+
+    /// Files through a running engine: bookmarks import, a JSON export round trip, a file
+    /// that's neither, and a file whose rules would delete stored items (confirmed first).
+    #[test]
+    fn imports_through_the_engine() {
+        let running = crate::testing::core();
+        let core = &running.core;
+        let pending = PendingImport::default();
+        let dir = tempfile::tempdir().unwrap();
+        let file = |name: &str, text: &str| {
+            let p = dir.path().join(name);
+            std::fs::write(&p, text).unwrap();
+            p
+        };
+
+        let marks = file(
+            "bookmarks.html",
+            "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n<DT><A HREF=\"https://example.com/a\">A page</A>\n</DL>",
+        );
+        let parsed = parse_file(core, &marks).unwrap();
+        assert!(parsed.bookmarks && !parsed.links_capped);
+        let ImportOutcome::Done(done) = run_import(core, &pending, parsed, 0).unwrap() else {
+            panic!("bookmarks need no confirmation")
+        };
+        assert_eq!(
+            (done.file_name.as_str(), done.result.report.items_imported),
+            ("bookmarks.html", 1)
+        );
+
+        assert_eq!(
+            parse_file(core, &file("notes.txt", "hello")).unwrap_err().code,
+            "INVALID_INPUT"
+        );
+        assert_eq!(parse_file(core, &file("x.json", "{oops")).unwrap_err().code, "INVALID_INPUT");
+
+        // An export of this archive, with a "never record" rule for the imported site.
+        let tz = jiff::tz::TimeZone::UTC;
+        let (bytes, count) = core
+            .ask(move |e, now| {
+                (build(e.store(), ExportFormat::Json, Include::default(), now, &tz), Vec::new())
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(count, 1);
+        let mut doc: Value = serde_json::from_slice(&bytes).unwrap();
+        doc["rules"].as_array_mut().unwrap().push(serde_json::json!({
+            "id": "x1", "scope": "domain", "match": "example.com", "action": "exclude",
+            "enabled": true, "source": "user", "createdAt": 1, "hitCount": 0
+        }));
+        let export = file("decay.json", &doc.to_string());
+        let parsed = parse_file(core, &export).unwrap();
+        let ImportOutcome::Confirm(ask) = run_import(core, &pending, parsed, 0).unwrap() else {
+            panic!("a rule that deletes stored items needs a confirmation")
+        };
+        assert_eq!((ask.purge, ask.file_name.as_str()), (1, "decay.json"));
+        assert!(confirmed(core, &pending, ask.token + 1, true).unwrap().is_none(), "wrong token");
+        let ImportOutcome::Done(done) =
+            confirmed(core, &pending, ask.token, true).unwrap().unwrap()
+        else {
+            panic!("confirmed")
+        };
+        assert_eq!(done.result.report.items_purged, 1);
+        assert!(confirmed(core, &pending, ask.token, true).unwrap().is_none(), "used once");
     }
 }

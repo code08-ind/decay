@@ -30,6 +30,8 @@ mod menu;
 mod metrics;
 mod notify;
 mod onboarding;
+#[cfg(test)]
+mod testing;
 // The tray popover is Windows-only; its placement is tested everywhere.
 #[cfg_attr(not(windows), allow(dead_code))]
 mod popover;
