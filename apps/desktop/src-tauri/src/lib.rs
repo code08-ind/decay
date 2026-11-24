@@ -96,6 +96,12 @@ fn forward(app: &AppHandle, event: EngineEvent) {
                 json!({ "sweepId": sweep_id, "hidden": hidden, "failed": failed }),
             );
         }
+        EngineEvent::WindowsClosed { sweep_id, closed, failed } => {
+            let _ = app.emit(
+                "windows:closed",
+                json!({ "sweepId": sweep_id, "closed": closed, "failed": failed }),
+            );
+        }
         EngineEvent::AccessibilityChanged { trusted } => {
             let accessibility = if trusted { "granted" } else { "denied" };
             let _ = app.emit("permission:changed", json!({ "accessibility": accessibility }));

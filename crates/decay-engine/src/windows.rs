@@ -163,7 +163,11 @@ fn same_window(item: &Item, w: &AppWindow) -> bool {
 /// unknown until a list shows its window), so the same matching and expiry apply to it.
 fn load_stored(state: &mut AppWindowsState, store: &Store) -> Res {
     for item in store.live_items()? {
-        let live = matches!(item.state, ItemState::Active | ItemState::Stale | ItemState::Hidden);
+        // Archiving: a close a quit or crash interrupted, settled by the first list.
+        let live = matches!(
+            item.state,
+            ItemState::Active | ItemState::Stale | ItemState::Hidden | ItemState::Archiving
+        );
         if item.kind == ItemKind::Window && live && !state.tracked.contains_key(&item.id) {
             let window_id = item.external_id.as_deref().and_then(|n| n.parse().ok());
             state.tracked.insert(item.id.clone(), TrackedWindow::loaded(item, window_id));
@@ -189,15 +193,23 @@ fn refresh(item: &mut Item, w: &AppWindow) -> bool {
     changed
 }
 
-/// The `apps` row for an app whose windows are tracked.
+/// The file managers whose folder windows may be closed (P4.1; the default catalog's
+/// rows, kept as they are).
+const FOLDER_APPS: [&str; 2] = ["com.apple.finder", "explorer.exe"];
+
+/// The `apps` row for an app whose windows are tracked. Windows app ids are executable
+/// names (`*.exe`).
 fn app_row(bundle: &str, name: &str) -> App {
+    let folders = FOLDER_APPS.contains(&bundle);
+    let windows =
+        std::path::Path::new(bundle).extension().is_some_and(|e| e.eq_ignore_ascii_case("exe"));
     App {
         id: bundle.to_owned(),
         name: name.to_owned(),
-        platform: Platform::MacOs,
+        platform: if windows { Platform::Windows } else { Platform::MacOs },
         is_browser: false,
-        close_allowed: false,
-        restore_kind: RestoreKind::Document,
+        close_allowed: folders,
+        restore_kind: if folders { RestoreKind::Folder } else { RestoreKind::Document },
         icon_png: None,
     }
 }
@@ -479,11 +491,16 @@ impl Engine {
         deleted.extend(expire_missing(&mut state, &seen, &present, now));
         write_changes(&mut self.store, &apps, &writes, &deleted, &used, now)?;
         self.app_windows = state;
+        self.settle_after_list(first_list, now)
+    }
+
+    /// What a list settles: hide sweeps a quit or crash left running (the first list
+    /// only), and closes nobody confirmed (P4.1).
+    fn settle_after_list(&mut self, first_list: bool, now: i64) -> Res {
         if first_list {
-            // Hide sweeps a quit or crash left running: settled against this list.
             self.settle_hide_sweeps(now)?;
         }
-        Ok(())
+        self.settle_closes(now)
     }
 
     /// Window handling is off: no window records are kept. Every live, untouched window
@@ -503,6 +520,7 @@ impl Engine {
                     pid: t.pid,
                     window_id,
                     deadline: now + crate::hide::HIDE_ANSWER_MS,
+                    reopen: None,
                 }));
             }
         }
@@ -651,6 +669,20 @@ mod tests {
         assert_eq!(save_state_of(&win("a", None, Some(false))), SaveState::Unknown);
         assert_eq!(save_state_of(&win("a", doc, None)), SaveState::Unknown);
         assert_eq!(save_state_of(&win("a", None, Some(true))), SaveState::Unsaved);
+    }
+
+    #[test]
+    fn file_managers_keep_their_catalog_row() {
+        let finder = app_row("com.apple.finder", "Finder");
+        assert!(finder.close_allowed);
+        assert_eq!((finder.platform, finder.restore_kind), (Platform::MacOs, RestoreKind::Folder));
+        let explorer = app_row("explorer.exe", "explorer");
+        assert_eq!(explorer.platform, Platform::Windows);
+        assert!(explorer.close_allowed);
+        let notepad = app_row("notepad.exe", "notepad");
+        assert_eq!((notepad.platform, notepad.close_allowed), (Platform::Windows, false));
+        let text = app_row("com.apple.TextEdit", "TextEdit");
+        assert_eq!((text.platform, text.restore_kind), (Platform::MacOs, RestoreKind::Document));
     }
 
     #[test]

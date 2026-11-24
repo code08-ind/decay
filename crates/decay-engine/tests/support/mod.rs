@@ -73,9 +73,14 @@ pub fn snapshot(tabs: Vec<TabInfo>) -> Snapshot {
 
 impl Harness {
     pub fn new() -> Self {
+        Self::with_pro(false)
+    }
+
+    /// With or without Pro (closing allowlisted windows, P4.1).
+    pub fn with_pro(pro: bool) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let store = open_store(dir.path(), T0);
-        let config = EngineConfig { platform: Platform::MacOs, pro: false };
+        let config = EngineConfig { platform: Platform::MacOs, pro };
         let engine = Engine::new(store, config, T0).unwrap();
         Self {
             engine,

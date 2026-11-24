@@ -125,7 +125,8 @@ pub enum Output {
     /// port and so the host; the engine ignores anything more from it.
     Close(ConnId),
     Event(EngineEvent),
-    /// Hide or restore an app window (P2.2), done by the runtime's window actor.
+    /// Hide, restore or close an app window (P2.2, P4.1), or reopen an archived one's
+    /// folder, done by the runtime's window actor.
     Window(crate::hide::WindowCommand),
 }
 
@@ -163,6 +164,12 @@ pub enum EngineEvent {
     WindowsHidden {
         sweep_id: String,
         hidden: u32,
+        failed: u32,
+    },
+    /// A close sweep finished (P4.1): hidden folder windows closed (Undo reopens them).
+    WindowsClosed {
+        sweep_id: String,
+        closed: u32,
         failed: u32,
     },
     /// The Accessibility permission was granted or revoked (F33 health; first sample too).
@@ -493,6 +500,10 @@ pub struct Engine {
     pub(crate) window_ops: HashMap<String, crate::hide::PendingWindowOp>,
     /// When the last hide sweep started.
     pub(crate) last_hide_at: Option<i64>,
+    /// When the last close sweep started (P4.1).
+    pub(crate) last_close_at: Option<i64>,
+    /// Restores of archived windows waiting for their folders to open, by batch id.
+    pub(crate) reopen_batches: HashMap<String, crate::close::ReopenBatch>,
     /// In a meeting until then (F12): no scheduled sweeps.
     pub(crate) meeting_until: Option<i64>,
     /// Why each pending hide was chosen (written with its answer).
@@ -585,7 +596,7 @@ impl Engine {
         let last_sweep_at = store
             .recent_sweeps(20)?
             .into_iter()
-            .find(|s| !crate::hide::is_hide_record(s))
+            .find(|s| !crate::hide::is_hide_record(s) && !crate::close::is_close_record(s))
             .map(|s| s.started_at);
         let unfinished = store.unfinished_sweeps()?.len();
         if unfinished > 0 {
@@ -605,6 +616,8 @@ impl Engine {
             app_windows: crate::windows::AppWindowsState::default(),
             window_ops: HashMap::new(),
             last_hide_at: None,
+            last_close_at: None,
+            reopen_batches: HashMap::new(),
             meeting_until: None,
             hide_reasons: HashMap::new(),
             late_hides: HashMap::new(),
@@ -744,6 +757,7 @@ impl Engine {
             }
             self.maybe_sweep(now, decay_core::SweepTrigger::Scheduled, false);
             self.maybe_hide_windows(now);
+            self.maybe_close_windows(now);
         }
         self.expire_window_ops(now);
         if now >= self.next_maintenance_at {

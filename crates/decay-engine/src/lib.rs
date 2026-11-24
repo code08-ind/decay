@@ -28,6 +28,7 @@
 //!
 //! [`Store`]: decay_store::Store
 
+mod close;
 mod control;
 mod domain;
 mod engine;

@@ -140,7 +140,10 @@ impl Core {
             migrations = ?report.applied_migrations,
             "store open"
         );
-        let engine = Engine::new(store, EngineConfig::default(), now_ms())
+        // Pro (closing allowlisted folder windows, P4.1) comes with licensing (P4.2);
+        // until then only a debug build started with DECAY_PRO=1 has it.
+        let pro = cfg!(debug_assertions) && std::env::var_os("DECAY_PRO").is_some();
+        let engine = Engine::new(store, EngineConfig { pro, ..EngineConfig::default() }, now_ms())
             .map_err(|e| StartError::new("start.engine", e))?;
         server.publish(&dir.support).map_err(|e| StartError::new("start.engine", e))?;
         let runtime = Runtime::start(server, engine, decay_platform::native(), events)

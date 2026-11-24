@@ -72,7 +72,7 @@ pub(crate) fn target(item: &Item) -> PolicyTarget<'_> {
 
 /// Guards for the lifecycle: archiving needs only `may_close` (age ≥ the archive
 /// threshold the decision used, not protected, not held).
-fn archive_guards(item: &Item, reason: &Reason, policy: &PolicySettings) -> Guards {
+pub(crate) fn archive_guards(item: &Item, reason: &Reason, policy: &PolicySettings) -> Guards {
     let archive = match reason {
         Reason::Unused { threshold, .. } => *threshold,
         Reason::CustomRule { rule_id, .. } => policy
@@ -123,7 +123,7 @@ pub(crate) fn commit(s: &Store, item: &mut Item, sweep: Option<&str>, now: i64) 
 /// The close didn't happen: back to stale (tabs) / hidden (windows). The archive reason
 /// and sweep stay on the record: if Decay's close lands after all (a late close), the
 /// item is archived with them (see `tab.removed` in `tabs`).
-fn abort(s: &Store, item: &mut Item, sweep: Option<&str>, now: i64) -> Res {
+pub(crate) fn abort(s: &Store, item: &mut Item, sweep: Option<&str>, now: i64) -> Res {
     item.state = next_state(ItemState::Archiving, LifecycleEvent::Abort, &plain_guards(item))
         .unwrap_or(ItemState::Stale);
     item.state_changed_at = now;

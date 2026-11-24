@@ -59,7 +59,7 @@ pub fn app_running(bundle_id: &str) -> Option<bool> {
 
 pub use windows::{
     AppWindow, AppWindows, NullWindowActor, NullWindowLister, WindowActor, WindowList,
-    WindowLister, WindowOp, window_actor, window_lister,
+    WindowLister, WindowOp, file_url_path, reopen_folder, window_actor, window_lister,
 };
 
 #[cfg(target_os = "macos")]

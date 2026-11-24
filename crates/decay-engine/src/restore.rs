@@ -20,7 +20,7 @@ use decay_bridge::protocol::{
     Ack, ArchiveRestore, ArchiveRestoreBatch, ArchiveSearch, ArchiveSearchResult, ArchiveUndo,
     ArchivedItem, LastSweep, RestoreGroup, RestoreItem, RestoreResult, RestoreSummary, TabsRestore,
 };
-use decay_core::{EventType, ItemState, LifecycleEvent, SweepStatus, next_state};
+use decay_core::{EventType, ItemKind, ItemState, LifecycleEvent, SweepStatus, next_state};
 use decay_store::{Item, SearchFilters, SearchQuery, Store, Sweep};
 
 use crate::engine::{
@@ -151,9 +151,11 @@ impl Engine {
             items.push(archived_item(&hit.item, key));
         }
         let last_sweep = if q.query.trim().is_empty() {
-            let last = undoable(&self.store)?
-                .into_iter()
-                .find(|w| w.undone_at.is_none() && !crate::hide::is_hide_record(w));
+            let last = undoable(&self.store)?.into_iter().find(|w| {
+                w.undone_at.is_none()
+                    && !crate::hide::is_hide_record(w)
+                    && !crate::close::is_close_record(w)
+            });
             match last {
                 Some(w) => Some(LastSweep {
                     remaining: u32::try_from(self.store.archived_in_sweep(&w.id)?.len())
@@ -266,14 +268,31 @@ impl Engine {
                 }
                 Ok(())
             }
-            Ok((sweep_id, items)) => self.start_restore(
-                Some((conn, req)),
-                &items,
-                Placement::Original { focus: false },
-                Some(sweep_id),
-                0,
-                now,
-            ),
+            Ok((sweep_id, items)) => {
+                // Closed windows (P4.1) reopen their folders: the popup hears how many
+                // were asked to (the result comes later, in the app).
+                let (windows, tabs): (Vec<Item>, Vec<Item>) =
+                    items.into_iter().partition(|i| i.kind == ItemKind::Window);
+                if tabs.is_empty() && !windows.is_empty() {
+                    let asked = u32::try_from(windows.len()).unwrap_or(u32::MAX);
+                    self.start_reopen(&windows, Some(sweep_id), 0, now);
+                    let result =
+                        serde_json::json!({ "restored": asked, "failed": 0, "skipped": 0 });
+                    self.reply_ok(conn, req, &result);
+                    return Ok(());
+                }
+                if !windows.is_empty() {
+                    self.start_reopen(&windows, Some(sweep_id.clone()), 0, now);
+                }
+                self.start_restore(
+                    Some((conn, req)),
+                    &tabs,
+                    Placement::Original { focus: false },
+                    Some(sweep_id),
+                    0,
+                    now,
+                )
+            }
         }
     }
 
@@ -294,6 +313,15 @@ impl Engine {
                 crate::hide::HideUndo::Done { .. } => return Ok(Ok(())),
                 crate::hide::HideUndo::Unknown => return Ok(Err(UndoRefused::WindowsUnknown)),
                 crate::hide::HideUndo::NotHide => {}
+            }
+        }
+        // Closed windows (P4.1) reopen their folders; the tabs go back as usual.
+        let (windows, items): (Vec<Item>, Vec<Item>) =
+            items.into_iter().partition(|i| i.kind == ItemKind::Window);
+        if !windows.is_empty() {
+            self.start_reopen(&windows, Some(sweep_id.clone()), 0, now);
+            if items.is_empty() {
+                return Ok(Ok(()));
             }
         }
         // Nothing left archived (restored one by one): the undo just marks the sweep undone.
@@ -332,6 +360,15 @@ impl Engine {
         }
         if items.is_empty() {
             return Ok(Err(RestoreRefused::NothingToRestore));
+        }
+        // Closed windows (P4.1) reopen their folders, whatever browser is connected.
+        let (windows, mut items): (Vec<Item>, Vec<Item>) =
+            items.into_iter().partition(|i| i.kind == ItemKind::Window);
+        if !windows.is_empty() {
+            self.start_reopen(&windows, None, if items.is_empty() { skipped } else { 0 }, now);
+            if items.is_empty() {
+                return Ok(Ok(()));
+            }
         }
         if !items.iter().any(|i| matches!(self.home_conn(i, now), Ok(Some(_)))) {
             return Ok(Err(RestoreRefused::NoBrowser));

@@ -48,6 +48,9 @@ pub struct WindowCommand {
     pub window_id: u32,
     /// Epoch ms after which the actor must not act any more (answering "too late").
     pub deadline: i64,
+    /// Reopen this folder instead (an archived window's restore, P4.1; `pid` and
+    /// `window_id` mean nothing then).
+    pub reopen: Option<String>,
 }
 
 /// What Undo did with a hide sweep.
@@ -67,6 +70,8 @@ pub(crate) struct PendingWindowOp {
     pub op: WindowOp,
     pub sweep_id: Option<String>,
     pub deadline: i64,
+    /// A folder reopening for this restore batch (P4.1).
+    pub reopen_batch: Option<String>,
 }
 
 impl Engine {
@@ -136,6 +141,7 @@ impl Engine {
                     op: WindowOp::Hide,
                     sweep_id: Some(sweep_id.clone()),
                     deadline: now + HIDE_ANSWER_MS,
+                    reopen_batch: None,
                 },
             );
             self.out.push(Output::Window(WindowCommand {
@@ -144,6 +150,7 @@ impl Engine {
                 pid,
                 window_id,
                 deadline: now + HIDE_ANSWER_MS,
+                reopen: None,
             }));
         }
         self.last_hide_at = Some(now);
@@ -233,12 +240,20 @@ impl Engine {
                         op: WindowOp::Hide,
                         sweep_id: Some(sweep.clone()),
                         deadline: now,
+                        reopen_batch: None,
                     },
                     true,
                 ),
                 _ => return Ok(()),
             },
         };
+        if let Some(batch) = &op.reopen_batch {
+            return self.reopen_answered(item_id, batch, result, now);
+        }
+        if op.op == WindowOp::Close {
+            let sweep = op.sweep_id.clone().unwrap_or_default();
+            return self.window_close_answered(item_id, &sweep, result, now);
+        }
         if op.op != WindowOp::Hide {
             if result.is_err() {
                 // Undo couldn't bring it back: it's still in the Dock, so it's still hidden
@@ -327,6 +342,11 @@ impl Engine {
             .map(|(id, _)| id.clone())
             .collect();
         for id in late {
+            // A close nobody confirmed proves nothing: the next window list settles it.
+            if self.window_ops.get(&id).is_some_and(|op| op.op == WindowOp::Close) {
+                self.window_ops.remove(&id);
+                continue;
+            }
             // Recorded as failed, but a late success is still applied for a while.
             if let Some(PendingWindowOp { op: WindowOp::Hide, sweep_id: Some(sweep), .. }) =
                 self.window_ops.get(&id)
@@ -389,6 +409,7 @@ impl Engine {
                 pid,
                 window_id,
                 deadline: now + HIDE_ANSWER_MS,
+                reopen: None,
             });
             back.push(item);
         }
@@ -412,7 +433,12 @@ impl Engine {
         for c in commands {
             self.window_ops.insert(
                 c.item_id.clone(),
-                PendingWindowOp { op: WindowOp::Restore, sweep_id: None, deadline: c.deadline },
+                PendingWindowOp {
+                    op: WindowOp::Restore,
+                    sweep_id: None,
+                    deadline: c.deadline,
+                    reopen_batch: None,
+                },
             );
             self.out.push(Output::Window(c));
         }

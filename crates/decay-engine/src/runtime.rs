@@ -265,6 +265,8 @@ impl Runtime {
                 // Queued behind a slow app past its deadline: the engine has moved on.
                 let result = if now_ms() > cmd.deadline {
                     Err("too late".to_owned())
+                } else if let Some(folder) = &cmd.reopen {
+                    decay_platform::reopen_folder(std::path::Path::new(folder))
                 } else {
                     actor.act(cmd.op, cmd.pid, cmd.window_id)
                 };
