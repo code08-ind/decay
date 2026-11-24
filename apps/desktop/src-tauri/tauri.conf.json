@@ -34,7 +34,8 @@
       "signingIdentity": "-",
       "hardenedRuntime": true,
       "files": {
-        "MacOS/decay-host": "sidecar/decay-host"
+        "MacOS/decay-host": "sidecar/decay-host",
+        "MacOS/decay-labeler": "sidecar/decay-labeler"
       }
     },
     "createUpdaterArtifacts": false

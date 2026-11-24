@@ -483,7 +483,7 @@ mod tests {
         }
         let (_, report) = Store::open(paths, key(), NOW).unwrap();
         assert!(!report.created);
-        assert_eq!(report.applied_migrations, vec![1, 2, 3, 4, 5]);
+        assert_eq!(report.applied_migrations, vec![1, 2, 3, 4, 5, 6]);
         let backup = report.pre_migration_backup.unwrap();
         assert_eq!(
             backup.file_name().unwrap().to_string_lossy(),

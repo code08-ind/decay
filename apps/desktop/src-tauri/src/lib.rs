@@ -24,6 +24,7 @@ mod diagnostics;
 mod help;
 mod i18n;
 mod keys;
+mod labels;
 mod library;
 mod license;
 mod menu;
@@ -159,6 +160,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         update::start(app);
         notify::start(app);
         license::start(app);
+        labels::start(app);
         // Settings come from the engine thread: read them off the main thread.
         let handle = app.clone();
         std::thread::spawn(move || {

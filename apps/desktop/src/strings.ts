@@ -57,6 +57,13 @@ export const en = {
   'license.feature.batch': 'Restore a whole batch at once, in its original order',
   'license.feature.retention': 'Keep the archive longer than 90 days',
   'license.feature.rules': 'Unlimited custom timing rules (3 without Pro)',
+  'license.feature.labels': 'Names for archived batches, made on this computer',
+  'labels.title': 'Batch names (Pro)',
+  'labels.switch': 'Name archived batches on this computer',
+  'labels.text':
+    'Gives each group of tabs archived together a short name, using Apple’s on-device model where this Mac has one, or the words the tabs share. Nothing is sent anywhere. Turning it off forgets every name.',
+  'labels.on': 'Batches will be named in a few minutes',
+  'labels.off': 'Batch names forgotten',
   'license.trialNote': '14-day free trial · no account needed',
   'license.status.free': 'You’re using Decay Free.',
   'license.status.trial':

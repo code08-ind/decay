@@ -5,13 +5,17 @@
 //
 // Windows: src-tauri/windows/installer-hooks.nsh puts it next to Decay.exe.
 //
+// macOS also gets `decay-labeler` (F15): a Swift helper that names archived batches with
+// Apple's on-device model (src-tauri/labeler/main.swift), staged and signed the same way
+// (`bundle.macOS.files` puts it at Contents/MacOS/decay-labeler).
+//
 // macOS: the host is signed before bundling, with $APPLE_SIGNING_IDENTITY when set
 // (Developer ID, hardened runtime, timestamp: needed for notarization), else ad hoc.
 // Windows: signed with Azure Trusted Signing when $TRUSTED_SIGNING_ACCOUNT is set (the
 // release workflow sets it with the same account the installer is signed with), else
 // left unsigned.
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,17 +56,45 @@ if (triple === 'universal-apple-darwin') {
 }
 
 if (triple.includes('apple-darwin')) {
+  // The labeler: one slice per architecture (macOS 14+; the model itself needs macOS 26
+  // and is checked at run time).
+  const labeler = join(outDir, 'decay-labeler');
+  const source = join(app, 'src-tauri', 'labeler', 'main.swift');
+  const arches =
+    triple === 'universal-apple-darwin'
+      ? ['arm64', 'x86_64']
+      : [triple.split('-')[0] === 'aarch64' ? 'arm64' : 'x86_64'];
+  const slices = arches.map((arch) => {
+    const slice = join(outDir, `decay-labeler-${arch}`);
+    run('swiftc', [
+      ...(debug ? ['-Onone'] : ['-O']),
+      '-target',
+      `${arch}-apple-macos14`,
+      '-Xlinker',
+      '-weak_framework',
+      '-Xlinker',
+      'FoundationModels',
+      source,
+      '-o',
+      slice,
+    ]);
+    return slice;
+  });
+  run('lipo', ['-create', '-output', labeler, ...slices]);
+  for (const slice of slices) rmSync(slice);
   const identity = process.env.APPLE_SIGNING_IDENTITY || '-';
   const real = identity !== '-';
-  run('codesign', [
-    '--force',
-    '--options',
-    'runtime',
-    ...(real ? ['--timestamp'] : []),
-    '--sign',
-    identity,
-    out,
-  ]);
+  for (const binary of [out, labeler]) {
+    run('codesign', [
+      '--force',
+      '--options',
+      'runtime',
+      ...(real ? ['--timestamp'] : []),
+      '--sign',
+      identity,
+      binary,
+    ]);
+  }
 }
 if (windows && process.env.TRUSTED_SIGNING_ACCOUNT) {
   const env = process.env;

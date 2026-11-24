@@ -64,7 +64,9 @@ export function groupResults(items: PanelItem[], now: number, locale?: string): 
     if (!g) {
       const app = appWithProfile(item.appName, item.profile);
       const source = item.sourceTitle ? `${app} — ${item.sourceTitle}` : app;
-      g = { key, label: `${dayLabel(at, now, locale)} · ${source}`, items: [], batch: false };
+      // A named batch (F15) shows its name instead of where it came from.
+      const name = item.batchLabel ?? source;
+      g = { key, label: `${dayLabel(at, now, locale)} · ${name}`, items: [], batch: false };
       groups.set(key, g);
     }
     g.items.push(item);

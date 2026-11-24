@@ -193,6 +193,14 @@ describe('Settings', () => {
     );
   });
 
+  it('privacy: batch names (Pro) are switched on and off', async () => {
+    await show('/privacy');
+    const toggle = screen.getByRole('switch', { name: 'Name archived batches on this computer' });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(toggle);
+    expect(api.updateSettings).toHaveBeenCalledWith({ batch_labels: true });
+  });
+
   it('switches tabs with the arrow keys', async () => {
     await show('/general');
     fireEvent.keyDown(screen.getByRole('tab', { name: 'General' }), { key: 'ArrowDown' });

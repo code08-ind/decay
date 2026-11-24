@@ -67,6 +67,15 @@ export function Privacy(props: TabProps & { version: number; changed: () => void
             }}
           />
         </Group>
+        <Group title={t('labels.title')}>
+          <Switch
+            className="pb-3"
+            label={t('labels.switch')}
+            description={t('labels.text')}
+            checked={settings?.batch_labels === true}
+            onChange={(on) => save({ batch_labels: on }, on ? t('labels.on') : t('labels.off'))}
+          />
+        </Group>
         <Transfer notify={notify} changed={props.changed} />
         <Diagnostics crashReports={settings?.crash_reports === true} save={save} notify={notify} />
         <p className="flex items-center gap-2 text-xs text-muted">

@@ -26,13 +26,15 @@ pub fn default_setting(key: &str) -> Option<Value> {
         "daily_summary_time" => json!("09:00"),
         "notifications" => json!({"summary": true, "sweep": false, "health": true}),
         "window_management" => json!("hide"),
-        "crash_reports" => json!(false),
+        // `batch_labels` (F15, Pro): name archived batches on this computer; off until
+        // turned on.
+        "crash_reports" | "batch_labels" => json!(false),
         _ => return None,
     })
 }
 
 /// Every known key (for snapshots).
-const KEYS: [&str; 19] = [
+const KEYS: [&str; 20] = [
     "mode",
     "onboarded_at",
     "shadow_started_at",
@@ -51,6 +53,7 @@ const KEYS: [&str; 19] = [
     "notifications",
     "window_management",
     "crash_reports",
+    "batch_labels",
     "locale",
 ];
 

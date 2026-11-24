@@ -288,10 +288,11 @@ pub fn validate_settings(patch: &serde_json::Map<String, Value>) -> Res<Vec<(Str
                 out.push((key.clone(), value.clone()));
             }
             "update_channel" => return Err(bad("settings.channel")),
-            "auto_update" | "crash_reports" if value.is_boolean() => {
+            "auto_update" | "crash_reports" | "batch_labels" if value.is_boolean() => {
                 out.push((key.clone(), value.clone()));
             }
             "crash_reports" => return Err(bad("settings.crash")),
+            "batch_labels" => return Err(bad("settings.labels")),
             "daily_summary_time"
                 if value.as_str().and_then(crate::notify::parse_time).is_some() =>
             {
@@ -350,8 +351,12 @@ pub fn broadcast_settings(app: &AppHandle, settings: &serde_json::Map<String, Va
 
 /// Saves `changes` on the engine thread and broadcasts the result from there.
 /// Without Pro, retention can't be raised past 90 days (a longer one set before is kept
-/// until it's lowered: P4.2).
+/// until it's lowered: P4.2), and batch labels (F15) can't be turned on.
 fn retention_allowed(e: &decay_engine::Engine, changes: &[(String, Value)]) -> Res<()> {
+    let labels_on = changes.iter().any(|(k, v)| k == "batch_labels" && v == &json!(true));
+    if labels_on && !e.is_pro() {
+        return Err(AppError::new("PRO_REQUIRED", crate::i18n::t("refused.labels.proRequired")));
+    }
     let Some(days) =
         changes.iter().find(|(k, _)| k == "retention_days").and_then(|(_, v)| v.as_u64())
     else {
@@ -381,6 +386,14 @@ async fn save_settings(
                 })
                 .and_then(|()| e.store().settings_snapshot())
                 .map_err(|err| AppError::db(&err));
+            // Batch names turned off: forgotten at once (F15).
+            let labels_off = changes.iter().any(|(k, v)| k == "batch_labels" && v == &json!(false));
+            if labels_off
+                && saved.is_ok()
+                && let Err(err) = e.store().clear_batch_labels()
+            {
+                tracing::warn!("batch labels: {err}");
+            }
             let mut out = Vec::new();
             if let Ok(settings) = &saved {
                 broadcast_settings(&handle, settings);

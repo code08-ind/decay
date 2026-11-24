@@ -12,6 +12,7 @@ export const PRO_FEATURES: Key[] = [
   'license.feature.batch',
   'license.feature.retention',
   'license.feature.rules',
+  'license.feature.labels',
 ];
 
 /** One line about the license. */

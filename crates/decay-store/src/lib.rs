@@ -12,6 +12,7 @@ mod export;
 mod import;
 mod items;
 mod key;
+mod labels;
 mod library;
 mod license;
 mod metrics;
@@ -38,6 +39,7 @@ pub use export::{MAX_BOOKMARKS, bookmarks_to_items};
 pub use import::{FileOptions, ImportReport, catalog_app_id};
 pub use items::{App, Item, Platform, RestoreKind};
 pub use key::DbKey;
+pub use labels::{Batch, BatchItem, MIN_BATCH_ITEMS};
 pub use license::LicenseRow;
 pub use metrics::{MetricsDay, SourceCount};
 pub use migrate::SCHEMA_VERSION;
@@ -426,7 +428,7 @@ mod tests {
         let paths = StorePaths::in_dir(dir.path());
         let (store, report) = Store::open(paths.clone(), key(), NOW).unwrap();
         assert!(report.created);
-        assert_eq!(report.applied_migrations, vec![1, 2, 3, 4, 5]);
+        assert_eq!(report.applied_migrations, vec![1, 2, 3, 4, 5, 6]);
         assert_eq!(report.pre_migration_backup, None);
         let journal: String =
             store.conn.query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();

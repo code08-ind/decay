@@ -87,6 +87,15 @@ describe('groupResults', () => {
     // "Restore all" only where there is a batch of more than one.
     expect(groups.map((g) => g.batch)).toEqual([true, false, false]);
   });
+
+  it('a named batch (F15) shows its name instead of its window', () => {
+    const groups = groupResults(
+      [item('a', { batchLabel: 'Lisbon trip' }), item('b')],
+      NOW,
+      'en-US',
+    );
+    expect(groups.map((g) => g.label)).toEqual(['Today · Lisbon trip']);
+  });
 });
 
 describe('highlighting', () => {

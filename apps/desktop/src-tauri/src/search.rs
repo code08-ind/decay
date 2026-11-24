@@ -67,6 +67,9 @@ pub struct PanelItem {
     pub reason: Option<String>,
     /// Archived with others from the same window by the same sweep (⌘↵ restores them).
     pub batch: bool,
+    /// The batch's name (F15, Pro, made on this computer), when it has one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub batch_label: Option<String>,
 }
 
 /// A row's browser profile: its name, else "Profile {ordinal}".
@@ -103,9 +106,18 @@ pub struct RowCache {
     /// Source id → (profile, title).
     sources: HashMap<String, Option<SourceInfo>>,
     profiles: Option<HashMap<(String, String), decay_store::Profile>>,
+    /// (sweep, source) → the batch's label.
+    labels: HashMap<(String, Option<String>), Option<String>>,
 }
 
 impl RowCache {
+    fn label(&mut self, store: &Store, sweep: &str, source: Option<&str>) -> Option<String> {
+        self.labels
+            .entry((sweep.to_owned(), source.map(str::to_owned)))
+            .or_insert_with(|| store.batch_label(sweep, source).ok().flatten())
+            .clone()
+    }
+
     fn app_name(&mut self, store: &Store, app_id: &str) -> String {
         self.apps
             .entry(app_id.to_owned())
@@ -169,9 +181,15 @@ pub fn row(store: &Store, item: Item, cache: &mut RowCache) -> PanelItem {
         item.source_id.as_deref().and_then(|id| cache.source(store, id)).unwrap_or_default();
     let source_title = source_title.filter(|t| !t.trim().is_empty());
     let profile = profile.and_then(|p| cache.profile(store, &item.app_id, &p));
+    let batch_label = item
+        .last_sweep_id
+        .as_deref()
+        .filter(|_| item.state == decay_core::ItemState::Archived)
+        .and_then(|sweep| cache.label(store, sweep, item.source_id.as_deref()));
     PanelItem {
         reason: reason_label(&item),
         batch: item.last_sweep_id.is_some(),
+        batch_label,
         id: item.id,
         kind: item.kind,
         title: item.title,
@@ -605,5 +623,44 @@ mod tests {
         e.set_license(true, None, NOW).unwrap();
         assert_eq!(restore_whole_batch(&mut e, NOW, "nope").0.unwrap_err().code, "NOT_FOUND");
         assert_eq!(protect(&mut e, NOW, "nope").0.unwrap_err().code, "NOT_FOUND");
+    }
+
+    #[test]
+    fn rows_carry_their_batch_label() {
+        use crate::testing::{NOW, engine};
+        let (e, _dir) = engine();
+        let store = e.store();
+        store
+            .insert_sweep(&decay_store::Sweep {
+                id: "s1".into(),
+                started_at: NOW,
+                finished_at: Some(NOW),
+                trigger: decay_core::SweepTrigger::Scheduled,
+                is_shadow: false,
+                status: decay_core::SweepStatus::Done,
+                item_count: 1,
+                failed_count: 0,
+                reason: None,
+                undone_at: None,
+            })
+            .unwrap();
+        let mut item = decay_store::Item::new_live(
+            "a".into(),
+            decay_core::ItemKind::Tab,
+            "com.google.Chrome",
+            NOW,
+        );
+        item.state = ItemState::Archived;
+        item.archived_at = Some(NOW);
+        item.last_sweep_id = Some("s1".into());
+        let mut cache = RowCache::default();
+        assert_eq!(row(store, item.clone(), &mut cache).batch_label, None);
+        store.set_batch_label("s1", None, "Lisbon trip", "apple", NOW).unwrap();
+        let mut cache = RowCache::default();
+        let labelled = row(store, item.clone(), &mut cache);
+        assert_eq!(labelled.batch_label.as_deref(), Some("Lisbon trip"));
+        assert_eq!(serde_json::to_value(&labelled).unwrap()["batchLabel"], "Lisbon trip");
+        item.state = ItemState::Restored;
+        assert_eq!(row(store, item, &mut cache).batch_label, None, "only archived items");
     }
 }

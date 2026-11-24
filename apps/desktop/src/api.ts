@@ -144,6 +144,8 @@ export interface PanelItem {
   archivedAt: number | null;
   reason: string | null;
   batch: boolean;
+  /** The batch's name (F15, Pro), when it has one. */
+  batchLabel?: string;
 }
 
 export interface SearchOutput {
