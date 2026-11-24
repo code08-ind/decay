@@ -51,7 +51,7 @@ export const en = {
   'settings.seePro': 'See Decay Pro',
   'license.subtitle': 'One-time purchase. Verified on this computer: no account, nothing sent.',
   'license.pro': 'Decay Pro',
-  'license.oneTime': 'One-time purchase · yours forever',
+  'license.oneTime': '$24 one-time · yours forever',
   'license.feature.close':
     'Close stale Finder and Explorer folder windows (they reopen from the archive)',
   'license.feature.batch': 'Restore a whole batch at once, in its original order',

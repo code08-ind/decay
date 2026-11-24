@@ -4,7 +4,7 @@ Drafts for the public launch. Placeholders in `[CAPS]` are decided later:
 
 | Placeholder | What | Waiting for |
 | --- | --- | --- |
-| `[PRICE]` | Decay Pro's one-time price ($19–29, PRD) | your price decision |
+| `[PRICE]` | **$24** one-time (decided 24 Nov 2026; replaced below) | — |
 | `[WEBSITE]` | https://decay.aryangarg.com (built: `apps/site`) | deploying it (Docs/Release.md "Website") |
 | `[DOWNLOAD]` | Where people get the app | the first public release in `decay-releases` (or `[WEBSITE]`) |
 | `[EXTENSION]` | The Chrome Web Store listing | publishing the extension publicly (it's unlisted for the beta) |

@@ -6,7 +6,7 @@ description: What Decay Pro adds, the trial, and activating a license.
 
 # Decay Pro
 
-Decay is free. **Decay Pro** is a one-time purchase that adds:
+Decay is free. **Decay Pro** is a one-time purchase ($24, no subscription) that adds:
 
 - Closing stale **Finder and Explorer folder windows** (they reopen from the archive).
 - **Restoring a whole batch** at once, in its original order (⌘ Return).

@@ -29,8 +29,8 @@
 ## Open items
 
 - [ ] Final name + trademark/domain check
-- [ ] Pro price (from beta pre-order data)
-- [ ] Payment provider: Lemon Squeezy vs Paddle
+- [x] Pro price: **$24 one-time** (user, 24 Nov 2026)
+- [x] Payment provider: **Lemon Squeezy** (user, 24 Nov 2026)
 - [ ] Windows 10: official or best-effort
 - [ ] Apple Developer account ($99/yr) and Windows signing (Azure Trusted Signing)
 - [ ] Chrome Web Store developer account ($5)

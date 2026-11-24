@@ -28,7 +28,7 @@ Private by design
 Details
 • macOS 14+ (Windows too). Works with Chrome, Edge, Brave and Arc through a small extension.
 • Free: tab archiving, search, restore, Undo, window hiding, 90 days of archive.
-• Decay Pro ([PRICE], one-time, 14-day free trial, no account): closes stale Finder folder windows (they reopen from the archive), restores whole batches at once, keeps the archive longer, unlimited custom timing rules.
+• Decay Pro ($24, one-time, 14-day free trial, no account): closes stale Finder folder windows (they reopen from the archive), restores whole batches at once, keeps the archive longer, unlimited custom timing rules.
 
 Download: [DOWNLOAD]  ·  Extension: [EXTENSION]  ·  Site: [WEBSITE]
 
@@ -42,4 +42,4 @@ I'd love feedback, especially on how it decides a tab is stale. Happy to answer 
 - **"Why does it need Accessibility access?"** Only to see and minimise app windows. Without it, Decay works with tabs only.
 - **"Will it close a window with unsaved work?"** No. Windows are only minimised; Pro closes Finder folder windows (which have nothing to save) and reopens them on restore.
 - **"Is it signed / notarized?"** [Answer once the Apple Developer account exists: yes.]
-- **"Subscription?"** No. Free forever for the basics; Pro is a one-time [PRICE].
+- **"Subscription?"** No. Free forever for the basics; Pro is a one-time $24.

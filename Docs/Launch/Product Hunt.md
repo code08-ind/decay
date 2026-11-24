@@ -16,7 +16,7 @@ Decay quietly archives the browser tabs and windows you've stopped using, by act
 
 **Topics:** Productivity, Mac, Windows, Chrome Extensions, Privacy, Open Source.
 
-**Pricing:** Free (Decay Pro: [PRICE] one-time, 14-day trial).
+**Pricing:** Free (Decay Pro: $24 one-time, 14-day trial).
 
 **Links:** [WEBSITE] · [DOWNLOAD] · [EXTENSION] · the open-core repository.
 
