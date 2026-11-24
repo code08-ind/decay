@@ -536,6 +536,12 @@ export function ItemDrawer(props: {
                 <dd>{d.groupTitle}</dd>
               </>
             )}
+            {d.batchLabel && (
+              <>
+                <dt className="text-feature-sub">{t('drawer.batch')}</dt>
+                <dd>{d.batchLabel}</dd>
+              </>
+            )}
             {d.reason && (
               <>
                 <dt className="text-feature-sub">{t('drawer.why')}</dt>

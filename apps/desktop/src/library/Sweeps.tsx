@@ -10,12 +10,19 @@ import {
   Switch,
 } from '@decay/ui';
 import { Ghost, RotateCcw, Undo2, Wind, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { api, errorMessage, restoreChoices, type SweepRow } from '../api';
 import { timeLabel } from '../panel/results';
 import { t } from '../strings';
 import type { PageProps } from './Archive';
-import { entryState, groupByDay, sweepAction, sweepHeadline, triggerText } from './model';
+import {
+  byBatchName,
+  entryState,
+  groupByDay,
+  sweepAction,
+  sweepHeadline,
+  triggerText,
+} from './model';
 import { ItemTile, type RestoreChoices, RestoreElsewhere, useLoad } from './parts';
 
 const time = (at: number) => formatDate(at, { hour: 'numeric', minute: '2-digit' });
@@ -268,29 +275,36 @@ function SweepDrawer(props: {
               {t('sweeps.drawer.items')}
             </h3>
             <ul className="grid max-h-80 gap-1 overflow-y-auto">
-              {d.items.map((i) => (
-                <li key={i.id} className="flex items-center gap-2.5 py-1">
-                  {!d.isShadow && i.archived ? (
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-current"
-                      aria-label={t('sweeps.drawer.select', {
-                        title: i.title || t('sweeps.drawer.untitledLower'),
-                      })}
-                      checked={selected.has(i.id)}
-                      onChange={() => toggle(i.id)}
-                    />
-                  ) : (
-                    <span className="size-4" />
+              {byBatchName(d.items).map((g) => (
+                <Fragment key={g.label ?? ''}>
+                  {g.label && (
+                    <li className="pt-1 text-[11px] font-semibold text-feature-sub">{g.label}</li>
                   )}
-                  <ItemTile item={i} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-sm">
-                    {i.title || t('sweeps.drawer.untitled')}
-                  </span>
-                  <span className="shrink-0 font-mono text-[11px] text-feature-sub">
-                    {d.isShadow || i.archived ? (i.reason ?? '') : entryState(i.state)}
-                  </span>
-                </li>
+                  {g.items.map((i) => (
+                    <li key={i.id} className="flex items-center gap-2.5 py-1">
+                      {!d.isShadow && i.archived ? (
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-current"
+                          aria-label={t('sweeps.drawer.select', {
+                            title: i.title || t('sweeps.drawer.untitledLower'),
+                          })}
+                          checked={selected.has(i.id)}
+                          onChange={() => toggle(i.id)}
+                        />
+                      ) : (
+                        <span className="size-4" />
+                      )}
+                      <ItemTile item={i} size="sm" />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        {i.title || t('sweeps.drawer.untitled')}
+                      </span>
+                      <span className="shrink-0 font-mono text-[11px] text-feature-sub">
+                        {d.isShadow || i.archived ? (i.reason ?? '') : entryState(i.state)}
+                      </span>
+                    </li>
+                  ))}
+                </Fragment>
               ))}
               {d.items.length === 0 && (
                 <li className="text-sm text-feature-sub">{t('sweeps.drawer.empty')}</li>

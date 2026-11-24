@@ -10,6 +10,7 @@
 - [ ] **The website** (P4.4) with downloads, the privacy policy, docs, and a contact address. `HELP_URL` in `apps/desktop/src-tauri/src/help.rs` points at its docs.
 - [ ] **Hands-on checks** from Progress: Finder / Explorer folder windows close and reopen (Pro), a real call on Windows holds sweeps.
 - [ ] **Numbers** in the posts are real beta numbers (or the sentences using them are dropped).
+- [ ] **Privacy policy covers the desktop app:** merge `Docs/Store/Privacy Policy - Desktop (draft).md` into the published policy (it covers only the extension today): update checks, opt-in crash reports, Pro and purchases, batch names, window and microphone checks.
 - [ ] **Support ready:** a reply-to address on the license email you actually read, a pinned "known issues" note in `decay-releases`, the feedback link in the app works.
 - [ ] **Assets:** 3–5 screenshots (light and dark, macOS and Windows), a 30–60 s demo video, a 1270×760 Product Hunt thumbnail and gallery images. Reuse `Docs/Store/assets/` where they still match the app.
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SweepRow } from '../api';
 import {
+  byBatchName,
   entryState,
   eventText,
   firstDayOfWeek,
@@ -148,5 +149,22 @@ describe('words', () => {
     expect(entryState('archiving')).toBe('Closing…');
     expect(entryState('archived')).toBe('Archived again later');
     expect(entryState('active')).toBe('Restored');
+  });
+});
+
+describe('batch names', () => {
+  it("groups a sweep's items under their names, in order", () => {
+    const items = [
+      { id: 'a', batchLabel: 'Lisbon trip' },
+      { id: 'b' },
+      { id: 'c', batchLabel: 'Rust async' },
+      { id: 'd', batchLabel: 'Lisbon trip' },
+    ];
+    expect(byBatchName(items).map((g) => [g.label, g.items.map((i) => i.id)])).toEqual([
+      ['Lisbon trip', ['a', 'd']],
+      [null, ['b']],
+      ['Rust async', ['c']],
+    ]);
+    expect(byBatchName([])).toEqual([]);
   });
 });

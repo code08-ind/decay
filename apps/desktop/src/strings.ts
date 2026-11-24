@@ -59,6 +59,7 @@ export const en = {
   'license.feature.rules': 'Unlimited custom timing rules (3 without Pro)',
   'license.feature.labels': 'Names for archived batches, made on this computer',
   'labels.title': 'Batch names (Pro)',
+  'drawer.batch': 'Batch',
   'labels.switch': 'Name archived batches on this computer',
   'labels.text':
     'Gives each group of tabs archived together a short name, using Apple’s on-device model where this Mac has one, or the words the tabs share. Nothing is sent anywhere. Turning it off forgets every name.',

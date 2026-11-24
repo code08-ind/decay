@@ -163,6 +163,23 @@ export function sweepAction(s: SweepRow): { label: string; undo: boolean } {
   };
 }
 
+/**
+ * A sweep's items under their batch names (F15): named batches in order of first
+ * appearance, each item keeping its order; items without a name have no heading.
+ */
+export function byBatchName<T extends { batchLabel?: string }>(
+  items: T[],
+): { label: string | null; items: T[] }[] {
+  const groups = new Map<string | null, T[]>();
+  for (const item of items) {
+    const key = item.batchLabel ?? null;
+    const list = groups.get(key);
+    if (list) list.push(item);
+    else groups.set(key, [item]);
+  }
+  return [...groups].map(([label, items]) => ({ label, items }));
+}
+
 /** Sweeps grouped by local day, newest first (they arrive newest first). */
 export function groupByDay<T extends { startedAt: number }>(
   rows: T[],
