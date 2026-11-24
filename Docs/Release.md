@@ -43,6 +43,22 @@ Workflow: `.github/workflows/release.yml`.
 - **Issuing by hand** (support, testers): `cargo run -p decay-license --bin decay-license-tool -- issue ~/.decay/license-signing.key someone@example.com [license-id]`; `… -- verify <key>` checks one. P4.3's purchase webhook issues keys the same way (`decay_license::issue`).
 - **Activation link:** `decay://license/activate?key=<key>` opens Settings → Decay Pro with the key filled in (nothing is activated without a click).
 
+## Selling Decay Pro (P4.3)
+
+Keys are issued by `services/license-webhook`, a Cloudflare Worker that Lemon Squeezy calls on every order. One-time setup:
+
+1. **Lemon Squeezy:** create the store and a *Decay Pro* product (single payment). Note its **variant id** (Products → the variant → its id).
+2. **Resend:** add and verify the sending domain (DNS records), create an API key with *sending* access only.
+3. **Worker:** in `services/license-webhook/wrangler.toml` set `EMAIL_FROM` (an address on the verified domain) and `LS_VARIANT_IDS` (the variant id). Then, logged in with `npx wrangler login`, from that folder:
+   - `npx wrangler secret put LICENSE_SIGNING_KEY < ~/.decay/license-signing.key` (read from the file: the key is never typed or shown)
+   - `npx wrangler secret put RESEND_API_KEY`
+   - `npx wrangler secret put LS_SIGNING_SECRET` (any long random string; the same one goes into step 4)
+   - `npx wrangler deploy` → note the Worker's URL.
+4. **Lemon Squeezy webhook:** Settings → Webhooks → add `https://<worker URL>/webhooks/purchase`, the signing secret from step 3, event **order_created**.
+5. **Test:** set `ALLOW_TEST_MODE = "1"`, deploy, buy in Lemon Squeezy's test mode with your own address, activate the emailed key in Decay (Settings → Decay Pro). Then set it back to `"0"` and deploy.
+
+Notes: an order always produces the same key (a retried webhook resends it at most once, through Resend's idempotency key). A refund doesn't revoke the key: offline keys can't be. To resend a key by hand, `decay-license-tool issue` (above) with the buyer's address and `ls-<order id>`. The price and a Buy button in the app wait for the price decision.
+
 ## Windows
 
 - **Installer:** one x64 NSIS installer, `Decay_<v>_x64-setup.exe`, **per user** (`%LOCALAPPDATA%\Decay`, no administrator prompt; matches the per-user data, pipe and native-host registry entries). No MSI for now: it installs per machine, which needs an administrator, and the updater would then need one too. WebView2 is fetched by a small bootstrapper when missing (Windows 11 and up-to-date Windows 10 have it).

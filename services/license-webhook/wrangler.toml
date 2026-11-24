@@ -1,0 +1,16 @@
+# The purchase webhook (P4.3): a Cloudflare Worker. Deploy: `npx wrangler deploy` from
+# this folder, after setting the secrets (Docs/Release.md "Selling Decay Pro"):
+#   wrangler secret put LS_SIGNING_SECRET      # Lemon Squeezy webhook signing secret
+#   wrangler secret put LICENSE_SIGNING_KEY    # ~/.decay/license-signing.key (64 hex)
+#   wrangler secret put RESEND_API_KEY         # Resend API key (sending only)
+name = "decay-license-webhook"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Who the license email comes from (a domain verified in Resend).
+EMAIL_FROM = "Decay <licenses@example.com>"
+# Lemon Squeezy variant ids that are Decay Pro (comma-separated); empty: any.
+LS_VARIANT_IDS = ""
+# "1": also issue keys for test-mode orders (while setting the store up).
+ALLOW_TEST_MODE = "0"

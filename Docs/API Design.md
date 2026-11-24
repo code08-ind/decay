@@ -365,5 +365,7 @@ Deep links never perform a destructive action without UI confirmation.
 ### 7.2 License issuance (serverless, not called by the app)
 `POST /webhooks/purchase` (from Lemon Squeezy/Paddle, HMAC-verified) → creates a license and emails it.
 
+**As built (P4.3, `services/license-webhook`, a Cloudflare Worker):** Lemon Squeezy only. `X-Signature` = hex HMAC-SHA256 of the raw body with the webhook's signing secret (else `401`); bodies over 256 KB → `413`; not JSON → `400`. A license is issued only for `meta.event_name = order_created` with `data.attributes.status = paid`, a variant in `LS_VARIANT_IDS` (when set), a plausible `user_email`, and `test_mode` false unless `ALLOW_TEST_MODE = 1`; anything else → `200 ignored: …` (so Lemon Squeezy doesn't retry). The key's `licenseId` is `ls-<order id>` and `issuedAt` the order's `created_at`: the same order always yields the same key. Sent with Resend (`Idempotency-Key: decay-order-<id>`); a failed send → `500` (Lemon Squeezy retries). No storage; refunds don't revoke keys (offline keys can't be).
+
 **License key format:** `DECAY-` + base32( `payload` ‖ `ed25519_sig` ), where
 `payload = { v:1, email, tier:'pro', issuedAt, licenseId }`. The app verifies offline with the embedded public key. No activation server and no device limit in v1.
