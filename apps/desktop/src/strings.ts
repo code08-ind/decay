@@ -542,6 +542,7 @@ export const en = {
   'panel.couldntReopen':
     "Couldn't reopen {n, plural, one {it} other {# tabs}}. Is its browser still open?",
   'panel.already': 'Already on its way back.',
+  'panel.batchPro': 'Restoring a whole group at once is part of Decay Pro. ↵ restores one item.',
   'panel.restoring': 'Restoring…',
   'panel.noAnswer': "The browser didn't answer. Is it still open?",
   'panel.keeping': 'Always keeping {match}',

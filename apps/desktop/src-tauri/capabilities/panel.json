@@ -1,12 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "panel",
-  "description": "The search panel: search, restore, protect, details, status, its own visibility",
+  "description": "The search panel: search, restore, protect, details, status, the license (P4.2), its own visibility",
   "windows": ["panel"],
   "permissions": [
     "core:event:default",
     "core:window:allow-hide",
     "allow-get-status",
+    "allow-get-license",
     "allow-ui-hide-panel",
     "allow-ui-show-window",
     "allow-ui-take-pending",

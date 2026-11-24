@@ -43,7 +43,13 @@ interface Results {
   cursor: string | null;
 }
 
-type Note = { text: string; tone: 'info' | 'error' | 'busy'; choices?: RestoreChoices };
+type Note = {
+  text: string;
+  tone: 'info' | 'error' | 'busy';
+  choices?: RestoreChoices;
+  /** A Pro feature: the note offers the Decay Pro tab (P4.2). */
+  pro?: boolean;
+};
 type RestoreChoices = NonNullable<ReturnType<typeof restoreChoices>>;
 
 const keyOf = (query: string, kind: Kind) => `${kind}\u0000${query}`;
@@ -61,6 +67,20 @@ export function Panel() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState(0);
   const [note, setNote] = useState<Note | null>(null);
+  // Pro features on (P4.2): ⌘↵ restores a whole group only with Pro. Unknown (`null`)
+  // until read; the engine refuses Pro work on its own side too.
+  const [pro, setPro] = useState<boolean | null>(null);
+  useEffect(() => {
+    const read = (tier: string) => setPro(tier !== 'free');
+    api
+      .getLicense()
+      .then((l) => read(l.tier))
+      .catch(() => {});
+    const off = listen<{ tier: string }>('license:changed', (e) => read(e.payload.tier));
+    return () => {
+      off.then((f) => f()).catch(() => {});
+    };
+  }, []);
   const [opened, setOpened] = useState(0);
   const seq = useRef(0);
   const loadingMore = useRef(false);
@@ -270,6 +290,10 @@ export function Panel() {
       case 'restoreGroup': {
         // Exactly what the group shows (the engine puts each window's tabs in order).
         const group = groupOf.get(item.id)?.items ?? [item];
+        if (group.length > 1 && pro === false) {
+          setNote({ text: t('panel.batchPro'), tone: 'info', pro: true });
+          return;
+        }
         startRestore(
           api.restoreItems(
             group.map((i) => i.id),
@@ -524,6 +548,17 @@ export function Panel() {
               >
                 {note.text}
               </p>
+              {note.pro && (
+                <button
+                  type="button"
+                  className="shrink-0 rounded-full border border-line px-2.5 py-1 text-ink hover:bg-surface-2"
+                  onClick={() => {
+                    api.showWindow('settings', '/license').catch(() => {});
+                  }}
+                >
+                  {t('settings.seePro')}
+                </button>
+              )}
               {note.choices?.alternatives.map((c) => (
                 <button
                   key={`${c.appId}|${c.profileId}`}

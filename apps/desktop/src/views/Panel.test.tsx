@@ -20,6 +20,8 @@ const api = {
   hidePanel: vi.fn(),
   protectItem: vi.fn(),
   showItem: vi.fn(),
+  getLicense: vi.fn(),
+  showWindow: vi.fn(),
 };
 vi.mock('../api', async (orig) => ({ ...(await orig<typeof import('../api')>()), api }));
 
@@ -46,6 +48,8 @@ beforeEach(() => {
   api.recordSearch.mockResolvedValue(undefined);
   api.restoreItems.mockResolvedValue({ started: true });
   api.hidePanel.mockResolvedValue(undefined);
+  api.getLicense.mockResolvedValue({ tier: 'free', trialAvailable: true });
+  api.showWindow.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -108,5 +112,33 @@ describe('Panel restore elsewhere', () => {
     expect(api.restoreItemsIn).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Open in Arc instead' }));
     expect(api.restoreItemsIn).toHaveBeenCalledWith(['a'], 'arc', 'p');
+  });
+});
+
+describe('Panel Pro', () => {
+  const two = [item, { ...item, id: 'b', title: 'Cargo book' }];
+
+  it('⌘↵ on a group needs Pro, and offers the Decay Pro tab', async () => {
+    api.search.mockResolvedValue({ items: two, nextCursor: null, totalArchived: 2 });
+    render(<Panel />);
+    const input = await screen.findByRole('combobox');
+    await screen.findAllByRole('option');
+    fireEvent.keyDown(input, { key: 'Enter', metaKey: true, ctrlKey: true });
+    expect(
+      (await screen.findByText(/Restoring a whole group at once is part of Decay Pro/)).textContent,
+    ).toBeTruthy();
+    expect(api.restoreItems).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'See Decay Pro' }));
+    expect(api.showWindow).toHaveBeenCalledWith('settings', '/license');
+  });
+
+  it('with Pro (or a trial) ⌘↵ restores the whole group', async () => {
+    api.getLicense.mockResolvedValue({ tier: 'trial', trialDaysLeft: 3, trialAvailable: false });
+    api.search.mockResolvedValue({ items: two, nextCursor: null, totalArchived: 2 });
+    render(<Panel />);
+    const input = await screen.findByRole('combobox');
+    await screen.findAllByRole('option');
+    fireEvent.keyDown(input, { key: 'Enter', metaKey: true, ctrlKey: true });
+    expect(api.restoreItems.mock.calls[0]?.slice(0, 2)).toEqual([['a', 'b'], 'original']);
   });
 });
