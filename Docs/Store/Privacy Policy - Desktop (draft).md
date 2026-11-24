@@ -1,6 +1,6 @@
 # Decay: Privacy Policy, desktop app section (DRAFT)
 
-> **Draft, not published.** The published policy (`Privacy Policy.md`, on the personal site) covers only the browser extension. Before the desktop app is released publicly, merge this section into it (both copies: the site's `lib/content/decay-privacy.ts` and `Privacy Policy.md`) with a new effective date. Every statement below matches the app's code as of 24 Nov 2026; re-check them if the app changes.
+> **Draft, not published.** The published policy (`Privacy Policy.md`, on the personal site) covers only the browser extension. Before the desktop app is released publicly, merge this section into it (both copies: the site's `lib/content/decay-privacy.ts` and `Privacy Policy.md`) with a new effective date. Every statement below matches the app's code as of 24 Nov 2026; re-check them if the app changes. One depends on a setting, not the code: before publishing, confirm Sentry's *Prevent Storing of IP Addresses* is on (Docs/Release.md, step 5).
 
 ## The Decay desktop app
 
@@ -11,7 +11,7 @@ The desktop app (macOS and Windows) does the archiving the extension does, for y
 **What it sends over the network.**
 
 - **Update checks:** once a day (and when you click *Check now*), the app downloads a small file listing the latest version from GitHub (`github.com/code08-ind/decay-releases`), and the update itself when you choose to install it. The request carries nothing about you or your tabs; GitHub sees your IP address, as with any download. Updates are only installed if they're signed by Decay.
-- **Crash reports, only if you turn them on** (Settings → Privacy & data, off by default): when the app crashes, a report goes to Sentry, a crash-reporting service. Before it's sent, Decay removes the computer's name, any user information, file paths and addresses, and keeps only the error and where it happened in Decay's code. Sentry is set not to store IP addresses.
+- **Crash reports, only if you turn them on** (Settings → Privacy & data, off by default): when the app crashes, a report goes to Sentry, a crash-reporting service. Before it's sent, Decay removes the computer's name, any user information, file paths and addresses, and keeps only the error and where it happened in Decay's code. Decay's Sentry project is set not to store IP addresses.
 - **Nothing else.** No account, no analytics, no advertising.
 
 **Decay Pro.** Your license key is checked on your computer; it's never sent anywhere. If you buy Pro, the purchase is handled by Lemon Squeezy (the merchant of record) under its own privacy policy, and your license key is emailed to you; Decay itself receives your email address only as part of the key you paste in.
