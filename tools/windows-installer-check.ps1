@@ -78,7 +78,8 @@ New-Item -ItemType Directory -Force -Path (Join-Path $support 'host') | Out-Null
 # (UTF-8 without a BOM: the host's JSON reader refuses one.)
 [IO.File]::WriteAllText((Join-Path $support 'host\host-config.json'), (@{ allowedOrigins = @($origin) } | ConvertTo-Json))
 # A browser counts as present when its HKCU key exists.
-New-Item -Path 'HKCU:\Software\Google\Chrome' -Force | Out-Null
+# (Hosted runners have Chrome, whose key can't be re-created: only add it when missing.)
+if (-not (Test-Path 'HKCU:\Software\Google\Chrome')) { New-Item -Path 'HKCU:\Software\Google\Chrome' -Force | Out-Null }
 $run = Start-Process -FilePath $app.FullName -ArgumentList '--background' -PassThru
 $registered = WaitFor { Test-Path $chromeHost } 60
 Check 'app registers the host with Chrome' $registered
