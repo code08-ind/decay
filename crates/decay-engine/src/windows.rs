@@ -99,6 +99,11 @@ pub(crate) fn is_browser(bundle_id: &str) -> bool {
             | "company.thebrowser.Browser"
             | "org.chromium.Chromium"
             | "com.vivaldi.Vivaldi"
+            // F14: Firefox (release / ESR, Developer Edition, Nightly).
+            | "org.mozilla.firefox"
+            | "org.mozilla.firefoxdeveloperedition"
+            | "org.mozilla.nightly"
+            | "firefox.exe"
             // Windows (P3.1): the executable's lower-cased file name.
             | "chrome.exe"
             | "msedge.exe"

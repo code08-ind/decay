@@ -1,5 +1,11 @@
 //! Native messaging host manifests (Software Design §5.2 step 2): one
-//! `com.decay.host.json` per detected Chromium browser, so it can launch `decay-host`.
+//! `com.decay.host.json` per detected browser, so it can launch `decay-host`.
+//!
+//! Firefox (F14) reads its own manifest: `allowed_extensions` (Decay's extension id)
+//! instead of `allowed_origins`, in Mozilla's folder (macOS:
+//! `~/Library/Application Support/Mozilla/NativeMessagingHosts/`) or, on Windows, from
+//! `HKCU\Software\Mozilla\NativeMessagingHosts\com.decay.host` pointing at
+//! `<support dir>\host\com.decay.host.firefox.json`.
 //!
 //! - macOS: `~/Library/Application Support/<browser>/NativeMessagingHosts/` (user level,
 //!   no admin rights). A browser counts as detected when its support folder exists.
@@ -31,6 +37,8 @@ pub struct BrowserTarget {
     pub win_key: Option<&'static str>,
     /// Linux: under `~/.config/`.
     pub linux_dir: Option<&'static str>,
+    /// Firefox: its own manifest format, file name and installed check.
+    pub gecko: bool,
 }
 
 pub const TARGETS: &[BrowserTarget] = &[
@@ -39,38 +47,57 @@ pub const TARGETS: &[BrowserTarget] = &[
         mac_dir: Some("Google/Chrome"),
         win_key: Some(r"Google\Chrome"),
         linux_dir: Some("google-chrome"),
+        gecko: false,
     },
     BrowserTarget {
         name: "Google Chrome Beta",
         mac_dir: Some("Google/Chrome Beta"),
         win_key: None,
         linux_dir: Some("google-chrome-beta"),
+        gecko: false,
     },
     BrowserTarget {
         name: "Google Chrome Canary",
         mac_dir: Some("Google/Chrome Canary"),
         win_key: None,
         linux_dir: None,
+        gecko: false,
     },
     BrowserTarget {
         name: "Chromium",
         mac_dir: Some("Chromium"),
         win_key: Some("Chromium"),
         linux_dir: Some("chromium"),
+        gecko: false,
     },
     BrowserTarget {
         name: "Microsoft Edge",
         mac_dir: Some("Microsoft Edge"),
         win_key: Some(r"Microsoft\Edge"),
         linux_dir: Some("microsoft-edge"),
+        gecko: false,
     },
     BrowserTarget {
         name: "Brave",
         mac_dir: Some("BraveSoftware/Brave-Browser"),
         win_key: Some(r"BraveSoftware\Brave-Browser"),
         linux_dir: Some("BraveSoftware/Brave-Browser"),
+        gecko: false,
     },
-    BrowserTarget { name: "Arc", mac_dir: Some("Arc/User Data"), win_key: None, linux_dir: None },
+    BrowserTarget {
+        name: "Arc",
+        mac_dir: Some("Arc/User Data"),
+        win_key: None,
+        linux_dir: None,
+        gecko: false,
+    },
+    BrowserTarget {
+        name: "Firefox",
+        mac_dir: Some("Mozilla"),
+        win_key: Some("Mozilla"),
+        linux_dir: None,
+        gecko: true,
+    },
 ];
 
 /// What [`install`] needs.
@@ -115,6 +142,26 @@ pub fn manifest(host_path: &Path, origins: &[String]) -> serde_json::Value {
         "type": "stdio",
         "allowed_origins": origins,
     })
+}
+
+/// Firefox's manifest: the same host, for Decay's extension id only.
+pub fn firefox_manifest(host_path: &Path) -> serde_json::Value {
+    json!({
+        "name": HOST_NAME,
+        "description": "Decay: connects the browser extension to the Decay app",
+        "path": host_path,
+        "type": "stdio",
+        "allowed_extensions": [crate::config::FIREFOX_EXTENSION_ID],
+    })
+}
+
+/// The manifest's file name for a target (Windows keeps both side by side).
+fn manifest_file(target: &BrowserTarget) -> String {
+    if target.gecko && cfg!(windows) {
+        format!("{HOST_NAME}.firefox.json")
+    } else {
+        format!("{HOST_NAME}.json")
+    }
 }
 
 /// Writes `bytes` to `path` via a new temporary file (unique name, never an existing file
@@ -192,13 +239,15 @@ fn browser_dir(home: &Path, target: &BrowserTarget) -> Option<PathBuf> {
 /// reported in [`Report::failed`] and the others still get the host.
 pub fn install(opts: &InstallOptions) -> io::Result<Report> {
     let bytes = manifest_bytes(opts)?;
-    let file = format!("{HOST_NAME}.json");
+    let gecko_bytes =
+        serde_json::to_vec_pretty(&firefox_manifest(&opts.host_path)).map_err(io::Error::other)?;
+    let bytes_for = |t: &BrowserTarget| if t.gecko { &gecko_bytes } else { &bytes };
     let mut report = Report::default();
     #[cfg(not(windows))]
     for target in TARGETS {
         let Some(dir) = browser_dir(&opts.home, target).filter(|d| d.is_dir()) else { continue };
-        let path = dir.join("NativeMessagingHosts").join(&file);
-        match write_atomic(&path, &bytes) {
+        let path = dir.join("NativeMessagingHosts").join(manifest_file(target));
+        match write_atomic(&path, bytes_for(target)) {
             Ok(()) => report
                 .done
                 .push(Installed { browser: target.name, location: path.display().to_string() }),
@@ -209,13 +258,16 @@ pub fn install(opts: &InstallOptions) -> io::Result<Report> {
     {
         use winreg::RegKey;
         use winreg::enums::HKEY_CURRENT_USER;
-        let manifest_path = host_dir(&opts.support_dir).join(&file);
-        write_atomic(&manifest_path, &bytes)?;
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         for target in TARGETS {
             let Some(key) = target.win_key else { continue };
             let browser = format!(r"{}\{key}", opts.registry_root);
             if hkcu.open_subkey(&browser).is_err() {
+                continue;
+            }
+            let manifest_path = host_dir(&opts.support_dir).join(manifest_file(target));
+            if let Err(e) = write_atomic(&manifest_path, bytes_for(target)) {
+                report.failed.push((target.name, e));
                 continue;
             }
             let host_key = format!(r"{browser}\NativeMessagingHosts\{HOST_NAME}");
@@ -238,7 +290,6 @@ pub fn install(opts: &InstallOptions) -> io::Result<Report> {
 /// config. Missing ones are fine; one that can't be removed is reported, and the rest are
 /// still removed.
 pub fn uninstall(opts: &InstallOptions) -> Report {
-    let file = format!("{HOST_NAME}.json");
     let mut report = Report::default();
     let mut note = |what: &'static str, r: io::Result<()>| {
         if let Err(e) = r {
@@ -248,7 +299,8 @@ pub fn uninstall(opts: &InstallOptions) -> Report {
     #[cfg(not(windows))]
     for target in TARGETS {
         if let Some(dir) = browser_dir(&opts.home, target) {
-            note(target.name, remove_if_present(&dir.join("NativeMessagingHosts").join(&file)));
+            let path = dir.join("NativeMessagingHosts").join(manifest_file(target));
+            note(target.name, remove_if_present(&path));
         }
     }
     #[cfg(windows)]
@@ -265,7 +317,12 @@ pub fn uninstall(opts: &InstallOptions) -> Report {
                 _ => {}
             }
         }
-        note("manifest", remove_if_present(&host_dir(&opts.support_dir).join(&file)));
+        for target in TARGETS.iter().filter(|t| t.win_key.is_some()) {
+            note(
+                "manifest",
+                remove_if_present(&host_dir(&opts.support_dir).join(manifest_file(target))),
+            );
+        }
     }
     note("host config", remove_if_present(&HostConfig::path(&opts.support_dir)));
     report
@@ -288,7 +345,6 @@ pub struct Detected {
 /// writes the manifest for any existing folder (harmless; the list shown to the user
 /// must not offer a browser that isn't there).
 pub fn detect(home: &Path, support_dir: &Path, registry_root: &str) -> Vec<Detected> {
-    let file = format!("{HOST_NAME}.json");
     #[cfg(not(windows))]
     {
         let _ = (support_dir, registry_root);
@@ -296,9 +352,14 @@ pub fn detect(home: &Path, support_dir: &Path, registry_root: &str) -> Vec<Detec
             .iter()
             .filter_map(|target| {
                 let dir = browser_dir(home, target)?;
-                let installed = dir.join("Local State").is_file();
-                let host_installed =
-                    installed && dir.join("NativeMessagingHosts").join(&file).is_file();
+                // Firefox keeps its profiles next to Mozilla's folder.
+                let installed = if target.gecko {
+                    dir.parent().is_some_and(|p| p.join("Firefox/profiles.ini").is_file())
+                } else {
+                    dir.join("Local State").is_file()
+                };
+                let host_installed = installed
+                    && dir.join("NativeMessagingHosts").join(manifest_file(target)).is_file();
                 Some(Detected { target, installed, host_installed })
             })
             .collect()
@@ -309,13 +370,19 @@ pub fn detect(home: &Path, support_dir: &Path, registry_root: &str) -> Vec<Detec
         use winreg::enums::HKEY_CURRENT_USER;
         let _ = home;
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let manifest = host_dir(support_dir).join(&file);
         TARGETS
             .iter()
             .filter_map(|target| {
                 let key = target.win_key?;
                 let browser = format!(r"{registry_root}\{key}");
-                let installed = hkcu.open_subkey(&browser).is_ok();
+                let manifest = host_dir(support_dir).join(manifest_file(target));
+                // Other Mozilla apps (Thunderbird) share its key: Firefox must be there.
+                let installed = if target.gecko {
+                    hkcu.open_subkey(format!(r"{browser}\Firefox")).is_ok()
+                        || hkcu.open_subkey(format!(r"{browser}\Mozilla Firefox")).is_ok()
+                } else {
+                    hkcu.open_subkey(&browser).is_ok()
+                };
                 let host_installed = installed
                     && manifest.is_file()
                     && hkcu
@@ -490,6 +557,80 @@ mod tests {
             .unwrap();
         let manifest_path: String = key.get_value("").unwrap();
         assert!(Path::new(&manifest_path).is_file());
+        assert_eq!(uninstall(&opts).failed.len(), 0);
+        assert!(!Path::new(&manifest_path).exists());
+    }
+
+    /// F14: Firefox gets its own manifest (Decay's extension id, not origins) in Mozilla's
+    /// folder; it counts as installed once Firefox has a profile.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn firefox_gets_its_own_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let opts = options(dir.path());
+        let firefox = TARGETS.iter().find(|t| t.gecko).unwrap();
+        let mozilla = browser_dir(&opts.home, firefox).unwrap();
+        std::fs::create_dir_all(&mozilla).unwrap();
+        let installed = |opts: &InstallOptions| {
+            detect(&opts.home, &opts.support_dir, &opts.registry_root)
+                .into_iter()
+                .find(|d| d.target.gecko)
+                .map(|d| (d.installed, d.host_installed))
+        };
+        assert_eq!(installed(&opts), Some((false, false)), "no profile yet");
+        let profiles = mozilla.parent().unwrap().join("Firefox");
+        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::write(profiles.join("profiles.ini"), "[General]").unwrap();
+        let report = install(&opts).unwrap();
+        let done = report.done.iter().find(|i| i.browser == "Firefox").unwrap();
+        let written: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&done.location).unwrap()).unwrap();
+        assert_eq!(written["allowed_extensions"][0], crate::config::FIREFOX_EXTENSION_ID);
+        assert!(written.get("allowed_origins").is_none());
+        assert_eq!(written["name"], HOST_NAME);
+        assert_eq!(installed(&opts), Some((true, true)));
+        assert_eq!(uninstall(&opts).failed.len(), 0);
+        assert!(!Path::new(&done.location).exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn firefox_gets_its_own_registry_entry_and_manifest() {
+        use winreg::RegKey;
+        use winreg::enums::HKEY_CURRENT_USER;
+        struct Cleanup(String);
+        impl Drop for Cleanup {
+            fn drop(&mut self) {
+                let _ = RegKey::predef(HKEY_CURRENT_USER).delete_subkey_all(&self.0);
+            }
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let opts = options(dir.path());
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let _cleanup = Cleanup(opts.registry_root.clone());
+        hkcu.create_subkey(format!(r"{}\Mozilla\Firefox", opts.registry_root)).unwrap();
+        hkcu.create_subkey(format!(r"{}\Google\Chrome", opts.registry_root)).unwrap();
+        let report = install(&opts).unwrap();
+        let mut names: Vec<&str> = report.done.iter().map(|i| i.browser).collect();
+        names.sort_unstable();
+        assert_eq!(names, ["Firefox", "Google Chrome"]);
+        let key = hkcu
+            .open_subkey(format!(
+                r"{}\Mozilla\NativeMessagingHosts\{HOST_NAME}",
+                opts.registry_root
+            ))
+            .unwrap();
+        let manifest_path: String = key.get_value("").unwrap();
+        assert!(manifest_path.ends_with("com.decay.host.firefox.json"), "{manifest_path}");
+        let written: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+        assert_eq!(written["allowed_extensions"][0], crate::config::FIREFOX_EXTENSION_ID);
+        let found: Vec<(&str, bool)> = detect(&opts.home, &opts.support_dir, &opts.registry_root)
+            .iter()
+            .filter(|d| d.installed)
+            .map(|d| (d.target.name, d.host_installed))
+            .collect();
+        assert!(found.contains(&("Firefox", true)), "{found:?}");
         assert_eq!(uninstall(&opts).failed.len(), 0);
         assert!(!Path::new(&manifest_path).exists());
     }

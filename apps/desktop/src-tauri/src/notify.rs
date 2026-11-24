@@ -131,6 +131,7 @@ fn browser_name(b: BrowserKind) -> String {
         BrowserKind::Edge => "Edge".into(),
         BrowserKind::Brave => "Brave".into(),
         BrowserKind::Arc => "Arc".into(),
+        BrowserKind::Firefox => "Firefox".into(),
         BrowserKind::Chromium | BrowserKind::Other => t("notify.yourBrowser"),
     }
 }

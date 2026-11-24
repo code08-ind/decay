@@ -580,6 +580,8 @@ pub(crate) fn browser_app(kind: BrowserKind, platform: Platform) -> (&'static st
         (BrowserKind::Brave, Platform::Windows) => ("brave.exe", "Brave"),
         (BrowserKind::Arc, Platform::MacOs) => ("company.thebrowser.Browser", "Arc"),
         (BrowserKind::Arc, Platform::Windows) => ("arc.exe", "Arc"),
+        (BrowserKind::Firefox, Platform::MacOs) => ("org.mozilla.firefox", "Firefox"),
+        (BrowserKind::Firefox, Platform::Windows) => ("firefox.exe", "Firefox"),
         (BrowserKind::Chromium | BrowserKind::Other, Platform::MacOs) => {
             ("org.chromium.Chromium", "Chromium")
         }

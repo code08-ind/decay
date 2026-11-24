@@ -114,3 +114,44 @@ fn stdout_carries_only_protocol_frames_even_for_garbage() {
     assert_eq!(reply.payload_as::<ErrorPayload>().unwrap().code, ErrorCode::BadMessage);
     assert_eq!(read_envelope(&mut r, usize::MAX).unwrap(), None, "nothing else on stdout");
 }
+
+/// F14: Firefox starts the host with its manifest's path and the extension's id. Decay's
+/// Firefox extension is allowed without any configuration; another id gets nothing.
+#[test]
+fn firefox_starts_the_host_with_its_extension_id() {
+    use decay_host::config::FIREFOX_EXTENSION_ID;
+    let dir = tempfile::tempdir().unwrap();
+    let (ep, ep_text) = if cfg!(windows) {
+        let name = format!("decay-bin-ff-{}", std::process::id());
+        (Endpoint::Pipe(name.clone()), name)
+    } else {
+        let path = dir.path().join("run").join("decay.sock");
+        (Endpoint::Socket(path.clone()), path.display().to_string())
+    };
+    let server = IpcServer::bind(ep).unwrap();
+    let app = thread::spawn(move || {
+        let (mut rx, mut tx) = server.accept().unwrap();
+        let frame = rx.read_host_frame().unwrap().unwrap();
+        tx.write_json(&frame.msg.reply(kinds::WELCOME, &json!({})).unwrap()).unwrap();
+        frame
+    });
+    let manifest = dir.path().join("com.decay.host.json").display().to_string();
+    let mut cmd = host(dir.path(), &ep_text, &manifest);
+    cmd.arg(FIREFOX_EXTENSION_ID);
+    let mut child = cmd.spawn().unwrap();
+    let mut stdin = child.stdin.take().unwrap();
+    stdin.write_all(&hello()).unwrap();
+    let mut stdout = child.stdout.take().unwrap();
+    assert_eq!(read_envelope(&mut stdout, usize::MAX).unwrap().unwrap().kind, "welcome");
+    assert_eq!(app.join().unwrap().conn.origin, FIREFOX_EXTENSION_ID);
+    drop(stdin);
+    assert!(child.wait().unwrap().success());
+
+    let mut other = host(dir.path(), &ep_text, &manifest);
+    other.arg("someone-else@example.com");
+    let mut child = other.spawn().unwrap();
+    child.stdin.take().unwrap().write_all(&hello()).unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(!out.status.success());
+    assert_eq!(out.stdout.len(), 0);
+}

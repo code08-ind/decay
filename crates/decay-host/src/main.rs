@@ -46,13 +46,18 @@ fn launch_app(config: &HostConfig, support: &Path) {
 }
 
 fn main() -> ExitCode {
-    let origin = std::env::args().nth(1).unwrap_or_default();
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let origin = decay_host::config::caller(&args);
     let Some(support) = support_dir() else { return ExitCode::FAILURE };
     let config = HostConfig::load(&support);
     let launch_config = config.clone();
     let relay = Relay {
         origin,
-        allowed: config.allowed(),
+        allowed: config
+            .allowed()
+            .into_iter()
+            .chain(decay_host::config::firefox_allowed())
+            .collect(),
         endpoint: Endpoint::default_for_user(),
         launch_app: Box::new(move || launch_app(&launch_config, &support)),
         connect_timeout: Duration::from_secs(3),

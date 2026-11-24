@@ -39,6 +39,7 @@
     DeleteRegKey HKCU "Software\Chromium\NativeMessagingHosts\com.decay.host"
     DeleteRegKey HKCU "Software\Microsoft\Edge\NativeMessagingHosts\com.decay.host"
     DeleteRegKey HKCU "Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\com.decay.host"
+    DeleteRegKey HKCU "Software\Mozilla\NativeMessagingHosts\com.decay.host"
   ${EndIf}
 !macroend
 

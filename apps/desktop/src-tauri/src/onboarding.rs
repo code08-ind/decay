@@ -22,6 +22,8 @@ use crate::shell::Shell;
 /// The extension's store page. Every supported browser installs from the Chrome Web
 /// Store (Edge allows it too). Until the listing is public (P0.9) this is a store search.
 pub const STORE_URL: &str = "https://chromewebstore.google.com/search/Decay";
+/// Firefox installs from addons.mozilla.org (F14). A search until the listing exists.
+pub const FIREFOX_STORE_URL: &str = "https://addons.mozilla.org/firefox/search/?q=Decay";
 
 /// A browser onboarding lists: its host targets (decay-host's names), its kind as the
 /// extension reports it, and how to open a page in it.
@@ -35,16 +37,19 @@ pub struct Known {
     pub mac_bundle: &'static str,
     /// Windows: its executable under App Paths, if it registers one.
     pub win_exe: Option<&'static str>,
+    /// Where its extension comes from.
+    pub store_url: &'static str,
 }
 
 /// The browsers onboarding shows, in order (Designs/03c).
-pub const KNOWN: [Known; 5] = [
+pub const KNOWN: [Known; 6] = [
     Known {
         targets: &["Google Chrome", "Google Chrome Beta", "Google Chrome Canary"],
         kind: BrowserKind::Chrome,
         name: "Google Chrome",
         mac_bundle: "com.google.Chrome",
         win_exe: Some("chrome.exe"),
+        store_url: STORE_URL,
     },
     Known {
         targets: &["Arc"],
@@ -52,6 +57,7 @@ pub const KNOWN: [Known; 5] = [
         name: "Arc",
         mac_bundle: "company.thebrowser.Browser",
         win_exe: None,
+        store_url: STORE_URL,
     },
     Known {
         targets: &["Brave"],
@@ -59,6 +65,7 @@ pub const KNOWN: [Known; 5] = [
         name: "Brave",
         mac_bundle: "com.brave.Browser",
         win_exe: Some("brave.exe"),
+        store_url: STORE_URL,
     },
     Known {
         targets: &["Microsoft Edge"],
@@ -66,6 +73,7 @@ pub const KNOWN: [Known; 5] = [
         name: "Microsoft Edge",
         mac_bundle: "com.microsoft.edgemac",
         win_exe: Some("msedge.exe"),
+        store_url: STORE_URL,
     },
     Known {
         targets: &["Chromium"],
@@ -73,6 +81,15 @@ pub const KNOWN: [Known; 5] = [
         name: "Chromium",
         mac_bundle: "org.chromium.Chromium",
         win_exe: Some("chromium.exe"),
+        store_url: STORE_URL,
+    },
+    Known {
+        targets: &["Firefox"],
+        kind: BrowserKind::Firefox,
+        name: "Firefox",
+        mac_bundle: "org.mozilla.firefox",
+        win_exe: Some("firefox.exe"),
+        store_url: FIREFOX_STORE_URL,
     },
 ];
 
@@ -118,7 +135,7 @@ pub fn rows(
                 host_installed: on || found.iter().any(|d| d.host_installed),
                 extension_connected: on,
                 profiles: u32::try_from(profiles).unwrap_or(u32::MAX),
-                store_url: STORE_URL,
+                store_url: k.store_url,
             })
         })
         .collect()
@@ -177,7 +194,7 @@ pub async fn open_extension_store(browser: String) -> Res<Value> {
 #[cfg(target_os = "macos")]
 fn open_in(known: &Known) -> std::io::Result<()> {
     let status = std::process::Command::new("/usr/bin/open")
-        .args(["-b", known.mac_bundle, STORE_URL])
+        .args(["-b", known.mac_bundle, known.store_url])
         .status()?;
     if status.success() {
         Ok(())
@@ -201,7 +218,7 @@ fn open_in(known: &Known) -> std::io::Result<()> {
         .find_map(|root| RegKey::predef(root).open_subkey(&key).ok()?.get_value("").ok())
         .ok_or_else(|| std::io::Error::other(format!("{exe} isn't registered")))?;
     std::process::Command::new(path.trim_matches('"'))
-        .arg(STORE_URL)
+        .arg(known.store_url)
         .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .map(|_| ())
@@ -209,7 +226,7 @@ fn open_in(known: &Known) -> std::io::Result<()> {
 
 #[cfg(not(any(target_os = "macos", windows)))]
 fn open_in(_known: &Known) -> std::io::Result<()> {
-    std::process::Command::new("xdg-open").arg(STORE_URL).spawn().map(|_| ())
+    std::process::Command::new("xdg-open").arg(known.store_url).spawn().map(|_| ())
 }
 
 /// What an Accessibility request does: the system prompt the first time in a run (it also
@@ -331,6 +348,9 @@ mod tests {
             ]
         );
         assert!(rows.iter().all(|r| r.store_url == STORE_URL));
+        // Firefox installs its extension from Mozilla's site.
+        let ff = super::rows(&[found("Firefox", true, false)], &[]);
+        assert_eq!((ff[0].id.as_str(), ff[0].store_url), ("firefox", FIREFOX_STORE_URL));
     }
 
     #[test]

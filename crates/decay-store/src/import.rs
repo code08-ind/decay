@@ -169,12 +169,13 @@ fn ms(v: f64) -> i64 {
 }
 
 /// Browsers' catalog ids on macOS and on Windows (the engine's `browser_app`).
-const BROWSER_IDS: [(&str, &str); 5] = [
+const BROWSER_IDS: [(&str, &str); 6] = [
     ("com.google.Chrome", "chrome.exe"),
     ("com.microsoft.edgemac", "msedge.exe"),
     ("com.brave.Browser", "brave.exe"),
     ("company.thebrowser.Browser", "arc.exe"),
     ("org.chromium.Chromium", "chromium.exe"),
+    ("org.mozilla.firefox", "firefox.exe"),
 ];
 
 /// The app catalog id on this platform for an app id from the extension or from another

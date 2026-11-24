@@ -57,18 +57,41 @@ impl HostConfig {
     }
 }
 
+/// The Firefox extension's id (`browser_specific_settings.gecko.id` in its manifest, F14).
+/// Fixed forever: installed copies and the host's manifest know it by this.
+pub const FIREFOX_EXTENSION_ID: &str = "decay@decay-app";
+
+/// What Firefox's caller check allows: only Decay's own extension (Firefox names the
+/// caller by its id, not an origin).
+pub fn firefox_allowed() -> Vec<String> {
+    vec![FIREFOX_EXTENSION_ID.to_owned()]
+}
+
+/// The caller from the browser's arguments: Chromium passes the extension's origin first
+/// (Windows adds `--parent-window=<id>`); Firefox passes the manifest's path, then the
+/// extension's id. Whatever it is, [`origin_allowed`] decides.
+pub fn caller(args: &[String]) -> String {
+    match args {
+        [first, ..] if first.starts_with("chrome-extension://") => first.clone(),
+        [_, id, ..] => id.clone(),
+        [first] => first.clone(),
+        [] => String::new(),
+    }
+}
+
 /// `chrome-extension://<id>/` for an extension id.
 pub fn origin_of(id: &str) -> String {
     format!("chrome-extension://{id}/")
 }
 
 /// Whether `origin` is a well-formed extension origin (`chrome-extension://` + 32
-/// letters a–p + `/`) that is in `allowed`.
+/// letters a–p + `/`), or Decay's Firefox extension id, that is in `allowed`.
 pub fn origin_allowed(origin: &str, allowed: &[String]) -> bool {
-    let well_formed = origin
+    let chromium = origin
         .strip_prefix("chrome-extension://")
         .and_then(|rest| rest.strip_suffix('/'))
         .is_some_and(|id| id.len() == 32 && id.bytes().all(|b| (b'a'..=b'p').contains(&b)));
+    let well_formed = chromium || origin == FIREFOX_EXTENSION_ID;
     well_formed && allowed.iter().any(|a| a == origin)
 }
 
@@ -105,5 +128,25 @@ mod tests {
         assert_eq!(HostConfig::load(dir.path()), config);
         std::fs::write(HostConfig::path(dir.path()), b"{oops").unwrap();
         assert_eq!(HostConfig::load(dir.path()), HostConfig::default());
+    }
+
+    #[test]
+    fn firefox_names_its_caller_by_id() {
+        let args = |a: &[&str]| a.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+        let chrome = format!("chrome-extension://{ID}/");
+        assert_eq!(caller(&args(&[&chrome, "--parent-window=7"])), chrome);
+        assert_eq!(
+            caller(&args(&["/x/com.decay.host.json", FIREFOX_EXTENSION_ID])),
+            FIREFOX_EXTENSION_ID
+        );
+        assert_eq!(caller(&args(&["garbage"])), "garbage");
+        assert_eq!(caller(&[]), "");
+        let ff = firefox_allowed();
+        assert!(origin_allowed(FIREFOX_EXTENSION_ID, &ff));
+        assert!(
+            !origin_allowed("evil@decay-app", &["evil@decay-app".to_owned()]),
+            "only Decay's id"
+        );
+        assert!(!origin_allowed(FIREFOX_EXTENSION_ID, &[]), "must be allowed too");
     }
 }

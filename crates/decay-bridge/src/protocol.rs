@@ -182,6 +182,8 @@ pub enum BrowserKind {
     Brave,
     Arc,
     Chromium,
+    /// Firefox (F14).
+    Firefox,
     /// Another Chromium browser (or a newer extension's value).
     #[serde(other)]
     Other,
