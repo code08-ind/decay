@@ -1,4 +1,5 @@
 ---
+import OsIcon from '../components/OsIcon.astro';
 import Base from '../layouts/Base.astro';
 import { RELEASES } from '../consts';
 ---
@@ -9,9 +10,9 @@ import { RELEASES } from '../consts';
     <p class="mt-4 text-lg text-muted">Free, with a 14-day Decay Pro trial whenever you want it. No account.</p>
     <div class="mt-10 grid gap-5 md:grid-cols-2">
       <article class="rounded-3xl border border-line bg-surface p-6">
-        <h2 class="font-serif text-2xl">macOS</h2>
+        <h2 class="flex items-center gap-2 font-serif text-2xl"><OsIcon os="mac" size={22} />macOS</h2>
         <p class="mt-1 text-sm text-muted">macOS 14 or later · Apple silicon and Intel</p>
-        <a href={RELEASES} class="mt-5 inline-block rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink">Download for Mac (.dmg)</a>
+        <a href={RELEASES} class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="mac" />Download for Mac (.dmg)</a>
         <p class="mt-4 text-sm text-muted">
           The first time you open it, macOS says it can’t check the app for malicious software
           (Decay isn’t notarized by Apple yet). Drag Decay to Applications, then right-click it →
@@ -19,9 +20,9 @@ import { RELEASES } from '../consts';
         </p>
       </article>
       <article class="rounded-3xl border border-line bg-surface p-6">
-        <h2 class="font-serif text-2xl">Windows</h2>
+        <h2 class="flex items-center gap-2 font-serif text-2xl"><OsIcon os="windows" size={20} />Windows</h2>
         <p class="mt-1 text-sm text-muted">Windows 10 or 11 · 64-bit · installs for you only, no administrator needed</p>
-        <a href={RELEASES} class="mt-5 inline-block rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink">Download for Windows (.exe)</a>
+        <a href={RELEASES} class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="windows" size={16} />Download for Windows (.exe)</a>
       </article>
     </div>
     <h2 class="mt-14 font-serif text-3xl">Then add the browser extension</h2>

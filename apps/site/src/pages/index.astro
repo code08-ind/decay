@@ -1,6 +1,7 @@
 ---
 // The landing page (Designs/17), with only what Decay does today: no sync, no device
 // limit, no sample numbers, and the price left out until it's decided.
+import OsIcon from '../components/OsIcon.astro';
 import Base from '../layouts/Base.astro';
 import { REPO } from '../consts';
 
@@ -62,8 +63,8 @@ const faq = [
       anything in a keystroke — nothing is ever lost.
     </p>
     <div class="mt-8 flex flex-wrap justify-center gap-3">
-      <a href="/download" class="rounded-full bg-primary px-6 py-3 font-medium text-primary-ink">Download for Mac</a>
-      <a href="/download" class="rounded-full border border-line-strong bg-surface px-6 py-3 font-medium">Download for Windows</a>
+      <a href="/download" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-primary-ink"><OsIcon os="mac" />Download for Mac</a>
+      <a href="/download" class="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-6 py-3 font-medium"><OsIcon os="windows" size={16} />Download for Windows</a>
     </div>
     <p class="mt-4 text-sm text-faint">Free · Decay Pro is a one-time $24 · no account</p>
   </section>
