@@ -6,6 +6,10 @@ description: The extension won't connect, a restore is refused, sweeps don't hap
 
 # Troubleshooting
 
+## macOS says it can't check Decay for malicious software
+
+Decay isn't notarized by Apple yet. Move it to Applications, then right-click it → **Open** → **Open** (or System Settings → Privacy & Security → **Open Anyway**). You only do this once; updates install without it.
+
 ## The extension says it can't reach the app
 
 Open Decay (it lives in the menu bar / the tray), then click **Connect to the Decay app** in the extension's popup again. If you quit Decay from its menu, the extension won't start it again until you open it yourself.
