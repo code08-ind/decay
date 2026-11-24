@@ -22,7 +22,7 @@ const DAY_MS: i64 = 24 * 60 * 60 * 1000;
 pub const MAX_KEY_LEN: usize = 512;
 const SIG_LEN: usize = 64;
 
-/// The public half of the license signing key (generated 24 Nov 2026; the private half is
+/// The public half of the license signing key (generated 24 Nov 2026, replaced the same day; the private half is
 /// kept outside the repository: Docs/Release.md "Licenses").
 pub const PUBLIC_KEY: [u8; 32] = include!("public_key.in");
 
