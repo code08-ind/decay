@@ -221,6 +221,15 @@ impl Engine {
         r: &ArchiveRestoreBatch,
         now: i64,
     ) -> Res {
+        if !self.config.pro {
+            self.reply_err(
+                conn,
+                req,
+                ErrorCode::ProRequired,
+                "restoring a whole batch needs Decay Pro",
+            );
+            return Ok(());
+        }
         let Some(item) = self.store.item(&r.item_id)? else {
             self.reply_err(conn, req, ErrorCode::NotFound, "no such item");
             return Ok(());
@@ -456,6 +465,9 @@ impl Engine {
         item_id: &str,
         now: i64,
     ) -> Res<Result<(), RestoreRefused>> {
+        if !self.config.pro {
+            return Ok(Err(RestoreRefused::ProRequired));
+        }
         let ids = self.restore_ids(item_id)?;
         if ids.is_empty() {
             return Ok(Err(RestoreRefused::NothingToRestore));

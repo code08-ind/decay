@@ -345,6 +345,17 @@ impl Store {
         )?)
     }
 
+    /// Deletes archived / restored records archived at or after `from` and before `to`
+    /// (the free retention for what's archived since Pro ended, P4.2).
+    pub fn purge_archived_between(&self, from: i64, to: i64) -> Result<usize> {
+        Ok(self.conn.execute(
+            "DELETE FROM items WHERE state IN ('archived', 'restored', 'purged')
+               AND coalesce(archived_at, state_changed_at) >= ?1
+               AND coalesce(archived_at, state_changed_at) < ?2",
+            [from, to],
+        )?)
+    }
+
     /// Saves the aging clock's new ages in one transaction-friendly batch. Unlike
     /// [`Store::update_item`], this writes only `active_age_s`, so a tick never touches the
     /// search index. Returns how many items were found.

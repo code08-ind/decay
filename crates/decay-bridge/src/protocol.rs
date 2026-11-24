@@ -159,6 +159,8 @@ pub enum ErrorCode {
     NotFound,
     Timeout,
     BadMessage,
+    /// A Pro feature without Pro (P4.2: batch restore).
+    ProRequired,
     /// A code from a newer version.
     #[serde(other)]
     Unknown,

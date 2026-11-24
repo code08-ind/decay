@@ -199,6 +199,9 @@ pub enum RestoreRefused {
     /// The browser profile it came from isn't connected (it's never sent elsewhere).
     #[error("the browser it came from isn't open (or the Decay extension isn't connected)")]
     NoBrowser,
+    /// Restoring a whole batch is Pro (P4.2, PRD F6).
+    #[error("restoring a whole batch needs Decay Pro")]
+    ProRequired,
 }
 
 /// Why Undo didn't start.
@@ -270,12 +273,12 @@ pub(crate) struct PolicySettings {
 }
 
 impl PolicySettings {
-    pub fn load(store: &Store) -> Result<Self, StoreError> {
+    pub fn load(store: &Store, pro: bool) -> Result<Self, StoreError> {
         Ok(Self {
             mode: store.mode()?,
             hold_until: store.hold_until()?,
             thresholds: store.thresholds()?,
-            rules: store.rules()?.into_iter().filter(|r| r.enabled).collect(),
+            rules: crate::rules::applied_rules(store.rules()?, pro),
             max_items: store.setting::<usize>("max_items_per_sweep")?.unwrap_or(50).clamp(1, 500),
             idle_cutoff_s: store.setting::<u64>("idle_cutoff_s")?.unwrap_or(300).max(30),
             retention_days: store.setting::<u64>("retention_days")?.unwrap_or(90).max(1),
@@ -500,6 +503,9 @@ pub struct Engine {
     pub(crate) window_ops: HashMap<String, crate::hide::PendingWindowOp>,
     /// When the last hide sweep started.
     pub(crate) last_hide_at: Option<i64>,
+    /// Without Pro: since when (P4.2). Items archived from then on keep the free
+    /// retention (90 days); older ones keep the retention set while they were archived.
+    pub(crate) free_since: Option<i64>,
     /// When the last close sweep started (P4.1).
     pub(crate) last_close_at: Option<i64>,
     /// Restores of archived windows waiting for their folders to open, by batch id.
@@ -591,7 +597,7 @@ impl Engine {
     /// An engine over an open store. Sweeps left unfinished by a crash are settled when
     /// their browser's next snapshot arrives.
     pub fn new(store: Store, config: EngineConfig, now: i64) -> Result<Self, StoreError> {
-        let policy = Arc::new(PolicySettings::load(&store)?);
+        let policy = Arc::new(PolicySettings::load(&store, config.pro)?);
         // The last tab sweep (hide sweeps keep their own interval).
         let last_sweep_at = store
             .recent_sweeps(20)?
@@ -617,6 +623,7 @@ impl Engine {
             window_ops: HashMap::new(),
             last_hide_at: None,
             last_close_at: None,
+            free_since: None,
             reopen_batches: HashMap::new(),
             meeting_until: None,
             hide_reasons: HashMap::new(),
@@ -935,8 +942,28 @@ impl Engine {
         }
     }
 
+    /// The license changed (P4.2): Pro features on or off from now. `free_since`: when
+    /// Pro last ended (or this installation started without it), for the retention.
+    pub fn set_license(
+        &mut self,
+        pro: bool,
+        free_since: Option<i64>,
+        now: i64,
+    ) -> Res<Vec<Output>> {
+        self.config.pro = pro;
+        self.free_since = free_since;
+        self.reload_policy()?;
+        self.publish_status(now);
+        Ok(std::mem::take(&mut self.out))
+    }
+
+    /// Whether Pro features are on.
+    pub fn is_pro(&self) -> bool {
+        self.config.pro
+    }
+
     pub(crate) fn reload_policy(&mut self) -> Res {
-        let policy = PolicySettings::load(&self.store)?;
+        let policy = PolicySettings::load(&self.store, self.config.pro)?;
         self.clock.idle_cutoff_secs = policy.idle_cutoff_s;
         self.policy = Arc::new(policy);
         Ok(())

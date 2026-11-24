@@ -670,7 +670,8 @@ fn search_and_restore_through_the_app() {
     );
     assert!(events_of(h.store(), &id).contains(&EventType::Restored));
 
-    // Batch: the rest of that sweep's window.
+    // Batch (Pro): the rest of that sweep's window.
+    h.engine.set_license(true, None, h.now).unwrap(); // batch restore is Pro
     let other = archived(h.store()).into_iter().next().unwrap();
     let req = h.request(1, kinds::ARCHIVE_RESTORE_BATCH, json!({"itemId": other.id}));
     let restore = h.one(1, kinds::TABS_RESTORE);
@@ -1337,6 +1338,7 @@ fn the_app_restores_into_a_new_window_or_a_whole_batch() {
     h.ack_ok(1, &restore, json!({"restored": [], "failed": []}));
 
     // ⌘↵: the batch of one item = everything archived with it from its window.
+    h.engine.set_license(true, None, h.now).unwrap(); // batch restore is Pro
     let out = h.engine.restore_batch(&ids[0], h.now).unwrap().unwrap();
     h.collect(out);
     let batch = h.one(1, kinds::TABS_RESTORE);
@@ -1348,6 +1350,7 @@ fn the_app_restores_into_a_new_window_or_a_whole_batch() {
 #[test]
 fn a_refused_restore_names_its_profile_and_can_go_elsewhere_on_request() {
     let (mut h, sweep) = swept();
+    h.engine.set_license(true, None, h.now).unwrap(); // batch restore is Pro
     let ids = archived_ids(&h, &sweep);
     let out = h.engine.handle(Input::Disconnected(1), h.now);
     h.collect(out);
@@ -2005,4 +2008,22 @@ fn insights_count_an_undo_once_and_its_tabs_as_regret() {
     let _ = h.reply_to(1, &req);
     let today = h.engine.metrics(0, h.now).unwrap().days.pop().unwrap();
     assert_eq!((today.undo_count, today.restored_24h_count), (1, 2), "{today:?}");
+}
+
+/// P4.2: restoring a whole batch is Pro, from the app (⌘↵) and from the popup.
+#[test]
+fn batch_restore_needs_pro() {
+    let (mut h, sweep) = swept();
+    let ids = archived_ids(&h, &sweep);
+    let refused = h.engine.restore_batch(&ids[0], h.now).unwrap();
+    assert!(matches!(refused, Err(decay_engine::RestoreRefused::ProRequired)), "{refused:?}");
+    let req = h.request(1, kinds::ARCHIVE_RESTORE_BATCH, json!({"itemId": ids[0]}));
+    let reply = h.reply_to(1, &req);
+    assert_eq!(reply.payload["ok"], false);
+    assert_eq!(reply.payload["error"]["code"], "PRO_REQUIRED");
+    assert_eq!(h.take(1, kinds::TABS_RESTORE).len(), 0);
+    // Single restores and Undo stay free.
+    let out = h.engine.restore(&ids[..1], false, h.now).unwrap().unwrap();
+    h.collect(out);
+    assert_eq!(h.take(1, kinds::TABS_RESTORE).len(), 1);
 }

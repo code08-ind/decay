@@ -50,8 +50,32 @@ pub enum RuleRefused {
     Duplicate,
     #[error("this rule no longer exists")]
     NotFound,
+    /// A fourth custom-timing rule without Pro (P4.2, PRD §7.4).
+    #[error("more than {FREE_CUSTOM_RULES} custom timing rules need Decay Pro")]
+    ProRequired,
     #[error(transparent)]
     Store(#[from] StoreError),
+}
+
+/// Custom-timing rules that apply without Pro (the oldest first; more are kept, not
+/// applied, and can't be added or turned on: P4.2, PRD §7.4).
+pub const FREE_CUSTOM_RULES: usize = 3;
+
+/// The rules the policy applies: enabled ones, and without Pro only the oldest
+/// [`FREE_CUSTOM_RULES`] custom-timing rules (`rules` in creation order).
+pub(crate) fn applied_rules(rules: Vec<Rule>, pro: bool) -> Vec<Rule> {
+    let mut custom = 0;
+    rules
+        .into_iter()
+        .filter(|r| r.enabled)
+        .filter(|r| {
+            if pro || r.action != RuleAction::CustomThreshold {
+                return true;
+            }
+            custom += 1;
+            custom <= FREE_CUSTOM_RULES
+        })
+        .collect()
 }
 
 fn invalid(why: impl Into<String>) -> RuleRefused {
@@ -207,6 +231,7 @@ impl Engine {
         let (scope, pattern, action, thresholds) = validate_rule(input)?;
         let mut r = rule(scope, &pattern, action, thresholds, input.enabled.unwrap_or(true), now);
         r.id = new_id(now);
+        self.check_custom_limit(&r)?;
         let purged = self.save_and_purge(&r, true)?;
         Ok((r, purged, self.rules_changed(now)?))
     }
@@ -236,9 +261,28 @@ impl Engine {
             r.action = action;
             r.threshold_hours = thresholds;
             r.enabled = input.enabled.unwrap_or(r.enabled);
+            self.check_custom_limit(&r)?;
         }
         let purged = self.save_and_purge(&r, false)?;
         Ok((r, purged, self.rules_changed(now)?))
+    }
+
+    /// Without Pro, `r` may be an enabled custom-timing rule only if it's among the
+    /// oldest [`FREE_CUSTOM_RULES`] of them (the ones that apply): a new one only while
+    /// fewer are on; one of the applied ones can always be edited.
+    fn check_custom_limit(&self, r: &Rule) -> Result<(), RuleRefused> {
+        if self.config.pro || !r.enabled || r.action != RuleAction::CustomThreshold {
+            return Ok(());
+        }
+        // The stored order (creation time, then id), with `r` in its place, or last when
+        // it's new.
+        let mut rules = self.store.rules()?;
+        match rules.iter_mut().find(|o| o.id == r.id) {
+            Some(old) => *old = r.clone(),
+            None => rules.push(r.clone()),
+        }
+        let applied = applied_rules(rules, false).iter().any(|a| a.id == r.id);
+        if applied { Ok(()) } else { Err(RuleRefused::ProRequired) }
     }
 
     pub fn delete_rule(&mut self, id: &str, now: i64) -> Result<Vec<Output>, RuleRefused> {
@@ -432,6 +476,29 @@ mod tests {
 
     fn err(i: &RuleInput) -> String {
         validate_rule(i).unwrap_err().to_string()
+    }
+
+    #[test]
+    fn without_pro_only_the_oldest_three_custom_rules_apply() {
+        let mk = |n: i64, action, enabled| {
+            let mut r = rule(RuleScope::Domain, &format!("s{n}.com"), action, None, enabled, n);
+            r.id = format!("r{n}");
+            r
+        };
+        let rules = vec![
+            mk(1, RuleAction::CustomThreshold, true),
+            mk(2, RuleAction::Protect, true),
+            mk(3, RuleAction::CustomThreshold, false),
+            mk(4, RuleAction::CustomThreshold, true),
+            mk(5, RuleAction::CustomThreshold, true),
+            mk(6, RuleAction::CustomThreshold, true),
+            mk(7, RuleAction::Exclude, true),
+        ];
+        let ids = |pro| -> Vec<String> {
+            applied_rules(rules.clone(), pro).into_iter().map(|r| r.id).collect()
+        };
+        assert_eq!(ids(false), ["r1", "r2", "r4", "r5", "r7"], "turned-off rules don't count");
+        assert_eq!(ids(true), ["r1", "r2", "r4", "r5", "r6", "r7"]);
     }
 
     #[test]

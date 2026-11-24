@@ -58,6 +58,9 @@ pub(crate) enum SettleOutcome {
     NotArchiving,
 }
 
+/// The retention without Pro (PRD §7.4).
+pub const FREE_RETENTION_DAYS: i64 = 90;
+
 pub(crate) fn target(item: &Item) -> PolicyTarget<'_> {
     PolicyTarget {
         kind: item.kind,
@@ -352,7 +355,17 @@ impl Engine {
         if let Err(e) = self.prune_metrics(now) {
             self.problem("metrics", &e);
         }
-        let purged = self.store.purge_archived_before(cutoff)?;
+        let mut purged = self.store.purge_archived_before(cutoff)?;
+        // Without Pro, retention is 90 days for what's archived since Pro ended; what was
+        // archived before keeps the retention it was archived under (P4.2: never deleted
+        // on the day Pro ends).
+        if !self.config.pro
+            && days > FREE_RETENTION_DAYS
+            && let Some(since) = self.free_since
+        {
+            let free_cutoff = now.saturating_sub(FREE_RETENTION_DAYS * 86_400_000);
+            purged += self.store.purge_archived_between(since, free_cutoff)?;
+        }
         if purged > 0 {
             tracing::info!(purged, "archive retention");
         }

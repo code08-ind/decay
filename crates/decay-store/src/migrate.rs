@@ -21,10 +21,11 @@ pub(crate) const MIGRATIONS: &[Migration] = &[
     },
     Migration { version: 3, name: "metrics", sql: include_str!("../migrations/V3__metrics.sql") },
     Migration { version: 4, name: "profiles", sql: include_str!("../migrations/V4__profiles.sql") },
+    Migration { version: 5, name: "license", sql: include_str!("../migrations/V5__license.sql") },
 ];
 
 /// The newest schema version this build knows.
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 
 /// FNV-1a over the SQL with line endings normalised (a Windows checkout has CRLF).
 fn checksum(sql: &str) -> String {
@@ -138,7 +139,7 @@ mod tests {
             apply(&mut conn, &v1, 5).unwrap();
             conn.execute_batch(seed).unwrap();
             let rest = pending(&conn).unwrap();
-            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3, 4]);
+            assert_eq!(rest.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3, 4, 5]);
             apply(&mut conn, &rest, 5).unwrap();
             let at: Option<String> = conn
                 .query_row("SELECT value FROM settings WHERE key = 'onboarded_at'", [], |r| {
