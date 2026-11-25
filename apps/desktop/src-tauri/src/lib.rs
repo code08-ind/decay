@@ -214,7 +214,7 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let links = app.clone();
     app.deep_link().on_open_url(move |event| {
         let urls: Vec<String> = event.urls().iter().map(ToString::to_string).collect();
-        shell::open_links(&links, urls.iter().map(String::as_str));
+        shell::open_links_later(&links, urls);
     });
     #[cfg(all(debug_assertions, windows))]
     if let Err(e) = app.deep_link().register_all() {

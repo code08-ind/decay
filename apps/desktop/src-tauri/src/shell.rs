@@ -570,6 +570,21 @@ pub fn window_closed(app: &AppHandle, label: &str) {
     }
 }
 
+/// Handles links the OS hands over while Decay runs (the deep-link plugin's `on_open_url`).
+/// Not right away: on macOS that callback runs inside the plugin's event hook, with Tauri's
+/// plugin store locked, and opening a window takes that lock too, so the app froze on every
+/// link while running (v0.1.0 draft). Queued from another thread instead
+/// (`run_on_main_thread` called on the main thread would run it at once), it runs on the
+/// main thread after the hook has returned.
+pub fn open_links_later(app: &AppHandle, urls: Vec<String>) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let handle = app.clone();
+        let _ =
+            app.run_on_main_thread(move || open_links(&handle, urls.iter().map(String::as_str)));
+    });
+}
+
 /// Handles `decay://` links (from the OS, or forwarded from a second launch).
 pub fn open_links<'a>(app: &AppHandle, links: impl IntoIterator<Item = &'a str>) {
     for raw in links {
