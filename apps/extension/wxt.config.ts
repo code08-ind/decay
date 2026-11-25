@@ -44,7 +44,13 @@ export default defineConfig({
       ...(firefox
         ? {
             browser_specific_settings: {
-              gecko: { id: FIREFOX_EXTENSION_ID, strict_min_version: '128.0' },
+              gecko: {
+                id: FIREFOX_EXTENSION_ID,
+                strict_min_version: '128.0',
+                // Mozilla's data-collection consent (required for new add-ons on AMO): Decay sends
+                // nothing off the device (the desktop app link is local native messaging).
+                data_collection_permissions: { required: ['none'] },
+              },
             },
           }
         : { minimum_chrome_version: '120' }),
