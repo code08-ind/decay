@@ -1,19 +1,39 @@
 # Decay — Progress Tracker
 
-## ▶ Start here next (paused 24 Nov 2026, resume 25 Nov 2026)
+## ▶ Start here next (updated 25 Nov 2026)
 
-Finish selling Decay Pro through Paddle (P4.3). Everything before this is built, pushed and live (https://decay.aryangarg.com, `/buy` opens Paddle's sandbox checkout).
+**Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **in review** on both stores. **v0.1.1** (the app accepts the Chrome Web Store extension; onboarding opens its store page) is built as a **draft** on decay-releases.
 
-1. **Test the sandbox checkout:** open https://decay.aryangarg.com/buy and pay with Paddle's sandbox test card (e.g. `4242 4242 4242 4242`, any future expiry, any CVC). Check it appears under **Transactions** in the Paddle sandbox.
-2. **Cloudflare login:** in Claude Code run `! npx wrangler login` and approve it in the browser.
-3. **Paddle sandbox API key:** Developer tools → Authentication → API keys, permission to **read customers**. Don't paste it in chat: wrangler asks for it in a hidden prompt.
-4. **Resend:** check whether `aryangarg.com` is already a verified domain (aryangarg.com's contact form uses Resend), and have a sending-only Resend API key ready.
+### 1. When the Chrome Web Store approves Decay (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
+- [ ] **Publish v0.1.1:** Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
+- [ ] **Website:** link the listing (`https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa`) from `apps/site/src/pages/docs/browsers.md` and the download page.
+- [ ] **Official URL badge:** Developer Dashboard → Store listing → Official URL → `https://decay.aryangarg.com/` (verified in Google Search Console on 25 Nov 2026; it must be the same Google account as the dashboard, as an Owner). Don't edit the listing while it's in review.
 
-Then Claude deploys the license webhook (`services/license-webhook`, Docs/Release.md "Selling Decay Pro" steps 3–5), sets up Paddle's notification destination (`transaction.completed`), and we run one sandbox purchase end to end: payment → license email → activate in Decay. After that: Paddle's live account review, then switch the site and webhook to live values.
+### 2. When Firefox Add-ons approves Decay (slug `decay-tabs`)
+- [ ] Put the listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the site's browsers page; ship it in the next app release.
+- [ ] Upload a new Firefox version with the new leaf icon (0.1.0 on AMO still has the old one).
+
+### 3. Selling for real (Paddle live)
+- [ ] Paddle approves the live account (seller review).
+- [ ] Switch to live: the site's Paddle client token and price id (`apps/site/src/consts.ts`), the Worker's `PADDLE_ENV = "production"` and `PADDLE_PRICE_IDS` (`services/license-webhook/wrangler.toml`), live `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` (`npx wrangler secret put …` in a real terminal, never via `!`), a live notification destination for `transaction.completed`.
+- [ ] One real $24 purchase → email → activate → refund it.
+
+### 4. Checks on real machines
+- [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
+- [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).
+
+### 5. Later / optional
+- [ ] **Signing:** Apple Developer account ($99/yr; removes Open Anyway and the keychain prompt after updates) and Windows signing (removes SmartScreen). Deferred by the user.
+- [ ] **Crash reports:** a Sentry project, its DSN as the `DECAY_SENTRY_DSN` secret, IP storage off.
+- [ ] **Email polish:** a sender logo (Gravatar for licenses.decay@ / support.decay@) and a DMARC record for aryangarg.com.
+- [ ] **Extension:** remove the leftover "Beta goals" / "Share with beta team" from Insights.
+- [ ] **Edge Add-ons** listing (optional; Edge already installs from the Chrome Web Store). Its ID would go into `BUILTIN_EXTENSION_IDS` too.
+- [ ] **aryangarg site repo:** GitHub Actions don't start (billing / spending limit); Vercel still deploys.
+- [ ] **Launch posts** (Docs/Launch): after the items above, per `Docs/Launch/Checklist.md`.
 
 | | |
 | --- | --- |
-| **Last updated** | 24 Nov 2026 (Phases 3–5 built; website live; Paddle sandbox checkout live) |
+| **Last updated** | 25 Nov 2026 (v0.1.0 published; sandbox purchase verified; extension in review on both stores; v0.1.1 draft) |
 | **Legend (design)** | ✅ = approved (all Stitch designs in `Designs/`, 7 Nov 2026) |
 | **Current phase** | Phase 4 — Pro and public launch: selling Decay Pro (P4.3, Paddle) |
 | **Capacity assumption** | ~15 h/week |
@@ -44,13 +64,13 @@ Then Claude deploys the license webhook (`services/license-webhook`, Docs/Releas
 - [x] Payment provider: **Paddle** (user, 24 Nov 2026; Lemon Squeezy, chosen first, closed to new stores; Stripe Managed Payments doesn't accept India-based sellers)
 - [ ] Windows 10: official or best-effort
 - [ ] Apple Developer account ($99/yr): **a future step** (user, 24 Nov 2026: skipped for now; macOS builds stay ad-hoc signed until then) · Windows signing (Azure Trusted Signing)
-- [ ] Chrome Web Store developer account ($5)
+- [x] Chrome Web Store developer account ($5): item `jidljehgkacgjoefbancbihmdkkpcaaa`, submitted 25 Nov 2026
 
 ## Deferred items (to look at later)
 
 Everything a review or QA pass left for later, with where it comes from and when it's due. Tick an item off when it's done.
 
-- [ ] **Store link in onboarding**: "Install extension" opens a Chrome Web Store search until the listing is public; put the real listing URL in `STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the extension ID in decay-host `BUILTIN_EXTENSION_IDS`. *From P1.10 · due with P0.9.*
+- [x] **Store link in onboarding**: `STORE_URL` is the listing and the ID is in `BUILTIN_EXTENSION_IDS` (25 Nov 2026, v0.1.1). *From P1.10.*
 - [ ] **"Customise thresholds" link and version badge** in onboarding (Designs/03b, 03a). *From P1.10 · was due with P1.12; still open (Settings › Aging now exists to link to).*
 - [ ] **Tests for the Tauri command wrappers** in onboarding.rs / shell.rs (need a running app, e.g. `tauri::test` mock runtime); keeps Rust coverage comfortably above 80 % (81.9 % now). *From P1.10.*
 - [ ] **Item route lost before onboarding**: the panel's "open in Library" (`/item/{id}`) asked for before onboarding opens onboarding and drops the route. *From P1.10 · low.*
