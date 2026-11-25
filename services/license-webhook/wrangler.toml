@@ -10,7 +10,7 @@ compatibility_date = "2026-11-01"
 
 [vars]
 # Who the license email comes from (a domain verified in Resend).
-EMAIL_FROM = "Decay <licenses@aryangarg.com>"
+EMAIL_FROM = "Decay <licenses.decay@aryangarg.com>"
 # Paddle price ids that are Decay Pro (comma-separated); empty: any.
 PADDLE_PRICE_IDS = "pri_01m878svs4bgc3z7wq69kpp85z"
 # "sandbox" while testing with Paddle's sandbox; "production" for real sales.

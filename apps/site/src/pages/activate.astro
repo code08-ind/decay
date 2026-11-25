@@ -1,0 +1,47 @@
+---
+// The license email's "Activate in Decay" button lands here (P4.3). Mail apps such as Gmail
+// strip decay:// links, so the email links to this page instead, with the key in the URL
+// fragment (#key=…): browsers never send the fragment to the server. The page hands the key
+// to the app through its decay://license/activate link, where the user confirms it.
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Activate Decay Pro" description="Open your Decay Pro license key in Decay.">
+  <section class="mx-auto max-w-2xl px-5 pt-10 text-center">
+    <h1 class="font-serif text-5xl">Activate Decay Pro</h1>
+    <p id="ready" class="mt-4 hidden text-lg text-muted">
+      Your browser should ask to open Decay. Allow it, then click <strong class="text-ink">Activate</strong> in Decay.
+    </p>
+    <a
+      id="open"
+      class="mt-8 hidden items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-primary-ink"
+      href="#"
+    >
+      Open in Decay
+    </a>
+    <p id="missing" class="mt-4 hidden text-lg text-muted">
+      This link has no license key. Open the link from your license email again, or paste the key into
+      <strong class="text-ink">Decay → Settings → Decay Pro</strong>.
+    </p>
+    <p class="mt-8 text-sm text-muted">
+      Nothing happens? Make sure Decay is installed (<a class="underline" href="/download">download it</a>), or copy the
+      key from the email into <strong>Decay → Settings → Decay Pro</strong> and click <strong>Activate</strong>.
+    </p>
+  </section>
+  <script is:inline>
+    (() => {
+      const key = new URLSearchParams(location.hash.slice(1)).get('key');
+      const show = (id) => {
+        const el = document.getElementById(id);
+        el.classList.remove('hidden');
+        if (id === 'open') el.classList.add('inline-flex');
+        return el;
+      };
+      if (!key) return show('missing');
+      const link = 'decay://license/activate?key=' + encodeURIComponent(key);
+      show('ready');
+      show('open').href = link;
+      location.href = link;
+    })();
+  </script>
+</Base>

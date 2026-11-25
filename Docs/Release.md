@@ -61,7 +61,7 @@ Decay Pro ($24, one-time) is sold through **Paddle** (merchant of record: paymen
 
 1. **Paddle (sandbox first):** sign up at sandbox-vendors.paddle.com (test) and vendors.paddle.com (live; Paddle reviews the seller and the website: decay.aryangarg.com has pricing, [Terms](https://decay.aryangarg.com/terms) naming Paddle as merchant of record, a [Refund Policy](https://decay.aryangarg.com/refunds) and the privacy page). Create the product **Decay Pro** with a one-time price of **$24 USD**; note its **price id** (`pri_…`). Create a **hosted checkout** (Checkout → Hosted checkouts) for that price: its link is the Buy button. Create an **API key** with permission to read customers.
 2. **Resend:** the sending domain `aryangarg.com` (aryangarg.com's contact form may already use it), and an API key with sending access only.
-3. **Worker:** in `services/license-webhook/wrangler.toml` set `PADDLE_PRICE_IDS` (the price id) and `PADDLE_ENV` (`sandbox` while testing, then `production`); `EMAIL_FROM` is `Decay <licenses@aryangarg.com>`. Then, logged in with `npx wrangler login`, from that folder:
+3. **Worker:** in `services/license-webhook/wrangler.toml` set `PADDLE_PRICE_IDS` (the price id) and `PADDLE_ENV` (`sandbox` while testing, then `production`); `EMAIL_FROM` is `Decay <licenses.decay@aryangarg.com>`. Then, logged in with `npx wrangler login`, from that folder:
    - `npx wrangler secret put LICENSE_SIGNING_KEY < ~/.decay/license-signing.key` (read from the file: the key is never typed or shown)
    - `npx wrangler secret put PADDLE_API_KEY`
    - `npx wrangler secret put RESEND_API_KEY`

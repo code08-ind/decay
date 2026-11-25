@@ -202,7 +202,9 @@ describe('the email', () => {
   it('carries the key, an activation link and escapes the name', () => {
     const m = licenseMail('Decay <a@b.c>', 'x@y.z', '<b>Eve</b>', 'DECAY-ABCDE');
     expect(m.text).toContain('DECAY-ABCDE');
-    expect(m.text).toContain('decay://license/activate?key=DECAY-ABCDE');
+    expect(m.text).toContain('https://decay.aryangarg.com/activate#key=DECAY-ABCDE');
+    expect(m.html).toContain('href="https://decay.aryangarg.com/activate#key=DECAY-ABCDE"');
+    expect(m.html).toContain('https://decay.aryangarg.com/icon.png');
     expect(m.html).toContain('&lt;b&gt;Eve&lt;/b&gt;');
     expect(m.html).not.toContain('<b>Eve</b>');
   });
