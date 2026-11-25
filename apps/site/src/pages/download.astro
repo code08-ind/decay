@@ -80,7 +80,12 @@ import { DOWNLOAD } from '../consts';
       card.classList.remove('border-line');
       // Don't start it again on reload or Back.
       history.replaceState(null, '', location.pathname);
-      location.href = files[os];
+      // Download in a hidden frame, so this page (the install steps) stays on screen even
+      // if the file can't be fetched; "Download it again" is the fallback.
+      const frame = document.createElement('iframe');
+      frame.hidden = true;
+      frame.src = files[os];
+      document.body.append(frame);
     })();
   </script>
 </Base>
