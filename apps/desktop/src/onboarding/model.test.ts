@@ -19,7 +19,7 @@ const browser = (over: Partial<DetectedBrowser>): DetectedBrowser => ({
   hostInstalled: true,
   extensionConnected: false,
   profiles: 0,
-  storeUrl: 'https://chromewebstore.google.com/search/Decay',
+  storeUrl: 'https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa',
   ...over,
 });
 

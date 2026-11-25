@@ -20,8 +20,10 @@ use crate::core::{AppError, Core, home_dir, install_host};
 use crate::shell::Shell;
 
 /// The extension's store page. Every supported browser installs from the Chrome Web
-/// Store (Edge allows it too). Until the listing is public (P0.9) this is a store search.
-pub const STORE_URL: &str = "https://chromewebstore.google.com/search/Decay";
+/// Store (Edge allows it too). The item's id is also in decay-host's
+/// `BUILTIN_EXTENSION_IDS`.
+pub const STORE_URL: &str =
+    "https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa";
 /// Firefox installs from addons.mozilla.org (F14). A search until the listing exists.
 pub const FIREFOX_STORE_URL: &str = "https://addons.mozilla.org/firefox/search/?q=Decay";
 

@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "decay-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "decay-bridge",
  "decay-core",
