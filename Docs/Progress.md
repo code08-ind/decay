@@ -7,7 +7,10 @@
 ### 1. When the Chrome Web Store approves Decay (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [ ] **Publish v0.1.1:** Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
 - [ ] **Website:** link the listing (`https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa`) from `apps/site/src/pages/docs/browsers.md` and the download page.
-- [ ] **Official URL badge:** Developer Dashboard → Store listing → Official URL → `https://decay.aryangarg.com/` (verified in Google Search Console on 25 Nov 2026; it must be the same Google account as the dashboard, as an Owner). Don't edit the listing while it's in review.
+- [ ] **"Verified site" badge (Official URL).** `decay.aryangarg.com` was verified in Google Search Console on 25 Nov 2026.
+  1. **Don't edit the listing while Decay is in review:** changing it withdraws the submission and sends it to the back of the queue. Add the Official URL after approval; that small change gets a quick review.
+  2. After approval: Developer Dashboard → Decay → **Store listing** → **Official URL** → pick `https://decay.aryangarg.com/`. It's only listed if Search Console uses the **same Google account** as the Developer Dashboard: check the avatar at the top right of both.
+  3. If it still says "not verified": Search Console → **Settings** → **Users and permissions** → add the dashboard's account as an **Owner** (a Full user isn't enough).
 
 ### 2. When Firefox Add-ons approves Decay (slug `decay-tabs`)
 - [ ] Put the listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the site's browsers page; ship it in the next app release.
