@@ -1,4 +1,8 @@
-# Demo video (store review)
+# Store media
+
+Screenshots and promo tiles: `screenshots.mjs` and `promo.mjs` (commands in `../Store Listing.md`). Playwright: `npm i --no-save playwright` doesn't work inside the pnpm workspace; install it in a folder outside the repo and symlink its `node_modules` here (git-ignored).
+
+## Demo video (store review)
 
 `../assets/decay-demo.mp4` was recorded from the real extension in headless Chromium. `stage.html` / `stage.js` form a recording-only extension page, **never shipped**: a live tab strip read from `chrome.tabs`, a caption, and a Decay page (popup or Sweeps) in a frame.
 
