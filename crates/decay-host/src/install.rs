@@ -431,13 +431,16 @@ mod tests {
     }
 
     #[test]
-    fn refuses_bad_origins_no_origins_and_transient_host_paths() {
+    fn refuses_bad_origins_and_transient_host_paths() {
         let dir = tempfile::tempdir().unwrap();
         let mut opts = options(dir.path());
         opts.origins = vec!["garbage".into()];
         assert_eq!(install(&opts).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+        // No extra origins: the store build is still allowed.
         opts.origins = vec![];
-        assert_eq!(install(&opts).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+        assert!(install(&opts).is_ok());
+        let allowed = HostConfig::load(&opts.support_dir).allowed();
+        assert!(allowed.contains(&origin_of("jidljehgkacgjoefbancbihmdkkpcaaa")));
         assert!(transient_path(Path::new(
             "/private/var/folders/x/AppTranslocation/ABC/d/Decay.app/Contents/MacOS/decay-host"
         )));

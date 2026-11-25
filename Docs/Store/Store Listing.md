@@ -154,7 +154,7 @@ No remote code, no network requests of its own. Privacy policy: https://www.arya
 
 ## After the first upload
 
-1. The dashboard shows the item's **ID** (32 letters) as soon as the package is uploaded, before review. Send it to Claude / put it in `crates/decay-host/src/config.rs` → `BUILTIN_EXTENSION_IDS`, so the released desktop app accepts the store build, and release the app (v0.1.1). Do the same for the Edge Add-ons ID if Edge is listed.
+1. Item ID: **`jidljehgkacgjoefbancbihmdkkpcaaa`** (added to `BUILTIN_EXTENSION_IDS` on 25 Nov 2026). The dashboard shows the item's **ID** (32 letters) as soon as the package is uploaded, before review. Send it to Claude / put it in `crates/decay-host/src/config.rs` → `BUILTIN_EXTENSION_IDS`, so the released desktop app accepts the store build, and release the app (v0.1.1). Do the same for the Edge Add-ons ID if Edge is listed.
 2. After approval: replace the store search link in `apps/desktop/src-tauri/src/onboarding.rs` (`STORE_URL`) and the website's docs with the listing URL (`https://chromewebstore.google.com/detail/<id>`).
 3. Each new version: bump `apps/extension/package.json`, rebuild the zip, **Package → Upload new package**, and submit for review.
 

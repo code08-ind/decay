@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 
 /// Extension IDs always allowed (the published store builds). Development builds are
 /// allowed through [`HostConfig::allowed_origins`].
-// TODO(P0.9 publish): add the Chrome Web Store / Edge Add-ons IDs once assigned.
-pub const BUILTIN_EXTENSION_IDS: &[&str] = &[];
+/// - `jidljehgkacgjoefbancbihmdkkpcaaa`: Chrome Web Store (Chrome, Brave, Arc, and Edge
+///   when installed from the Chrome Web Store).
+// TODO: add the Edge Add-ons ID if Decay is listed there too.
+pub const BUILTIN_EXTENSION_IDS: &[&str] = &["jidljehgkacgjoefbancbihmdkkpcaaa"];
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
