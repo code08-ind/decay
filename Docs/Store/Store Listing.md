@@ -98,7 +98,7 @@ Questions or bugs: support.decay@aryangarg.com
 | `storage` | Stores the tab archive, the user's rules and settings, and daily usage counts locally (IndexedDB and chrome.storage). Nothing is synced or sent anywhere. |
 | `alarms` | Runs the aging clock every 30 seconds in the MV3 service worker, which can't keep timers alive on its own. |
 | `idle` | Counts only time when the user is actively at the computer, so tabs don't "age" overnight or while the user is away. |
-| `scripting` | Only with the optional site access below: registers two small content scripts (watchers for typing, "leave site?" prompts and uploads in progress) and, just before archiving a stale tab, runs a one-off check in that tab that returns yes / no / unknown. |
+| `scripting` | Only with the optional site access (host permissions): registers two small content scripts (watchers for typing, "leave site?" prompts and uploads in progress) and, just before archiving a stale tab, runs a one-off check in that tab that returns yes / no / unknown. |
 | `favicon` | Shows site icons in the popup and pages from Chrome's local favicon cache, so Decay never downloads icons. |
 | `notifications` | Shows "Archived N tabs" with Undo / View buttons after a sweep, and an "Always keep <site> open?" suggestion when a tab is restored soon after being archived. |
 | `nativeMessaging` (optional) | Requested only when the user clicks "Connect" to link the Decay desktop app installed on the same computer. The extension then exchanges tab information and its archive with that app through the native messaging host the app installs. Nothing is sent over the network. |
