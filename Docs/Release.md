@@ -92,7 +92,7 @@ To withdraw a bad release: mark it as a draft again (stable users stop seeing it
 
 ## Unsigned builds (until the Apple account exists)
 
-- **First install:** macOS says the app "can't be opened because Apple cannot check it". Open it from Finder with right-click → Open, or System Settings → Privacy & Security → *Open Anyway*. Updates installed by the app itself aren't affected (they don't carry the download quarantine).
+- **First install:** macOS says the app "can't be opened because Apple cannot check it". On macOS 15 and later the only way is System Settings → Privacy & Security → *Open Anyway* (right-click → Open no longer bypasses it; it still works on macOS 14). Updates installed by the app itself aren't affected (they don't carry the download quarantine).
 - **Keychain prompt after each update:** the database key is in the login Keychain, trusted for the app's code signature. An ad-hoc signature changes with every build, so after an update macOS asks whether Decay may use its Keychain item: choose *Always Allow*. Developer ID signing removes this (the signature's identity stays the same).
 - **Window access (Accessibility) after each update:** macOS ties the permission to the code signature too, so an ad-hoc update most likely turns it off. Decay keeps working with tabs only; turn it back on in System Settings → Privacy & Security → Accessibility (remove the old Decay entry first if it's listed). Developer ID signing removes this too.
 

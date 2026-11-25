@@ -227,6 +227,15 @@ jobs:
           jq --arg notes "$body" '.notes = $notes' m/latest.json > m/notes.json
           mv m/notes.json m/latest.json
           gh release upload "$TAG" m/latest.json --repo "$RELEASES_REPO" --clobber
+      # The website's Download buttons link to releases/latest/download/<name>, which only
+      # works with names that don't change between versions: add copies under fixed names.
+      - name: Fixed-name downloads for the website
+        run: |
+          mkdir d
+          gh release download "$TAG" --repo "$RELEASES_REPO" -D d -p '*_universal.dmg' -p '*_x64-setup.exe'
+          dmg=$(ls d/*_universal.dmg) exe=$(ls d/*_x64-setup.exe)
+          cp "$dmg" d/Decay-mac.dmg && cp "$exe" d/Decay-windows-setup.exe
+          gh release upload "$TAG" d/Decay-mac.dmg d/Decay-windows-setup.exe --repo "$RELEASES_REPO" --clobber
       - name: Publish the draft
         run: |
           pre=false; case "$TAG" in *-*) pre=true;; esac

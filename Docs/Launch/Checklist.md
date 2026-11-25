@@ -2,7 +2,7 @@
 
 ## Must be true before any public post
 
-- [ ] **macOS signing and notarization** (Apple Developer account, Docs/Release.md step 4). **Deferred by the user (24 Nov 2026) to a future step.** Until then every new Mac user sees "Apple cannot check it for malicious software" and must open it with right-click → Open (or System Settings → Privacy & Security → Open Anyway): say so in the download page and the posts, and expect fewer Mac installs; launching Windows-first is an option.
+- [ ] **macOS signing and notarization** (Apple Developer account, Docs/Release.md step 4). **Deferred by the user (24 Nov 2026) to a future step.** Until then every new Mac user sees "Apple cannot check it for malicious software" and must open it through System Settings → Privacy & Security → Open Anyway (right-click → Open no longer works on macOS 15+): say so in the download page and the posts, and expect fewer Mac installs; launching Windows-first is an option.
 - [ ] **Windows signing** (Trusted Signing or a certificate, Docs/Release.md step 6), or launch macOS-first and say Windows is coming. Unsigned, SmartScreen warns on every download.
 - [ ] **The extension is public** on the Chrome Web Store (listed, not unlisted), and on Edge Add-ons if Edge users are targeted. Its built-in store ids go into `crates/decay-host/src/config.rs` (`BUILTIN_EXTENSION_IDS`), or the desktop app can't talk to it: release the app after that change.
 - [ ] **Selling works end to end** (Docs/Release.md "Selling Decay Pro"): a test-mode purchase emails a key that activates. Price decided; Buy button and price in the app.

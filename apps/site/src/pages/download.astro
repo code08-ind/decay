@@ -1,28 +1,45 @@
 ---
+// Download Decay. The site's Download buttons link here with ?os=mac, ?os=windows or
+// ?os=auto (detect the visitor's system); the page then starts that download at once and
+// shows its install steps. Plain /download starts nothing. The buttons below link straight
+// to the files (fixed names on the latest release, consts.ts DOWNLOAD), so the page works
+// without JavaScript too.
 import OsIcon from '../components/OsIcon.astro';
 import Base from '../layouts/Base.astro';
-import { RELEASES } from '../consts';
+import { DOWNLOAD } from '../consts';
 ---
 
 <Base title="Download" description="Download Decay for macOS or Windows, and add its browser extension.">
   <section class="mx-auto max-w-3xl px-5 pt-10">
     <h1 class="font-serif text-5xl">Download Decay</h1>
     <p class="mt-4 text-lg text-muted">Free, with a 14-day Decay Pro trial whenever you want it. No account.</p>
+    <p id="started" role="status" class="mt-6 hidden rounded-2xl bg-accent-soft px-5 py-4 text-ink">
+      Your download for <strong data-os-name></strong> has started. It didn’t?
+      <a class="underline" data-os-link href="#">Download it again</a>.
+    </p>
+    <p id="unsupported" role="status" class="mt-6 hidden rounded-2xl bg-surface-2 px-5 py-4 text-ink">
+      Decay runs on macOS and Windows. Open this page on your Mac or PC, or pick a download below.
+    </p>
     <div class="mt-10 grid gap-5 md:grid-cols-2">
-      <article class="rounded-3xl border border-line bg-surface p-6">
+      <article id="os-mac" class="rounded-3xl border border-line bg-surface p-6">
         <h2 class="flex items-center gap-2 font-serif text-2xl"><OsIcon os="mac" size={22} />macOS</h2>
         <p class="mt-1 text-sm text-muted">macOS 14 or later · Apple silicon and Intel</p>
-        <a href={RELEASES} class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="mac" />Download for Mac (.dmg)</a>
+        <a href={DOWNLOAD.mac} download class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="mac" />Download for Mac (.dmg)</a>
         <p class="mt-4 text-sm text-muted">
-          The first time you open it, macOS says it can’t check the app for malicious software
-          (Decay isn’t notarized by Apple yet). Drag Decay to Applications, then right-click it →
-          <strong>Open</strong> → <strong>Open</strong>. You only do this once.
+          Decay isn’t notarized by Apple yet, so the first time you open it macOS says it
+          “could not verify” the app. Click <strong>Done</strong>, then open
+          <strong>System Settings → Privacy &amp; Security</strong>, scroll down and click
+          <strong>Open Anyway</strong> next to Decay. You only do this once.
         </p>
       </article>
-      <article class="rounded-3xl border border-line bg-surface p-6">
+      <article id="os-windows" class="rounded-3xl border border-line bg-surface p-6">
         <h2 class="flex items-center gap-2 font-serif text-2xl"><OsIcon os="windows" size={20} />Windows</h2>
         <p class="mt-1 text-sm text-muted">Windows 10 or 11 · 64-bit · installs for you only, no administrator needed</p>
-        <a href={RELEASES} class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="windows" size={16} />Download for Windows (.exe)</a>
+        <a href={DOWNLOAD.windows} download class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink"><OsIcon os="windows" size={16} />Download for Windows (.exe)</a>
+        <p class="mt-4 text-sm text-muted">
+          If Windows SmartScreen says it protected your PC (Decay isn’t code-signed yet), click
+          <strong>More info</strong> → <strong>Run anyway</strong>.
+        </p>
       </article>
     </div>
     <h2 class="mt-14 font-serif text-3xl">Then add the browser extension</h2>
@@ -35,4 +52,35 @@ import { RELEASES } from '../consts';
       New to Decay? <a class="underline" href="/docs">Getting started</a> takes five minutes.
     </p>
   </section>
+  <script is:inline define:vars={{ files: DOWNLOAD }}>
+    (() => {
+      const want = new URLSearchParams(location.search).get('os');
+      if (!want) return;
+      const detect = () => {
+        const ua = navigator.userAgent;
+        const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+        // Phones and tablets (iPadOS reports itself as a Mac, but has touch).
+        if (/iPhone|iPad|iPod|Android/i.test(ua)) return null;
+        if (platform.includes('mac') || /Mac OS X/.test(ua)) return navigator.maxTouchPoints > 1 ? null : 'mac';
+        if (platform.includes('win') || /Windows/.test(ua)) return 'windows';
+        return null;
+      };
+      const os = want === 'mac' || want === 'windows' ? want : detect();
+      if (!os) {
+        document.getElementById('unsupported').classList.remove('hidden');
+        return;
+      }
+      const note = document.getElementById('started');
+      note.querySelector('[data-os-name]').textContent = os === 'mac' ? 'macOS' : 'Windows';
+      note.querySelector('[data-os-link]').href = files[os];
+      note.classList.remove('hidden');
+      // Put the chosen system's card (with its install steps) first and outline it.
+      const card = document.getElementById(`os-${os}`);
+      card.classList.add('border-line-strong', 'md:order-first');
+      card.classList.remove('border-line');
+      // Don't start it again on reload or Back.
+      history.replaceState(null, '', location.pathname);
+      location.href = files[os];
+    })();
+  </script>
 </Base>

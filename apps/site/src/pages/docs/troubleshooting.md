@@ -8,7 +8,7 @@ description: The extension won't connect, a restore is refused, sweeps don't hap
 
 ## macOS says it can't check Decay for malicious software
 
-Decay isn't notarized by Apple yet. Move it to Applications, then right-click it → **Open** → **Open** (or System Settings → Privacy & Security → **Open Anyway**). You only do this once; updates install without it.
+Decay isn't notarized by Apple yet, so macOS says it "could not verify" the app the first time. Click **Done** (not *Move to Bin*), open **System Settings → Privacy & Security**, scroll down to *"Decay.app" was blocked*, click **Open Anyway** and confirm. You only do this once; updates open normally. (On macOS 14 you can also right-click Decay → **Open** → **Open**.)
 
 ## The extension says it can't reach the app
 

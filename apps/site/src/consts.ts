@@ -1,5 +1,13 @@
 /** Where people get Decay: the public releases repository (P1.13). */
 export const RELEASES = 'https://github.com/code08-ind/decay-releases/releases/latest';
+/**
+ * Direct downloads of the latest release: fixed-name copies the Release workflow's publish
+ * job adds to every release (Decay-mac.dmg, Decay-windows-setup.exe).
+ */
+export const DOWNLOAD = {
+  mac: `${RELEASES}/download/Decay-mac.dmg`,
+  windows: `${RELEASES}/download/Decay-windows-setup.exe`,
+} as const;
 /** The source code (open core: LICENSE.md). */
 export const REPO = 'https://github.com/code08-ind/decay';
 /** The privacy policy (published on aryangarg.com; Docs/Store/Privacy Policy.md). */
