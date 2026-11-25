@@ -1,7 +1,7 @@
 name: Release
 
 # Builds Decay for macOS and uploads it to a DRAFT release in the public releases repo
-# (code08-ind/decay-releases; this repo stays private). Then "Run workflow" with the tag
+# (code08-ind/decay-releases, created 25 Nov 2026). Then "Run workflow" with the tag
 # publishes the draft and refreshes the beta channel's manifest (Docs/Release.md).
 #
 #   git tag v0.2.0 && git push origin v0.2.0      → build + draft release
