@@ -205,6 +205,7 @@ describe('the email', () => {
     expect(m.text).toContain('https://decay.aryangarg.com/activate#key=DECAY-ABCDE');
     expect(m.html).toContain('href="https://decay.aryangarg.com/activate#key=DECAY-ABCDE"');
     expect(m.html).toContain('https://decay.aryangarg.com/icon.png');
+    expect(m.reply_to).toBe('support.decay@aryangarg.com');
     expect(m.html).toContain('&lt;b&gt;Eve&lt;/b&gt;');
     expect(m.html).not.toContain('<b>Eve</b>');
   });

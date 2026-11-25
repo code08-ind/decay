@@ -7,6 +7,8 @@ export interface Mail {
   subject: string;
   text: string;
   html: string;
+  /** Where replies go (Resend's reply_to). */
+  reply_to: string;
 }
 
 const escapeHtml = (s: string) =>
@@ -17,6 +19,8 @@ const escapeHtml = (s: string) =>
 
 /** The site that hosts the logo and the activation page (apps/site). */
 const SITE = 'https://decay.aryangarg.com';
+/** Support inbox (Cloudflare Email Routing forwards it); replies to the license email go here. */
+const SUPPORT = 'support.decay@aryangarg.com';
 
 // Decay's light theme (packages/ui/tokens.css). Mail apps ignore stylesheets and web fonts
 // unevenly, so the HTML uses tables and inline styles with system fallbacks.
@@ -53,7 +57,7 @@ export function licenseMail(from: string, to: string, name: string, key: string)
     'The key works on all your computers and never expires. Keep this email: it is your',
     'only copy of the key. Decay checks it on your computer; nothing is sent anywhere.',
     '',
-    'Questions? Reply to this email.',
+    `Questions? Reply to this email, or write to ${SUPPORT}.`,
     '',
     `— Decay · ${SITE}`,
   ].join('\n');
@@ -87,7 +91,7 @@ export function licenseMail(from: string, to: string, name: string, key: string)
 </tr></table>
 <p style="${p}">Or open <b>Decay → Settings → Decay Pro</b>, paste the key and click <b>Activate</b>.</p>
 <p style="${p}">The key works on all your computers and never expires. Keep this email: it is your only copy of the key. Decay checks it on your computer; nothing is sent anywhere.</p>
-<p style="${p};margin-bottom:0">Questions? Just reply to this email.</p>
+<p style="${p};margin-bottom:0">Questions? Just reply to this email, or write to <a href="mailto:${SUPPORT}" style="color:${C.text}">${SUPPORT}</a>.</p>
 </td></tr>
 <tr><td align="center" style="padding:20px 4px 0;font-family:${SANS};font-size:12px;line-height:1.6;color:${C.faint}">
 Decay quietly archives the tabs and windows you stopped using.<br>
@@ -98,7 +102,7 @@ Decay quietly archives the tabs and windows you stopped using.<br>
 </table>
 </body>
 </html>`;
-  return { from, to, subject: 'Your Decay Pro license key', text, html };
+  return { from, to, subject: 'Your Decay Pro license key', text, html, reply_to: SUPPORT };
 }
 
 export async function send(

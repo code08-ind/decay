@@ -4,6 +4,8 @@ export const RELEASES = 'https://github.com/code08-ind/decay-releases/releases/l
 export const REPO = 'https://github.com/code08-ind/decay';
 /** The privacy policy (published on aryangarg.com; Docs/Store/Privacy Policy.md). */
 export const PRIVACY = 'https://www.aryangarg.com/decay/privacy-policy';
+/** Support (forwarded by Cloudflare Email Routing; also the license email's reply-to). */
+export const SUPPORT_EMAIL = 'support.decay@aryangarg.com';
 /** Feedback and bug reports. */
 export const ISSUES = 'https://github.com/code08-ind/decay-releases/issues';
 

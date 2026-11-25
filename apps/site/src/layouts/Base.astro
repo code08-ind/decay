@@ -1,5 +1,6 @@
 ---
 import '../styles/site.css';
+import { SUPPORT_EMAIL } from '../consts';
 
 interface Props {
   title: string;
@@ -43,12 +44,13 @@ const nav = [
       <slot />
     </main>
     <footer class="mx-auto mt-24 flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-line px-5 py-8 text-sm text-muted">
-      <p>© 2026 Aryan Garg · Decay</p>
+      <p>© 2026 Aryan Garg · Decay · <a href={`mailto:${SUPPORT_EMAIL}`} class="hover:text-ink">{SUPPORT_EMAIL}</a></p>
       <nav aria-label="Footer" class="flex flex-wrap gap-5">
         <a href="/docs" class="hover:text-ink">Docs</a>
         <a href="/privacy" class="hover:text-ink">Privacy</a>
         <a href="/terms" class="hover:text-ink">Terms</a>
         <a href="/refunds" class="hover:text-ink">Refunds</a>
+        <a href={`mailto:${SUPPORT_EMAIL}`} class="hover:text-ink">Contact</a>
         <a href="https://github.com/code08-ind/decay" class="hover:text-ink">Source</a>
         <a href="https://github.com/code08-ind/decay-releases/releases" class="hover:text-ink">Changelog</a>
       </nav>

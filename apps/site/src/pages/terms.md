@@ -43,4 +43,4 @@ We may update these terms; the new version will be posted here with a new effect
 
 ## Contact
 
-Questions about purchases and refunds: contact Paddle through the link in your receipt email. Anything else: [open an issue](https://github.com/code08-ind/decay-releases/issues).
+Email [support.decay@aryangarg.com](mailto:support.decay@aryangarg.com) about anything: your license, the app, or these terms. Payments and refunds are handled by Paddle: use the link in your receipt email, or contact Paddle at [paddle.net](https://paddle.net). Bug reports are also welcome as [issues](https://github.com/code08-ind/decay-releases/issues).

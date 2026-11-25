@@ -10,4 +10,4 @@ Your **license key is on its way by email** (a separate email from Paddle's rece
 
 To activate it, open the link in that email on a computer with Decay installed, or paste the key into **Decay → Settings → Decay Pro** and click **Activate**. The key works on all your computers and never expires.
 
-No email after an hour? [Let us know](https://github.com/code08-ind/decay-releases/issues) with your Paddle order number (from the receipt), never the card details.
+No email after an hour? Email [support.decay@aryangarg.com](mailto:support.decay@aryangarg.com) with your Paddle order number (from the receipt), never the card details.
