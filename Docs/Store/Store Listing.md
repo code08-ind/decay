@@ -7,7 +7,7 @@ Everything to enter in the Chrome Web Store Developer Dashboard (https://chrome.
 | What | File | Notes |
 | --- | --- | --- |
 | Package | `apps/extension/.output/decayextension-0.1.0-chrome.zip` | `pnpm --filter @decay/extension zip`. 569 KB, no source maps, no remote code. If a 0.1.0 was ever uploaded to this item before (the unlisted beta), bump `version` in `apps/extension/package.json` first: the store refuses a version it has seen. |
-| Store icon | `Docs/Store/assets/store-icon-128.png` | 128×128 |
+| Store icon | `Docs/Store/assets/store-icon-128.png` | 128×128: the 512 px app icon at 96×96 with 16 px transparent padding, per the store's icon guideline (`Docs/Store/demo/store-icon.mjs`) |
 | Screenshots, in this order | `Docs/Store/assets/screenshot-1-search.png` … `screenshot-5-insights.png` | 1280×800, the real extension with sample data (`Docs/Store/demo/screenshots.mjs`) |
 | Small promo tile (required) | `Docs/Store/assets/promo-small-440x280.png` | 440×280 |
 | Marquee promo tile (optional) | `Docs/Store/assets/promo-marquee-1400x560.png` | 1400×560; only used if the store features Decay |
