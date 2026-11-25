@@ -4,6 +4,12 @@
 
 **Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **in review** on both stores. **v0.1.1** (the app accepts the Chrome Web Store extension; onboarding opens its store page) is built as a **draft** on decay-releases.
 
+### 0. Next session first: Sentry crash reports (sentry.io didn't open on 25 Nov 2026)
+- [ ] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
+- [ ] Project → Settings → **Security & Privacy**: turn on **Prevent Storing of IP Addresses** and the **Data Scrubber** (the privacy policy promises it).
+- [ ] Save the DSN in a real terminal (not `!`): `gh secret set DECAY_SENTRY_DSN -R code08-ind/decay`.
+- [ ] Rebuild the v0.1.1 draft (the DSN is compiled in): delete the draft, re-run Release for tag `v0.1.1`.
+
 ### 1. When the Chrome Web Store approves Decay (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [ ] **Publish v0.1.1:** Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
 - [ ] **Website:** link the listing (`https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa`) from `apps/site/src/pages/docs/browsers.md` and the download page.
@@ -27,7 +33,6 @@
 
 ### 5. Later / optional
 - [ ] **Signing:** Apple Developer account ($99/yr; removes Open Anyway and the keychain prompt after updates) and Windows signing (removes SmartScreen). Deferred by the user.
-- [ ] **Crash reports:** a Sentry project, its DSN as the `DECAY_SENTRY_DSN` secret, IP storage off.
 - [ ] **Email polish:** a sender logo (Gravatar for licenses.decay@ / support.decay@) and a DMARC record for aryangarg.com.
 - [ ] **Extension:** remove the leftover "Beta goals" / "Share with beta team" from Insights.
 - [ ] **Edge Add-ons** listing (optional; Edge already installs from the Chrome Web Store). Its ID would go into `BUILTIN_EXTENSION_IDS` too.
