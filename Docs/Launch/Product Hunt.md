@@ -14,11 +14,11 @@
 Decay quietly archives the browser tabs and windows you've stopped using, by active time, with Undo after every sweep. One shortcut searches everything it archived and puts it back. Shadow mode first. Local-only, no account. macOS and Windows.
 ```
 
-**Topics:** Productivity, Mac, Windows, Chrome Extensions, Privacy, Open Source.
+**Topics:** Productivity, Mac, Windows, Chrome Extensions, Firefox Extensions, Privacy, Open Source.
 
 **Pricing:** Free (Decay Pro: $24 one-time, 14-day trial).
 
-**Links:** [WEBSITE] · [DOWNLOAD] · [EXTENSION] · the open-core repository.
+**Links:** https://decay.aryangarg.com · https://decay.aryangarg.com/download · https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa · https://github.com/code08-ind/decay
 
 ## Maker comment (post right at launch)
 
@@ -33,9 +33,9 @@ A few things I cared about:
 • It's yours. Everything stays on your computer in an encrypted database, no account, no analytics. The core is open source.
 • No subscription. The basics are free; Decay Pro is a one-time purchase.
 
-[BETA NUMBERS: e.g. "Beta testers went from X to Y open tabs, and reopened Z% of what was archived within a day."]
-
 I'd love to hear how you manage your tabs today, and what would make you trust an app to tidy them.
+
+(Not notarized by Apple yet: on a Mac, the first launch needs System Settings → Privacy & Security → Open Anyway.)
 ```
 
 ## Gallery (in order)
