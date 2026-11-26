@@ -71,6 +71,8 @@ Decay Pro ($24, one-time) is sold through **Paddle** (merchant of record: paymen
 
 **As set up (24 Nov 2026, sandbox):** price `pri_01m878svs4bgc3z7wq69kpp85z` (in `wrangler.toml` and `apps/site/src/consts.ts`), client-side token in `apps/site/src/consts.ts` (public by design), default payment link `https://decay.aryangarg.com/buy`. The checkout opens on the website's `/buy` page (Paddle.js overlay; Paddle's own links arrive with `?_ptxn=`), success page `/thanks`; the app's Settings → Decay Pro has **Buy Decay Pro — $24** (opens `/buy`). For live sales switch `PADDLE.environment`, the token and the price id in `consts.ts`, and `PADDLE_ENV` / `PADDLE_PRICE_IDS` in `wrangler.toml`.
 
+**Live (26 Nov 2026, account not verified yet):** price `pri_01m8bsze9kntjnct8hcx8jdgk8` ($24 one-time), client-side token `live_cdb7e26dd1d269e4a743fbeafdd`. Both are already switched on branch `paddle-live` (6e2a4c7). On approval day: live API key → `npx wrangler secret put PADDLE_API_KEY`; Events/Notifications → new destination `https://decay-license-webhook.decay-license-webhook.workers.dev/webhooks/purchase` for `transaction.completed`, its secret → `npx wrangler secret put PADDLE_WEBHOOK_SECRET` (both in a real terminal); merge `paddle-live`, `npx wrangler deploy` from `services/license-webhook`; approve the domain; one real purchase → activate → refund.
+
 Notes: a transaction always produces the same key (`pd-<txn id>`; a retried notification resends it at most once, through Resend's idempotency key). A refund doesn't revoke the key: offline keys can't be. To resend a key by hand, `decay-license-tool issue` (above) with the buyer's address and `pd-<txn id>`.
 
 ## Windows
