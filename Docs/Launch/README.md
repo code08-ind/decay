@@ -16,3 +16,6 @@ Every claim here is something the product does today. Keep it that way: if a fea
 - [r/macapps](./r-macapps.md): the post and answers to likely questions.
 - [Product Hunt](./Product%20Hunt.md): tagline, description, maker comment, gallery.
 - [Build in public](./Build%20in%20public.md): a thread for X / LinkedIn / Bluesky, and follow-ups.
+- [Demo video](./Demo%20video.md): the 45–60 s launch video, shot by shot.
+- [Known issues](./Known%20issues.md): the pinned note on decay-releases.
+- `assets/`: Product Hunt thumbnail and gallery images.

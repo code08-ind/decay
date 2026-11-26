@@ -40,10 +40,12 @@ I'd love to hear how you manage your tabs today, and what would make you trust a
 
 ## Gallery (in order)
 
-1. The search panel over a browser: typing, the result, "back in its window". (Hero image; light.)
-2. The Library: archived today, with reasons ("unused for 61 active hours").
-3. Shadow mode review: "here's what I would have archived this week".
-4. A sweep notification with Undo.
-5. Privacy: "Everything stays on your computer" (dark).
-6. Windows: the same panel with Windows chrome.
-7. The 30–60 s demo video.
+Thumbnail: `assets/ph-thumbnail-240.png` (240×240, the leaf). Gallery images are 1270×760 (`assets/`, cropped from the store screenshots, `Docs/Store/assets/`):
+
+1. The launch video (`Demo video.md`), as a YouTube link: first, so it's what people see.
+2. `assets/ph-gallery-1-search.png`: search, "Need a tab back? Type a few letters".
+3. `assets/ph-gallery-2-popup.png`: the popup.
+4. `assets/ph-gallery-3-sweeps.png`: sweeps with Undo.
+5. `assets/ph-gallery-4-shadow-review.png`: shadow mode, what it would have archived.
+6. `assets/ph-gallery-5-insights.png`: Insights, open tabs falling.
+7. Optional, when available: the desktop app's Library and search panel on a Mac, and the same on Windows (screenshots by hand: 1270×760, nothing private on screen).

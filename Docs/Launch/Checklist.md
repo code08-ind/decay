@@ -12,8 +12,8 @@
 - [ ] **Hands-on checks** from Progress: Finder / Explorer folder windows close and reopen (Pro), a real call on Windows holds sweeps.
 - [x] **Numbers:** the beta-number sentences were dropped (26 Nov 2026).
 - [x] **Privacy policy covers the desktop app** (25 Nov 2026): the desktop app, buying Pro (Paddle, the Cloudflare license service, Resend) and the website are in the published policy (aryangarg site PR #45; `Docs/Store/Privacy Policy.md`). Sentry set up 26 Nov 2026 with IP storage off and the data scrubber on (v0.1.2 is the first build with the DSN; reports stay opt-in).
-- [ ] **Support ready:** ~~a reply-to address on the license email you actually read~~ (done 25 Nov 2026: support.decay@aryangarg.com, forwarded by Cloudflare Email Routing), a pinned "known issues" note in `decay-releases`, the feedback link in the app works.
-- [ ] **Assets:** 3–5 screenshots (light and dark, macOS and Windows), a 30–60 s demo video, a 1270×760 Product Hunt thumbnail and gallery images. Reuse `Docs/Store/assets/` where they still match the app.
+- [ ] **Support ready:** ~~a reply-to address on the license email you actually read~~ (done 25 Nov 2026: support.decay@aryangarg.com, forwarded by Cloudflare Email Routing), ~~a pinned "known issues" note in `decay-releases`~~ (done 26 Nov 2026: issue #1, source `Docs/Launch/Known issues.md`), the feedback link in the app works.
+- [ ] **Assets:** Product Hunt thumbnail + five 1270×760 gallery images done (`Docs/Launch/assets/`, 26 Nov 2026). Left: the launch video (script: `Docs/Launch/Demo video.md`, recorded by hand on a Mac) and, optionally, desktop-app and Windows screenshots.
 
 ## Launch day (suggested order)
 
