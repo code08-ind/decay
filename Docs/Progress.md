@@ -8,7 +8,7 @@
 - [x] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
 - [x] Project → Settings → **Security & Privacy**: turn on **Prevent Storing of IP Addresses** and the **Data Scrubber** (the privacy policy promises it).
 - [x] Save the DSN in a real terminal (not `!`): `gh secret set DECAY_SENTRY_DSN -R code08-ind/decay`.
-- [ ] **v0.1.2** (DSN compiled in; crash reports opt-in, off by default): re-tagged 26 Nov 2026 at e7386f6 (also has the Insights cleanup), release run 45803440890 → draft; publish after the user's OK.
+- [x] **v0.1.2 PUBLISHED 26 Nov 2026** (publish run 45813879532; DSN compiled in; crash reports opt-in, off by default): re-tagged 26 Nov 2026 at e7386f6 (also has the Insights cleanup), release run 45803440890 → draft; publish after the user's OK.
 
 ### 1. Chrome Web Store: Decay approved and live 26 Nov 2026 (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [x] **Publish v0.1.1** (done 26 Nov 2026, run 45797476154; Sentry moves to v0.1.2): Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
