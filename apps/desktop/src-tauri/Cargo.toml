@@ -1,6 +1,6 @@
 [package]
 name = "decay-app"
-version = "0.1.1"
+version = "0.1.2"
 description = "Decay desktop app: the Tauri shell around the engine (tray, hotkey, deep links, windows)"
 edition.workspace = true
 rust-version.workspace = true
