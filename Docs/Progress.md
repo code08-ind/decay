@@ -1,6 +1,6 @@
 # Decay — Progress Tracker
 
-## ▶ Start here next (updated 25 Nov 2026)
+## ▶ Start here next (updated 26 Nov 2026)
 
 **Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **live on the Chrome Web Store** (26 Nov 2026) and in review on Firefox Add-ons. **v0.1.1** (the app accepts the Chrome Web Store extension) is published.
 
@@ -41,7 +41,7 @@
 
 | | |
 | --- | --- |
-| **Last updated** | 25 Nov 2026 (v0.1.0 published; sandbox purchase verified; extension in review on both stores; v0.1.1 draft) |
+| **Last updated** | 26 Nov 2026 (CWS live; v0.1.1 + v0.1.2 published with Sentry; Paddle live verification submitted; Edge listing, launch assets and known-issues note ready; user closes the hands-on items over the weekend) |
 | **Legend (design)** | ✅ = approved (all Stitch designs in `Designs/`, 7 Nov 2026) |
 | **Current phase** | Phase 4 — Pro and public launch: selling Decay Pro (P4.3, Paddle) |
 | **Capacity assumption** | ~15 h/week |
