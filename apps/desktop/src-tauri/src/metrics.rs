@@ -1,13 +1,10 @@
 //! Insights (P2.7, PRD F34, Designs/14): on-device metrics for the Library's Insights
-//! page, the searches the panel reports, and saving the "Share with beta team" and CSV
-//! files the page builds (shown to the user in full before they're saved).
+//! page, the searches the panel reports, and saving the CSV file the page builds.
 
 #![allow(clippy::needless_pass_by_value, reason = "Tauri commands take their arguments by value")]
 
-use decay_core::{RuleAction, SqlEnum as _};
 use decay_engine::MetricsReport;
-use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde::Deserialize;
 use tauri::{AppHandle, Window};
 use tauri_plugin_dialog::DialogExt;
 
@@ -38,105 +35,20 @@ pub async fn record_search(app: AppHandle) -> Res<()> {
     .await
 }
 
-/// What the beta export says about this installation (no content: counts, settings that
-/// describe how Decay is set up, browser kinds, a random install id).
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BetaContext {
-    pub install_id: String,
-    pub app_version: String,
-    pub platform: &'static str,
-    /// Connected browser kinds (no profiles).
-    pub browsers: Vec<Value>,
-    pub mode: decay_core::Mode,
-    pub preset: String,
-    pub thresholds: decay_core::Thresholds,
-    pub shadow_started_at: Option<i64>,
-    pub window_management: String,
-    /// Enabled rules per action (no patterns).
-    pub rules: serde_json::Map<String, Value>,
-}
-
-/// The beta export's context from the store and the connected browsers (makes the install
-/// id on first use).
-fn beta_context(
-    s: &decay_store::Store,
-    browsers: &[Value],
-    now: i64,
-) -> Result<BetaContext, decay_store::StoreError> {
-    let mut rules = serde_json::Map::new();
-    let all = s.rules()?;
-    for action in [
-        RuleAction::Protect,
-        RuleAction::Exclude,
-        RuleAction::CustomThreshold,
-        RuleAction::CloseAllowed,
-    ] {
-        let n = all.iter().filter(|r| r.enabled && r.action == action).count();
-        let key = serde_json::to_value(action)
-            .ok()
-            .and_then(|v| v.as_str().map(str::to_owned))
-            .unwrap_or_else(|| action.as_sql().to_owned());
-        rules.insert(key, json!(n));
-    }
-    let mut browsers = browsers.to_vec();
-    browsers.sort_by_key(ToString::to_string);
-    browsers.dedup();
-    Ok(BetaContext {
-        install_id: s.beta_install_id(now)?,
-        app_version: env!("CARGO_PKG_VERSION").to_owned(),
-        platform: if cfg!(windows) { "windows" } else { "macos" },
-        browsers,
-        mode: s.mode()?,
-        preset: s.setting::<String>("preset")?.unwrap_or_else(|| "balanced".into()),
-        thresholds: s.thresholds()?,
-        shadow_started_at: s.setting::<i64>("shadow_started_at")?,
-        window_management: s
-            .setting::<String>("window_management")?
-            .unwrap_or_else(|| "hide".into()),
-        rules,
-    })
-}
-
-/// The beta export's context (makes the install id on first use).
-#[tauri::command]
-pub async fn get_beta_context(app: AppHandle) -> Res<BetaContext> {
-    blocking(app, |core| {
-        let browsers: Vec<Value> = core
-            .status()
-            .iter()
-            .flat_map(|st| st.browsers.iter().map(|b| json!(b.browser)))
-            .collect();
-        core.ask(move |e, now| {
-            (beta_context(e.store(), &browsers, now).map_err(|err| AppError::db(&err)), Vec::new())
-        })?
-    })
-    .await
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MetricsFile {
-    /// `decay-beta-metrics` JSON.
-    Beta,
     /// Daily rows.
     Csv,
 }
 
-/// Checks a file the page asks to save is what it says: the beta JSON (its format
-/// header) or the daily CSV (its header row).
+/// Checks a file the page asks to save is what it says: the daily CSV (its header row).
 fn checked(kind: MetricsFile, content: &str) -> Result<(), AppError> {
     let bad = |key: &str| AppError::new("INVALID_INPUT", crate::i18n::t(key));
     if content.len() > MAX_FILE_BYTES {
         return Err(bad("metrics.tooLarge"));
     }
     match kind {
-        MetricsFile::Beta => {
-            let doc: Value = serde_json::from_str(content).map_err(|_| bad("metrics.notExport"))?;
-            if doc.get("format").and_then(Value::as_str) != Some("decay-beta-metrics") {
-                return Err(bad("metrics.notExport"));
-            }
-        }
         MetricsFile::Csv => {
             if !content.starts_with("day,activeMinutes,") {
                 return Err(bad("metrics.notExport"));
@@ -146,8 +58,7 @@ fn checked(kind: MetricsFile, content: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Saves the beta JSON or the daily CSV where the user picks (exactly the text the page
-/// showed). `null` when the dialog is cancelled.
+/// Saves the daily CSV where the user picks (exactly the text the page built). `null` when the dialog is cancelled.
 #[tauri::command]
 pub async fn save_metrics_file(
     app: AppHandle,
@@ -158,9 +69,6 @@ pub async fn save_metrics_file(
     checked(kind, &content)?;
     let today = jiff::Zoned::now().date().to_string();
     let (name, filter, ext) = match kind {
-        MetricsFile::Beta => {
-            (format!("decay-beta-metrics-{today}.json"), "JSON".to_owned(), "json")
-        }
         MetricsFile::Csv => {
             (format!("decay-metrics-{today}.csv"), crate::i18n::t("file.csv"), "csv")
         }
@@ -187,11 +95,6 @@ mod tests {
 
     #[test]
     fn only_metrics_files_are_saved() {
-        assert!(
-            checked(MetricsFile::Beta, r#"{"format":"decay-beta-metrics","version":2}"#).is_ok()
-        );
-        assert!(checked(MetricsFile::Beta, r#"{"format":"decay-archive"}"#).is_err());
-        assert!(checked(MetricsFile::Beta, "not json").is_err());
         assert!(checked(MetricsFile::Csv, "day,activeMinutes,active\n").is_ok());
         assert!(checked(MetricsFile::Csv, "title,url\n").is_err());
         let big = format!("day,activeMinutes,{}", "x".repeat(MAX_FILE_BYTES));
@@ -199,21 +102,11 @@ mod tests {
     }
 
     #[test]
-    fn the_beta_context_counts_without_content() {
+    fn the_metrics_report_serializes() {
         use crate::testing::{NOW, engine};
         let (e, _dir) = engine();
         e.record_search(NOW).unwrap();
         let report = e.metrics(NOW - 86_400_000, NOW).unwrap();
         assert!(serde_json::to_value(&report).is_ok());
-        let browsers = [json!("chrome"), json!("edge"), json!("chrome")];
-        let ctx = beta_context(e.store(), &browsers, NOW).unwrap();
-        assert_eq!(ctx.browsers, [json!("chrome"), json!("edge")], "sorted, no duplicates");
-        assert_eq!(ctx.preset, "balanced");
-        // The default rules: four protect rules and the two folder close rules.
-        assert_eq!(ctx.rules["protect"], 4);
-        assert_eq!(ctx.rules["closeAllowed"], 2);
-        assert_eq!(ctx.rules["customThreshold"], 0);
-        let again = beta_context(e.store(), &[], NOW + 1).unwrap();
-        assert_eq!(again.install_id, ctx.install_id, "made once");
     }
 }

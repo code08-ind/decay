@@ -9,13 +9,10 @@ import {
   Lock,
   Minus,
   PanelTop,
-  Share2,
   ShieldCheck,
   Sparkles,
-  X,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
-import { DialogActions } from '../DialogActions';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { formatDate, formatNumber, logicalArrow } from '../i18n';
 import { t } from '../strings';
 import { type Goal, type Insights, percent, RANGES, type RangeDays } from './insights';
@@ -25,22 +22,18 @@ import type { Mode } from './types';
 export interface InsightsCopy {
   intro: string;
   privacy: string;
-  /** Who made the shared file (the share dialog says what else is in it). */
-  client: 'browser' | 'app';
 }
 
 /** The extension's wording (in the current locale). */
 export const browserCopy = (): InsightsCopy => ({
   intro: t('insights.intro.browser'),
   privacy: t('insights.privacy.browser'),
-  client: 'browser',
 });
 
 /** The desktop app's wording (in the current locale). */
 export const appCopy = (): InsightsCopy => ({
   intro: t('insights.intro.app'),
   privacy: t('insights.privacy.app'),
-  client: 'app',
 });
 
 export interface InsightsProps {
@@ -48,11 +41,6 @@ export interface InsightsProps {
   mode: Mode;
   onRangeChange: (range: RangeDays) => void;
   onExportCsv: () => void;
-  /** Opens the share preview (the JSON that would be downloaded). */
-  sharePreview: string | null;
-  onShare: () => void;
-  onShareDownload: () => void;
-  onShareCancel: () => void;
   error?: string | null;
   /** Above the page (the extension's page header); none in the app. */
   header?: ReactNode;
@@ -84,170 +72,146 @@ export function InsightsView(props: InsightsProps) {
   const copy = props.copy ?? browserCopy();
   return (
     <div className={props.embedded ? 'text-ink' : 'min-h-screen bg-canvas text-ink'}>
-      {/* Inert while the share dialog is open: focus stays in the dialog. */}
-      <div inert={props.sharePreview !== null}>
-        {props.header}
+      {props.header}
 
-        <main className={props.embedded ? '' : 'mx-auto max-w-6xl px-4 py-8 sm:px-10'}>
-          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('insights.title')}</h1>
-          <p className="mt-2 text-muted">{copy.intro}</p>
+      <main className={props.embedded ? '' : 'mx-auto max-w-6xl px-4 py-8 sm:px-10'}>
+        <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('insights.title')}</h1>
+        <p className="mt-2 text-muted">{copy.intro}</p>
 
-          {/* Filters scope everything below them: one row, above the content. */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <fieldset className="inline-flex rounded-full bg-surface-2 p-1">
-              <legend className="sr-only">{t('insights.range')}</legend>
-              {RANGES.map((r) => (
-                <label
-                  key={r}
-                  className={`cursor-pointer rounded-full px-4 py-1.5 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-                    data.range === r ? 'bg-primary text-primary-ink' : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="range"
-                    value={r}
-                    checked={data.range === r}
-                    onChange={() => props.onRangeChange(r)}
-                    className="sr-only"
-                  />
-                  {t('insights.lastDays', { n: r })}
-                </label>
-              ))}
-            </fieldset>
-            <div className="flex gap-2 sm:ms-auto">
-              <button
-                type="button"
-                onClick={props.onExportCsv}
-                className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
+        {/* Filters scope everything below them: one row, above the content. */}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <fieldset className="inline-flex rounded-full bg-surface-2 p-1">
+            <legend className="sr-only">{t('insights.range')}</legend>
+            {RANGES.map((r) => (
+              <label
+                key={r}
+                className={`cursor-pointer rounded-full px-4 py-1.5 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+                  data.range === r ? 'bg-primary text-primary-ink' : 'text-muted hover:text-ink'
+                }`}
               >
-                <Download size={16} aria-hidden /> {t('insights.exportCsv')}
-              </button>
-              <button
-                type="button"
-                onClick={props.onShare}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
-              >
-                <Share2 size={16} aria-hidden /> {t('insights.share')}
-              </button>
-            </div>
-          </div>
-
-          {props.error && (
-            <p
-              role="alert"
-              className="mt-4 rounded-tile bg-surface-2 px-4 py-3 text-sm text-danger"
-            >
-              {props.error}
-            </p>
-          )}
-
-          <section
-            aria-label={t('insights.summary')}
-            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <Tile label={t('insights.medianOpenTabs')} icon={<PanelTop size={18} aria-hidden />}>
-              <Value>{data.openTabs === null ? t('insights.none') : fmt(data.openTabs)}</Value>
-              {data.openTabsChange !== null && data.firstWeekOpenTabs !== null ? (
-                <p className="mt-2 flex items-center gap-2 text-sm text-muted">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 text-chip-ink">
-                    {data.openTabsChange < 0 ? (
-                      <ArrowDown size={12} aria-hidden />
-                    ) : data.openTabsChange > 0 ? (
-                      <ArrowUp size={12} aria-hidden />
-                    ) : null}
-                    {percent(Math.abs(data.openTabsChange))}
-                    <span className="sr-only">
-                      {data.openTabsChange < 0
-                        ? t('insights.change.fewer')
-                        : data.openTabsChange > 0
-                          ? t('insights.change.more')
-                          : t('insights.change.none')}
-                    </span>
-                  </span>
-                  {t('insights.vsWeek1', { n: data.firstWeekOpenTabs })}
-                </p>
-              ) : (
-                <Sub>
-                  {data.openTabs === null
-                    ? t('insights.countedHourly')
-                    : t('insights.comparedAfter14')}
-                </Sub>
-              )}
-            </Tile>
-            <Tile label={t('insights.regretRate')} icon={<History size={18} aria-hidden />}>
-              <Value>{percent(regret)}</Value>
-              <Sub>
-                {data.regretRate !== null
-                  ? t('insights.restoredWithinDay', { n: data.restored24h })
-                  : data.shadowRegretRate !== null
-                    ? t('insights.shadowRegret')
-                    : t('insights.nothingArchived')}
-              </Sub>
-            </Tile>
-            <Tile label={t('insights.itemsArchived')} icon={<Archive size={18} aria-hidden />}>
-              <Value>{fmt(data.archived)}</Value>
-              <Sub>
-                {data.undos
-                  ? t('insights.sweepsUndone', { n: data.undos })
-                  : t('insights.inLastDays', { n: data.range })}
-              </Sub>
-            </Tile>
-            <Tile label={t('insights.mostTidied')} icon={<Sparkles size={18} aria-hidden />}>
-              <p className="mt-3 truncate text-2xl font-medium" title={mostTidied?.domain}>
-                {mostTidied?.domain ?? t('insights.none')}
-              </p>
-              <Sub>
-                {mostTidied
-                  ? t('insights.quietlyArchived', { n: mostTidied.count })
-                  : t('insights.nothingArchived')}
-              </Sub>
-            </Tile>
-          </section>
-
-          {/* Wide screens: chart and site lists on the left, goals beside both (no gap
-              under the goals card). Narrow: chart, goals, lists. */}
-          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            {/* Keyed by range: the roving focus index must fit the new number of days. */}
-            <OpenTabsChart key={data.range} insights={data} />
-            <Goals goals={data.goals} privacy={copy.privacy} />
-            <div className="grid gap-6 sm:grid-cols-2 lg:col-start-1 lg:row-start-2">
-              <DomainList
-                title={t('insights.archivedMost')}
-                subtitle={t('insights.archivedMost.sub', { n: data.range })}
-                rows={data.topArchived}
-                count={(n) => t('insights.tabs', { n })}
-                empty={t('insights.archivedMost.empty')}
-              />
-              <DomainList
-                title={t('insights.restoredMost')}
-                subtitle={t('insights.restoredMost.sub')}
-                rows={data.restoredMost}
-                count={(n) => t('insights.restores', { n })}
-                empty={t('insights.restoredMost.empty')}
-                onProtect={props.onProtectSite}
-                protectedSites={props.protectedSites}
-              />
-              {props.topSources && (
-                <TopSources
-                  rows={props.topSources}
-                  total={props.topSourcesTotal}
-                  range={data.range}
+                <input
+                  type="radio"
+                  name="range"
+                  value={r}
+                  checked={data.range === r}
+                  onChange={() => props.onRangeChange(r)}
+                  className="sr-only"
                 />
-              )}
-            </div>
-          </div>
-        </main>
-      </div>
+                {t('insights.lastDays', { n: r })}
+              </label>
+            ))}
+          </fieldset>
+          <button
+            type="button"
+            onClick={props.onExportCsv}
+            className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95 sm:ms-auto"
+          >
+            <Download size={16} aria-hidden /> {t('insights.exportCsv')}
+          </button>
+        </div>
 
-      {props.sharePreview !== null && (
-        <ShareDialog
-          json={props.sharePreview}
-          onDownload={props.onShareDownload}
-          onCancel={props.onShareCancel}
-          client={copy.client}
-        />
-      )}
+        {props.error && (
+          <p role="alert" className="mt-4 rounded-tile bg-surface-2 px-4 py-3 text-sm text-danger">
+            {props.error}
+          </p>
+        )}
+
+        <section
+          aria-label={t('insights.summary')}
+          className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <Tile label={t('insights.medianOpenTabs')} icon={<PanelTop size={18} aria-hidden />}>
+            <Value>{data.openTabs === null ? t('insights.none') : fmt(data.openTabs)}</Value>
+            {data.openTabsChange !== null && data.firstWeekOpenTabs !== null ? (
+              <p className="mt-2 flex items-center gap-2 text-sm text-muted">
+                <span className="inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 text-chip-ink">
+                  {data.openTabsChange < 0 ? (
+                    <ArrowDown size={12} aria-hidden />
+                  ) : data.openTabsChange > 0 ? (
+                    <ArrowUp size={12} aria-hidden />
+                  ) : null}
+                  {percent(Math.abs(data.openTabsChange))}
+                  <span className="sr-only">
+                    {data.openTabsChange < 0
+                      ? t('insights.change.fewer')
+                      : data.openTabsChange > 0
+                        ? t('insights.change.more')
+                        : t('insights.change.none')}
+                  </span>
+                </span>
+                {t('insights.vsWeek1', { n: data.firstWeekOpenTabs })}
+              </p>
+            ) : (
+              <Sub>
+                {data.openTabs === null
+                  ? t('insights.countedHourly')
+                  : t('insights.comparedAfter14')}
+              </Sub>
+            )}
+          </Tile>
+          <Tile label={t('insights.regretRate')} icon={<History size={18} aria-hidden />}>
+            <Value>{percent(regret)}</Value>
+            <Sub>
+              {data.regretRate !== null
+                ? t('insights.restoredWithinDay', { n: data.restored24h })
+                : data.shadowRegretRate !== null
+                  ? t('insights.shadowRegret')
+                  : t('insights.nothingArchived')}
+            </Sub>
+          </Tile>
+          <Tile label={t('insights.itemsArchived')} icon={<Archive size={18} aria-hidden />}>
+            <Value>{fmt(data.archived)}</Value>
+            <Sub>
+              {data.undos
+                ? t('insights.sweepsUndone', { n: data.undos })
+                : t('insights.inLastDays', { n: data.range })}
+            </Sub>
+          </Tile>
+          <Tile label={t('insights.mostTidied')} icon={<Sparkles size={18} aria-hidden />}>
+            <p className="mt-3 truncate text-2xl font-medium" title={mostTidied?.domain}>
+              {mostTidied?.domain ?? t('insights.none')}
+            </p>
+            <Sub>
+              {mostTidied
+                ? t('insights.quietlyArchived', { n: mostTidied.count })
+                : t('insights.nothingArchived')}
+            </Sub>
+          </Tile>
+        </section>
+
+        {/* Wide screens: chart and site lists on the left, goals beside both (no gap
+              under the goals card). Narrow: chart, goals, lists. */}
+        <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          {/* Keyed by range: the roving focus index must fit the new number of days. */}
+          <OpenTabsChart key={data.range} insights={data} />
+          <Goals goals={data.goals} privacy={copy.privacy} />
+          <div className="grid gap-6 sm:grid-cols-2 lg:col-start-1 lg:row-start-2">
+            <DomainList
+              title={t('insights.archivedMost')}
+              subtitle={t('insights.archivedMost.sub', { n: data.range })}
+              rows={data.topArchived}
+              count={(n) => t('insights.tabs', { n })}
+              empty={t('insights.archivedMost.empty')}
+            />
+            <DomainList
+              title={t('insights.restoredMost')}
+              subtitle={t('insights.restoredMost.sub')}
+              rows={data.restoredMost}
+              count={(n) => t('insights.restores', { n })}
+              empty={t('insights.restoredMost.empty')}
+              onProtect={props.onProtectSite}
+              protectedSites={props.protectedSites}
+            />
+            {props.topSources && (
+              <TopSources
+                rows={props.topSources}
+                total={props.topSourcesTotal}
+                range={data.range}
+              />
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
@@ -479,10 +443,7 @@ function Goals({ goals, privacy }: { goals: Goal[]; privacy: string }) {
       aria-labelledby="goals-title"
       className="flex flex-col rounded-card bg-feature p-6 text-feature-ink lg:col-start-2 lg:row-span-2 lg:row-start-1"
     >
-      <span className="self-start rounded-full bg-lime px-3 py-1 text-xs font-medium tracking-widest text-lime-ink uppercase">
-        {t('insights.goals.badge')}
-      </span>
-      <h2 id="goals-title" className="mt-4 font-serif text-3xl">
+      <h2 id="goals-title" className="font-serif text-3xl">
         {t('insights.goals.title')}
       </h2>
       <p className="mt-1 text-sm text-feature-sub">{t('insights.goals.sub')}</p>
@@ -644,100 +605,5 @@ function TopSources(props: {
         </ul>
       )}
     </section>
-  );
-}
-
-function ShareDialog(props: {
-  json: string;
-  onDownload: () => void;
-  onCancel: () => void;
-  client: InsightsCopy['client'];
-}) {
-  const titleId = useId();
-  const downloadRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const onCancel = useRef(props.onCancel);
-  onCancel.current = props.onCancel;
-  // Once on open: focus Save; on close, focus goes back to whatever opened the dialog.
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    downloadRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel.current();
-      if (e.key !== 'Tab' || !dialogRef.current) return;
-      // Keep Tab inside the dialog (the page behind it is inert).
-      const focusable = dialogRef.current.querySelectorAll<HTMLElement>('button');
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && (active === first || !dialogRef.current.contains(active))) {
-        e.preventDefault();
-        last?.focus();
-      } else if (!e.shiftKey && (active === last || !dialogRef.current.contains(active))) {
-        e.preventDefault();
-        first?.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      opener?.focus?.();
-    };
-  }, []);
-  return (
-    <div className="fixed inset-0 z-20 grid place-items-center bg-black/40 p-4">
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-card bg-surface p-6 shadow-xl"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id={titleId} className="font-serif text-2xl">
-              {t('insights.share.title')}
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              {t('insights.share.body', { client: props.client })}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={props.onCancel}
-            className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-2"
-          >
-            <X size={16} aria-hidden />
-            <span className="sr-only">{t('insights.share.close')}</span>
-          </button>
-        </div>
-        {/* Chrome makes scrollable boxes keyboard-focusable on its own. */}
-        <pre className="mt-4 min-h-0 flex-1 overflow-auto rounded-tile bg-surface-2 p-4 font-mono text-xs">
-          {props.json}
-        </pre>
-        <DialogActions
-          className="mt-4 justify-end"
-          action={
-            <button
-              ref={downloadRef}
-              type="button"
-              onClick={props.onDownload}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-ink hover:opacity-90"
-            >
-              <Download size={16} aria-hidden /> {t('insights.share.save')}
-            </button>
-          }
-          cancel={
-            <button
-              type="button"
-              onClick={props.onCancel}
-              className="rounded-full border border-line-strong bg-cta px-4 py-1.5 text-sm font-medium text-cta-ink hover:brightness-95"
-            >
-              {t('insights.share.cancel')}
-            </button>
-          }
-        />
-      </div>
-    </div>
   );
 }

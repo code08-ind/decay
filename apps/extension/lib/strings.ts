@@ -247,7 +247,6 @@ export const en = {
   'load.review': "Couldn't load the review: {error}",
   'load.insights': "Couldn't load insights: {error}",
   'load.sweeps': "Couldn't load sweeps: {error}",
-  'insights.prepareFailed': "Couldn't prepare the file: {error}",
   'insights.exportFailed': "Couldn't export: {error}",
   'insights.protectFailed': "Couldn't always keep {site}: {error}",
   'popup.noAnswer': 'No answer from the Decay app.',

@@ -113,8 +113,8 @@ impl Store {
         let mut rows = stmt.query([])?;
         while let Some(r) = rows.next()? {
             let key: String = r.get(0)?;
-            // The beta export's install id is only for that file (P2.7): not broadcast to
-            // every window with the settings.
+            // The removed beta export's install id (P2.7) may still be stored: it isn't a
+            // setting, so it's never sent to the windows.
             if !out.contains_key(&key) && key != "beta_install_id" {
                 let value: String = r.get(1)?;
                 out.insert(key, serde_json::from_str(&value).unwrap_or(Value::Null));

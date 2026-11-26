@@ -57,7 +57,6 @@ const COMMANDS: &[&str] = &[
     "log_ui_error",
     "get_metrics",
     "record_search",
-    "get_beta_context",
     "save_metrics_file",
     "open_link",
     "system_language",

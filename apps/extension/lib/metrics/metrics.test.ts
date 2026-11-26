@@ -1,10 +1,10 @@
+import { betaDays, toCsv } from '@decay/ui/metrics';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DecayDB } from '../db/db';
-import type { Item, MetricsDay, Rule } from '../db/types';
+import type { Item, MetricsDay } from '../db/types';
 import { emptyMetrics, localDay } from '../shadow/shadow';
 import { FakeBrowser, makeTab } from '../tracker/test-utils';
 import { Tracker } from '../tracker/tracker';
-import { buildBetaExport, getInstallId, toCsv } from './export';
 import { automaticSince, buildInsights, dayRange } from './insights';
 import {
   MAX_SAMPLES,
@@ -223,78 +223,17 @@ describe('buildInsights', () => {
   });
 });
 
-describe('beta export', () => {
-  const rules = [
-    { id: 'r1', scope: 'domain', match: 'secret-bank.com', action: 'protect', enabled: true },
-    { id: 'r2', scope: 'domain', match: 'private.example', action: 'exclude', enabled: true },
-    { id: 'r3', scope: 'domain', match: 'off.example', action: 'protect', enabled: false },
-  ] as Rule[];
-  const input = () => ({
-    now: NOW,
-    installId: 'abc',
-    extensionVersion: '0.1.0',
-    browser: 'chrome' as const,
-    mode: 'automatic' as const,
-    preset: 'balanced',
-    thresholds: { stale: 12, hidden: 36, archive: 60 },
-    probeAccess: 'some' as const,
-    rules,
-    shadowStartedAt: NOW - 10 * 86_400_000,
-    metrics: [
+describe('CSV export', () => {
+  it('has the daily rows, counts only', () => {
+    const metrics = [
       sampled(1, 30, { archivedCount: 8, restored24hCount: 1, searchToRestoreSamples: [1500] }),
       row(0, { activeSeconds: 600 }),
-    ],
-  });
-
-  it('has counts only: no sites, rule patterns or URLs', () => {
-    const data = buildBetaExport(input());
-    const text = JSON.stringify(data);
-    for (const secret of ['secret-bank', 'private.example', 'off.example', 'http']) {
-      expect(text).not.toContain(secret);
-    }
-    expect(data.setup.rules).toEqual({
-      protect: 1,
-      exclude: 1,
-      customThreshold: 0,
-      closeAllowed: 0,
-    });
-    expect(data.setup.shadowStartedDaysAgo).toBe(10);
-    expect(data.summary).toMatchObject({
-      days: 2,
-      activeDays: 1,
-      archived: 8,
-      regretRate: 0.125,
-      searchToRestoreMsP50: 1500,
-      openTabsP50: 30,
-    });
-    expect(data.days[1]).toMatchObject({
-      day: localDay(NOW),
-      activeMinutes: 10,
-      openTabsP50: null,
-    });
-  });
-
-  it('reports automatic days the same way as Insights', () => {
-    const metrics = [row(5, { autoModeOn: 1, activeSeconds: 7200 }), row(0, { autoModeOn: 1 })];
-    const data = buildBetaExport({ ...input(), metrics });
-    const page = buildInsights({ now: NOW, range: 30, mode: 'automatic', metrics, items: [] });
-    expect(data.setup.automaticForDays).toBe(5);
-    expect(page.goals.find((g) => g.id === 'automatic')?.value).toBe('On for 5 days');
-    expect(data.summary).not.toHaveProperty('autoModeDays');
-  });
-
-  it('exports the same daily rows as CSV', () => {
-    const text = toCsv(buildBetaExport(input()));
+    ];
+    const text = toCsv({ days: betaDays(metrics) });
     expect(text.endsWith('\n')).toBe(true);
     const csv = text.trimEnd().split('\n');
     expect(csv[0]).toMatch(/^day,activeMinutes,active,openTabsP50/);
     expect(csv).toHaveLength(3);
     expect(csv[2]).toContain(`${localDay(NOW)},10,false,,`);
-  });
-
-  it('keeps one random install id', async () => {
-    const id = await getInstallId(db);
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(await getInstallId(db)).toBe(id);
   });
 });

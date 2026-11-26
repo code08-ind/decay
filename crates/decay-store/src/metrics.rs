@@ -12,7 +12,7 @@
 //!
 //! Counts and medians only: no item, address, title or site.
 
-use rusqlite::{OptionalExtension, params};
+use rusqlite::params;
 use serde::Serialize;
 
 use crate::{Result, Store};
@@ -321,29 +321,6 @@ impl Store {
         )?;
         Ok(count(n))
     }
-
-    /// A random id for the beta export, made once on this installation.
-    pub fn beta_install_id(&self, now: i64) -> Result<String> {
-        let stored: Option<String> = self
-            .conn
-            .query_row("SELECT value FROM settings WHERE key = 'beta_install_id'", [], |r| r.get(0))
-            .optional()?
-            .and_then(|v: String| serde_json::from_str(&v).ok());
-        if let Some(id) = stored {
-            return Ok(id);
-        }
-        // Random, not time-based: it mustn't say when Decay was installed.
-        let mut bytes = [0u8; 16];
-        getrandom::fill(&mut bytes)
-            .map_err(|e| crate::StoreError::Io(std::io::Error::other(e.to_string())))?;
-        let id = bytes.iter().fold(String::with_capacity(32), |mut s, b| {
-            use std::fmt::Write as _;
-            let _ = write!(s, "{b:02x}");
-            s
-        });
-        self.set_setting("beta_install_id", &id, now)?;
-        Ok(id)
-    }
 }
 
 #[cfg(test)]
@@ -476,8 +453,6 @@ mod tests {
         let (archived, restored) = store.metrics_top_sites(NOW - 1, 5).unwrap();
         assert_eq!(archived, [("a.com".to_owned(), 2), ("b.com".to_owned(), 1)]);
         assert_eq!(restored, [("b.com".to_owned(), 5), ("a.com".to_owned(), 2)]);
-        let id = store.beta_install_id(NOW).unwrap();
-        assert_eq!(store.beta_install_id(NOW + 1).unwrap(), id, "made once");
     }
 
     #[test]

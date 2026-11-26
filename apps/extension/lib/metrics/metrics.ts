@@ -4,7 +4,7 @@ import { emptyMetrics, localDay } from '../shadow/shadow';
 
 /**
  * On-device success metrics (P0.8, PRD §9 / F34). Everything here stays in the browser;
- * the beta export (`export.ts`) shares aggregates only when the user chooses to.
+ * the CSV export carries aggregates only, and only when the user saves it.
  */
 
 /** Samples kept per day for medians (hourly open-tab counts, search → restore times). */

@@ -4,11 +4,11 @@
 
 **Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **live on the Chrome Web Store** (26 Nov 2026) and in review on Firefox Add-ons. **v0.1.1** (the app accepts the Chrome Web Store extension) is published.
 
-### 0. Next session first: Sentry crash reports (sentry.io didn't open on 25 Nov 2026)
-- [ ] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
-- [ ] Project → Settings → **Security & Privacy**: turn on **Prevent Storing of IP Addresses** and the **Data Scrubber** (the privacy policy promises it).
-- [ ] Save the DSN in a real terminal (not `!`): `gh secret set DECAY_SENTRY_DSN -R code08-ind/decay`.
-- [ ] The DSN is compiled in: ship it in **v0.1.2** (v0.1.1 went out without it on 26 Nov 2026 so store users could connect).
+### 0. Sentry crash reports (set up 26 Nov 2026)
+- [x] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
+- [x] Project → Settings → **Security & Privacy**: turn on **Prevent Storing of IP Addresses** and the **Data Scrubber** (the privacy policy promises it).
+- [x] Save the DSN in a real terminal (not `!`): `gh secret set DECAY_SENTRY_DSN -R code08-ind/decay`.
+- [ ] **v0.1.2** (DSN compiled in; crash reports opt-in, off by default): tagged 26 Nov 2026, release run 45801879714 → draft; publish after the user's OK.
 
 ### 1. Chrome Web Store: Decay approved and live 26 Nov 2026 (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [x] **Publish v0.1.1** (done 26 Nov 2026, run 45797476154; Sentry moves to v0.1.2): Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
@@ -34,7 +34,7 @@
 ### 5. Later / optional
 - [ ] **Signing:** Apple Developer account ($99/yr; removes Open Anyway and the keychain prompt after updates) and Windows signing (removes SmartScreen). Deferred by the user.
 - [ ] **Email polish:** a sender logo (Gravatar for licenses.decay@ / support.decay@) and a DMARC record for aryangarg.com.
-- [ ] **Extension:** remove the leftover "Beta goals" / "Share with beta team" from Insights.
+- [x] **Insights:** "Beta goals" badge and "Share with beta team" removed from the extension and the app (26 Nov 2026; ships in the next app release and extension upload). **Then:** drop the share paragraph from the privacy policy (Docs/Store/Privacy Policy.md §Insights → aryangarg repo).
 - [ ] **Edge Add-ons** listing (optional; Edge already installs from the Chrome Web Store). Its ID would go into `BUILTIN_EXTENSION_IDS` too.
 - [ ] **aryangarg site repo:** GitHub Actions don't start (billing / spending limit); Vercel still deploys.
 - [ ] **Launch posts** (Docs/Launch): after the items above, per `Docs/Launch/Checklist.md`.

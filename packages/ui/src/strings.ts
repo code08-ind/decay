@@ -29,14 +29,13 @@ export const en = {
   'insights.title': 'Insights',
   'insights.intro.browser':
     'How your browsing has settled since you started using Decay. Computed in this browser only.',
-  'insights.privacy.browser': 'Computed in this browser. Nothing leaves it unless you share.',
+  'insights.privacy.browser': 'Computed in this browser. Nothing leaves it.',
   'insights.intro.app':
     'How your browsing has settled since you started using Decay. Computed on this computer only.',
-  'insights.privacy.app': 'Computed on this computer. Nothing leaves it unless you share.',
+  'insights.privacy.app': 'Computed on this computer. Nothing leaves it.',
   'insights.range': 'Time range',
   'insights.lastDays': 'Last {n} days',
   'insights.exportCsv': 'Export CSV (all days)',
-  'insights.share': 'Share with beta team',
   'insights.summary': 'Summary',
   'insights.none': '—',
   'insights.percent': '{p}',
@@ -88,9 +87,8 @@ export const en = {
   'insights.chart.table': 'Show as table',
   'insights.chart.day': 'Day',
   'insights.chart.median': 'Open tabs (median)',
-  'insights.goals.badge': 'Beta goals',
   'insights.goals.title': 'How Decay is doing',
-  'insights.goals.sub': 'The targets the beta is measured against.',
+  'insights.goals.sub': 'What Decay aims for, measured on your own browsing.',
   'insights.goals.target': 'Target: {target}',
   'insights.status.met': 'On target',
   'insights.status.notYet': 'Not yet',
@@ -107,12 +105,6 @@ export const en = {
   'insights.goal.off': 'Off',
   'insights.goal.onFor': '{n, plural, one {On for # day} other {On for # days}}',
   'insights.goal.stillOn': 'still on after {n} days',
-  'insights.share.title': 'Share with the beta team',
-  'insights.share.body':
-    "This is the whole file. It has counts and medians only — no addresses, page titles, sites or rule patterns — plus the dates you browsed and for how many minutes, your Decay settings (mode, thresholds, number of rules), {client, select, app {and Decay''s version, the platform and the kinds of browser connected} other {and the extension and browser version}}. The install id is random, made on this device; it links your exports to each other so the team can count testers, but not to you. Save the file, then send it to the team yourself.",
-  'insights.share.close': 'Close',
-  'insights.share.cancel': 'Cancel',
-  'insights.share.save': 'Save file',
 } as const;
 
 export type UiKey = keyof typeof en;

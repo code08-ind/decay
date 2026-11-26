@@ -33,10 +33,6 @@ function renderProps(over: Partial<InsightsProps> = {}): InsightsProps {
     mode: 'automatic',
     onRangeChange: vi.fn(),
     onExportCsv: vi.fn(),
-    sharePreview: null,
-    onShare: vi.fn(),
-    onShareDownload: vi.fn(),
-    onShareCancel: vi.fn(),
     ...over,
   };
 }
@@ -47,10 +43,6 @@ function renderView(over: Partial<InsightsProps> = {}) {
     mode: 'automatic',
     onRangeChange: vi.fn(),
     onExportCsv: vi.fn(),
-    sharePreview: null,
-    onShare: vi.fn(),
-    onShareDownload: vi.fn(),
-    onShareCancel: vi.fn(),
     ...over,
   };
   render(<InsightsView {...props} />);
@@ -86,19 +78,8 @@ describe('Insights', () => {
     expect(props.onRangeChange).toHaveBeenCalledWith(7);
     fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));
     expect(props.onExportCsv).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Share with beta team/ }));
-    expect(props.onShare).toHaveBeenCalled();
-  });
-
-  it('previews the exact file before saving it', () => {
-    const props = renderView({ sharePreview: '{\n  "format": "decay-beta-metrics"\n}' });
-    const dialog = screen.getByRole('dialog', { name: 'Share with the beta team' });
-    expect(within(dialog).getByText(/decay-beta-metrics/)).toBeTruthy();
-    expect(document.activeElement?.textContent).toContain('Save file');
-    fireEvent.click(within(dialog).getByRole('button', { name: /Save file/ }));
-    expect(props.onShareDownload).toHaveBeenCalled();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(props.onShareCancel).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /Share/ })).toBeNull();
+    expect(screen.queryByText(/beta/i)).toBeNull();
   });
 
   it('keeps the chart keyboard-reachable after the range shrinks', () => {
@@ -127,23 +108,6 @@ describe('Insights', () => {
     expect(within(nav).getByRole('link', { name: 'Insights' }).getAttribute('aria-current')).toBe(
       'page',
     );
-  });
-
-  it('keeps Tab inside the share dialog and says what the file holds', () => {
-    renderView({ sharePreview: '{}' });
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText(/install id is random/)).toBeTruthy();
-    const save = within(dialog).getByRole('button', { name: /Save file/ });
-    expect(document.activeElement).toBe(save);
-    // Tab wraps from the last button to the first (Close) and back.
-    const buttons = within(dialog).getAllByRole('button');
-    const [first, last] = [buttons[0], buttons[buttons.length - 1]];
-    expect(first).toBe(within(dialog).getByRole('button', { name: 'Close' }));
-    last?.focus();
-    fireEvent.keyDown(window, { key: 'Tab' });
-    expect(document.activeElement).toBe(first);
-    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
-    expect(document.activeElement).toBe(last);
   });
 
   it('explains an empty chart', () => {

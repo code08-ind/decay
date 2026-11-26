@@ -43,7 +43,6 @@ const api = {
   resume: vi.fn(),
   showWindow: vi.fn(),
   getMetrics: vi.fn(),
-  getBetaContext: vi.fn(),
   saveMetricsFile: vi.fn(),
   whatsNew: vi.fn(),
   whatsNewSeen: vi.fn(),
@@ -431,19 +430,7 @@ describe('Library', () => {
         { appId: 'com.apple.finder', appName: 'Finder', profile: null, tabs: 0, windows: 1 },
       ],
     });
-    api.getBetaContext.mockResolvedValue({
-      installId: 'abc123',
-      appVersion: '0.1.0',
-      platform: 'macos',
-      browsers: ['chrome'],
-      mode: 'automatic',
-      preset: 'balanced',
-      thresholds: { stale: 12, hidden: 36, archive: 60 },
-      shadowStartedAt: NOW - 20 * 86_400_000,
-      windowManagement: 'hide',
-      rules: { protect: 2, exclude: 1, customThreshold: 0, closeAllowed: 0 },
-    });
-    api.saveMetricsFile.mockResolvedValue('/Users/me/decay-beta-metrics.json');
+    api.saveMetricsFile.mockResolvedValue('/Users/me/decay-metrics.csv');
     await show('/insights');
     expect(screen.getByRole('heading', { name: 'Insights' })).toBeTruthy();
     expect(screen.getAllByText('42').length).toBeGreaterThan(0);
@@ -453,21 +440,14 @@ describe('Library', () => {
     expect(screen.getByText('3 tabs · 75%')).toBeTruthy();
     expect(screen.getByText('1 window · 25%')).toBeTruthy();
     expect(screen.getAllByText('news.example').length).toBeGreaterThan(0);
-    expect(screen.getByText(/Nothing leaves it unless you share/).textContent).toContain(
-      'this computer',
-    );
-    fireEvent.click(screen.getByRole('button', { name: /Share with beta team/ }));
+    expect(screen.getByText(/Nothing leaves it\./).textContent).toContain('this computer');
+    expect(screen.queryByRole('button', { name: /Share/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));
     await flush();
-    const dialog = screen.getByRole('dialog');
-    const json = within(dialog).getByText(/decay-beta-metrics/).textContent ?? '';
-    const file = JSON.parse(json);
-    expect([file.version, file.client, file.installId]).toEqual([2, 'desktop', 'abc123']);
-    expect(file.summary.archived).toBe(20);
-    expect(json).not.toMatch(/news\.example|docs\.example/);
-    fireEvent.click(within(dialog).getByRole('button', { name: /Save/ }));
-    await flush();
-    expect(api.saveMetricsFile).toHaveBeenCalledWith('beta', json);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    const [kind, csv] = api.saveMetricsFile.mock.calls[0] as [string, string];
+    expect(kind).toBe('csv');
+    expect(csv).toMatch(/^day,activeMinutes/);
+    expect(csv).not.toMatch(/news\.example|docs\.example/);
   });
 
   it('insights: "Always keep" on restored-most rows makes a protect rule', async () => {

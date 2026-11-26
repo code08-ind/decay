@@ -509,7 +509,6 @@ pub fn run() {
             diagnostics::log_ui_error,
             metrics::get_metrics,
             metrics::record_search,
-            metrics::get_beta_context,
             metrics::save_metrics_file,
             help::open_link,
             i18n::system_language,

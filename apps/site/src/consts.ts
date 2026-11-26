@@ -9,7 +9,8 @@ export const DOWNLOAD = {
   windows: `${RELEASES}/download/Decay-windows-setup.exe`,
 } as const;
 /** The extension's Chrome Web Store listing (Chrome, Edge, Brave, Arc, Chromium). */
-export const CHROME_STORE = 'https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa';
+export const CHROME_STORE =
+  'https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa';
 /** The source code (open core: LICENSE.md). */
 export const REPO = 'https://github.com/code08-ind/decay';
 /** The privacy policy (published on aryangarg.com; Docs/Store/Privacy Policy.md). */

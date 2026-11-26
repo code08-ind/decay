@@ -1,28 +1,19 @@
 import { setLocale } from '@decay/ui';
+import { betaDays, toCsv } from '@decay/ui/metrics';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { browser } from 'wxt/browser';
 import { InsightsView } from '@/components/Insights';
 import { db } from '@/lib/db/db';
 import type { Mode } from '@/lib/db/types';
-import { buildBetaExport, getInstallId, toCsv } from '@/lib/metrics/export';
 import { buildInsights, type Insights, type RangeDays } from '@/lib/metrics/insights';
-import { probeAccess } from '@/lib/probe/chrome';
 import { rules } from '@/lib/rules/rules';
 import { settings } from '@/lib/settings/settings';
 import { localDay } from '@/lib/shadow/shadow';
 import { t } from '@/lib/strings';
-import { detectAppId } from '@/lib/tracker/browser-api';
 import { applyTheme } from '@/lib/ui/theme';
 
 const REFRESH_MS = 60_000;
 const RANGE_KEY = 'decay.insightsRange';
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
-
-const BROWSER: Record<string, 'chrome' | 'edge' | 'brave'> = {
-  'com.google.Chrome': 'chrome',
-  'com.microsoft.Edge': 'edge',
-  'com.brave.Browser': 'brave',
-};
 
 function storedRange(): RangeDays {
   try {
@@ -43,7 +34,7 @@ function saveFile(name: string, text: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-/** Insights page (P0.8, F34): on-device metrics + "Share with beta team". */
+/** Insights page (P0.8, F34): on-device metrics and a CSV export. */
 export function InsightsPage() {
   // The tab's name, in the page's language (again after a change).
   useEffect(() => {
@@ -52,7 +43,6 @@ export function InsightsPage() {
   const [range, setRange] = useState<RangeDays>(storedRange);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [mode, setMode] = useState<Mode>('shadow');
-  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [protectedSites, setProtectedSites] = useState<ReadonlySet<string>>(new Set());
   const loadSeq = useRef(0);
@@ -84,14 +74,11 @@ export function InsightsPage() {
     }
   }, [range]);
 
-  // No refresh while the share preview is open (it would re-render under the reader).
-  const previewOpen = preview !== null;
   useEffect(() => {
-    if (previewOpen) return;
     void load();
     const timer = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(timer);
-  }, [load, previewOpen]);
+  }, [load]);
 
   const onRangeChange = (r: RangeDays) => {
     setRange(r);
@@ -102,43 +89,15 @@ export function InsightsPage() {
     }
   };
 
-  /** The CSV doesn't carry the install id, so it doesn't create one. */
-  const buildExport = async (withId: boolean) => {
-    const [all, metrics, rules, installId, access] = await Promise.all([
-      settings.getAll(),
-      db.metrics.toArray(),
-      db.rules.toArray(),
-      withId ? getInstallId(db) : Promise.resolve(''),
-      probeAccess(),
-    ]);
-    return buildBetaExport({
-      now: Date.now(),
-      installId,
-      extensionVersion: browser.runtime.getManifest().version,
-      browser: BROWSER[detectAppId()] ?? 'chrome',
-      mode: all.mode,
-      preset: all.preset,
-      thresholds: all.thresholds,
-      probeAccess: access,
-      rules,
-      shadowStartedAt: all.shadowStartedAt,
-      metrics,
-    });
-  };
-
   const stamp = () => localDay(Date.now());
-
-  const onShare = async () => {
-    try {
-      setPreview(JSON.stringify(await buildExport(true), null, 2));
-    } catch (e) {
-      setError(t('insights.prepareFailed', { error: message(e) }));
-    }
-  };
 
   const onExportCsv = async () => {
     try {
-      saveFile(`decay-metrics-${stamp()}.csv`, toCsv(await buildExport(false)), 'text/csv');
+      saveFile(
+        `decay-metrics-${stamp()}.csv`,
+        toCsv({ days: betaDays(await db.metrics.toArray()) }),
+        'text/csv',
+      );
     } catch (e) {
       setError(t('insights.exportFailed', { error: message(e) }));
     }
@@ -159,13 +118,6 @@ export function InsightsPage() {
     setError(null);
   };
 
-  const onShareDownload = () => {
-    if (preview === null) return;
-    // Exactly the text the user just reviewed.
-    saveFile(`decay-beta-metrics-${stamp()}.json`, preview, 'application/json');
-    setPreview(null);
-  };
-
   if (!insights) {
     return (
       <p className="p-10 text-muted" aria-busy={!error}>
@@ -179,10 +131,6 @@ export function InsightsPage() {
       mode={mode}
       onRangeChange={onRangeChange}
       onExportCsv={() => void onExportCsv()}
-      sharePreview={preview}
-      onShare={() => void onShare()}
-      onShareDownload={onShareDownload}
-      onShareCancel={() => setPreview(null)}
       onProtectSite={onProtectSite}
       protectedSites={protectedSites}
       error={error}

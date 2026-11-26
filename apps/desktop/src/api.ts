@@ -386,10 +386,8 @@ export const api = {
   getMetrics: (since: number) => invoke<MetricsReport>('get_metrics', { since }),
   /** One search in the panel (once per opening). */
   recordSearch: () => invoke<void>('record_search'),
-  /** What the beta export says about this installation (makes the install id). */
-  getBetaContext: () => invoke<BetaContext>('get_beta_context'),
-  /** Saves the beta JSON or the daily CSV where the user picks; `null` when cancelled. */
-  saveMetricsFile: (kind: 'beta' | 'csv', content: string) =>
+  /** Saves the daily CSV where the user picks; `null` when cancelled. */
+  saveMetricsFile: (kind: 'csv', content: string) =>
     invoke<string | null>('save_metrics_file', { kind, content }),
   /** Help and feedback (P2.7): opens a fixed link (no address leaves the page). */
   openLink: (link: 'help' | 'changelog' | 'feedback' | 'buy') =>
@@ -477,20 +475,6 @@ export interface MetricsReport {
   }[];
   /** Everything archived since the range's first day (the shares are of this). */
   archivedTotal?: number;
-}
-
-/** `get_beta_context` (P2.7). */
-export interface BetaContext {
-  installId: string;
-  appVersion: string;
-  platform: 'macos' | 'windows';
-  browsers: string[];
-  mode: 'shadow' | 'automatic' | 'paused';
-  preset: string;
-  thresholds: { stale: number; hidden: number; archive: number };
-  shadowStartedAt: number | null;
-  windowManagement: string;
-  rules: Record<string, number>;
 }
 
 export type ExportFormat = 'json' | 'html' | 'csv';
