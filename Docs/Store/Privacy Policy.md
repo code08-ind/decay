@@ -2,7 +2,7 @@
 
 > Published at https://www.aryangarg.com/decay/privacy-policy (source: `lib/content/decay-privacy.ts` in the aryangarg site repo). Keep both in sync.
 
-**Effective:** 25 November 2026 · **Publisher:** Aryan Garg
+**Effective:** 26 November 2026 · **Publisher:** Aryan Garg
 
 This policy covers Decay: the desktop app for macOS and Windows, its browser extension (Chrome, Edge, Brave and Firefox), Decay Pro, and the website decay.aryangarg.com.
 
@@ -20,7 +20,7 @@ To decide which tabs have gone stale, and to let you search and restore them lat
 | Timing: when a tab was opened and last used, a log of when you used each tab (at most one entry per 10 minutes), and how long it has been unused while you were actively browsing | Decay ages tabs by active browsing time, not wall-clock time. |
 | History of what Decay did: sweeps, archives, restores and undos | Undo, the Sweeps page and the regret check (tabs you reopened within a day). |
 | Your rules (sites you never want archived, for example) and settings | So Decay behaves the way you asked. |
-| Daily counts: open-tab and window counts sampled once an hour, number of archives, restores, undos and searches, search-to-restore time, active minutes | The Insights page and the optional beta metrics file. |
+| Daily counts: open-tab and window counts sampled once an hour, number of archives, restores, undos and searches, search-to-restore time, active minutes | The Insights page and its optional CSV export. |
 
 Nothing is deleted automatically yet: the archive and its history stay on your device until you remove Decay, and uninstalling deletes all of it. Decay doesn’t run in Incognito windows and records nothing from them.
 
@@ -28,13 +28,13 @@ Nothing is deleted automatically yet: the archive and its history stay on your d
 
 If you allow it, Decay checks a page for unsaved work before archiving it, so it never closes a half-written form or an upload. With that optional site access, small scripts on each page note which form fields you typed into, whether the page asks before closing (a “leave site?” prompt), and whether a file upload is in progress, and just before archiving a stale tab Decay runs a one-off check in it. It never records what you typed, and it counts uploads without reading their contents or destinations. Only the answer (yes / no / can’t tell) is kept, together with the page’s address and the time of the check, in session memory that is cleared when the tab is closed or the browser quits; the answer is re-checked after 10–30 minutes. You can allow all sites, pick sites, or turn the access off at any time on your browser’s extensions page (chrome://extensions, or Firefox’s Add-ons Manager); without it, Decay simply waits longer before archiving pages it can’t check.
 
-## The beta metrics file
+## Exporting your Insights
 
-Insights has a “Share with beta team” button. It shows you the complete file first, and only saves it to your computer when you click Save; you decide whether to send it. The file holds counts and medians only: the dates you browsed and for how many minutes, open-tab and window counts, numbers of archives, restores, undos and searches, search-to-restore times, shadow-mode counts, your Decay settings (mode, preset, thresholds, whether page checks are allowed on all, some or no sites, and the number of rules of each kind), how many days shadow and automatic mode have run, the extension version and browser name (Chrome, Edge or Brave), and a random install id created on your device so exports from the same tester can be matched. It contains no addresses, page titles, site names or rule contents. “Export CSV” saves the same daily counts to your computer.
+Insights has an “Export CSV” button. It saves the daily counts to your computer, and only when you click it: the dates you browsed and for how many minutes, open-tab and window counts, numbers of archives, restores, undos and searches, and search-to-restore times. It contains no addresses, page titles, site names or rule contents, and Decay never sends it anywhere. Earlier versions (the extension up to 0.1.0, the app up to 0.1.1) also had a “Share with beta team” button that saved a similar file with your Decay settings and a random install id, for testers to send if they chose; it was removed in the next versions.
 
-## Beta feedback
+## Feedback and support
 
-If you join the beta and send feedback through the beta Google Form or by email, or attach the metrics file, I receive what you send. Google processes form responses and email under its own privacy policy. I use beta feedback and metrics files only to evaluate and improve Decay, never sell or share them, and delete them when the beta ends or sooner if you ask.
+If you send feedback or a support request by email (support.decay@aryangarg.com) or through a feedback form, or attach a file, I receive what you send. Google processes form responses and email under its own privacy policy. I use what you send only to answer you and improve Decay, never sell or share it, and delete it when it’s no longer needed or sooner if you ask.
 
 ## Browser permissions
 

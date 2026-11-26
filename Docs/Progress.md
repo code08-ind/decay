@@ -8,7 +8,7 @@
 - [x] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
 - [x] Project → Settings → **Security & Privacy**: turn on **Prevent Storing of IP Addresses** and the **Data Scrubber** (the privacy policy promises it).
 - [x] Save the DSN in a real terminal (not `!`): `gh secret set DECAY_SENTRY_DSN -R code08-ind/decay`.
-- [ ] **v0.1.2** (DSN compiled in; crash reports opt-in, off by default): tagged 26 Nov 2026, release run 45801879714 → draft; publish after the user's OK.
+- [ ] **v0.1.2** (DSN compiled in; crash reports opt-in, off by default): re-tagged 26 Nov 2026 at e7386f6 (also has the Insights cleanup), release run 45803440890 → draft; publish after the user's OK.
 
 ### 1. Chrome Web Store: Decay approved and live 26 Nov 2026 (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [x] **Publish v0.1.1** (done 26 Nov 2026, run 45797476154; Sentry moves to v0.1.2): Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
@@ -20,7 +20,7 @@
 
 ### 2. When Firefox Add-ons approves Decay (slug `decay-tabs`)
 - [ ] Put the listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the site's browsers page; ship it in the next app release.
-- [ ] Upload a new Firefox version with the new leaf icon (0.1.0 on AMO still has the old one).
+- [ ] Upload Firefox 0.1.1 (new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
 
 ### 3. Selling for real (Paddle live)
 - [ ] Paddle approves the live account (seller review).
@@ -34,7 +34,7 @@
 ### 5. Later / optional
 - [ ] **Signing:** Apple Developer account ($99/yr; removes Open Anyway and the keychain prompt after updates) and Windows signing (removes SmartScreen). Deferred by the user.
 - [ ] **Email polish:** a sender logo (Gravatar for licenses.decay@ / support.decay@) and a DMARC record for aryangarg.com.
-- [x] **Insights:** "Beta goals" badge and "Share with beta team" removed from the extension and the app (26 Nov 2026; ships in the next app release and extension upload). **Then:** drop the share paragraph from the privacy policy (Docs/Store/Privacy Policy.md §Insights → aryangarg repo).
+- [x] **Insights:** "Beta goals" badge and "Share with beta team" removed from the extension and the app (26 Nov 2026; ships in the next app release and extension upload). Privacy policy updated (repo copy here; live copy: aryangarg PR #46, merge when 0.1.2 / extension 0.1.1 ship). Extension 0.1.1 zips built in apps/extension/.output (Chrome, Firefox + source): upload to both stores.
 - [ ] **Edge Add-ons** listing (optional; Edge already installs from the Chrome Web Store). Its ID would go into `BUILTIN_EXTENSION_IDS` too.
 - [ ] **aryangarg site repo:** GitHub Actions don't start (billing / spending limit); Vercel still deploys.
 - [ ] **Launch posts** (Docs/Launch): after the items above, per `Docs/Launch/Checklist.md`.
