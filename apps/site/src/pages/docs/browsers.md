@@ -6,7 +6,7 @@ description: Which browsers Decay works with, and how the extension connects to 
 
 # Browsers and the extension
 
-Decay works with **Google Chrome, Microsoft Edge, Brave, Arc, Chromium** and **Firefox** (128 or later) through a small extension. Chromium browsers install it from the Chrome Web Store; Firefox from Firefox Add-ons. Safari isn't supported.
+Decay works with **Google Chrome, Microsoft Edge, Brave, Arc, Chromium** and **Firefox** (128 or later) through a small extension. Chromium browsers install it from the [Chrome Web Store](https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa); Firefox from Firefox Add-ons. Safari isn't supported.
 
 ## Connecting
 
