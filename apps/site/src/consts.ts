@@ -39,7 +39,7 @@ export const DOCS = [
  * live account; then switch all three to the live values (Docs/Release.md "Selling Decay Pro").
  */
 export const PADDLE = {
-  environment: 'sandbox' as 'sandbox' | 'production',
-  clientToken: 'test_3aa89cb8d041d5bf6cafdfc0973',
-  priceId: 'pri_01m878svs4bgc3z7wq69kpp85z',
+  environment: 'production' as 'sandbox' | 'production',
+  clientToken: 'live_cdb7e26dd1d269e4a743fbeafdd',
+  priceId: 'pri_01m8bsze9kntjnct8hcx8jdgk8',
 };
