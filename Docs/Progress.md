@@ -23,7 +23,7 @@
 - [ ] Upload Firefox 0.1.1 (new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
 
 ### 3. Selling for real (Paddle live)
-- [ ] Paddle approves the live account (seller review). Live account created 26 Nov 2026; product + $24 price + client token made; switch prepared on branch `paddle-live` (Docs/Release.md). Verification (02) submitted by the user: pending.
+- [ ] Paddle approves the live account (seller review). Live account created 26 Nov 2026; product + $24 price + client token made; switch prepared on branch `paddle-live` (Docs/Release.md). Next: the user completes verification (02 in Get started).
 - [ ] Switch to live: the site's Paddle client token and price id (`apps/site/src/consts.ts`), the Worker's `PADDLE_ENV = "production"` and `PADDLE_PRICE_IDS` (`services/license-webhook/wrangler.toml`), live `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` (`npx wrangler secret put …` in a real terminal, never via `!`), a live notification destination for `transaction.completed`.
 - [ ] One real $24 purchase → email → activate → refund it.
 
