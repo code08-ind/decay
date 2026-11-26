@@ -13,7 +13,7 @@
 ### 1. Chrome Web Store: Decay approved and live 26 Nov 2026 (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [x] **Publish v0.1.1** (done 26 Nov 2026, run 45797476154; Sentry moves to v0.1.2): Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
 - [x] **Website:** link the listing (`https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa`) from `apps/site/src/pages/docs/browsers.md` and the download page.
-- [ ] **"Verified site" badge (Official URL).** `decay.aryangarg.com` was verified in Google Search Console on 25 Nov 2026.
+- [ ] **"Verified site" badge (Official URL).** 26 Nov 2026: the publisher account (workwitharyangarg@) verified `decay.aryangarg.com` itself in Search Console via `apps/site/public/google841a91a93e8a8723.html` (keep that file: Google re-checks it; "Make owner" isn't offered for Full users any more). Left: pick the Official URL in the dashboard and submit.
   1. **Don't edit the listing while Decay is in review:** changing it withdraws the submission and sends it to the back of the queue. Add the Official URL after approval; that small change gets a quick review.
   2. After approval: Developer Dashboard → Decay → **Store listing** → **Official URL** → pick `https://decay.aryangarg.com/`. It's only listed if Search Console uses the **same Google account** as the Developer Dashboard: check the avatar at the top right of both.
   3. If it still says "not verified": Search Console → **Settings** → **Users and permissions** → add the dashboard's account as an **Owner** (a Full user isn't enough).
