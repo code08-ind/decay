@@ -441,6 +441,7 @@ mod tests {
         assert!(install(&opts).is_ok());
         let allowed = HostConfig::load(&opts.support_dir).allowed();
         assert!(allowed.contains(&origin_of("jidljehgkacgjoefbancbihmdkkpcaaa")));
+        assert!(allowed.contains(&origin_of("eeaegefjfdjnianmndialmkjdeffgoac")));
         assert!(transient_path(Path::new(
             "/private/var/folders/x/AppTranslocation/ABC/d/Decay.app/Contents/MacOS/decay-host"
         )));

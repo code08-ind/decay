@@ -10,8 +10,9 @@ use serde::{Deserialize, Serialize};
 /// allowed through [`HostConfig::allowed_origins`].
 /// - `jidljehgkacgjoefbancbihmdkkpcaaa`: Chrome Web Store (Chrome, Brave, Arc, and Edge
 ///   when installed from the Chrome Web Store).
-// TODO: add the Edge Add-ons ID if Decay is listed there too.
-pub const BUILTIN_EXTENSION_IDS: &[&str] = &["jidljehgkacgjoefbancbihmdkkpcaaa"];
+/// - `eeaegefjfdjnianmndialmkjdeffgoac`: Edge Add-ons (Partner Center CRX ID).
+pub const BUILTIN_EXTENSION_IDS: &[&str] =
+    &["jidljehgkacgjoefbancbihmdkkpcaaa", "eeaegefjfdjnianmndialmkjdeffgoac"];
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
