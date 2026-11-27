@@ -20,7 +20,7 @@
 
 ### 2. When Firefox Add-ons approves Decay (slug `decay-tabs`)
 - [ ] Put the listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the site's browsers page; ship it in the next app release.
-- [ ] Upload Firefox 0.1.1 (new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
+- [x] Upload Firefox 0.1.1 (submitted 27 Nov 2026; new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
 
 ### 3. Selling for real (Paddle live)
 - [ ] Paddle approves the live account (seller review). Live account created 26 Nov 2026; product + $24 price + client token made; switch prepared on branch `paddle-live` (Docs/Release.md). Verification submitted 26 Nov 2026 (trading name Decay, domain decay.aryangarg.com); Paddle reviews and emails if more is needed (ID, W-8BEN). **Payout bank details deferred by the user:** fill in before the first monthly payout (Business account → Payouts → Payout Settings: Individual, Bank Transfer, USD, SWIFT + IFSC, $100 threshold).
@@ -34,8 +34,8 @@
 ### 5. Later / optional
 - [ ] **Signing:** Apple Developer account ($99/yr; removes Open Anyway and the keychain prompt after updates) and Windows signing (removes SmartScreen). Deferred by the user.
 - [x] **Email polish:** licenses.decay@ now also forwards to Gmail (Cloudflare Email Routing, 26 Nov 2026); sender logo via a Google account for licenses.decay@ with the leaf as profile photo (26 Nov 2026; Gmail doesn't use Gravatar; BIMI later needs p=quarantine + a paid certificate) (DMARC done 26 Nov 2026: Cloudflare DMARC Management, `p=none` with reports to Cloudflare; after a few clean weeks consider `p=quarantine`).
-- [x] **Insights:** "Beta goals" badge and "Share with beta team" removed from the extension and the app (26 Nov 2026; ships in the next app release and extension upload). Privacy policy updated (repo copy here; live copy: aryangarg PR #46, merge when 0.1.2 / extension 0.1.1 ship). Extension 0.1.1 zips built, but **the user wants ONE upload per store after all updates are done**: rebuild the zips from the final commit then (bump the version again if the extension changed), and upload Chrome + Firefox together.
-- [ ] **Edge Add-ons** listing (optional; Edge already installs from the Chrome Web Store): everything ready in `Docs/Store/Edge Listing.md` (text, 300×300 logo `Docs/Store/assets/edge-logo-300.png`). Partner Center Edge account ready (26 Nov 2026). Upload with the final Chrome/Firefox upload; then its Extension ID goes into `BUILTIN_EXTENSION_IDS` and the app is released.
+- [x] **Insights:** "Beta goals" badge and "Share with beta team" removed from the extension and the app (26 Nov 2026; ships in the next app release and extension upload). Privacy policy updated (repo copy here; live copy: aryangarg PR #46, merge when 0.1.2 / extension 0.1.1 ship). **Extension 0.1.1 submitted 27 Nov 2026** to Chrome, Firefox and Edge (zips rebuilt from 30c32ec, same code as 26 Nov). Next uploads: bump the version again and batch changes into one upload per store.
+- [ ] **Edge Add-ons** listing: 0.1.1 **submitted 27 Nov 2026**; still to do: put its Extension ID in `BUILTIN_EXTENSION_IDS` and release the app. (Optional; Edge already installs from the Chrome Web Store.) everything ready in `Docs/Store/Edge Listing.md` (text, 300×300 logo `Docs/Store/assets/edge-logo-300.png`). Partner Center Edge account ready (26 Nov 2026). Upload with the final Chrome/Firefox upload; then its Extension ID goes into `BUILTIN_EXTENSION_IDS` and the app is released.
 - [ ] **aryangarg site repo:** GitHub Actions don't start (billing / spending limit); Vercel still deploys.
 - [ ] **Launch posts** (Docs/Launch): links, Firefox, Pro list and signing answers refreshed 26 Nov 2026; post after the items above, per `Docs/Launch/Checklist.md`.
 
