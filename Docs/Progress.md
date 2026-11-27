@@ -1,6 +1,6 @@
 # Decay — Progress Tracker
 
-## ▶ Start here next (updated 26 Nov 2026)
+## ▶ Start here next (updated 27 Nov 2026)
 
 **Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **live on the Chrome Web Store** (26 Nov 2026) and in review on Firefox Add-ons. **v0.1.1** (the app accepts the Chrome Web Store extension) is published.
 
@@ -13,7 +13,7 @@
 ### 1. Chrome Web Store: Decay approved and live 26 Nov 2026 (item `jidljehgkacgjoefbancbihmdkkpcaaa`)
 - [x] **Publish v0.1.1** (done 26 Nov 2026, run 45797476154; Sentry moves to v0.1.2): Actions → Release → *Run workflow*, tag `v0.1.1` (the draft's release notes must be filled in first). Until then the store extension can't connect to the app (v0.1.0 doesn't know its ID).
 - [x] **Website:** link the listing (`https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa`) from `apps/site/src/pages/docs/browsers.md` and the download page.
-- [ ] **"Verified site" badge (Official URL).** 26 Nov 2026: the publisher account (workwitharyangarg@) verified `decay.aryangarg.com` itself in Search Console via `apps/site/public/google841a91a93e8a8723.html` (keep that file: Google re-checks it; "Make owner" isn't offered for Full users any more). Official URL picked and submitted for review 26 Nov 2026; badge shows once approved.
+- [x] **"Verified site" badge (Official URL).** Approved 27 Nov 2026: the listing (updated 27 Nov, still extension 0.1.0) now shows https://decay.aryangarg.com/ under the title and as the developer website. 26 Nov 2026: the publisher account (workwitharyangarg@) verified `decay.aryangarg.com` itself in Search Console via `apps/site/public/google841a91a93e8a8723.html` (keep that file: Google re-checks it; "Make owner" isn't offered for Full users any more). Official URL picked and submitted for review 26 Nov 2026; badge shows once approved.
   1. **Don't edit the listing while Decay is in review:** changing it withdraws the submission and sends it to the back of the queue. Add the Official URL after approval; that small change gets a quick review.
   2. After approval: Developer Dashboard → Decay → **Store listing** → **Official URL** → pick `https://decay.aryangarg.com/`. It's only listed if Search Console uses the **same Google account** as the Developer Dashboard: check the avatar at the top right of both.
   3. If it still says "not verified": Search Console → **Settings** → **Users and permissions** → add the dashboard's account as an **Owner** (a Full user isn't enough).
