@@ -1,11 +1,11 @@
 ---
 // The landing page (Designs/17), with only what Decay does today: no sync, no device
-// limit, no sample numbers, and the price left out until it's decided.
+// limit, no sample numbers. Firefox is marked "soon" until its Firefox Add-ons listing is approved.
 import OsIcon from '../components/OsIcon.astro';
 import Base from '../layouts/Base.astro';
 import { REPO } from '../consts';
 
-const works = ['Google Chrome', 'Microsoft Edge', 'Brave', 'Arc', 'Firefox', 'macOS Finder', 'Windows Explorer'];
+const works = ['Google Chrome', 'Microsoft Edge', 'Brave', 'Arc', 'Firefox (soon)', 'macOS Finder', 'Windows Explorer'];
 const results = [
   { letter: 'S', title: 'Stripe pricing — Compare plans', where: 'stripe.com / pricing', why: 'Unused 61 active h' },
   { letter: 'L', title: 'Linear — Cycle 42 roadmap', where: 'linear.app', why: 'Unused 48 active h' },
@@ -47,7 +47,7 @@ const faq = [
   },
   {
     q: 'Is it a subscription?',
-    a: 'No. Decay is free; Decay Pro is a one-time $24, with a 14-day free trial and no account.',
+    a: 'No. Decay is free; Decay Pro is a one-time $24 (plus local tax where it applies), with a 14-day free trial and no account.',
   },
 ];
 ---
@@ -55,7 +55,7 @@ const faq = [
 <Base title="Decay">
   <section class="mx-auto max-w-4xl px-5 pt-12 text-center">
     <p class="mx-auto mb-6 inline-flex rounded-full bg-chip px-3 py-1 text-xs font-medium text-chip-ink">
-      macOS &amp; Windows · Chrome, Edge, Brave, Arc &amp; Firefox
+      macOS &amp; Windows · Chrome, Edge, Brave &amp; Arc · Firefox soon
     </p>
     <h1 class="font-serif text-5xl leading-[1.05] md:text-7xl">Your tabs, gently put away.</h1>
     <p class="mx-auto mt-6 max-w-2xl text-lg text-muted">
@@ -185,7 +185,7 @@ const faq = [
       </article>
       <article class="rounded-3xl border-2 border-accent bg-surface p-8">
         <h3 class="font-serif text-2xl">Decay Pro</h3>
-        <p class="text-sm text-muted"><span class="font-serif text-3xl text-ink">$24</span> one-time · 14-day free trial · no account</p>
+        <p class="text-sm text-muted"><span class="font-serif text-3xl text-ink">$24</span> one-time + local tax · 14-day free trial · no account</p>
         <ul class="mt-5 grid gap-2 text-sm">{pro.map((f) => <li>✓ {f}</li>)}</ul>
         <div class="mt-8 flex flex-wrap items-center gap-3">
           <a href="/buy" class="inline-block rounded-full bg-primary px-5 py-2.5 font-medium text-primary-ink">Buy Decay Pro — $24</a>

@@ -10,9 +10,15 @@ description: The extension won't connect, a restore is refused, sweeps don't hap
 
 Decay isn't notarized by Apple yet, so macOS says it "could not verify" the app the first time. Click **Done** (not *Move to Bin*), open **System Settings → Privacy & Security**, scroll down to *"Decay.app" was blocked*, click **Open Anyway** and confirm. You only do this once; updates open normally. (On macOS 14 you can also right-click Decay → **Open** → **Open**.)
 
+## macOS asks for your password ("Decay wants to use your confidential information…")
+
+Decay keeps its database key in your macOS Keychain. When Decay's signature changes, macOS asks once whether Decay may use it: enter your Mac login password and click **Always Allow**. Updating to **0.1.4** asks one last time (Decay is now signed with a fixed certificate); later updates shouldn't ask again.
+
 ## The extension says it can't reach the app
 
 Open Decay (it lives in the menu bar / the tray), then click **Connect to the Decay app** in the extension's popup again. If you quit Decay from its menu, the extension won't start it again until you open it yourself.
+
+Right after updating Decay, the extension may stay disconnected: quit your browser completely (⌘Q on a Mac) and open it again.
 
 ## "Open Chrome · Work to restore this"
 
