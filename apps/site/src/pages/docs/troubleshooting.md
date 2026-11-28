@@ -12,7 +12,7 @@ Decay isn't notarized by Apple yet, so macOS says it "could not verify" the app 
 
 ## macOS asks for your password ("Decay wants to use your confidential information…")
 
-Decay keeps its database key in your macOS Keychain. When Decay's signature changes, macOS asks once whether Decay may use it: enter your Mac login password and click **Always Allow**. Updating to **0.1.4** asks one last time (Decay is now signed with a fixed certificate); later updates shouldn't ask again.
+Decay keeps its database key in your macOS Keychain. Until Decay is signed by Apple, macOS asks again after **each update** whether Decay may use it: enter your Mac login password and click **Always Allow**. It doesn't ask again until the next update.
 
 ## The extension says it can't reach the app
 
