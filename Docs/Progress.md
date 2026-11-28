@@ -50,6 +50,10 @@
 - [ ] **29 Nov 2026:** watch both and ask for changes (pace, captions, order) if needed.
 - [ ] Upload `decay-launch.mp4` to YouTube as **Unlisted**; the link is Product Hunt's first gallery item (`Docs/Launch/Product Hunt.md`). Optional cover: `thumbnail-insights.png`.
 
+### 3g. Product Hunt (after the video is on YouTube)
+- [ ] Create the Product Hunt listing from `Docs/Launch/Product Hunt.md`: name, tagline, description, topics, pricing, the maker's first comment, gallery (YouTube link first, then `Docs/Launch/assets/ph-gallery-1…5.png`, thumbnail `ph-thumbnail-240.png`). **Regenerate the gallery images first**: they still show the old leaf.
+- [ ] Pick a launch day (Tuesday–Thursday, 00:01 PT = 13:31 IST), schedule it, and line up the other launch posts for the same day (`Docs/Launch/Checklist.md`).
+
 ### 4. Checks on real machines
 - [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
 - [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).
