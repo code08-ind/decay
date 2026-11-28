@@ -12,6 +12,10 @@ Decay archives the browser tabs and hides the app windows you've stopped using, 
 
 [Download Decay](/download) for macOS (14 or later) or Windows (10 or 11) and open it. A short guide walks you through the rest.
 
+**On a Mac, two one-time prompts** (Decay isn't signed by Apple yet):
+- The first time you open it, macOS says it can't verify Decay: click **Done**, then **System Settings → Privacy & Security → Open Anyway**.
+- After each update, macOS asks for your login password so Decay can open its encrypted data: enter it and click **Always Allow**. [Why?](/docs/troubleshooting)
+
 ## 2. Choose a pace
 
 How long a tab may go unused before Decay acts, in **active hours** (time only counts while you're using your computer):
