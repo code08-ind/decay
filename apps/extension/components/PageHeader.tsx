@@ -1,6 +1,6 @@
-import { Leaf } from 'lucide-react';
 import type { Mode } from '@/lib/db/types';
 import { type Key, t } from '@/lib/strings';
+import { DecayLeaf } from './DecayLeaf';
 
 const MODE_LABEL: Record<Mode, Key> = {
   shadow: 'mode.shadow',
@@ -21,7 +21,7 @@ export function PageHeader(props: { current: PageId; mode: Mode }) {
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-3 sm:px-10">
       <div className="flex items-center gap-2">
-        <Leaf size={20} className="text-accent" aria-hidden />
+        <DecayLeaf size={20} className="text-accent" aria-hidden />
         <span className="font-serif text-xl">Decay</span>
       </div>
       <nav aria-label={t('pages.nav')} className="order-last w-full sm:order-none sm:w-auto">

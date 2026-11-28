@@ -5,7 +5,6 @@ import {
   ArrowRightLeft,
   BarChart3,
   CalendarDays,
-  Leaf,
   type LucideIcon,
   Search,
   Star,
@@ -14,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { errorMessage } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { t } from '../strings';
 import { formatDate, type NoteIcon, type ReleaseNotes } from './releases';
 
@@ -89,7 +89,7 @@ export function WhatsNew(props: {
             aria-hidden
             className="grid size-12 shrink-0 place-items-center rounded-full border border-line bg-surface text-accent"
           >
-            <Leaf size={22} />
+            <DecayLeaf size={22} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="flex flex-wrap items-center gap-3 text-sm text-muted">

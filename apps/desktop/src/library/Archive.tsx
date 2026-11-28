@@ -16,7 +16,6 @@ import {
   Copy,
   Ghost,
   Info,
-  Leaf,
   RotateCcw,
   ShieldCheck,
   Trash2,
@@ -35,6 +34,7 @@ import {
   profileLabel,
   restoreChoices,
 } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { displayUrl, timeLabel } from '../panel/results';
 import { t } from '../strings';
 import { useProfiles } from '../useStatus';
@@ -206,7 +206,7 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
         />
         <Stat
           label={t('archive.stat.total')}
-          icon={<Leaf size={14} />}
+          icon={<DecayLeaf size={14} />}
           value={s?.archivedTotal ?? '–'}
         />
       </div>
@@ -268,7 +268,7 @@ export function Archive(props: PageProps & { itemId?: string; confirmRestore: bo
           )}
           {!loading && items.length === 0 && !error ? (
             <EmptyState
-              icon={<Leaf size={20} />}
+              icon={<DecayLeaf size={20} />}
               title={filtered ? t('archive.noMatch') : t('archive.empty')}
             >
               {filtered ? t('archive.noMatch.text') : t('archive.empty.text')}

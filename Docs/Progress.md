@@ -30,6 +30,9 @@
 ### 3b. Bug to fix: extension doesn't reconnect after an app update (found 28 Nov 2026)
 - [ ] After updating the app 0.1.3 → 0.1.4 (Mac, Chrome open) the extension stayed "No browser is connected" for 5+ minutes although the 1-minute watchdog should reconnect; quitting and reopening Chrome fixed it. The host itself starts and answers fine. Reproduce with the service worker's console open (chrome://extensions → Decay → service worker) during an app update; the fix ships in the next batched extension upload. Workaround noted in the v0.1.4 release notes. 28 Nov 2026: a plain app restart and a reinstall both reconnect within ~30 s (couldn't reproduce); likely cause found and fixed in the extension (an attempt stuck before its handshake timer, e.g. `hello()` never settling while the worker was swapped, blocked every watchdog reconnect): such an attempt is now dropped after 20 s. **Ships in the next batched extension upload** (bump the extension version first).
 
+### 3c. Logo consistency (28 Nov 2026)
+- [x] The app and the extension drew a generic library leaf (lucide `Leaf`) in their headers, onboarding, About, What's New and empty states, unlike the logo. Replaced by `DecayLeaf` (the app icon's own leaf, `apps/desktop/src/DecayLeaf.tsx`, `apps/extension/components/DecayLeaf.tsx`). Icon files (app, tray, extension, site, store) already matched. **Ships in v0.1.5 (app) and the next batched extension upload.**
+
 ### 4. Checks on real machines
 - [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
 - [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).

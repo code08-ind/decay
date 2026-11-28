@@ -22,7 +22,6 @@ import {
   ExternalLink,
   Globe,
   Info,
-  Leaf,
   Lock,
   Play,
   Search,
@@ -44,6 +43,7 @@ import {
   type Preset,
   type WindowManagement,
 } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import {
   back,
   hostProblem,
@@ -165,7 +165,7 @@ function Sidebar({ step }: { step: number }) {
     >
       <div className="mb-6 flex items-center gap-2">
         <span className="grid size-8 place-items-center rounded-lg bg-feature-tile">
-          <Leaf size={16} aria-hidden />
+          <DecayLeaf size={16} aria-hidden />
         </span>
         <span className="font-serif text-xl">Decay</span>
       </div>
@@ -725,7 +725,7 @@ function Done({ heading }: HeadingRef) {
         aria-hidden
         className="mb-4 grid size-16 place-items-center rounded-full bg-chip text-accent-text"
       >
-        <Leaf size={28} />
+        <DecayLeaf size={28} />
       </span>
       <h1
         id="step-title"

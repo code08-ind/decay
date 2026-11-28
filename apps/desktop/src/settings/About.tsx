@@ -6,12 +6,12 @@ import {
   ExternalLink,
   FileText,
   Keyboard,
-  Leaf,
   MessageSquare,
   Sparkles,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { api } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { t } from '../strings';
 import { Group, Row, TabHeader } from './parts';
 
@@ -35,7 +35,7 @@ export function About(props: { go: (tab: string) => void; fail: (e: unknown) => 
             aria-hidden
             className="grid size-20 place-items-center rounded-3xl bg-chip text-accent"
           >
-            <Leaf size={40} />
+            <DecayLeaf size={40} />
           </span>
           <p className="font-serif text-5xl">Decay</p>
           <p className="rounded-full bg-surface-2 px-3 py-0.5 font-mono text-sm text-muted">

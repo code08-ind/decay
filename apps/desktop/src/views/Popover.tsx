@@ -6,13 +6,13 @@ import {
   ExternalLink,
   Settings as Gear,
   Hourglass,
-  Leaf,
   PanelLeft,
   RotateCcw,
   Search,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { api, describe, type HoldDuration, type SweepRow } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { t } from '../strings';
 import { useStatus } from '../useStatus';
 
@@ -98,7 +98,7 @@ export function Popover() {
     <main className="flex h-screen select-none flex-col gap-3 bg-canvas p-4 text-ink">
       <header className="flex items-center gap-2">
         <span className="grid size-6 place-items-center rounded-md bg-accent-soft text-accent">
-          <Leaf size={16} aria-hidden />
+          <DecayLeaf size={16} aria-hidden />
         </span>
         <span className="font-serif text-lg font-medium">Decay</span>
         {version && (

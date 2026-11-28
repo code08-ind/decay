@@ -3,7 +3,6 @@ import {
   ChartColumn,
   CircleAlert,
   History,
-  Leaf,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -32,6 +31,7 @@ import {
 import { localDay } from '@/lib/shadow/shadow';
 import { t } from '@/lib/strings';
 import { AppLink } from './AppLink';
+import { DecayLeaf } from './DecayLeaf';
 import { avatarClass, shortUrl } from './format';
 import { ProbeBanner } from './ProbeBanner';
 
@@ -180,7 +180,7 @@ export function Popup(props: PopupProps) {
     <div className="w-[380px] bg-canvas p-4 text-ink">
       <header className="flex items-center gap-2">
         <span className="grid size-8 place-items-center rounded-full bg-lime text-lime-ink">
-          <Leaf size={16} aria-hidden />
+          <DecayLeaf size={16} aria-hidden />
         </span>
         <h1 className="font-serif text-xl">Decay</h1>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs">

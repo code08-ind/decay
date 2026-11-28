@@ -10,9 +10,10 @@ import {
   tabId,
 } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
-import { Leaf, Pause, Play, RotateCcw, Settings as SettingsIcon, Wind } from 'lucide-react';
+import { Pause, Play, RotateCcw, Settings as SettingsIcon, Wind } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, describe, type EngineStatus, errorMessage, profileLabel } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { notesFor, RELEASES, type ReleaseNotes } from '../help/releases';
 import { WhatsNew } from '../help/WhatsNew';
 import { Archive } from '../library/Archive';
@@ -146,7 +147,7 @@ export function Library() {
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-3">
         {/* Windows shows the leaf and name in its title bar. */}
         <div className="flex items-center gap-2 in-data-[chrome=custom]:hidden">
-          <Leaf size={20} className="text-accent" aria-hidden />
+          <DecayLeaf size={20} className="text-accent" aria-hidden />
           <span className="font-serif text-xl">Decay</span>
         </div>
         <Tabs<View>

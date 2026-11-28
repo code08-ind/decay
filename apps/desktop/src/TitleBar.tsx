@@ -1,7 +1,8 @@
 import { cx } from '@decay/ui';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Copy, Leaf, Minus, Square, X } from 'lucide-react';
+import { Copy, Minus, Square, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DecayLeaf } from './DecayLeaf';
 import { t } from './strings';
 
 /** What the window's page was told about its chrome (Rust `shell::page_query`). */
@@ -62,7 +63,7 @@ export function TitleBar(props: { resizable?: boolean }) {
       data-tauri-drag-region
       className="flex h-8 shrink-0 select-none items-center bg-transparent ps-3"
     >
-      <Leaf data-tauri-drag-region size={16} className="text-accent" aria-hidden />
+      <DecayLeaf data-tauri-drag-region size={16} className="text-accent" aria-hidden />
       <span data-tauri-drag-region className="ms-2 min-w-0 flex-1 truncate font-serif text-sm">
         {title}
       </span>

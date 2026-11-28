@@ -1,8 +1,9 @@
 import { Banner, Button, formatDate, SegmentedControl, Switch } from '@decay/ui';
 import { listen } from '@tauri-apps/api/event';
-import { Leaf, RefreshCw, RotateCcw } from 'lucide-react';
+import { RefreshCw, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, errorMessage, type UpdateState } from '../api';
+import { DecayLeaf } from '../DecayLeaf';
 import { t } from '../strings';
 import { Group, Row, TabHeader, type TabProps } from './parts';
 
@@ -64,7 +65,7 @@ export function Updates(props: TabProps) {
             className="rounded-card bg-feature p-5 text-feature-ink shadow-sm"
           >
             <p className="mb-1 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
-              <Leaf size={14} aria-hidden /> {t('updates.newRelease')}
+              <DecayLeaf size={14} aria-hidden /> {t('updates.newRelease')}
             </p>
             <h2 id="release-h" className="font-serif text-2xl">
               {phase === 'ready'
