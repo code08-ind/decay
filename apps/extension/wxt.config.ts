@@ -6,7 +6,7 @@ import { defineConfig } from 'wxt';
 export const FIREFOX_EXTENSION_ID = 'decay@decay-app';
 
 // See https://wxt.dev/api/config.html. One source, two builds: Chromium (Chrome, Edge,
-// Brave, Arc) and Firefox (`-b firefox --mv3`, F14).
+// Brave) and Firefox (`-b firefox --mv3`, F14).
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({ plugins: [tailwindcss()] }),

@@ -5,7 +5,7 @@ A launch-day thread (X / Bluesky; for LinkedIn, join the posts into one). Attach
 ```
 1/ I've shipped Decay: an app that quietly archives the browser tabs and windows you've stopped using, and brings any of them back with one shortcut.
 
-macOS + Windows, Chrome / Edge / Brave / Arc / Firefox. Free, with a one-time $24 Pro.
+macOS + Windows, Chrome / Edge / Brave / Firefox. Free, with a one-time $24 Pro.
 https://decay.aryangarg.com
 ```
 

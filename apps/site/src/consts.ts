@@ -8,7 +8,7 @@ export const DOWNLOAD = {
   mac: `${RELEASES}/download/Decay-mac.dmg`,
   windows: `${RELEASES}/download/Decay-windows-setup.exe`,
 } as const;
-/** The extension's Chrome Web Store listing (Chrome, Edge, Brave, Arc, Chromium). */
+/** The extension's Chrome Web Store listing (Chrome, Edge, Brave, Chromium). */
 export const CHROME_STORE =
   'https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa';
 /** The source code (open core: LICENSE.md). */

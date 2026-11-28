@@ -16,7 +16,7 @@ I keep 60+ tabs open "just in case". So I'm building Decay: a browser extension 
 • Alt+Shift+D → type → Enter, and the tab is back where it was
 • everything stays in your browser: no account, no server
 
-Looking for 20–30 people with too many tabs to try it for 3–4 weeks (Chrome / Edge / Brave / Arc). Reply or DM me and I'll send the link.
+Looking for 20–30 people with too many tabs to try it for 3–4 weeks (Chrome / Edge / Brave). Reply or DM me and I'll send the link.
 ```
 
 ## Short DM

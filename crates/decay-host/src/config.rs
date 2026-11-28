@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /// Extension IDs always allowed (the published store builds). Development builds are
 /// allowed through [`HostConfig::allowed_origins`].
-/// - `jidljehgkacgjoefbancbihmdkkpcaaa`: Chrome Web Store (Chrome, Brave, Arc, and Edge
+/// - `jidljehgkacgjoefbancbihmdkkpcaaa`: Chrome Web Store (Chrome, Brave, and Edge
 ///   when installed from the Chrome Web Store).
 /// - `eeaegefjfdjnianmndialmkjdeffgoac`: Edge Add-ons (Partner Center CRX ID).
 pub const BUILTIN_EXTENSION_IDS: &[&str] =

@@ -4,7 +4,7 @@
 
 Thanks for testing Decay! It takes about 3–4 weeks, and almost all of that is just browsing normally.
 
-**Install:** <Chrome Web Store link> (Chrome 120 or newer; also Brave and Arc. In Edge, first turn on "Allow extensions from other stores".)
+**Install:** <Chrome Web Store link> (Chrome 120 or newer; also Brave. In Edge, first turn on "Allow extensions from other stores".)
 **Feedback form:** <Google Form link>
 **Questions or problems:** gargaryan82000@gmail.com
 **Privacy:** https://www.aryangarg.com/decay/privacy-policy. In short, everything stays in your browser.

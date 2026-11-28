@@ -58,7 +58,7 @@ INSIGHTS
 • See your open tabs fall over time, how often you needed an archived tab back, and how fast search found it. Counted on your computer.
 
 WORKS WITH THE DECAY DESKTOP APP (OPTIONAL)
-The free Decay app for macOS and Windows does the same for your app windows, across Chrome, Edge, Brave, Arc and Firefox. Install it and click "Connect" in the popup: the extension and the app talk directly on your computer, never over the network. The extension works fully on its own without it. https://decay.aryangarg.com
+The free Decay app for macOS and Windows does the same for your app windows, across Chrome, Edge, Brave and Firefox. Install it and click "Connect" in the popup: the extension and the app talk directly on your computer, never over the network. The extension works fully on its own without it. https://decay.aryangarg.com
 
 PRIVATE BY DESIGN
 • Everything stays on your computer. No account, no server, no analytics, no ads.

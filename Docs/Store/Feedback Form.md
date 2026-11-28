@@ -7,7 +7,7 @@
 
 ## Section 1: About you
 
-1. **Which browser do you use Decay in?** *(multiple choice)* Chrome · Edge · Brave · Arc · Other
+1. **Which browser do you use Decay in?** *(multiple choice)* Chrome · Edge · Brave · Other
 2. **On a normal day, how many tabs do you have open?** *(multiple choice)* Under 10 · 10–30 · 30–60 · 60–100 · Over 100
 3. **What's your work?** *(multiple choice)* Software engineering · Design · Product / PM · Research / writing · Student · Other
 

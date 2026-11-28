@@ -14,8 +14,7 @@
 //!   `HKCU\Software\<vendor>\NativeMessagingHosts\com.decay.host` pointing at it.
 //! - Linux (development only): `~/.config/<browser>/NativeMessagingHosts/`.
 //!
-//! Arc's folder is from its documentation and not yet verified on a machine (Software
-//! Design §10 spike 4).
+//! Arc isn't a target any more (28 Nov 2026: its makers stopped developing it).
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -82,13 +81,6 @@ pub const TARGETS: &[BrowserTarget] = &[
         mac_dir: Some("BraveSoftware/Brave-Browser"),
         win_key: Some(r"BraveSoftware\Brave-Browser"),
         linux_dir: Some("BraveSoftware/Brave-Browser"),
-        gecko: false,
-    },
-    BrowserTarget {
-        name: "Arc",
-        mac_dir: Some("Arc/User Data"),
-        win_key: None,
-        linux_dir: None,
         gecko: false,
     },
     BrowserTarget {

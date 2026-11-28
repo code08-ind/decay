@@ -44,21 +44,13 @@ pub struct Known {
 }
 
 /// The browsers onboarding shows, in order (Designs/03c).
-pub const KNOWN: [Known; 6] = [
+pub const KNOWN: [Known; 5] = [
     Known {
         targets: &["Google Chrome", "Google Chrome Beta", "Google Chrome Canary"],
         kind: BrowserKind::Chrome,
         name: "Google Chrome",
         mac_bundle: "com.google.Chrome",
         win_exe: Some("chrome.exe"),
-        store_url: STORE_URL,
-    },
-    Known {
-        targets: &["Arc"],
-        kind: BrowserKind::Arc,
-        name: "Arc",
-        mac_bundle: "company.thebrowser.Browser",
-        win_exe: None,
         store_url: STORE_URL,
     },
     Known {
@@ -115,7 +107,7 @@ pub struct DetectedBrowser {
 }
 
 /// Puts detection and the connected browsers together. A browser that's connected counts
-/// as installed and set up even if detection missed it (Arc's folder is unverified).
+/// as installed and set up even if detection missed it.
 pub fn rows(
     detected: &[decay_host::install::Detected],
     connected: &[BrowserKind],
@@ -332,7 +324,7 @@ mod tests {
             found("Brave", true, false),
             found("Microsoft Edge", false, false),
         ];
-        let rows = rows(&detected, &[BrowserKind::Chrome, BrowserKind::Chrome, BrowserKind::Arc]);
+        let rows = rows(&detected, &[BrowserKind::Chrome, BrowserKind::Chrome, BrowserKind::Chromium]);
         let view: Vec<(&str, bool, bool, bool, u32)> = rows
             .iter()
             .map(|r| {
@@ -343,10 +335,10 @@ mod tests {
             view,
             [
                 ("chrome", true, true, true, 2),
-                // Connected though detection didn't see it.
-                ("arc", true, true, true, 1),
                 ("brave", true, false, false, 0),
                 ("edge", false, false, false, 0),
+                // Connected though detection didn't see it.
+                ("chromium", true, true, true, 1),
             ]
         );
         assert!(rows.iter().all(|r| r.store_url == STORE_URL));
