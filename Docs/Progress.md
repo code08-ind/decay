@@ -27,6 +27,9 @@
 - [x] Switch to live (done 28 Nov 2026: live API key + webhook secret set, `paddle-live` merged in 60b2ef0, Worker deployed in production, /buy serves the live checkout): the site's Paddle client token and price id (`apps/site/src/consts.ts`), the Worker's `PADDLE_ENV = "production"` and `PADDLE_PRICE_IDS` (`services/license-webhook/wrangler.toml`), live `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` (`npx wrangler secret put …` in a real terminal, never via `!`), a live notification destination for `transaction.completed`.
 - [x] One live end-to-end purchase → email → activate (28 Nov 2026, with a one-use 100% code `DECAYTEST100`; archive it). Tax: the $24 price is set to **Price excludes tax** (account setting too), so buyers pay $24 + local tax (matches the Terms); quantity limited to 1–1 so the checkout has no quantity selector (28 Nov 2026). Payout details saved 28 Nov 2026 (wire, USD, $100 threshold).
 
+### 3b. Bug to fix: extension doesn't reconnect after an app update (found 28 Nov 2026)
+- [ ] After updating the app 0.1.3 → 0.1.4 (Mac, Chrome open) the extension stayed "No browser is connected" for 5+ minutes although the 1-minute watchdog should reconnect; quitting and reopening Chrome fixed it. The host itself starts and answers fine. Reproduce with the service worker's console open (chrome://extensions → Decay → service worker) during an app update; the fix ships in the next batched extension upload. Workaround noted in the v0.1.4 release notes.
+
 ### 4. Checks on real machines
 - [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
 - [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).
