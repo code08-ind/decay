@@ -27,6 +27,17 @@ const nav = [
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <meta property="og:title" content={full} />
     <meta property="og:description" content={description} />
+    <!-- Theme before first paint (no flash): the saved choice, else the OS. -->
+    <script is:inline>
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('decay-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-canvas text-ink antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:m-2 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>
@@ -37,6 +48,21 @@ const nav = [
       </a>
       <nav aria-label="Site" class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
         {nav.map((n) => <a href={n.href} class="hidden hover:text-ink sm:inline">{n.label}</a>)}
+        <button
+          type="button"
+          id="theme-toggle"
+          aria-label="Toggle theme"
+          title="Toggle theme (Shift+T)"
+          class="theme-toggle grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
+        >
+          <svg class="icon-sun size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <svg class="icon-moon size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+        </button>
         <a href="/download?os=auto" class="rounded-full bg-primary px-4 py-2 font-medium text-primary-ink">Download</a>
       </nav>
     </header>
@@ -55,5 +81,71 @@ const nav = [
         <a href="https://github.com/code08-ind/decay-releases/releases" class="hover:text-ink">Changelog</a>
       </nav>
     </footer>
+    <script>
+      // Light / dark toggle, like aryangarg.com: the new theme sweeps over the page as a
+      // circle growing from the top-left corner to the bottom-right (View Transitions).
+      const KEY = 'decay-theme';
+      const root = document.documentElement;
+      const button = document.getElementById('theme-toggle');
+      const osDark = matchMedia('(prefers-color-scheme: dark)');
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+      const current = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
+      const label = () => {
+        button?.setAttribute('aria-label', current() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+      };
+      const saved = () => {
+        try {
+          return localStorage.getItem(KEY);
+        } catch {
+          return null;
+        }
+      };
+
+      function toggle() {
+        const next = current() === 'dark' ? 'light' : 'dark';
+        const apply = () => {
+          root.dataset.theme = next;
+          label();
+        };
+        try {
+          localStorage.setItem(KEY, next);
+        } catch {}
+
+        if (!('startViewTransition' in document) || reduceMotion.matches) {
+          apply();
+          return;
+        }
+        const transition = document.startViewTransition(apply);
+        transition.ready.then(() => {
+          const end = Math.hypot(innerWidth, innerHeight);
+          root.animate(
+            { clipPath: ['circle(0px at 0px 0px)', `circle(${end}px at 0px 0px)`] },
+            { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' },
+          );
+        });
+      }
+
+      label();
+      button?.addEventListener('click', toggle);
+
+      // Shift+T, as on aryangarg.com (not while typing, never with Ctrl/Cmd/Alt).
+      document.addEventListener('keydown', (e) => {
+        const el = e.target as HTMLElement | null;
+        const typing = el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+        if (!typing && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === 't') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+
+      // Until the visitor picks a theme, follow the OS when it changes.
+      osDark.addEventListener('change', (e) => {
+        if (saved() !== 'light' && saved() !== 'dark') {
+          root.dataset.theme = e.matches ? 'dark' : 'light';
+          label();
+        }
+      });
+    </script>
   </body>
 </html>
