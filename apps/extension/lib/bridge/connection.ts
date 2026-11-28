@@ -54,6 +54,8 @@ export interface BridgeDeps {
 
 /** No `welcome` within this long: the app isn't answering. */
 export const HANDSHAKE_TIMEOUT_MS = 10_000;
+/** An attempt still "connecting" after this never armed its handshake timer: it's stuck. */
+export const STUCK_ATTEMPT_MS = 2 * HANDSHAKE_TIMEOUT_MS;
 
 interface Pending {
   resolve(env: Envelope): void;
@@ -74,6 +76,9 @@ export class Bridge {
   private launching = false;
   /** A launching attempt was asked for while a quiet one was running. */
   private launchAfter = false;
+  /** When the current attempt started, and which attempt it is (a stale one is ignored). */
+  private connectingSince = 0;
+  private attempt = 0;
 
   constructor(private readonly deps: BridgeDeps) {}
 
@@ -85,6 +90,12 @@ export class Bridge {
   /** Connects unless already connecting or connected. */
   async connect(opts: { launch: boolean }): Promise<void> {
     if (this.state === 'connected') return;
+    if (this.state === 'connecting' && this.deps.now() - this.connectingSince > STUCK_ATTEMPT_MS) {
+      // An attempt that never reached the handshake timer (its `hello()` never settled,
+      // e.g. the worker was swapped mid-update) would otherwise block every reconnect
+      // until the browser restarts: drop it and start over.
+      this.end('unavailable', 'a stuck connection attempt was dropped');
+    }
     if (this.state === 'connecting') {
       // A user action (or browser start-up) during a quiet reconnect: if that attempt
       // finds no app, try once more and let the host start it.
@@ -93,14 +104,19 @@ export class Bridge {
     }
     // Claimed before any await, so two calls can't both open a port.
     this.setState('connecting');
+    this.connectingSince = this.deps.now();
+    const attempt = ++this.attempt;
     this.launching = opts.launch;
     this.launchAfter = false;
     let hello: Omit<Hello, 'launch'>;
     let port: PortLike;
     try {
       hello = await this.deps.hello();
+      // Dropped as stuck (or replaced) while waiting: the newer attempt owns the link.
+      if (attempt !== this.attempt || (this.state as BridgeState) !== 'connecting') return;
       port = this.deps.connectNative(HOST_NAME);
     } catch (e) {
+      if (attempt !== this.attempt) return;
       // No `nativeMessaging` permission, or the API is missing.
       this.setState('off', e instanceof Error ? e.message : String(e));
       return;

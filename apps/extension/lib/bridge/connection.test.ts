@@ -5,6 +5,7 @@ import {
   type BridgeState,
   HANDSHAKE_TIMEOUT_MS,
   type PortLike,
+  STUCK_ATTEMPT_MS,
 } from './connection';
 import { type Envelope, envelope, kinds } from './protocol';
 
@@ -78,6 +79,7 @@ function setup(opts: { noPermission?: boolean } = {}) {
   };
   return {
     bridge: new Bridge(deps),
+    deps,
     ports,
     states,
     messages,
@@ -145,6 +147,38 @@ describe('Bridge', () => {
     must(t.ports[1]).drop();
     expect(t.bridge.state).toBe('unavailable');
     expect(t.bridge.send(envelope('heartbeat', {}))).toBe(false);
+  });
+
+  it('drops an attempt stuck before the handshake so the watchdog can reconnect', async () => {
+    let now = 0;
+    let release: (() => void) | undefined;
+    const t = setup();
+    const deps = t.deps;
+    const realHello = deps.hello;
+    deps.now = () => now;
+    // The first hello() never settles (the worker was swapped mid-update).
+    deps.hello = () =>
+      new Promise((resolve) => {
+        release = () => resolve(realHello());
+      });
+    void t.bridge.connect({ launch: false });
+    expect(t.bridge.state).toBe('connecting');
+    deps.hello = realHello;
+    // A watchdog tick inside the window leaves the attempt alone…
+    now = STUCK_ATTEMPT_MS - 1;
+    await t.bridge.connect({ launch: false });
+    expect(t.ports.length).toBe(0);
+    // …a later one drops it and connects.
+    now = STUCK_ATTEMPT_MS + 1;
+    await t.bridge.connect({ launch: false });
+    expect(t.ports.length).toBe(1);
+    must(t.ports[0]).receive(welcomeFor(must(must(t.ports[0]).sent[0])));
+    expect(t.bridge.state).toBe('connected');
+    // The stale attempt finally settles: it must not open a second port.
+    release?.();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(t.ports.length).toBe(1);
+    expect(t.bridge.state).toBe('connected');
   });
 
   it('opens one port for overlapping connects, and upgrades a quiet attempt to launch', async () => {
