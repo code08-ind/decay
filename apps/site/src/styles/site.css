@@ -15,6 +15,45 @@
   display: none;
 }
 
+/* Docs search dialog (components/Search.astro). */
+.search-dialog::backdrop {
+  background: rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(2px);
+}
+.search-dialog [aria-selected="true"] .search-hit {
+  background: var(--lime);
+  color: var(--lime-text);
+}
+.search-dialog [aria-selected="true"] .search-hit span {
+  color: inherit;
+}
+.search-dialog [aria-selected="true"] .search-snippet {
+  opacity: 0.8;
+}
+.search-dialog mark {
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+/* Esc closes the dialog; the browser's own clear (×) button only gets in the way. */
+.search-dialog input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.search-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Searching jumps to a heading: keep it clear of the top edge. */
+.prose :is(h2, h3) {
+  scroll-margin-top: 1.5rem;
+}
+
 /* The theme switch is animated by hand (a circle from the top-left corner, see
    Base.astro), so turn off the default cross-fade. */
 ::view-transition-old(root),

@@ -80,7 +80,8 @@ const faq = [
         <ul class="mt-2 grid gap-1 text-start">
           {results.map((r, i) => (
             <li class:list={['flex items-center gap-3 rounded-xl px-3 py-2.5', i === 0 && 'bg-lime text-lime-ink']}>
-              <span aria-hidden="true" class="grid size-8 place-items-center rounded-lg bg-surface-3 text-sm font-semibold">{r.letter}</span>
+              {/* On the lime (selected) row the tile is a tint of the row's own ink, so the letter reads in both themes. */}
+              <span aria-hidden="true" class:list={['grid size-8 place-items-center rounded-lg text-sm font-semibold', i === 0 ? 'bg-lime-ink/12 text-lime-ink' : 'bg-surface-3']}>{r.letter}</span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-medium">{r.title}</span>
                 <span class:list={['block truncate font-mono text-xs', i === 0 ? 'opacity-80' : 'text-muted']}>{r.where}</span>

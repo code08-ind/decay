@@ -1,0 +1,237 @@
+---
+// Docs search: a navbar button and ⌘K / Ctrl+K (or "/") open a dialog that searches every
+// docs section (index: pages/search.json.ts). All in the browser, no service.
+---
+
+<button
+  type="button"
+  id="search-open"
+  aria-label="Search docs"
+  aria-haspopup="dialog"
+  class="flex h-9 items-center gap-2 rounded-full border border-line px-3 text-muted hover:border-line-strong hover:text-ink"
+>
+  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+  </svg>
+  <span class="hidden lg:inline">Search docs</span>
+  <kbd data-shortcut class="hidden rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-faint lg:inline">⌘K</kbd>
+</button>
+
+<dialog
+  id="search-dialog"
+  aria-label="Search docs"
+  class="search-dialog m-auto mt-[12vh] w-[min(40rem,calc(100vw-2rem))] max-w-none overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-panel"
+>
+  <div class="flex items-center gap-3 border-b border-line px-4">
+    <svg class="size-4 shrink-0 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+    </svg>
+    <input
+      id="search-input"
+      type="search"
+      role="combobox"
+      aria-expanded="true"
+      aria-controls="search-results"
+      aria-autocomplete="list"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Search the docs: shortcut, Pro, extension…"
+      class="h-14 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint focus-visible:outline-none"
+    />
+    <kbd class="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-faint">Esc</kbd>
+  </div>
+  <ul id="search-results" role="listbox" aria-label="Results" class="max-h-[60vh] overflow-y-auto p-2"></ul>
+  <p id="search-empty" class="hidden px-5 py-8 text-center text-sm text-muted"></p>
+  <div class="flex items-center gap-4 border-t border-line px-4 py-2.5 text-xs text-faint">
+    <span><kbd class="font-mono">↑↓</kbd> move</span>
+    <span><kbd class="font-mono">↵</kbd> open</span>
+    <span class="ms-auto">Docs only · runs in your browser</span>
+  </div>
+</dialog>
+
+<script>
+  type Section = { page: string; title: string; heading: string; href: string; text: string };
+
+  const openButton = document.getElementById('search-open') as HTMLButtonElement;
+  const dialog = document.getElementById('search-dialog') as HTMLDialogElement;
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const list = document.getElementById('search-results') as HTMLUListElement;
+  const empty = document.getElementById('search-empty') as HTMLParagraphElement;
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  document.querySelectorAll('[data-shortcut]').forEach((k) => (k.textContent = isMac ? '⌘K' : 'Ctrl K'));
+  openButton.title = `Search docs (${isMac ? '⌘K' : 'Ctrl+K'})`;
+
+  let index: Section[] | null = null;
+  let loading: Promise<Section[]> | null = null;
+  let results: Section[] = [];
+  let active = 0;
+
+  const load = () =>
+    (loading ??= fetch('/search.json')
+      .then((r) => r.json() as Promise<Section[]>)
+      .then((data) => (index = data))
+      .catch(() => {
+        loading = null;
+        return [];
+      }));
+
+  const escape = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  function highlight(text: string, terms: string[]): string {
+    if (!terms.length) return escape(text);
+    const re = new RegExp(`(${terms.map(escapeRe).join('|')})`, 'gi');
+    return text
+      .split(re)
+      .map((part, i) => (i % 2 ? `<mark>${escape(part)}</mark>` : escape(part)))
+      .join('');
+  }
+
+  /** A short piece of the section around the first match. */
+  function snippet(text: string, terms: string[]): string {
+    const lower = text.toLowerCase();
+    const at = Math.min(...terms.map((t) => lower.indexOf(t)).filter((i) => i >= 0), Infinity);
+    if (at === Infinity) return text.slice(0, 140) + (text.length > 140 ? '…' : '');
+    // Start at a word boundary a little before the match, not mid-word.
+    let start = Math.max(0, at - 50);
+    if (start > 0) start = text.indexOf(' ', start) + 1 || start;
+    const piece = text.slice(start, start + 150);
+    return (start > 0 ? '…' : '') + piece + (start + 150 < text.length ? '…' : '');
+  }
+
+  function search(query: string): Section[] {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!index) return [];
+    if (!terms.length) return index.filter((s) => !s.heading);
+    const scored: { s: Section; score: number }[] = [];
+    for (const s of index) {
+      const title = s.title.toLowerCase();
+      const page = s.page.toLowerCase();
+      const text = s.text.toLowerCase();
+      let score = 0;
+      let all = true;
+      for (const t of terms) {
+        const inTitle = title.includes(t);
+        const inPage = page.includes(t);
+        const inText = text.includes(t);
+        if (!inTitle && !inPage && !inText) {
+          all = false;
+          break;
+        }
+        score += (inTitle ? 10 : 0) + (inPage ? 3 : 0) + (inText ? 1 : 0);
+        if (new RegExp(`\\b${escapeRe(t)}`).test(title)) score += 5;
+      }
+      if (all) scored.push({ s, score });
+    }
+    return scored.sort((a, b) => b.score - a.score).slice(0, 20).map((x) => x.s);
+  }
+
+  function render() {
+    const query = input.value.trim();
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    results = search(query);
+    active = Math.min(active, Math.max(0, results.length - 1));
+
+    if (!index) {
+      list.innerHTML = '';
+      empty.textContent = 'Loading…';
+      empty.classList.remove('hidden');
+      return;
+    }
+    if (!results.length) {
+      list.innerHTML = '';
+      empty.innerHTML = `No results for “${escape(query)}”. Try fewer words, or <a class="underline" href="mailto:support.decay@aryangarg.com">ask support</a>.`;
+      empty.classList.remove('hidden');
+      input.removeAttribute('aria-activedescendant');
+      return;
+    }
+    empty.classList.add('hidden');
+    list.innerHTML = results
+      .map(
+        (s, i) => `
+        <li role="option" id="search-r${i}" aria-selected="${i === active}">
+          <a href="${s.href}" data-i="${i}" tabindex="-1" class="search-hit block rounded-xl px-3 py-2.5">
+            <span class="block text-xs text-faint">${escape(s.heading ? s.page : 'Docs')}</span>
+            <span class="block font-medium">${highlight(s.title, terms)}</span>
+            ${s.text ? `<span class="search-snippet mt-0.5 block text-sm text-muted">${highlight(snippet(s.text, terms), terms)}</span>` : ''}
+          </a>
+        </li>`,
+      )
+      .join('');
+    input.setAttribute('aria-activedescendant', `search-r${active}`);
+  }
+
+  function move(to: number) {
+    if (!results.length) return;
+    active = (to + results.length) % results.length;
+    list.querySelectorAll('[role=option]').forEach((li, i) => li.setAttribute('aria-selected', String(i === active)));
+    input.setAttribute('aria-activedescendant', `search-r${active}`);
+    document.getElementById(`search-r${active}`)?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function go(i: number) {
+    const s = results[i];
+    if (!s) return;
+    dialog.close();
+    location.href = s.href;
+  }
+
+  function open() {
+    if (dialog.open) return;
+    dialog.showModal();
+    input.select();
+    active = 0;
+    render();
+    if (!index) load().then(render);
+  }
+
+  openButton.addEventListener('click', open);
+  openButton.addEventListener('pointerenter', load, { once: true });
+
+  document.addEventListener('keydown', (e) => {
+    const el = e.target as HTMLElement | null;
+    const typing = el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      dialog.open ? dialog.close() : open();
+    } else if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      open();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    active = 0;
+    render();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      move(active + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      move(active - 1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      go(active);
+    } else if (e.key === 'Escape') {
+      // A search field's first Esc only clears it; close in one press instead.
+      e.preventDefault();
+      dialog.close();
+    }
+  });
+  list.addEventListener('mousemove', (e) => {
+    const a = (e.target as HTMLElement).closest('a[data-i]') as HTMLElement | null;
+    if (a && Number(a.dataset.i) !== active) move(Number(a.dataset.i));
+  });
+  // Close when clicking the backdrop (outside the panel).
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+  // A link to the page you're on only scrolls; close the dialog for those too.
+  list.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) dialog.close();
+  });
+</script>
