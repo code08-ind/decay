@@ -24,8 +24,8 @@ use crate::shell::Shell;
 /// `BUILTIN_EXTENSION_IDS`.
 pub const STORE_URL: &str =
     "https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa";
-/// Firefox installs from addons.mozilla.org (F14). A search until the listing exists.
-pub const FIREFOX_STORE_URL: &str = "https://addons.mozilla.org/firefox/search/?q=Decay";
+/// Firefox installs from addons.mozilla.org (F14; listed 28 Nov 2026, id `decay@decay-app`).
+pub const FIREFOX_STORE_URL: &str = "https://addons.mozilla.org/firefox/addon/decay-tabs/";
 
 /// A browser onboarding lists: its host targets (decay-host's names), its kind as the
 /// extension reports it, and how to open a page in it.

@@ -11,6 +11,8 @@ export const DOWNLOAD = {
 /** The extension's Chrome Web Store listing (Chrome, Edge, Brave, Chromium). */
 export const CHROME_STORE =
   'https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa';
+/** The add-on's Firefox Add-ons listing (approved 28 Nov 2026; id decay@decay-app). */
+export const FIREFOX_STORE = 'https://addons.mozilla.org/firefox/addon/decay-tabs/';
 /** The source code (open core: LICENSE.md). */
 export const REPO = 'https://github.com/code08-ind/decay';
 /** The privacy policy (published on aryangarg.com; Docs/Store/Privacy Policy.md). */

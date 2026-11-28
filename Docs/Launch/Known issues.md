@@ -19,7 +19,7 @@ Decay isn't code-signed on Windows yet. Click **More info → Run anyway**.
 The Chrome Web Store extension needs **Decay 0.1.1 or later**. Decay updates itself within a day; to update now, open Decay's **Settings → Updates → Check now**, or download the latest version from https://decay.aryangarg.com/download. Then click **Connect to the Decay app** in the extension's popup again.
 
 ### Firefox
-The Firefox add-on is in review at Firefox Add-ons. Until it's listed, Decay works with Chrome, Edge and Brave through the [Chrome Web Store extension](https://chromewebstore.google.com/detail/jidljehgkacgjoefbancbihmdkkpcaaa) (Edge installs it from there too).
+Install the add-on from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/decay-tabs/). Decay 0.1.5 and earlier open an add-ons search from the first-run guide instead of the listing: pick **Decay** there, or use the link above.
 
 ### Something else?
 [Open an issue](https://github.com/code08-ind/decay-releases/issues/new) or email **support.decay@aryangarg.com**. Settings → Privacy → **Export diagnostics…** saves a file you can attach (it contains no tab addresses, titles or sites).

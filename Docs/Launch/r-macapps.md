@@ -44,5 +44,5 @@ I'd love feedback, especially on how it decides a tab is stale. Happy to answer 
 - **"Why does it need Accessibility access?"** Only to see and minimise app windows. Without it, Decay works with tabs only.
 - **"Will it close a window with unsaved work?"** No. Windows are only minimised; Pro closes Finder folder windows (which have nothing to save) and reopens them on restore.
 - **"Is it signed / notarized?"** Not yet: I'm a solo developer and haven't paid for the Apple Developer Program yet. The first launch needs System Settings → Privacy & Security → Open Anyway (once), and after an update macOS may ask for your login password so Decay can open its encrypted database (click Always Allow). The source of the core is public, and the builds are made by GitHub Actions from the public tags. *(Change this to "yes" once the Apple Developer account exists.)*
-- **"Firefox?"** Yes: the add-on is on Firefox Add-ons. *(Until AMO approves it: "it's in review at Firefox Add-ons; Chrome, Edge and Brave work today".)*
+- **"Firefox?"** Yes: the add-on is on Firefox Add-ons.
 - **"Subscription?"** No. Free forever for the basics; Pro is a one-time $24.

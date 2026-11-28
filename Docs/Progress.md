@@ -2,7 +2,7 @@
 
 ## ▶ Start here next (updated 27 Nov 2026)
 
-**Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **live on the Chrome Web Store** (26 Nov 2026) and in review on Firefox Add-ons. **v0.1.1** (the app accepts the Chrome Web Store extension) is published.
+**Where things stand:** Decay v0.1.0 is published (https://github.com/code08-ind/decay-releases; the site's Download buttons start the right file for the visitor's system). Buying Pro works end to end in Paddle's **sandbox** (checkout → license email from licenses.decay@aryangarg.com → "Activate in Decay" turns Pro on). Support mail (support.decay@aryangarg.com) forwards to Gmail. The privacy policy covers the desktop app. The extension is **live on the Chrome Web Store** (26 Nov 2026) and on Firefox Add-ons (approved 28 Nov 2026: https://addons.mozilla.org/firefox/addon/decay-tabs/, version 0.1.0). **v0.1.1** (the app accepts the Chrome Web Store extension) is published.
 
 ### 0. Sentry crash reports (set up 26 Nov 2026)
 - [x] Sign up at sentry.io (free Developer plan; choose the EU or US region, fixed forever), create project `decay-desktop` (platform **Rust**).
@@ -18,8 +18,9 @@
   2. After approval: Developer Dashboard → Decay → **Store listing** → **Official URL** → pick `https://decay.aryangarg.com/`. It's only listed if Search Console uses the **same Google account** as the Developer Dashboard: check the avatar at the top right of both.
   3. If it still says "not verified": Search Console → **Settings** → **Users and permissions** → add the dashboard's account as an **Owner** (a Full user isn't enough).
 
-### 2. When Firefox Add-ons approves Decay (slug `decay-tabs`)
-- [ ] Put the listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs) and the site's browsers page; ship it in the next app release.
+### 2. Firefox Add-ons: APPROVED 28 Nov 2026 (slug `decay-tabs`, public version 0.1.0)
+- [x] Listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs; ships in v0.1.6, until then onboarding opens an AMO search) and on the site (`FIREFOX_STORE` in apps/site/src/consts.ts: download page, docs/browsers, home page no longer says "Firefox soon"; live 28 Nov 2026).
+- [ ] Upload Firefox **0.1.2** (logo leaf + reconnect fix + no Arc): `decayextension-0.1.2-firefox.zip` + `decay-firefox-source-0.1.2.zip`, listing text without Arc + new screenshots (Docs/Store/assets). AMO shows only 0.1.0 public.
 - [x] Upload Firefox 0.1.1 (submitted 27 Nov 2026; new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
 
 ### 3. Selling for real (Paddle live): LIVE 28 Nov 2026
