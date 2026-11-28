@@ -128,3 +128,64 @@
   text-align: start;
   vertical-align: top;
 }
+
+/* Buttons: a gentle hover on every filled and outlined pill (links and buttons). */
+a.bg-primary,
+button.bg-primary,
+a.border-line-strong {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+a.bg-primary:hover,
+button.bg-primary:not(:disabled):hover {
+  background-color: color-mix(in oklab, var(--primary) 86%, var(--canvas));
+}
+a.bg-primary:active,
+button.bg-primary:not(:disabled):active,
+a.border-line-strong:active {
+  transform: translateY(1px);
+}
+a.border-line-strong:hover {
+  background-color: var(--surface-2);
+}
+
+/* FAQ: a chevron that turns, instead of the browser's triangle. */
+.faq summary {
+  list-style: none;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq summary::after {
+  content: "";
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-inline-start: auto;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: translateY(-25%) rotate(45deg);
+  transition: transform 200ms ease;
+}
+.faq[open] summary::after {
+  transform: translateY(25%) rotate(-135deg);
+}
+
+/* Docs: previous / next cards aren't body links (no prose underline or colour). */
+.prose a.doc-step {
+  text-decoration: none;
+  color: inherit;
+}
+.docs-menu[open] .docs-menu-chevron {
+  transform: rotate(180deg);
+}
+
+/* Narrow phones: a wide docs table scrolls inside itself, not the page. */
+@media (max-width: 639px) {
+  .prose table {
+    display: block;
+    overflow-x: auto;
+  }
+}

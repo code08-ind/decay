@@ -5,34 +5,57 @@ import Base from './Base.astro';
 const { frontmatter } = Astro.props;
 const path = cleanPath(Astro.url.pathname);
 const at = DOCS.findIndex((d) => d.href === path);
+const current = DOCS[at];
 const prev = at > 0 ? DOCS[at - 1] : undefined;
 const next = at >= 0 && at < DOCS.length - 1 ? DOCS[at + 1] : undefined;
+const link = (href: string) =>
+  href === path ? 'bg-lime font-medium text-lime-ink' : 'text-muted hover:bg-surface-2 hover:text-ink';
 ---
 
 <Base title={frontmatter.title} description={frontmatter.description}>
-  <div class="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[14rem_1fr]">
-    <nav aria-label="Docs" class="text-sm">
-      <p class="mb-3 text-xs font-semibold tracking-wider text-faint uppercase">Docs</p>
-      <ul class="grid gap-1">
+  <div class="mx-auto grid max-w-6xl gap-x-12 gap-y-6 px-5 pt-6 md:grid-cols-[14rem_1fr] md:pt-10">
+    <!-- Phones: the page list folds away above the article. -->
+    <details class="docs-menu rounded-2xl border border-line bg-surface md:hidden">
+      <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 text-sm [&::-webkit-details-marker]:hidden">
+        <span class="text-xs font-semibold tracking-wider text-faint uppercase">Docs</span>
+        <span class="min-w-0 flex-1 truncate font-medium">{current?.title}</span>
+        <svg class="docs-menu-chevron size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </summary>
+      <ul class="grid gap-0.5 border-t border-line p-2 text-sm">
         {DOCS.map((d) => (
-          <li>
-            <a
-              href={d.href}
-              aria-current={d.href === path ? 'page' : undefined}
-              class:list={['block rounded-lg px-3 py-1.5', d.href === path ? 'bg-lime font-medium text-lime-ink' : 'text-muted hover:bg-surface-2 hover:text-ink']}
-            >
-              {d.title}
-            </a>
-          </li>
+          <li><a href={d.href} aria-current={d.href === path ? 'page' : undefined} class:list={['block rounded-lg px-3 py-2', link(d.href)]}>{d.title}</a></li>
         ))}
       </ul>
-    </nav>
-    <article class="prose max-w-2xl">
-      <slot />
-      <div class="mt-12 flex justify-between gap-4 border-t border-line pt-6 text-sm">
-        {prev ? <a href={prev.href}>← {prev.title}</a> : <span />}
-        {next ? <a href={next.href}>{next.title} →</a> : <span />}
+    </details>
+
+    <!-- Wider screens: a sidebar that stays in view while reading. -->
+    <nav aria-label="Docs" class="hidden text-sm md:block">
+      <div class="sticky top-6">
+        <p class="mb-3 px-3 text-xs font-semibold tracking-wider text-faint uppercase">Docs</p>
+        <ul class="grid gap-1">
+          {DOCS.map((d) => (
+            <li><a href={d.href} aria-current={d.href === path ? 'page' : undefined} class:list={['block rounded-lg px-3 py-1.5', link(d.href)]}>{d.title}</a></li>
+          ))}
+        </ul>
       </div>
+    </nav>
+
+    <article class="prose min-w-0 max-w-2xl">
+      <slot />
+      <nav aria-label="Previous and next" class="mt-12 grid gap-3 border-t border-line pt-6 text-sm sm:grid-cols-2">
+        {prev ? (
+          <a href={prev.href} class="doc-step rounded-2xl border border-line px-4 py-3 no-underline hover:border-line-strong hover:bg-surface">
+            <span class="block text-xs text-faint">← Previous</span>
+            <span class="block font-medium text-ink">{prev.title}</span>
+          </a>
+        ) : <span class="hidden sm:block" />}
+        {next && (
+          <a href={next.href} class="doc-step rounded-2xl border border-line px-4 py-3 text-end no-underline hover:border-line-strong hover:bg-surface">
+            <span class="block text-xs text-faint">Next →</span>
+            <span class="block font-medium text-ink">{next.title}</span>
+          </a>
+        )}
+      </nav>
     </article>
   </div>
 </Base>

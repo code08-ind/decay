@@ -1,0 +1,31 @@
+---
+// Shown by Vercel for any address that isn't a page (it serves 404.html).
+import Base from '../layouts/Base.astro';
+import { DOCS } from '../consts';
+
+const popular = DOCS.filter((d) => ['/docs', '/docs/search-and-restore', '/docs/troubleshooting'].includes(d.href));
+---
+
+<Base title="Page not found" description="This page doesn't exist. It may have been archived.">
+  <section class="mx-auto max-w-xl px-5 pt-16 text-center">
+    <p class="font-mono text-sm text-faint">404</p>
+    <h1 class="mt-3 font-serif text-5xl">This page decayed.</h1>
+    <p class="mt-4 text-lg text-muted">
+      There's nothing at this address. It may have moved, or the link has a typo.
+    </p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <a href="/" class="rounded-full bg-primary px-6 py-3 font-medium text-primary-ink">Back to the home page</a>
+      <a href="/docs" class="rounded-full border border-line-strong px-6 py-3 font-medium">Read the docs</a>
+    </div>
+    <p class="mt-10 text-sm text-muted">
+      Looking for something?
+      {popular.map((d, i) => (
+        <>
+          {i > 0 && ' · '}
+          <a href={d.href} class="underline underline-offset-2 hover:text-ink">{d.title}</a>
+        </>
+      ))}
+      {' '}— or press <kbd class="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-xs">/</kbd> to search.
+    </p>
+  </section>
+</Base>
