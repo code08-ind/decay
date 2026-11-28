@@ -36,6 +36,12 @@
 ### 3c. Logo consistency (28 Nov 2026)
 - [x] The app and the extension drew a generic library leaf (lucide `Leaf`) in their headers, onboarding, About, What's New and empty states, unlike the logo. Replaced by `DecayLeaf` (the app icon's own leaf, `apps/desktop/src/DecayLeaf.tsx`, `apps/extension/components/DecayLeaf.tsx`). Icon files (app, tray, extension, site, store) already matched. **Ships in v0.1.5 (app) and the next batched extension upload.**
 
+### 3d. Store listings after extension 0.1.2 (28 Nov 2026)
+- [x] Chrome 0.1.2 (reconnect fix + logo leaf) submitted 28 Nov 2026, in review.
+- [ ] **After Chrome approves 0.1.2** (editing the listing during review can withdraw it): Store listing → description without Arc (`Docs/Store/Store Listing.md`) + replace the 5 screenshots and both promo tiles with the new ones (`Docs/Store/assets/`, regenerated 28 Nov 2026 with the logo leaf).
+- [ ] Edge and Firefox: upload 0.1.2 (`decayextension-0.1.2-chrome.zip`; `-firefox.zip` + `decay-firefox-source-0.1.2.zip`) with the same text and images **after their current reviews finish**.
+- [ ] aryangarg.com: PR #49 (Decay's own leaf on /extensions) waiting for merge.
+
 ### 4. Checks on real machines
 - [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
 - [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).
