@@ -185,5 +185,8 @@
   "tray.undo": "Undo last sweep",
   "window.onboarding": "Decay Setup Assistant",
   "window.search": "Search",
-  "window.settings": "Settings"
+  "window.settings": "Settings",
+  "keychain.updated.title": "Decay was updated",
+  "keychain.updated.body": "Next, macOS asks for your Mac login password so Decay can open its encrypted data. Enter it and click Always Allow.\n\nThis happens once after each update, because Decay isn't signed by Apple yet. Your data stays on this computer.",
+  "keychain.updated.ok": "Continue"
 }

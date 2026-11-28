@@ -324,7 +324,8 @@ mod tests {
             found("Brave", true, false),
             found("Microsoft Edge", false, false),
         ];
-        let rows = rows(&detected, &[BrowserKind::Chrome, BrowserKind::Chrome, BrowserKind::Chromium]);
+        let rows =
+            rows(&detected, &[BrowserKind::Chrome, BrowserKind::Chrome, BrowserKind::Chromium]);
         let view: Vec<(&str, bool, bool, bool, u32)> = rows
             .iter()
             .map(|r| {

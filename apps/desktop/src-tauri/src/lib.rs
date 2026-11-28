@@ -23,6 +23,7 @@ mod deeplink;
 mod diagnostics;
 mod help;
 mod i18n;
+mod keychain_note;
 mod keys;
 mod labels;
 mod library;
@@ -149,14 +150,40 @@ fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let _ = std::fs::remove_file(quit_marker(&support));
     tray::create(app)?;
 
+    let dir = DataDir::for_build(support);
+    let version = app.package_info().version.to_string();
+    if keychain_note::due(&dir, &version) {
+        // macOS is about to ask for the login password (a new build, not signed by
+        // Apple): say so first, and open the data once the note is closed.
+        use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+        let handle = app.clone();
+        app.dialog()
+            .message(i18n::t("keychain.updated.body"))
+            .title(i18n::t("keychain.updated.title"))
+            .kind(MessageDialogKind::Info)
+            .buttons(MessageDialogButtons::OkCustom(i18n::t("keychain.updated.ok")))
+            .show(move |_| {
+                let main = handle.clone();
+                let _ = handle.run_on_main_thread(move || {
+                    if let Err(e) = start(&main, &dir, &version) {
+                        tracing::error!("start-up after the update note: {e}");
+                    }
+                });
+            });
+        return Ok(());
+    }
+    start(app, &dir, &version)
+}
+
+/// Opens the data and starts everything that needs it.
+fn start(app: &AppHandle, dir: &DataDir, version: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let support = dir.support.clone();
     let handle = app.clone();
     let endpoint = decay_bridge::ipc::Endpoint::new_for_app()?;
-    if let Err(why) =
-        app.state::<Core>()
-            .start(&DataDir::for_build(support.clone()), endpoint, move |e| forward(&handle, e))
-    {
+    if let Err(why) = app.state::<Core>().start(dir, endpoint, move |e| forward(&handle, e)) {
         fail(app, why);
     } else {
+        keychain_note::remember(&dir.data, version);
         update::start(app);
         notify::start(app);
         license::start(app);
