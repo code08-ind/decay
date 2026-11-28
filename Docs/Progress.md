@@ -45,6 +45,11 @@
 ### 3e. Keychain note after updates (28 Nov 2026)
 - [x] A native "Decay was updated" note before the Keychain prompt on the first start of a new version (`src-tauri/src/keychain_note.rs`; seen working on a Mac with `DECAY_SHOW_UPDATE_NOTE=1` in a debug build). **Ships in v0.1.6**, best bundled with the Firefox/Edge store links (every app update means one more prompt).
 
+### 3f. Launch video (due 29 Nov 2026, user asked to be reminded)
+- [x] Recorded automatically 28 Nov 2026: `Docs/Launch/assets/decay-launch.mp4` (48 s) + `decay-launch-30s.mp4` (20 s); copies in `~/Downloads/Decay-launch-video/`.
+- [ ] **29 Nov 2026:** watch both and ask for changes (pace, captions, order) if needed.
+- [ ] Upload `decay-launch.mp4` to YouTube as **Unlisted**; the link is Product Hunt's first gallery item (`Docs/Launch/Product Hunt.md`). Optional cover: `thumbnail-insights.png`.
+
 ### 4. Checks on real machines
 - [ ] A Mac that never had Decay: download from the site, Open Anyway, onboarding, connect the store extension, a sweep, Undo, restore, activate a license, update to a newer build.
 - [ ] A Windows PC: the same (nothing has been tried by hand on Windows yet), plus a real call holding sweeps and Explorer folder windows closing and reopening (Pro).
