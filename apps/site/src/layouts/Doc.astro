@@ -1,9 +1,9 @@
 ---
-import { DOCS } from '../consts';
+import { DOCS, cleanPath } from '../consts';
 import Base from './Base.astro';
 
 const { frontmatter } = Astro.props;
-const path = Astro.url.pathname.replace(/\/$/, '') || '/docs';
+const path = cleanPath(Astro.url.pathname);
 const at = DOCS.findIndex((d) => d.href === path);
 const prev = at > 0 ? DOCS[at - 1] : undefined;
 const next = at >= 0 && at < DOCS.length - 1 ? DOCS[at + 1] : undefined;

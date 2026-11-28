@@ -1,7 +1,7 @@
 ---
 import '../styles/site.css';
 import Search from '../components/Search.astro';
-import { SUPPORT_EMAIL } from '../consts';
+import { SUPPORT_EMAIL, cleanPath } from '../consts';
 
 interface Props {
   title: string;
@@ -25,7 +25,7 @@ const nav = [
     <title>{full}</title>
     <meta name="description" content={description} />
     <link rel="icon" href="/icon.png" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="canonical" href={new URL(cleanPath(Astro.url.pathname), Astro.site)} />
     <meta property="og:title" content={full} />
     <meta property="og:description" content={description} />
     <!-- Theme before first paint (no flash): the saved choice, else the OS. -->

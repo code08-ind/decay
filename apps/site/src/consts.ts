@@ -43,3 +43,9 @@ export const PADDLE = {
   clientToken: 'live_cdb7e26dd1d269e4a743fbeafdd',
   priceId: 'pri_01m8bsze9kntjnct8hcx8jdgk8',
 };
+
+/**
+ * A page's public path. The site builds one file per page (`build.format: 'file'`), so at
+ * build time Astro.url.pathname is `/docs/pro.html`; Vercel serves it as `/docs/pro`.
+ */
+export const cleanPath = (pathname: string) => pathname.replace(/\.html$/, '').replace(/\/(index)?$/, '') || '/';
