@@ -20,7 +20,7 @@
 
 ### 2. Firefox Add-ons: APPROVED 28 Nov 2026 (slug `decay-tabs`, public version 0.1.0)
 - [x] Listing URL (`https://addons.mozilla.org/firefox/addon/decay-tabs/`) in `FIREFOX_STORE_URL` (apps/desktop/src-tauri/src/onboarding.rs; ships in v0.1.6, until then onboarding opens an AMO search) and on the site (`FIREFOX_STORE` in apps/site/src/consts.ts: download page, docs/browsers, home page no longer says "Firefox soon"; live 28 Nov 2026).
-- [ ] Upload Firefox **0.1.2** (logo leaf + reconnect fix + no Arc): `decayextension-0.1.2-firefox.zip` + `decay-firefox-source-0.1.2.zip`, listing text without Arc + new screenshots (Docs/Store/assets). AMO shows only 0.1.0 public.
+- [x] Firefox **0.1.2** (logo leaf + reconnect fix + no Arc) APPROVED and public 28 Nov 2026; listing summary/description fixed (no Arc, no stray instruction text) + new screenshots.
 - [x] Upload Firefox 0.1.1 (submitted 27 Nov 2026; new leaf icon + Insights cleanup): `decayextension-0.1.1-firefox.zip` + `decay-firefox-source-0.1.1.zip`.
 
 ### 3. Selling for real (Paddle live): LIVE 28 Nov 2026
