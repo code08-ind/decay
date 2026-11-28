@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Decay launch video (stage)</title>
+  </head>
+  <body>
+    <!-- Recording-only page for the launch video (Docs/Launch/demo/record-launch.mjs), never
+         shipped. A Mac desktop drawn in HTML; Decay's own windows are the real UI (index.html
+         with sample data) in frames. -->
+    <div id="stage">
+      <div id="menubar">
+        <div class="left"><span class="apple"></span><b>Chrome</b><span>File</span><span>Edit</span><span>View</span><span>History</span><span>Window</span></div>
+        <div class="right"><span id="tray" class="tray"></span><span>Fri 28 Nov</span><span>09:42</span></div>
+      </div>
+
+      <div id="chrome" class="win">
+        <div class="tabbar">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <div id="tabs"></div>
+        </div>
+        <div class="toolbar">
+          <div id="url" class="url">github.com/acme/web/pulls</div>
+          <img class="ext" src="../src-tauri/icons/32x32.png" alt="" />
+        </div>
+        <div id="page" class="page"></div>
+      </div>
+
+      <div id="note" class="note">
+        <img src="../src-tauri/icons/128x128.png" alt="" />
+        <div class="body"><b>Decay</b><span id="note-text">Archived 9 tabs you haven’t used in days</span></div>
+        <button id="undo">Undo</button>
+      </div>
+
+      <div id="panel-wrap" class="hidden"><iframe id="panel" title="panel"></iframe></div>
+
+      <div id="library" class="win app hidden">
+        <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><span>Decay</span></div>
+        <iframe id="library-frame" title="library"></iframe>
+      </div>
+
+      <div id="settings" class="win app hidden">
+        <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><span>Settings</span></div>
+        <iframe id="settings-frame" title="settings"></iframe>
+      </div>
+
+      <div id="keys" class="keys hidden"></div>
+      <div id="caption" class="caption hidden"></div>
+      <div id="later" class="later hidden">Two days later</div>
+      <div class="sample">Sample data</div>
+      <svg id="cursor" viewBox="0 0 24 24" width="30" height="30"><path d="M4 2l15 11-6.5 1.2L16 21l-3 1.4-3.3-6.6L5 20z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+      <div id="end" class="end hidden">
+        <img src="../src-tauri/icons/icon.png" alt="" />
+        <h1>Decay</h1>
+        <p class="tag">Your tabs, gently put away.</p>
+        <p class="site">decay.aryangarg.com</p>
+        <p class="price">Free for macOS and Windows · Pro $24 one-time</p>
+      </div>
+    </div>
+    <script type="module" src="./stage.ts"></script>
+  </body>
+</html>

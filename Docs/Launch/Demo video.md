@@ -1,5 +1,7 @@
 # Launch demo video (45–60 s)
 
+**Recorded automatically (28 Nov 2026):** `assets/decay-launch.mp4` (48 s, 1920×1080, 30 fps) and `assets/decay-launch-30s.mp4` (20 s cut: shots 1–2, 4, end card), from the **real desktop UI** with sample data: `apps/desktop/demo/` (recording-only; Tauri's `mockIPC` answers the UI's commands; never shipped) on a stage drawn in HTML (Mac menu bar, a Chrome-like window, the notification). "Sample data" shows in a corner. To re-record after UI changes: `cd apps/desktop && npx vite --port 1420`, then `node Docs/Launch/demo/record-launch.mjs <out dir>` (Playwright symlinked into `Docs/Launch/demo/node_modules`, like `Docs/Store/demo`; the first run after an edit can fail while Vite reloads: run it again). The plan below is the hand-recorded alternative.
+
 For Product Hunt (first gallery item), the website and the launch posts. It shows the **desktop app**, so it's recorded by hand on a Mac; the store video (`Docs/Store/assets/decay-demo.mp4`, the extension alone, automated) stays as it is.
 
 **Format:** 1920×1080 (or 2560×1440, scaled down), 30 fps, no voice-over: short on-screen captions instead (most people watch muted). MP4 (H.264), under 50 MB. For Product Hunt, upload it to YouTube (unlisted is fine) and paste the link.
